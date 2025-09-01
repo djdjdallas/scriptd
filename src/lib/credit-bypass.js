@@ -1,110 +1,76 @@
-// Credit Bypass Middleware for Testing
-// This module provides functionality to bypass credit checks during development/testing
+// Credit bypass for development/testing or specific features
+// This module helps track credit usage without actually deducting credits
 
-/**
- * Checks if credit validation should be bypassed
- * @param {Object} user - The authenticated user object
- * @returns {boolean} - Whether to bypass credit checks
- */
-export function shouldBypassCredits(user = null) {
-  // Environment-based bypass
-  if (process.env.BYPASS_CREDIT_CHECKS === 'true') {
-    console.log('[Credit Bypass] Bypassing credits due to environment variable');
+import { createClient } from '@/lib/supabase/client';
+
+// Log credit usage without deducting
+export async function logCreditUsage(userId, feature, amount, metadata = {}) {
+  const supabase = createClient();
+  
+  try {
+    const { error } = await supabase
+      .from('credit_usage_logs')
+      .insert({
+        user_id: userId,
+        feature,
+        amount,
+        metadata,
+        bypassed: true,
+        created_at: new Date().toISOString()
+      });
+    
+    if (error) {
+      console.error('Error logging credit usage:', error);
+    }
+    
+    return { success: true, bypassed: true };
+  } catch (err) {
+    console.error('Failed to log credit usage:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+// Check if feature should bypass credits
+export function shouldBypassCredits(feature, userId) {
+  // Add bypass logic here
+  // For example:
+  // - Development environment
+  // - Specific user IDs
+  // - Certain features during beta
+  
+  if (process.env.NODE_ENV === 'development') {
     return true;
   }
-
-  // User-specific bypass (if user has a bypass flag)
-  if (user && user.bypass_credits === true) {
-    console.log(`[Credit Bypass] Bypassing credits for user ${user.id}`);
+  
+  // Beta features that don't require credits
+  const betaFeatures = ['VOICE_TRAINING', 'VOICE_MATCHING'];
+  if (betaFeatures.includes(feature)) {
     return true;
   }
-
-  // Development environment bypass (optional)
-  if (process.env.NODE_ENV === 'development' && process.env.BYPASS_CREDITS_IN_DEV === 'true') {
-    console.log('[Credit Bypass] Bypassing credits in development mode');
+  
+  // Admin users
+  const adminUsers = process.env.ADMIN_USER_IDS?.split(',') || [];
+  if (adminUsers.includes(userId)) {
     return true;
   }
-
+  
   return false;
 }
 
-/**
- * Validates user credits with bypass option
- * @param {number} userCredits - Current user credits
- * @param {number} requiredCredits - Credits required for operation
- * @param {Object} user - The authenticated user object
- * @returns {Object} - Validation result { isValid: boolean, message?: string, bypassed: boolean }
- */
-export function validateCreditsWithBypass(userCredits, requiredCredits, user = null) {
-  const bypass = shouldBypassCredits(user);
+// Wrapper for credit operations with bypass logic
+export async function withCreditBypass(userId, feature, amount, operation) {
+  if (shouldBypassCredits(feature, userId)) {
+    await logCreditUsage(userId, feature, amount, { bypassed: true });
+    return operation();
+  }
   
-  if (bypass) {
-    return {
-      isValid: true,
-      bypassed: true,
-      message: 'Credit check bypassed for testing'
-    };
-  }
-
-  if (userCredits < requiredCredits) {
-    return {
-      isValid: false,
-      bypassed: false,
-      message: `Insufficient credits. Need ${requiredCredits}, have ${userCredits}`
-    };
-  }
-
-  return {
-    isValid: true,
-    bypassed: false
-  };
-}
-
-/**
- * Conditionally deducts credits based on bypass status
- * @param {Object} supabase - Supabase client
- * @param {string} userId - User ID
- * @param {number} currentCredits - Current credits
- * @param {number} creditCost - Credits to deduct
- * @param {Object} user - The authenticated user object
- * @returns {Promise<Object>} - Result of credit deduction
- */
-export async function conditionalCreditDeduction(supabase, userId, currentCredits, creditCost, user = null) {
-  const bypass = shouldBypassCredits(user);
+  // Normal credit deduction flow
+  const { deductCredits } = await import('@/lib/credits');
+  const result = await deductCredits(userId, feature, { amount });
   
-  if (bypass) {
-    console.log(`[Credit Bypass] Skipping credit deduction of ${creditCost} credits for user ${userId}`);
-    return {
-      success: true,
-      bypassed: true,
-      remainingCredits: currentCredits
-    };
+  if (!result.success) {
+    throw new Error(result.error || 'Insufficient credits');
   }
-
-  try {
-    const { error } = await supabase
-      .from('users')
-      .update({ credits: currentCredits - creditCost })
-      .eq('id', userId);
-
-    if (error) {
-      return {
-        success: false,
-        error,
-        bypassed: false
-      };
-    }
-
-    return {
-      success: true,
-      bypassed: false,
-      remainingCredits: currentCredits - creditCost
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error,
-      bypassed: false
-    };
-  }
+  
+  return operation();
 }

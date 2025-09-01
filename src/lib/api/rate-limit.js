@@ -42,3 +42,27 @@ setInterval(() => {
     }
   }
 }, WINDOW_MS * 2)
+
+// Middleware wrapper for rate limiting
+export function withRateLimit(handler, options = {}) {
+  const { getIdentifier = (req) => req.ip || 'anonymous' } = options
+  
+  return async (req, ...args) => {
+    const identifier = getIdentifier(req)
+    const result = checkRateLimit(identifier)
+    
+    if (!result.success) {
+      return Response.json(
+        { error: result.error },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': String(result.retryAfter)
+          }
+        }
+      )
+    }
+    
+    return handler(req, ...args)
+  }
+}

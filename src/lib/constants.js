@@ -259,6 +259,33 @@ export const TEAM_ROLES = {
   }
 };
 
+// Credit Packages (imported from stripe config)
+export const CREDIT_PACKAGES = [
+  {
+    id: 'credits_50',
+    credits: 50,
+    price: 5,
+    priceId: process.env.STRIPE_PRICE_CREDITS_50,
+    popular: false
+  },
+  {
+    id: 'credits_100',
+    credits: 100,
+    price: 9,
+    priceId: process.env.STRIPE_PRICE_CREDITS_100,
+    popular: true,
+    savings: '10%'
+  },
+  {
+    id: 'credits_500',
+    credits: 500,
+    price: 40,
+    priceId: process.env.STRIPE_PRICE_CREDITS_500,
+    popular: false,
+    savings: '20%'
+  }
+];
+
 // Error Codes
 export const ERROR_CODES = {
   // Auth errors
