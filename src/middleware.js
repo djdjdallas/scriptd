@@ -6,17 +6,25 @@ export async function middleware(request) {
   const response = await updateSession(request)
 
   // Protected routes
-  const protectedRoutes = ['/dashboard', '/scripts', '/channels', '/research', '/settings']
-  const authRoutes = ['/login', '/signup', '/auth']
+  const protectedRoutes = ['/scripts', '/channels', '/research', '/settings', '/billing']
+  const authRoutes = ['/login', '/signup']
   const pathname = request.nextUrl.pathname
+
+  // Skip middleware for auth callback
+  if (pathname.startsWith('/auth/callback')) {
+    return response
+  }
 
   // Check if the current route is protected
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
 
-  // Get the session from the response cookies
-  const sessionCookie = response.cookies.get('sb-auth-token')
-  const hasSession = !!sessionCookie?.value
+  // Check for Supabase auth cookies (they start with sb-)
+  const cookies = request.cookies.getAll()
+  const hasSession = cookies.some(cookie => 
+    cookie.name.startsWith('sb-') && 
+    cookie.name.includes('auth-token')
+  )
 
   // Redirect logic
   if (isProtectedRoute && !hasSession) {
@@ -24,7 +32,7 @@ export async function middleware(request) {
   }
 
   if (isAuthRoute && hasSession) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/scripts', request.url))
   }
 
   return response

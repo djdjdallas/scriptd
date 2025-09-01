@@ -8,36 +8,27 @@ export class ApiError extends Error {
   }
 }
 
+import { NextResponse } from 'next/server';
+
 export function createApiHandler(handler) {
-  return async (req, res) => {
+  return async (req, { params } = {}) => {
     try {
       // Add request timing
       const startTime = Date.now();
       
       // Execute handler
-      const result = await handler(req, res);
-      
-      // If handler already sent response, return
-      if (res.headersSent) {
-        return;
-      }
+      const result = await handler(req, params);
       
       // Send success response
       const duration = Date.now() - startTime;
-      res.status(200).json({
+      return NextResponse.json({
         success: true,
         data: result,
         duration: `${duration}ms`
-      });
+      }, { status: 200 });
       
     } catch (error) {
       console.error('API Error:', error);
-      
-      // If response already sent, log but don't send again
-      if (res.headersSent) {
-        console.error('Error after response sent:', error);
-        return;
-      }
       
       // Determine status code
       const statusCode = error.statusCode || 500;
@@ -45,7 +36,7 @@ export function createApiHandler(handler) {
       const code = error.code || 'INTERNAL_ERROR';
       
       // Send error response
-      res.status(statusCode).json({
+      return NextResponse.json({
         success: false,
         error: {
           message,
@@ -54,101 +45,79 @@ export function createApiHandler(handler) {
             stack: error.stack
           })
         }
-      });
+      }, { status: statusCode });
     }
   };
 }
 
-// Rate limiting helper
-export function rateLimiter(options = {}) {
+// Rate limiting helper (simplified for App Router)
+const rateLimitStore = new Map();
+
+export function checkRateLimit(req, options = {}) {
   const {
     windowMs = 60 * 1000, // 1 minute
     max = 100, // max requests per window
     message = 'Too many requests, please try again later'
   } = options;
   
-  const requests = new Map();
+  const key = req.headers.get('x-forwarded-for') || 
+              req.headers.get('x-real-ip') || 
+              'unknown';
+  const now = Date.now();
   
-  return (req, res, next) => {
-    const key = req.ip || req.headers['x-forwarded-for'] || 'unknown';
-    const now = Date.now();
-    
-    // Clean old entries
-    for (const [k, timestamps] of requests.entries()) {
-      const filtered = timestamps.filter(t => now - t < windowMs);
-      if (filtered.length === 0) {
-        requests.delete(k);
-      } else {
-        requests.set(k, filtered);
-      }
+  // Clean old entries
+  for (const [k, timestamps] of rateLimitStore.entries()) {
+    const filtered = timestamps.filter(t => now - t < windowMs);
+    if (filtered.length === 0) {
+      rateLimitStore.delete(k);
+    } else {
+      rateLimitStore.set(k, filtered);
     }
-    
-    // Check rate limit
-    const timestamps = requests.get(key) || [];
-    if (timestamps.length >= max) {
-      throw new ApiError(message, 429, 'RATE_LIMIT_EXCEEDED');
-    }
-    
-    // Add current request
-    timestamps.push(now);
-    requests.set(key, timestamps);
-    
-    next();
-  };
-}
-
-// Method validation
-export function validateMethod(allowedMethods) {
-  return (req, res, next) => {
-    if (!allowedMethods.includes(req.method)) {
-      throw new ApiError(
-        `Method ${req.method} not allowed`,
-        405,
-        'METHOD_NOT_ALLOWED'
-      );
-    }
-    next();
-  };
-}
-
-// Auth validation
-export async function requireAuth(req, res, next) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  
-  if (!token) {
-    throw new ApiError('Authentication required', 401, 'AUTH_REQUIRED');
   }
   
-  // Token validation will be implemented with auth system
-  // For now, pass through
-  next();
+  // Check rate limit
+  const timestamps = rateLimitStore.get(key) || [];
+  if (timestamps.length >= max) {
+    throw new ApiError(message, 429, 'RATE_LIMIT_EXCEEDED');
+  }
+  
+  // Add current request
+  timestamps.push(now);
+  rateLimitStore.set(key, timestamps);
+}
+
+// Method validation for App Router
+export function validateMethod(req, allowedMethods) {
+  if (!allowedMethods.includes(req.method)) {
+    throw new ApiError(
+      `Method ${req.method} not allowed`,
+      405,
+      'METHOD_NOT_ALLOWED'
+    );
+  }
 }
 
 // Request body validation
-export function validateBody(schema) {
-  return (req, res, next) => {
-    const { error, value } = schema.validate(req.body, {
-      abortEarly: false,
-      stripUnknown: true
-    });
+export async function validateBody(body, schema) {
+  const { error, value } = schema.validate(body, {
+    abortEarly: false,
+    stripUnknown: true
+  });
+  
+  if (error) {
+    const details = error.details.map(d => ({
+      field: d.path.join('.'),
+      message: d.message
+    }));
     
-    if (error) {
-      const details = error.details.map(d => ({
-        field: d.path.join('.'),
-        message: d.message
-      }));
-      
-      throw new ApiError(
-        'Validation failed',
-        400,
-        'VALIDATION_ERROR',
-        { details }
-      );
-    }
-    
-    req.body = value;
-    next();
-  };
+    throw new ApiError(
+      'Validation failed',
+      400,
+      'VALIDATION_ERROR'
+    );
+  }
+  
+  return value;
 }
 
 // Pagination helper

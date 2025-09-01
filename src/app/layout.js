@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Subscribr - AI YouTube Script Generator",
+  title: "GenScript - AI YouTube Script Generator",
   description: "Generate viral YouTube scripts with AI. Analyze your channel, learn your voice, and create engaging content that drives views.",
 };
 

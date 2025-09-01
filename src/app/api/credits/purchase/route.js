@@ -1,17 +1,13 @@
 // Credit Purchase API Route
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { getStripeService, CREDIT_PACKAGES } from '@/lib/stripe/client';
 
 // POST /api/credits/purchase - Create Stripe checkout session for credit purchase
 export const POST = createApiHandler(async (req) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user } = await getAuthenticatedUser();
 
   const { packageId, successUrl, cancelUrl } = await req.json();
 
@@ -34,7 +30,7 @@ export const POST = createApiHandler(async (req) => {
     
     // Create Stripe checkout session
     const checkoutSession = await stripeService.createCreditsCheckout(
-      session.user.id,
+      user.id,
       packageId,
       success,
       cancel

@@ -1,37 +1,33 @@
 // Credits Management API Routes
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
-import { supabase } from '@/lib/supabase';
+import { validateCreditsWithBypass } from '@/lib/credit-bypass';
 
 // GET /api/credits - Get user's credit balance and history
 export const GET = createApiHandler(async (req) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { searchParams } = new URL(req.url);
   const includeHistory = searchParams.get('history') === 'true';
 
   // Get user's current credit balance
-  const { data: user, error: userError } = await supabase
+  const { data: userData, error: userError } = await supabase
     .from('users')
     .select('credits, subscription_status, subscription_plan')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single();
 
-  if (userError || !user) {
+  if (userError || !userData) {
     throw new ApiError('Failed to fetch user data', 500);
   }
 
   const response = {
-    balance: user.credits || 0,
+    balance: userData.credits || 0,
     subscription: {
-      status: user.subscription_status || 'inactive',
-      plan: user.subscription_plan || 'free'
+      status: userData.subscription_status || 'inactive',
+      plan: userData.subscription_plan || 'free'
     }
   };
 
@@ -40,7 +36,7 @@ export const GET = createApiHandler(async (req) => {
     const { data: transactions, error: txError } = await supabase
       .from('credit_transactions')
       .select('*')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -61,10 +57,7 @@ export const GET = createApiHandler(async (req) => {
 
 // POST /api/credits/transfer - Transfer credits between users (for teams)
 export const POST = createApiHandler(async (req) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { recipientId, amount, reason } = await req.json();
 
@@ -76,11 +69,17 @@ export const POST = createApiHandler(async (req) => {
   const { data: sender, error: senderError } = await supabase
     .from('users')
     .select('credits')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single();
 
-  if (senderError || !sender || sender.credits < amount) {
-    throw new ApiError('Insufficient credits', 400);
+  if (senderError || !sender) {
+    throw new ApiError('Failed to fetch user data', 500);
+  }
+
+  // Check sender's credits with bypass option
+  const creditValidation = validateCreditsWithBypass(sender.credits, amount, user);
+  if (!creditValidation.isValid) {
+    throw new ApiError(creditValidation.message, 400);
   }
 
   // Check if recipient exists
@@ -99,7 +98,7 @@ export const POST = createApiHandler(async (req) => {
     await supabase
       .from('users')
       .update({ credits: sender.credits - amount })
-      .eq('id', session.user.id);
+      .eq('id', user.id);
 
     // Add to recipient
     await supabase
@@ -110,7 +109,7 @@ export const POST = createApiHandler(async (req) => {
     // Record transactions
     const transactionData = {
       reason: reason || 'Credit transfer',
-      senderId: session.user.id,
+      senderId: user.id,
       recipientId: recipientId,
       recipientEmail: recipient.email
     };
@@ -119,7 +118,7 @@ export const POST = createApiHandler(async (req) => {
     await supabase
       .from('credit_transactions')
       .insert({
-        user_id: session.user.id,
+        user_id: user.id,
         amount: -amount,
         type: 'transfer_out',
         description: `Transferred to ${recipient.email}`,
@@ -133,7 +132,7 @@ export const POST = createApiHandler(async (req) => {
         user_id: recipientId,
         amount: amount,
         type: 'transfer_in',
-        description: `Received from ${session.user.email}`,
+        description: `Received from ${user.email}`,
         metadata: transactionData
       });
 

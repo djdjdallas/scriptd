@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { createApiHandler, ApiError, rateLimiter } from '@/lib/api-handler';
 import { getAIService } from '@/lib/ai';
 import { AI_MODELS } from '@/lib/constants';
-import { supabase } from '@/lib/supabase';
+import { createServiceClient } from '@/lib/supabase/service';
 
 // Rate limiter for free tools
 const freeToolLimiter = rateLimiter({
@@ -97,6 +97,7 @@ Format each title on a new line without numbers or bullets.`;
     titles.sort((a, b) => b.score - a.score);
 
     // Track usage for analytics (no user auth required)
+    const supabase = createServiceClient();
     await supabase
       .from('tool_usage')
       .insert({

@@ -1,19 +1,15 @@
 // Research Chat API Route
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { getAIService } from '@/lib/ai';
-import { supabase } from '@/lib/supabase';
 import { CREDIT_COSTS } from '@/lib/constants';
+import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
 
 // POST /api/research/chat
 export const POST = createApiHandler(async (req) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { sessionId, message, context = [] } = await req.json();
 
@@ -22,14 +18,22 @@ export const POST = createApiHandler(async (req) => {
   }
 
   // Check credits
-  const { data: user } = await supabase
+  const { data: userData } = await supabase
     .from('users')
     .select('credits')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single();
 
-  if (!user || user.credits < CREDIT_COSTS.RESEARCH_CHAT) {
-    throw new ApiError('Insufficient credits', 402);
+  const creditCost = CREDIT_COSTS.RESEARCH_CHAT || 1;
+  
+  if (!userData) {
+    throw new ApiError('Failed to fetch user data', 500);
+  }
+  
+  // Check user credits with bypass option
+  const creditValidation = validateCreditsWithBypass(userData.credits, creditCost, user);
+  if (!creditValidation.isValid) {
+    throw new ApiError(creditValidation.message, 402);
   }
 
   // Get or create research session
@@ -39,7 +43,7 @@ export const POST = createApiHandler(async (req) => {
       .from('research_sessions')
       .select('*')
       .eq('id', sessionId)
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single();
     
     researchSession = data;
@@ -49,7 +53,7 @@ export const POST = createApiHandler(async (req) => {
     const { data, error } = await supabase
       .from('research_sessions')
       .insert({
-        user_id: session.user.id,
+        user_id: user.id,
         title: message.substring(0, 100),
         metadata: { context: [] }
       })
@@ -129,25 +133,35 @@ Be concise but thorough. Cite sources when referencing specific information.`;
       })
       .eq('id', researchSession.id);
 
-    // Deduct credits
-    await supabase
-      .from('users')
-      .update({ credits: user.credits - CREDIT_COSTS.RESEARCH_CHAT })
-      .eq('id', session.user.id);
+    // Deduct credits (with bypass check)
+    const creditDeduction = await conditionalCreditDeduction(
+      supabase,
+      user.id,
+      userData.credits,
+      creditCost,
+      user
+    );
 
-    // Record transaction
-    await supabase
-      .from('credit_transactions')
-      .insert({
-        user_id: session.user.id,
-        amount: -CREDIT_COSTS.RESEARCH_CHAT,
-        type: 'research_chat',
-        description: 'Research chat message',
-        metadata: {
-          sessionId: researchSession.id,
-          messageId: aiMessage.id
-        }
-      });
+    if (!creditDeduction.success && !creditDeduction.bypassed) {
+      console.error('Failed to deduct credits:', creditDeduction.error);
+      // Don't throw error, message was already processed
+    }
+
+    // Record transaction (only if credits weren't bypassed)
+    if (!creditDeduction.bypassed) {
+      await supabase
+        .from('credit_transactions')
+        .insert({
+          user_id: user.id,
+          amount: -creditCost,
+          type: 'research_chat',
+          description: 'Research chat message',
+          metadata: {
+            sessionId: researchSession.id,
+            messageId: aiMessage.id
+          }
+        });
+    }
 
     // Check if AI suggested any sources
     const urlRegex = /https?:\/\/[^\s]+/g;
@@ -158,7 +172,8 @@ Be concise but thorough. Cite sources when referencing specific information.`;
       messageId: aiMessage.id,
       response: response.text,
       usage: response.usage,
-      creditsUsed: CREDIT_COSTS.RESEARCH_CHAT,
+      creditsUsed: creditDeduction.bypassed ? 0 : creditCost,
+      creditsBypassed: creditDeduction.bypassed,
       suggestedUrls
     };
 

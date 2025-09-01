@@ -1,17 +1,12 @@
 // Research Sessions List API Routes
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
-import { supabase } from '@/lib/supabase';
 
 // GET /api/research/sessions - List user's research sessions
 export const GET = createApiHandler(async (req) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { searchParams } = new URL(req.url);
   const search = searchParams.get('search');
@@ -24,7 +19,7 @@ export const GET = createApiHandler(async (req) => {
       research_messages (count),
       research_sources (count)
     `)
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .order('updated_at', { ascending: false });
 
   if (search) {
@@ -52,17 +47,14 @@ export const GET = createApiHandler(async (req) => {
 
 // POST /api/research/sessions - Create new research session
 export const POST = createApiHandler(async (req) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { title = 'New Research Session' } = await req.json();
 
   const { data, error } = await supabase
     .from('research_sessions')
     .insert({
-      user_id: session.user.id,
+      user_id: user.id,
       title,
       metadata: {
         createdAt: new Date().toISOString(),

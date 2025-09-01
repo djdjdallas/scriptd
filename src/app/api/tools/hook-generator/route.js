@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { createApiHandler, ApiError, rateLimiter } from '@/lib/api-handler';
 import { getAIService } from '@/lib/ai';
 import { AI_MODELS } from '@/lib/constants';
-import { supabase } from '@/lib/supabase';
+import { createServiceClient } from '@/lib/supabase/service';
 
 // Rate limiter for free tools
 const freeToolLimiter = rateLimiter({
@@ -115,6 +115,7 @@ Format each hook on a new line with the style name followed by a colon, then the
     }
 
     // Track usage
+    const supabase = createServiceClient();
     await supabase
       .from('tool_usage')
       .insert({

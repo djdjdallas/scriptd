@@ -1,19 +1,14 @@
 // Add Research Source API Route
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { getWebScraper } from '@/lib/scraping/web-scraper';
 import { getAIService } from '@/lib/ai';
-import { supabase } from '@/lib/supabase';
 
 // POST /api/research/sources/add
 export const POST = createApiHandler(async (req) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { url, sessionId } = await req.json();
 
@@ -41,7 +36,7 @@ export const POST = createApiHandler(async (req) => {
     const { data: source, error } = await supabase
       .from('research_sources')
       .insert({
-        user_id: session.user.id,
+        user_id: user.id,
         session_id: sessionId || null,
         url,
         title: scrapedData.metadata.title || 'Untitled',

@@ -1,11 +1,14 @@
 // Script Export API Route
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
-import { supabase } from '@/lib/supabase';
 import { EXPORT_FORMATS, CREDIT_COSTS } from '@/lib/constants';
+import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
+import { exportToPDF } from '@/lib/export/pdf-exporter';
+import { exportToDOCX } from '@/lib/export/docx-exporter';
+import { exportToGoogleDocs } from '@/lib/export/google-docs-exporter';
+import { Packer } from 'docx';
 
 // Helper to convert script to different formats
 function convertScript(script, format) {
@@ -72,10 +75,7 @@ function convertScript(script, format) {
 
 // POST /api/scripts/[id]/export - Export script
 export const POST = createApiHandler(async (req, { params }) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const body = await req.json();
   const format = body.format || EXPORT_FORMATS.TXT;
@@ -90,7 +90,7 @@ export const POST = createApiHandler(async (req, { params }) => {
     .from('scripts')
     .select('*')
     .eq('id', params.id)
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .single();
 
   if (error || !script) {
@@ -102,69 +102,129 @@ export const POST = createApiHandler(async (req, { params }) => {
     ? CREDIT_COSTS.EXPORT_PDF 
     : 0;
 
+  // Check credits if needed
   if (creditCost > 0) {
-    const { data: user } = await supabase
+    const { data: userData } = await supabase
       .from('users')
       .select('credits')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
-    if (!user || user.credits < creditCost) {
-      throw new ApiError('Insufficient credits for this export format', 402);
+    if (!userData) {
+      throw new ApiError('Failed to fetch user data', 500);
     }
 
-    // Deduct credits
-    await supabase
-      .from('users')
-      .update({ credits: user.credits - creditCost })
-      .eq('id', session.user.id);
+    // Check user credits with bypass option
+    const creditValidation = validateCreditsWithBypass(userData.credits, creditCost, user);
+    if (!creditValidation.isValid) {
+      throw new ApiError(creditValidation.message, 402);
+    }
 
-    // Record transaction
-    await supabase
-      .from('credit_transactions')
-      .insert({
-        user_id: session.user.id,
-        amount: -creditCost,
-        type: 'export',
-        description: `Exported script: ${script.title} as ${format}`,
-        metadata: { scriptId: script.id, format }
-      });
+    // Deduct credits (with bypass check)
+    const creditDeduction = await conditionalCreditDeduction(
+      supabase,
+      user.id,
+      userData.credits,
+      creditCost,
+      user
+    );
+
+    if (!creditDeduction.success && !creditDeduction.bypassed) {
+      console.error('Failed to deduct credits:', creditDeduction.error);
+      // Don't throw error, export can continue
+    }
+
+    // Record transaction (only if credits weren't bypassed)
+    if (!creditDeduction.bypassed) {
+      await supabase
+        .from('credit_transactions')
+        .insert({
+          user_id: user.id,
+          amount: -creditCost,
+          type: 'export',
+          description: `Exported script: ${script.title} as ${format}`,
+          metadata: { scriptId: script.id, format }
+        });
+    }
   }
 
   try {
-    // Convert script
-    const converted = convertScript(script, format);
-
     // Record export
     await supabase
       .from('script_exports')
       .insert({
         script_id: script.id,
-        user_id: session.user.id,
+        user_id: user.id,
         format,
         metadata: { creditCost }
       });
 
-    // For PDF and DOCX, we'd integrate with a conversion service
-    // For now, return the content for client-side handling
-    if ([EXPORT_FORMATS.PDF, EXPORT_FORMATS.DOCX].includes(format)) {
+    // Handle PDF export
+    if (format === EXPORT_FORMATS.PDF) {
+      const { buffer, filename, contentType } = await exportToPDF(script);
+      
+      // Return base64 encoded PDF for client download
       return {
         format,
-        title: script.title,
-        content: script.content,
-        message: 'Use client-side library to generate ' + format.toUpperCase()
+        filename,
+        content: buffer.toString('base64'),
+        contentType,
+        encoding: 'base64',
+        creditCost
       };
     }
 
-    // For Google Docs, return OAuth URL
+    // Handle DOCX export
+    if (format === EXPORT_FORMATS.DOCX) {
+      const { document, filename, contentType } = await exportToDOCX(script);
+      const buffer = await Packer.toBuffer(document);
+      
+      // Return base64 encoded DOCX for client download
+      return {
+        format,
+        filename,
+        content: buffer.toString('base64'),
+        contentType,
+        encoding: 'base64',
+        creditCost
+      };
+    }
+
+    // Handle Google Docs export
     if (format === EXPORT_FORMATS.GOOGLE_DOCS) {
+      // Check if user has Google OAuth token
+      const googleToken = body.googleAccessToken;
+      
+      if (!googleToken) {
+        // Return OAuth URL if no token
+        return {
+          format,
+          requiresAuth: true,
+          authUrl: `/api/auth/google?scope=https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive.file&redirect=/scripts/${script.id}/export-google`
+        };
+      }
+      
+      // Export to Google Docs
+      const { data: userData } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', user.id)
+        .single();
+        
+      const result = await exportToGoogleDocs(script, googleToken, userData?.email);
+      
       return {
         format,
-        authUrl: '/api/auth/google?scope=drive.file&redirect=/scripts/' + script.id + '/export-success'
+        documentId: result.documentId,
+        url: result.url,
+        title: result.title,
+        creditCost: 0 // Google Docs export is free
       };
     }
 
-    // Return the converted content
+    // Handle basic formats (TXT, MD, HTML)
+    const converted = convertScript(script, format);
+    
     return {
       format,
       filename: `${script.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${converted.extension}`,

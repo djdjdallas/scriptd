@@ -1,23 +1,18 @@
 // Individual Script API Routes
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
-import { supabase } from '@/lib/supabase';
 
 // GET /api/scripts/[id] - Get single script
 export const GET = createApiHandler(async (req, { params }) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { data: script, error } = await supabase
     .from('scripts')
     .select('*')
     .eq('id', params.id)
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .single();
 
   if (error || !script) {
@@ -29,10 +24,7 @@ export const GET = createApiHandler(async (req, { params }) => {
 
 // PUT /api/scripts/[id] - Update script
 export const PUT = createApiHandler(async (req, { params }) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const body = await req.json();
   
@@ -41,7 +33,7 @@ export const PUT = createApiHandler(async (req, { params }) => {
     .from('scripts')
     .select('id')
     .eq('id', params.id)
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .single();
 
   if (!existing) {
@@ -72,17 +64,14 @@ export const PUT = createApiHandler(async (req, { params }) => {
 
 // DELETE /api/scripts/[id] - Delete script
 export const DELETE = createApiHandler(async (req, { params }) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   // Check ownership and delete
   const { error } = await supabase
     .from('scripts')
     .delete()
     .eq('id', params.id)
-    .eq('user_id', session.user.id);
+    .eq('user_id', user.id);
 
   if (error) {
     throw new ApiError('Failed to delete script', 500);

@@ -12,7 +12,7 @@ export default function ToolsLayout({ children }) {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">Subscribr</span>
+            <span className="text-xl font-bold">GenScript</span>
           </Link>
           
           <nav className="flex items-center gap-6">
@@ -44,7 +44,7 @@ export default function ToolsLayout({ children }) {
             Ready to Create Amazing YouTube Scripts?
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of creators using Subscribr to generate engaging scripts with AI
+            Join thousands of creators using GenScript to generate engaging scripts with AI
           </p>
           <div className="flex items-center justify-center gap-4">
             <Button asChild size="lg">
@@ -67,7 +67,7 @@ export default function ToolsLayout({ children }) {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              © 2024 Subscribr. All rights reserved.
+              © 2024 GenScript. All rights reserved.
             </p>
             <nav className="flex items-center gap-6">
               <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary">

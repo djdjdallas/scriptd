@@ -2,8 +2,8 @@ import { SignupForm } from '@/components/auth/signup-form'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Sign Up - Subscribr',
-  description: 'Create your Subscribr account',
+  title: 'Sign Up - GenScript',
+  description: 'Create your GenScript account',
 }
 
 export default function SignupPage() {
@@ -13,7 +13,7 @@ export default function SignupPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Subscribr
+              GenScript
             </h1>
           </Link>
           <p className="text-gray-600 dark:text-gray-400 mt-2">

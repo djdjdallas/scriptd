@@ -29,14 +29,22 @@ export function LoginForm() {
       })
 
       if (error) {
+        console.error('Login error:', error)
         toast.error(error.message)
         return
       }
 
-      toast.success('Welcome back!')
-      router.push('/dashboard')
-      router.refresh()
+      if (data?.user) {
+        console.log('Login successful, user:', data.user.email)
+        toast.success('Welcome back!')
+        
+        // Force a hard navigation to ensure middleware runs
+        window.location.href = '/scripts'
+      } else {
+        toast.error('Login failed - no user data returned')
+      }
     } catch (error) {
+      console.error('Unexpected error:', error)
       toast.error('Something went wrong. Please try again.')
     } finally {
       setIsLoading(false)

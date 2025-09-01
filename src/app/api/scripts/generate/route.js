@@ -1,22 +1,18 @@
 // Script Generation API Route
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { validateSchema, schemas } from '@/lib/validators';
 import { getAIService } from '@/lib/ai';
 import { scriptPrompts } from '@/lib/prompts/script-generation';
 import { CREDIT_COSTS, AI_MODELS } from '@/lib/constants';
-import { supabase } from '@/lib/supabase';
+import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
 
 // POST /api/scripts/generate
 export const POST = createApiHandler(async (req) => {
   // Check authentication
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const body = await req.json();
   
@@ -36,18 +32,20 @@ export const POST = createApiHandler(async (req) => {
   // Check user credits
   const creditCost = CREDIT_COSTS.SCRIPT_GENERATION[validated.model] || 10;
   
-  const { data: user, error: userError } = await supabase
+  const { data: userData, error: userError } = await supabase
     .from('users')
     .select('credits')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single();
 
-  if (userError || !user) {
+  if (userError || !userData) {
     throw new ApiError('Failed to fetch user data', 500);
   }
 
-  if (user.credits < creditCost) {
-    throw new ApiError(`Insufficient credits. Need ${creditCost}, have ${user.credits}`, 402);
+  // Check user credits with bypass option
+  const creditValidation = validateCreditsWithBypass(userData.credits, creditCost, user);
+  if (!creditValidation.isValid) {
+    throw new ApiError(creditValidation.message, 402);
   }
 
   // Get channel context if provided
@@ -57,7 +55,7 @@ export const POST = createApiHandler(async (req) => {
       .from('channels')
       .select('name, description, keywords')
       .eq('id', validated.channelId)
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (channel) {
@@ -72,7 +70,7 @@ export const POST = createApiHandler(async (req) => {
       .from('voice_profiles')
       .select('profile_data')
       .eq('id', validated.voiceProfileId)
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (profile) {
@@ -108,7 +106,7 @@ export const POST = createApiHandler(async (req) => {
     const { data: script, error: scriptError } = await supabase
       .from('scripts')
       .insert({
-        user_id: session.user.id,
+        user_id: user.id,
         title: validated.title,
         type: validated.type,
         length: validated.length,
@@ -131,30 +129,35 @@ export const POST = createApiHandler(async (req) => {
       throw new ApiError('Failed to save script', 500);
     }
 
-    // Deduct credits
-    const { error: creditError } = await supabase
-      .from('users')
-      .update({ credits: user.credits - creditCost })
-      .eq('id', session.user.id);
+    // Deduct credits (with bypass check)
+    const creditDeduction = await conditionalCreditDeduction(
+      supabase,
+      user.id,
+      userData.credits,
+      creditCost,
+      user
+    );
 
-    if (creditError) {
-      console.error('Failed to deduct credits:', creditError);
+    if (!creditDeduction.success && !creditDeduction.bypassed) {
+      console.error('Failed to deduct credits:', creditDeduction.error);
       // Don't throw error, script was already generated
     }
 
-    // Record transaction
-    await supabase
-      .from('credit_transactions')
-      .insert({
-        user_id: session.user.id,
-        amount: -creditCost,
-        type: 'script_generation',
-        description: `Generated script: ${validated.title}`,
-        metadata: {
-          scriptId: script.id,
-          model: validated.model
-        }
-      });
+    // Record transaction (only if credits weren't bypassed)
+    if (!creditDeduction.bypassed) {
+      await supabase
+        .from('credit_transactions')
+        .insert({
+          user_id: user.id,
+          amount: -creditCost,
+          type: 'script_generation',
+          description: `Generated script: ${validated.title}`,
+          metadata: {
+            scriptId: script.id,
+            model: validated.model
+          }
+        });
+    }
 
     return {
       script: {
@@ -166,9 +169,10 @@ export const POST = createApiHandler(async (req) => {
         createdAt: script.created_at
       },
       usage: {
-        creditsUsed: creditCost,
-        remainingCredits: user.credits - creditCost,
-        tokenUsage: result.usage
+        creditsUsed: creditDeduction.bypassed ? 0 : creditCost,
+        remainingCredits: creditDeduction.bypassed ? userData.credits : creditDeduction.remainingCredits,
+        tokenUsage: result.usage,
+        creditsBypassed: creditDeduction.bypassed
       }
     };
 

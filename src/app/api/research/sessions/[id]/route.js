@@ -1,24 +1,19 @@
 // Research Session API Routes
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
-import { supabase } from '@/lib/supabase';
 
 // GET /api/research/sessions/[id] - Get session with messages and sources
 export const GET = createApiHandler(async (req, { params }) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   // Get session
   const { data: researchSession, error: sessionError } = await supabase
     .from('research_sessions')
     .select('*')
     .eq('id', params.id)
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .single();
 
   if (sessionError || !researchSession) {
@@ -69,10 +64,7 @@ export const GET = createApiHandler(async (req, { params }) => {
 
 // PUT /api/research/sessions/[id] - Update session
 export const PUT = createApiHandler(async (req, { params }) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { title } = await req.json();
 
@@ -83,7 +75,7 @@ export const PUT = createApiHandler(async (req, { params }) => {
       updated_at: new Date().toISOString()
     })
     .eq('id', params.id)
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .select()
     .single();
 
@@ -96,17 +88,14 @@ export const PUT = createApiHandler(async (req, { params }) => {
 
 // DELETE /api/research/sessions/[id] - Delete session
 export const DELETE = createApiHandler(async (req, { params }) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new ApiError('Authentication required', 401);
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   // Delete session (cascade will handle messages and sources)
   const { error } = await supabase
     .from('research_sessions')
     .delete()
     .eq('id', params.id)
-    .eq('user_id', session.user.id);
+    .eq('user_id', user.id);
 
   if (error) {
     throw new ApiError('Failed to delete session', 500);

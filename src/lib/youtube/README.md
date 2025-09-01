@@ -1,6 +1,6 @@
 # YouTube API Integration
 
-This module provides comprehensive YouTube Data API v3 integration for the Subscribr platform.
+This module provides comprehensive YouTube Data API v3 integration for the GenScript platform.
 
 ## Features
 

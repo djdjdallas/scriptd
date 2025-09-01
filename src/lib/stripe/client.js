@@ -8,14 +8,13 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
 });
 
-// Stripe price IDs (would be set in environment variables in production)
-export const PRICE_IDS = {
-  starter: process.env.STRIPE_STARTER_PRICE_ID,
-  professional: process.env.STRIPE_PROFESSIONAL_PRICE_ID,
-  credits_50: process.env.STRIPE_CREDITS_50_PRICE_ID,
-  credits_100: process.env.STRIPE_CREDITS_100_PRICE_ID,
-  credits_500: process.env.STRIPE_CREDITS_500_PRICE_ID,
-};
+// Get price ID based on plan and billing period
+export function getPriceId(planId, isAnnual = false) {
+  const plan = PLANS[planId.toUpperCase()];
+  if (!plan) return null;
+  
+  return isAnnual ? plan.stripePriceAnnual : plan.stripePriceMonthly;
+}
 
 // Credit packages
 export const CREDIT_PACKAGES = [
@@ -47,13 +46,13 @@ export const CREDIT_PACKAGES = [
 // Stripe service class
 export class StripeService {
   // Create checkout session for subscription
-  async createSubscriptionCheckout(userId, planId, successUrl, cancelUrl) {
+  async createSubscriptionCheckout(userId, planId, isAnnual = false, successUrl, cancelUrl) {
     const plan = PLANS[planId.toUpperCase()];
     if (!plan) {
       throw new Error('Invalid plan');
     }
 
-    const priceId = PRICE_IDS[planId];
+    const priceId = getPriceId(planId, isAnnual);
     if (!priceId) {
       throw new Error('Price not configured for this plan');
     }

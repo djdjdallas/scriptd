@@ -75,11 +75,15 @@ export const PLANS = {
       'Export to text'
     ]
   },
-  STARTER: {
-    id: 'starter',
-    name: 'Starter',
-    price: 29,
+  CREATOR: {
+    id: 'creator',
+    name: 'Creator',
+    price: 19,
+    priceAnnual: 192,
     credits: 500,
+    stripeProductId: process.env.STRIPE_PRODUCT_CREATOR,
+    stripePriceMonthly: process.env.STRIPE_PRICE_CREATOR_MONTHLY,
+    stripePriceAnnual: process.env.STRIPE_PRICE_CREATOR_ANNUAL,
     features: [
       '500 credits per month',
       'All AI models',
@@ -92,25 +96,50 @@ export const PLANS = {
   PROFESSIONAL: {
     id: 'professional',
     name: 'Professional',
-    price: 99,
+    price: 49,
+    priceAnnual: 468,
     credits: 2000,
+    stripeProductId: process.env.STRIPE_PRODUCT_PROFESSIONAL,
+    stripePriceMonthly: process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY,
+    stripePriceAnnual: process.env.STRIPE_PRICE_PROFESSIONAL_ANNUAL,
     features: [
       '2,000 credits per month',
-      'Everything in Starter',
+      'Everything in Creator',
       'Team collaboration',
       'Priority support',
       'Custom voice training',
       'API access'
     ]
   },
+  BUSINESS: {
+    id: 'business',
+    name: 'Business',
+    price: 99,
+    priceAnnual: 948,
+    credits: 5000,
+    stripeProductId: process.env.STRIPE_PRODUCT_BUSINESS,
+    stripePriceMonthly: process.env.STRIPE_PRICE_BUSINESS_MONTHLY,
+    stripePriceAnnual: process.env.STRIPE_PRICE_BUSINESS_ANNUAL,
+    features: [
+      '5,000 credits per month',
+      'Everything in Professional',
+      'Advanced analytics',
+      'Custom integrations',
+      'Dedicated account manager'
+    ]
+  },
   ENTERPRISE: {
     id: 'enterprise',
     name: 'Enterprise',
-    price: null, // Custom pricing
+    price: 199,
+    priceAnnual: null, // Custom pricing
     credits: null, // Unlimited
+    stripeProductId: process.env.STRIPE_PRODUCT_ENTERPRISE,
+    stripePriceMonthly: process.env.STRIPE_PRICE_ENTERPRISE_MONTHLY,
+    stripePriceAnnual: null, // Custom pricing
     features: [
       'Unlimited credits',
-      'Everything in Professional',
+      'Everything in Business',
       'Custom integrations',
       'Dedicated support',
       'SLA guarantee',

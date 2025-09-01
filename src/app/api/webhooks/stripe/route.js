@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { getStripeService } from '@/lib/stripe/client';
-import { supabase } from '@/lib/supabase';
+import { createServiceClient } from '@/lib/supabase/service';
 import { PLANS } from '@/lib/constants';
 
 // Disable body parsing for webhook
@@ -64,6 +64,8 @@ export async function POST(req) {
 
 // Handle successful checkout
 async function handleCheckoutComplete(session) {
+  const supabase = createServiceClient();
+  
   const { 
     client_reference_id: userId,
     customer,
@@ -78,6 +80,7 @@ async function handleCheckoutComplete(session) {
   }
 
   // Update user's Stripe customer ID
+  
   if (customer) {
     await supabase
       .from('users')
@@ -122,6 +125,8 @@ async function handleCheckoutComplete(session) {
 
 // Handle subscription updates
 async function handleSubscriptionUpdate(subscription) {
+  const supabase = createServiceClient();
+  
   const { 
     metadata: { userId },
     status,
@@ -183,6 +188,8 @@ async function handleSubscriptionUpdate(subscription) {
 
 // Handle subscription deletion
 async function handleSubscriptionDeleted(subscription) {
+  const supabase = createServiceClient();
+  
   const { metadata: { userId } } = subscription;
 
   if (!userId) {
@@ -219,6 +226,8 @@ async function handleInvoicePaymentSucceeded(invoice) {
 
 // Handle failed invoice payment
 async function handleInvoicePaymentFailed(invoice) {
+  const supabase = createServiceClient();
+  
   const { subscription, customer } = invoice;
 
   if (!subscription) return;
