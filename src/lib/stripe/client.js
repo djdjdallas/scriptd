@@ -16,6 +16,13 @@ export function getPriceId(planId, isAnnual = false) {
   return isAnnual ? plan.stripePriceAnnual : plan.stripePriceMonthly;
 }
 
+// Price IDs from environment variables
+const PRICE_IDS = {
+  credits_50: process.env.STRIPE_PRICE_CREDITS_50,
+  credits_100: process.env.STRIPE_PRICE_CREDITS_100,
+  credits_500: process.env.STRIPE_PRICE_CREDITS_500,
+};
+
 // Credit packages
 export const CREDIT_PACKAGES = [
   {

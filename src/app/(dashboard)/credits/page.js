@@ -1,9 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { CREDIT_PACKAGES, CREDIT_COSTS } from '@/lib/constants';
+import { loadStripe } from '@stripe/stripe-js';
 import { TiltCard } from '@/components/ui/tilt-card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/use-toast';
 import {
   CreditCard,
@@ -23,60 +29,39 @@ import {
   ShoppingCart
 } from 'lucide-react';
 
-const creditPackages = [
-  {
-    id: 'starter',
-    name: 'Starter Pack',
-    credits: 100,
-    price: 9.99,
-    icon: Zap,
-    color: 'from-blue-500/20',
-    popular: false,
-    bonus: 0
-  },
-  {
-    id: 'pro',
-    name: 'Pro Pack',
-    credits: 500,
-    price: 39.99,
-    icon: Gem,
-    color: 'from-purple-500/20',
-    popular: true,
-    bonus: 50
-  },
-  {
-    id: 'business',
-    name: 'Business Pack',
-    credits: 1200,
-    price: 89.99,
-    icon: Crown,
-    color: 'from-pink-500/20',
-    popular: false,
-    bonus: 200
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    credits: 5000,
-    price: 349.99,
-    icon: Trophy,
-    color: 'from-yellow-500/20',
-    popular: false,
-    bonus: 1000
-  }
-];
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 export default function CreditsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentCredits, setCurrentCredits] = useState(0);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoError, setPromoError] = useState('');
+  const [userDetails, setUserDetails] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchCreditsData();
   }, []);
+
+  // Check for success/cancel from Stripe
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      toast({
+        title: "Purchase Successful!",
+        description: "Your credits have been added to your account.",
+      });
+      // Refresh data and clean URL
+      fetchCreditsData();
+      setTimeout(() => {
+        router.replace('/dashboard/credits');
+      }, 2000);
+    }
+  }, [searchParams, router, toast]);
 
   const fetchCreditsData = async () => {
     try {
@@ -84,20 +69,24 @@ export default function CreditsPage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
-        // Fetch user credits
+        // Fetch user details
         const { data: userData } = await supabase
           .from('users')
-          .select('credits')
+          .select('*, subscription_tier, first_purchase_date, total_credit_purchases')
           .eq('id', user.id)
           .single();
 
-        if (userData) {
-          setCurrentCredits(userData.credits || 0);
-        }
+        setUserDetails(userData);
+
+        // Get credit balance using the RPC function
+        const { data: balance } = await supabase
+          .rpc('get_available_credit_balance', { p_user_id: user.id });
+
+        setCurrentCredits(balance || 0);
 
         // Fetch recent transactions
         const { data: transactionsData } = await supabase
-          .from('credit_transactions')
+          .from('credits_transactions')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
@@ -115,36 +104,31 @@ export default function CreditsPage() {
   const handlePurchase = async (packageId) => {
     setPurchasing(true);
     setSelectedPackage(packageId);
-
+    
     try {
-      const selectedPkg = creditPackages.find(pkg => pkg.id === packageId);
-      
-      const response = await fetch('/api/credits/purchase', {
+      const response = await fetch('/api/credits/checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
           packageId,
-          credits: selectedPkg.credits + selectedPkg.bonus
+          promoCode: promoCode || undefined 
         })
       });
 
-      const result = await response.json();
+      const data = await response.json();
 
-      if (response.ok) {
-        if (result.url) {
-          // Redirect to Stripe checkout
-          window.location.href = result.url;
-        } else {
-          toast({
-            title: "Purchase Successful",
-            description: `Added ${selectedPkg.credits + selectedPkg.bonus} credits to your account`
-          });
-          fetchCreditsData();
-        }
-      } else {
-        throw new Error(result.error || 'Purchase failed');
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session');
+      }
+
+      // Redirect to Stripe Checkout
+      const stripe = await stripePromise;
+      const { error } = await stripe.redirectToCheckout({
+        sessionId: data.sessionId
+      });
+
+      if (error) {
+        throw error;
       }
     } catch (error) {
       console.error('Purchase error:', error);
@@ -162,6 +146,10 @@ export default function CreditsPage() {
   const formatCredits = (num) => {
     return new Intl.NumberFormat().format(num);
   };
+
+  const isFirstPurchase = !userDetails?.first_purchase_date;
+  const purchaseCount = userDetails?.total_credit_purchases || 0;
+  const isLoyaltyBonus = (purchaseCount + 1) % 3 === 0;
 
   if (loading) {
     return (
@@ -222,6 +210,35 @@ export default function CreditsPage() {
         </div>
       </TiltCard>
 
+      {/* Success Alert */}
+      {searchParams.get('success') === 'true' && (
+        <Alert className="glass-card border-green-500/50 bg-green-500/10">
+          <CheckCircle className="h-4 w-4 text-green-400" />
+          <AlertDescription className="text-green-300">
+            Payment successful! Your credits have been added to your account.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Special Offers */}
+      {(isFirstPurchase || isLoyaltyBonus) && (
+        <Alert className="glass-card border-yellow-500/50 bg-yellow-500/10 animate-reveal">
+          <Gift className="h-4 w-4 text-yellow-400" />
+          <AlertDescription className="text-yellow-300">
+            {isFirstPurchase && (
+              <span className="font-semibold">
+                🎉 First Purchase Special: Get 20% off any credit package!
+              </span>
+            )}
+            {isLoyaltyBonus && (
+              <span className="font-semibold">
+                🎁 Loyalty Bonus: Your next purchase includes 10% bonus credits!
+              </span>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Credit Packages */}
       <div className="space-y-4 animate-reveal" style={{ animationDelay: '0.2s' }}>
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -229,46 +246,61 @@ export default function CreditsPage() {
           Purchase Credits
         </h2>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {creditPackages.map((pkg) => {
-            const Icon = pkg.icon;
+        <div className="grid md:grid-cols-3 gap-6">
+          {Object.values(CREDIT_PACKAGES).map((pkg) => {
+            const iconMap = {
+              'pack_50': Zap,
+              'pack_100': Gem,
+              'pack_500': Crown
+            };
+            const Icon = iconMap[pkg.id] || CreditCard;
+            const colorMap = {
+              'pack_50': 'from-blue-500/20',
+              'pack_100': 'from-purple-500/20',
+              'pack_500': 'from-yellow-500/20'
+            };
+            
             return (
               <TiltCard key={pkg.id}>
                 <div className={`glass-card glass-hover h-full relative ${
-                  pkg.popular ? 'ring-2 ring-purple-400' : ''
+                  pkg.badge ? 'ring-2 ring-purple-400' : ''
                 }`}>
-                  {pkg.popular && (
+                  {pkg.badge && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 glass px-3 py-1 rounded-full">
-                      <span className="text-xs text-purple-300 font-semibold">MOST POPULAR</span>
+                      <span className="text-xs text-purple-300 font-semibold">{pkg.badge}</span>
                     </div>
                   )}
                   
                   <div className="p-6 text-center">
-                    <div className={`w-16 h-16 glass rounded-xl flex items-center justify-center mx-auto mb-4 bg-gradient-to-br ${pkg.color} to-transparent`}>
+                    <div className={`w-16 h-16 glass rounded-xl flex items-center justify-center mx-auto mb-4 bg-gradient-to-br ${colorMap[pkg.id]} to-transparent`}>
                       <Icon className="h-8 w-8 text-white" />
                     </div>
                     
                     <h3 className="text-xl font-semibold text-white mb-2">{pkg.name}</h3>
+                    <p className="text-sm text-gray-400 mb-4">{pkg.description}</p>
                     
                     <div className="mb-4">
                       <p className="text-3xl font-bold text-white">{formatCredits(pkg.credits)}</p>
-                      {pkg.bonus > 0 && (
-                        <p className="text-sm text-green-400 flex items-center justify-center gap-1 mt-1">
-                          <Gift className="h-3 w-3" />
-                          +{pkg.bonus} bonus credits
-                        </p>
-                      )}
+                      <p className="text-sm text-gray-400 mt-1">
+                        ${pkg.perCredit} per credit
+                      </p>
                     </div>
                     
-                    <p className="text-2xl font-bold gradient-text mb-6">
+                    <p className="text-2xl font-bold gradient-text mb-2">
                       ${pkg.price}
                     </p>
+
+                    {isFirstPurchase && (
+                      <p className="text-sm text-green-400 font-medium mb-4">
+                        First purchase: ${(pkg.price * 0.8).toFixed(2)}
+                      </p>
+                    )}
                     
                     <Button
                       onClick={() => handlePurchase(pkg.id)}
                       disabled={purchasing}
                       className={`w-full glass-button ${
-                        pkg.popular 
+                        pkg.badge === 'Most Popular' 
                           ? 'bg-gradient-to-r from-purple-500/50 to-pink-500/50' 
                           : ''
                       } text-white`}
@@ -281,7 +313,7 @@ export default function CreditsPage() {
                       ) : (
                         <>
                           <Plus className="h-4 w-4 mr-2" />
-                          Purchase
+                          Purchase Now
                         </>
                       )}
                     </Button>
@@ -290,6 +322,31 @@ export default function CreditsPage() {
               </TiltCard>
             );
           })}
+        </div>
+
+        {/* Promo Code Section */}
+        <div className="glass-card p-6 mt-6">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Gift className="h-5 w-5 text-purple-400" />
+            Have a promo code?
+          </h3>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter promo code"
+              value={promoCode}
+              onChange={(e) => {
+                setPromoCode(e.target.value.toUpperCase());
+                setPromoError('');
+              }}
+              className="max-w-xs bg-black/20 border-gray-700 text-white"
+            />
+            <Badge variant="outline" className="px-3 py-2 border-gray-700">
+              Applied at checkout
+            </Badge>
+          </div>
+          {promoError && (
+            <p className="text-sm text-red-400 mt-2">{promoError}</p>
+          )}
         </div>
       </div>
 
@@ -338,38 +395,40 @@ export default function CreditsPage() {
       <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.4s' }}>
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Star className="h-5 w-5 text-yellow-400" />
-          What You Can Do With Credits
+          Credit Usage Guide
         </h3>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="flex gap-3">
-            <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-white font-medium">Generate Scripts</p>
-              <p className="text-xs text-gray-400">10-50 credits per script</p>
+        <div className="grid md:grid-cols-2 gap-6">
+          {Object.entries(CREDIT_COSTS).map(([feature, costs]) => (
+            <div key={feature} className="space-y-2">
+              <h4 className="font-medium text-white flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-purple-400" />
+                {feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              </h4>
+              <div className="ml-6 space-y-1">
+                {typeof costs === 'object' ? (
+                  Object.entries(costs).map(([model, cost]) => (
+                    <div key={model} className="flex justify-between text-sm">
+                      <span className="text-gray-400">{model}</span>
+                      <Badge variant="outline" className="text-xs">{cost} credits</Badge>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Standard</span>
+                    <Badge variant="outline" className="text-xs">{costs} credits</Badge>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex gap-3">
-            <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-white font-medium">Voice Training</p>
-              <p className="text-xs text-gray-400">100 credits per profile</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-white font-medium">Advanced Research</p>
-              <p className="text-xs text-gray-400">5-20 credits per query</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-white font-medium">Premium Templates</p>
-              <p className="text-xs text-gray-400">25 credits per use</p>
-            </div>
-          </div>
+          ))}
         </div>
+
+        <Alert className="mt-6 border-gray-700 bg-gray-900/50">
+          <Clock className="h-4 w-4 text-gray-400" />
+          <AlertDescription className="text-gray-300">
+            Credits expire 12 months after purchase. Subscription credits reset monthly.
+          </AlertDescription>
+        </Alert>
       </div>
     </div>
   );

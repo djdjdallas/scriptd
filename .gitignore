@@ -45,3 +45,6 @@ supabase/migrations
 
 # Markdown files
 *.md
+
+# SQL files
+*.sql

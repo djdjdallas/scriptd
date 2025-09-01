@@ -15,10 +15,13 @@ import {
   Hash,
   Wand2,
   Share2,
-  Loader2
+  Loader2,
+  Search,
+  Sparkles
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { EXPORT_FORMATS } from '@/lib/constants';
+import { SEOOptimizer } from '@/components/youtube/seo-optimizer';
 
 export function ScriptEditor({ script, onSave, onExport, readOnly = false }) {
   const { toast } = useToast();
@@ -193,9 +196,10 @@ export function ScriptEditor({ script, onSave, onExport, readOnly = false }) {
 
       {/* Content */}
       <Tabs defaultValue="edit" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="edit">Edit</TabsTrigger>
           <TabsTrigger value="preview">Preview</TabsTrigger>
+          <TabsTrigger value="seo">SEO Optimization</TabsTrigger>
         </TabsList>
         
         <TabsContent value="edit" className="mt-4">
@@ -218,6 +222,21 @@ export function ScriptEditor({ script, onSave, onExport, readOnly = false }) {
               {formatContent(content)}
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="seo" className="mt-4">
+          <SEOOptimizer 
+            initialData={{
+              title: script.title,
+              content: content,
+              topic: script.metadata?.topic || script.title,
+              keywords: script.metadata?.keywords || [],
+              channelNiche: script.metadata?.channelNiche || '',
+              category: script.type || 'general',
+              description: script.metadata?.description || '',
+              tags: script.metadata?.tags || [],
+            }}
+          />
         </TabsContent>
       </Tabs>
 
@@ -275,18 +294,26 @@ export function ScriptEditor({ script, onSave, onExport, readOnly = false }) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Button variant="outline" disabled>
-                Improve Hook
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  const tabsList = document.querySelector('[role="tablist"]');
+                  const seoTab = tabsList?.querySelector('[data-value="seo"]');
+                  seoTab?.click();
+                }}
+              >
+                <Search className="h-4 w-4 mr-2" />
+                SEO Optimization
               </Button>
               <Button variant="outline" disabled>
-                Add Transitions
+                Improve Hook
               </Button>
               <Button variant="outline" disabled>
                 Generate Thumbnail Ideas
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mt-3">
-              AI enhancement tools coming soon...
+              Use SEO Optimization to improve discoverability. More AI tools coming soon...
             </p>
           </CardContent>
         </Card>

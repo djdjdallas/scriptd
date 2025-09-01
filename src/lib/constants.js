@@ -67,63 +67,64 @@ export const PLANS = {
   FREE: {
     id: 'free',
     name: 'Free',
-    credits: 50,
+    credits: 15,
     features: [
-      '50 credits per month',
+      '15 free credits',
       'Basic script generation',
-      'Access to free tools',
-      'Export to text'
+      'Access to 3 tools',
+      'Community support'
     ]
   },
-  CREATOR: {
-    id: 'creator',
-    name: 'Creator',
-    price: 19,
-    priceAnnual: 192,
-    credits: 500,
-    stripeProductId: process.env.STRIPE_PRODUCT_CREATOR,
-    stripePriceMonthly: process.env.STRIPE_PRICE_CREATOR_MONTHLY,
-    stripePriceAnnual: process.env.STRIPE_PRICE_CREATOR_ANNUAL,
+  STARTER: {
+    id: 'starter',
+    name: 'Starter',
+    price: 29,
+    priceAnnual: 290,
+    credits: 100,
+    stripeProductId: process.env.STRIPE_PRODUCT_STARTER,
+    stripePriceMonthly: process.env.STRIPE_PRICE_STARTER_MONTHLY,
+    stripePriceAnnual: process.env.STRIPE_PRICE_STARTER_ANNUAL,
     features: [
-      '500 credits per month',
+      '100 credits per month',
       'All AI models',
       'YouTube integration',
-      'Research tools',
+      'SEO optimization tools',
       'Export to all formats',
-      'Email support'
+      'Community support'
     ]
   },
   PROFESSIONAL: {
     id: 'professional',
     name: 'Professional',
-    price: 49,
-    priceAnnual: 468,
-    credits: 2000,
+    price: 69,
+    priceAnnual: 690,
+    credits: 300,
     stripeProductId: process.env.STRIPE_PRODUCT_PROFESSIONAL,
     stripePriceMonthly: process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY,
     stripePriceAnnual: process.env.STRIPE_PRICE_PROFESSIONAL_ANNUAL,
     features: [
-      '2,000 credits per month',
-      'Everything in Creator',
-      'Team collaboration',
+      '300 credits per month',
+      'Everything in Starter',
+      'Voice cloning technology',
+      'Multi-channel management',
       'Priority support',
-      'Custom voice training',
-      'API access'
+      'Advanced analytics'
     ]
   },
   BUSINESS: {
     id: 'business',
     name: 'Business',
     price: 99,
-    priceAnnual: 948,
-    credits: 5000,
+    priceAnnual: 990,
+    credits: 1000,
     stripeProductId: process.env.STRIPE_PRODUCT_BUSINESS,
     stripePriceMonthly: process.env.STRIPE_PRICE_BUSINESS_MONTHLY,
     stripePriceAnnual: process.env.STRIPE_PRICE_BUSINESS_ANNUAL,
     features: [
-      '5,000 credits per month',
+      '1,000 credits per month',
       'Everything in Professional',
-      'Advanced analytics',
+      'Team collaboration',
+      'API access',
       'Custom integrations',
       'Dedicated account manager'
     ]
@@ -132,18 +133,18 @@ export const PLANS = {
     id: 'enterprise',
     name: 'Enterprise',
     price: 199,
-    priceAnnual: null, // Custom pricing
+    priceAnnual: 1990,
     credits: null, // Unlimited
     stripeProductId: process.env.STRIPE_PRODUCT_ENTERPRISE,
     stripePriceMonthly: process.env.STRIPE_PRICE_ENTERPRISE_MONTHLY,
-    stripePriceAnnual: null, // Custom pricing
+    stripePriceAnnual: process.env.STRIPE_PRICE_ENTERPRISE_ANNUAL,
     features: [
       'Unlimited credits',
       'Everything in Business',
-      'Custom integrations',
-      'Dedicated support',
+      'White-label options',
+      'Custom AI models',
       'SLA guarantee',
-      'On-premise deployment'
+      'Dedicated support team'
     ]
   }
 };

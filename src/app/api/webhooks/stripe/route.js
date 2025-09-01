@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { getStripeService } from '@/lib/stripe/client';
 import { createServiceClient } from '@/lib/supabase/service';
-import { PLANS } from '@/lib/constants';
+import { PLANS, CREDIT_PACKAGES } from '@/lib/constants';
 
 // Disable body parsing for webhook
 export const dynamic = 'force-dynamic';
@@ -67,20 +67,21 @@ async function handleCheckoutComplete(session) {
   const supabase = createServiceClient();
   
   const { 
-    client_reference_id: userId,
     customer,
     metadata,
     amount_total,
-    currency
+    currency,
+    payment_intent
   } = session;
 
+  const userId = metadata?.userId;
+
   if (!userId) {
-    console.error('No user ID in checkout session');
+    console.error('No user ID in checkout session metadata');
     return;
   }
 
   // Update user's Stripe customer ID
-  
   if (customer) {
     await supabase
       .from('users')
@@ -88,38 +89,48 @@ async function handleCheckoutComplete(session) {
       .eq('id', userId);
   }
 
-  // Handle credit purchase
-  if (metadata.type === 'credits') {
+  // Handle credit package purchase
+  if (metadata.packageId) {
     const credits = parseInt(metadata.credits);
+    const discountAmount = parseInt(metadata.discountAmount || 0);
+    const promoCode = metadata.promoCode || null;
     
-    // Add credits to user
-    const { data: user } = await supabase
-      .from('users')
-      .select('credits')
-      .eq('id', userId)
-      .single();
+    // Find the package details
+    const creditPackage = Object.values(CREDIT_PACKAGES).find(pkg => pkg.id === metadata.packageId);
+    
+    if (creditPackage) {
+      // Add credits with expiry using our database function
+      await supabase.rpc('add_credits_with_expiry', {
+        p_user_id: userId,
+        p_amount: credits,
+        p_stripe_payment_intent_id: payment_intent,
+        p_stripe_price_id: creditPackage.priceId,
+        p_description: `Purchased ${creditPackage.name}`,
+        p_discount_applied: discountAmount / 100,
+        p_expires_in_months: 12
+      });
 
-    if (user) {
+      // Record purchase history
       await supabase
-        .from('users')
-        .update({ credits: (user.credits || 0) + credits })
-        .eq('id', userId);
-
-      // Record transaction
-      await supabase
-        .from('credit_transactions')
+        .from('credit_purchase_history')
         .insert({
           user_id: userId,
-          amount: credits,
-          type: 'purchase',
-          description: `Purchased ${credits} credits`,
-          metadata: {
-            stripeSessionId: session.id,
-            amount: amount_total / 100,
-            currency
-          }
+          package_id: metadata.packageId,
+          credits_purchased: credits,
+          amount_paid: (amount_total - discountAmount) / 100,
+          discount_percentage: discountAmount > 0 ? (discountAmount / amount_total * 100) : 0,
+          discount_reason: promoCode === 'FIRST_PURCHASE' ? 'First purchase discount' : promoCode,
+          stripe_payment_intent_id: payment_intent,
+          purchase_number: 0 // Will be set by the database function
         });
+
+      console.log(`Credit purchase completed: ${credits} credits for user ${userId}`);
     }
+  }
+  // Handle subscription checkout
+  else if (metadata.type === 'subscription') {
+    // Existing subscription logic would go here
+    console.log('Subscription checkout completed');
   }
 }
 
