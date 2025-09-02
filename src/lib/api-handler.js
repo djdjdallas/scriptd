@@ -73,7 +73,7 @@ export function withErrorHandler(handler) {
   };
 }
 
-// Combined middleware
+// Combined middleware (with both naming conventions for compatibility)
 export function createAPIHandler(handler, options = {}) {
   const { rateLimit = true, errorHandler = true } = options;
   
@@ -121,4 +121,43 @@ export function createErrorResponse(error, status = 400) {
     { success: false, error },
     { status }
   );
+}
+
+// Export alternative naming for compatibility
+export const createApiHandler = createAPIHandler;
+
+// API Error class
+export class ApiError extends Error {
+  constructor(message, statusCode = 500, details = null) {
+    super(message);
+    this.statusCode = statusCode;
+    this.details = details;
+    this.name = 'ApiError';
+  }
+}
+
+// Pagination helper
+export function paginate(query, options = {}) {
+  const {
+    defaultLimit = 20,
+    maxLimit = 100
+  } = options;
+  
+  const page = parseInt(query.page) || 1;
+  const limit = Math.min(parseInt(query.limit) || defaultLimit, maxLimit);
+  const offset = (page - 1) * limit;
+  
+  return {
+    page,
+    limit,
+    offset,
+    getMetadata: (total) => ({
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page * limit < total,
+      hasPrevious: page > 1
+    })
+  };
 }

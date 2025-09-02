@@ -74,3 +74,41 @@ export async function withCreditBypass(userId, feature, amount, operation) {
   
   return operation();
 }
+
+// Validate credits with bypass logic
+export async function validateCreditsWithBypass(userId, feature, requiredCredits) {
+  if (shouldBypassCredits(feature, userId)) {
+    return { valid: true, bypassed: true };
+  }
+  
+  const { checkBalance } = await import('@/lib/credits');
+  const balance = await checkBalance(userId);
+  
+  if (balance < requiredCredits) {
+    return { 
+      valid: false, 
+      error: 'Insufficient credits',
+      required: requiredCredits,
+      balance
+    };
+  }
+  
+  return { valid: true, balance };
+}
+
+// Conditional credit deduction
+export async function conditionalCreditDeduction(userId, feature, options = {}) {
+  const { amount = 1, condition = true } = options;
+  
+  if (!condition) {
+    return { success: true, skipped: true };
+  }
+  
+  if (shouldBypassCredits(feature, userId)) {
+    await logCreditUsage(userId, feature, amount, { bypassed: true });
+    return { success: true, bypassed: true };
+  }
+  
+  const { deductCredits } = await import('@/lib/credits');
+  return deductCredits(userId, feature, { amount });
+}
