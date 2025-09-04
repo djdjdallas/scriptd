@@ -5,7 +5,7 @@ import { getChannelById, parseChannelData } from '@/lib/youtube/channel';
 export async function GET(request, { params }) {
   try {
     const supabase = await createClient();
-    const { id } = params;
+    const { id } = await params;
     
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -38,7 +38,7 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const supabase = await createClient();
-    const { id } = params;
+    const { id } = await params;
     
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -99,7 +99,7 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const supabase = await createClient();
-    const { id } = params;
+    const { id } = await params;
     
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser();

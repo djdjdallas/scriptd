@@ -150,19 +150,27 @@ export default function Home() {
         
         {/* Particle Field */}
         <div className="absolute inset-0">
-          {[...Array(50)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 bg-white rounded-full animate-float"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 20}s`,
-                animationDuration: `${20 + Math.random() * 10}s`,
-                opacity: Math.random() * 0.5 + 0.2
-              }}
-            />
-          ))}
+          {[...Array(50)].map((_, i) => {
+            // Use deterministic values based on index to avoid hydration mismatch
+            const seededRandom = (seed, multiplier = 1) => {
+              const x = Math.sin(seed * 12.9898 + multiplier * 78.233) * 43758.5453;
+              return x - Math.floor(x);
+            };
+            
+            return (
+              <div
+                key={i}
+                className="absolute w-1 h-1 bg-white rounded-full animate-float"
+                style={{
+                  left: `${seededRandom(i, 1) * 100}%`,
+                  top: `${seededRandom(i, 2) * 100}%`,
+                  animationDelay: `${seededRandom(i, 3) * 20}s`,
+                  animationDuration: `${20 + seededRandom(i, 4) * 10}s`,
+                  opacity: seededRandom(i, 5) * 0.5 + 0.2
+                }}
+              />
+            );
+          })}
         </div>
       </div>
 
@@ -438,16 +446,24 @@ export default function Home() {
               </div>
               {/* Animated bars */}
               <div className="absolute bottom-0 left-0 right-0 flex gap-1 p-4">
-                {[...Array(30)].map((_, i) => (
-                  <div 
-                    key={i} 
-                    className="flex-1 bg-gradient-to-t from-purple-500 to-pink-500 rounded-t animate-pulse"
-                    style={{ 
-                      height: `${Math.random() * 60 + 20}px`,
-                      animationDelay: `${i * 0.05}s`
-                    }}
-                  />
-                ))}
+                {[...Array(30)].map((_, i) => {
+                  // Use deterministic height based on index to avoid hydration mismatch
+                  const seededHeight = (seed) => {
+                    const x = Math.sin(seed * 9.8765) * 10000;
+                    return (x - Math.floor(x)) * 60 + 20;
+                  };
+                  
+                  return (
+                    <div 
+                      key={i} 
+                      className="flex-1 bg-gradient-to-t from-purple-500 to-pink-500 rounded-t animate-pulse"
+                      style={{ 
+                        height: `${seededHeight(i)}px`,
+                        animationDelay: `${i * 0.05}s`
+                      }}
+                    />
+                  );
+                })}
               </div>
             </div>
             <p className="text-xl text-gray-300 mb-8">

@@ -29,6 +29,8 @@ import {
 
 export default function VoiceTrainingPage() {
   const [voiceProfiles, setVoiceProfiles] = useState([]);
+  const [channels, setChannels] = useState([]);
+  const [selectedChannel, setSelectedChannel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [trainingStatus, setTrainingStatus] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -38,8 +40,15 @@ export default function VoiceTrainingPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchVoiceProfiles();
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    await Promise.all([
+      fetchVoiceProfiles(),
+      fetchChannels()
+    ]);
+  };
 
   const fetchVoiceProfiles = async () => {
     try {
@@ -48,22 +57,35 @@ export default function VoiceTrainingPage() {
 
       if (result.success) {
         setVoiceProfiles(result.data);
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to load voice profiles",
-          variant: "destructive"
-        });
       }
     } catch (error) {
       console.error('Error fetching voice profiles:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load voice profiles",
-        variant: "destructive"
-      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchChannels = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: channelsData, error } = await supabase
+          .from('channels')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (!error && channelsData) {
+          setChannels(channelsData);
+          if (channelsData.length > 0 && !selectedChannel) {
+            setSelectedChannel(channelsData[0]);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching channels:', error);
     }
   };
 
@@ -88,10 +110,19 @@ export default function VoiceTrainingPage() {
   };
 
   const startTraining = async () => {
-    if (!selectedFile) {
+    if (!selectedChannel) {
       toast({
-        title: "No file selected",
-        description: "Please upload a file before training",
+        title: "No channel selected",
+        description: "Please select a YouTube channel first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedFile && !selectedChannel.video_count) {
+      toast({
+        title: "No training data",
+        description: "Please upload a file or import from YouTube",
         variant: "destructive"
       });
       return;
@@ -114,15 +145,18 @@ export default function VoiceTrainingPage() {
         "Before we dive in, I want to thank everyone who's been supporting the channel. Your comments and feedback mean the world to me, and they help me create better content for you. If you're new here, consider subscribing and hitting that notification bell so you don't miss any future videos."
       ];
 
+      const profileName = `${selectedChannel.title || selectedChannel.name} Voice`;
+      
       const response = await fetch('/api/voice/train', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          profileName: 'My Voice Profile',
+          channelId: selectedChannel.id,
+          profileName: profileName,
           samples: mockSamples,
-          description: 'Voice profile trained from uploaded content'
+          description: `Voice profile for ${selectedChannel.title || selectedChannel.name} channel`
         })
       });
 
@@ -148,10 +182,10 @@ export default function VoiceTrainingPage() {
           description: "Your voice model has been trained successfully!"
         });
         
-        // Reset state
+        // Reset state and refresh data
         setSelectedFile(null);
         setUploadProgress(0);
-        fetchVoiceProfiles();
+        await fetchVoiceProfiles();
       } else {
         throw new Error(result.error || 'Training failed');
       }
@@ -239,9 +273,30 @@ export default function VoiceTrainingPage() {
               <p className="text-sm text-gray-400 mb-4">
                 Extract audio from your existing videos
               </p>
-              <Button className="glass-button text-white w-full">
-                Connect Channel
-              </Button>
+              {channels.length > 0 ? (
+                <select 
+                  className="glass-button text-white w-full px-3 py-2 rounded-lg bg-black/50"
+                  value={selectedChannel?.id || ''}
+                  onChange={(e) => {
+                    const channel = channels.find(c => c.id === e.target.value);
+                    setSelectedChannel(channel);
+                  }}
+                >
+                  <option value="" disabled>Select Channel</option>
+                  {channels.map(channel => (
+                    <option key={channel.id} value={channel.id}>
+                      {channel.title || channel.name || channel.youtube_channel_id}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Button 
+                  className="glass-button text-white w-full"
+                  onClick={() => window.location.href = '/channels/connect'}
+                >
+                  Connect Channel
+                </Button>
+              )}
             </div>
 
             {/* Script Upload */}
@@ -292,13 +347,13 @@ export default function VoiceTrainingPage() {
           )}
 
           {/* Training Button */}
-          {uploadProgress === 100 && !isTraining && (
+          {(uploadProgress === 100 || selectedChannel) && !isTraining && (
             <Button
               onClick={startTraining}
               className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white mt-6 w-full"
             >
               <Wand2 className="h-4 w-4 mr-2" />
-              Start Voice Training
+              Start Voice Training {selectedChannel ? `for ${selectedChannel.title || selectedChannel.name}` : ''}
             </Button>
           )}
 
@@ -348,13 +403,17 @@ export default function VoiceTrainingPage() {
                       <div className="w-16 h-16 glass rounded-full flex items-center justify-center">
                         <Volume2 className="h-8 w-8 text-purple-400" />
                       </div>
-                      {profile.status === 'trained' && (
+                      {(profile.parameters?.status === 'trained' || profile.status === 'trained') && (
                         <CheckCircle className="absolute -bottom-1 -right-1 h-5 w-5 text-green-400 bg-black rounded-full" />
                       )}
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-white">{profile.profile_name || profile.name}</h3>
                       <div className="flex items-center gap-4 mt-1">
+                        <span className="text-sm text-gray-400 flex items-center gap-1">
+                          <Youtube className="h-3 w-3" />
+                          {profile.channels?.name || 'Channel'}
+                        </span>
                         <span className="text-sm text-gray-400 flex items-center gap-1">
                           <FileAudio className="h-3 w-3" />
                           {profile.training_data?.sampleCount || profile.samples || 0} samples
@@ -378,7 +437,7 @@ export default function VoiceTrainingPage() {
                     
                     {/* Status */}
                     <div className="flex items-center gap-2">
-                      {profile.status === 'trained' ? (
+                      {(profile.parameters?.status === 'trained' || profile.status === 'trained') ? (
                         <Button className="glass-button text-white">
                           <Play className="h-4 w-4 mr-2" />
                           Use Voice

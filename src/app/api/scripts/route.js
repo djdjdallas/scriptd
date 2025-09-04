@@ -50,20 +50,22 @@ export const GET = createApiHandler(async (req) => {
     throw new ApiError(`Failed to fetch scripts: ${error.message}`, 500);
   }
 
-  return pagination.createResponse(
-    (scripts || []).map(script => ({
-      id: script.id,
-      title: script.title,
-      type: script.type,
-      length: script.length,
-      excerpt: script.content ? script.content.substring(0, 200) + '...' : '',
-      channelId: script.channel_id,
-      channelName: script.channels?.name,
-      createdAt: script.created_at,
-      updatedAt: script.updated_at
-    })),
-    count || 0
-  );
+  const items = (scripts || []).map(script => ({
+    id: script.id,
+    title: script.title,
+    type: script.type,
+    length: script.length,
+    excerpt: script.content ? script.content.substring(0, 200) + '...' : '',
+    channelId: script.channel_id,
+    channelName: script.channels?.name,
+    createdAt: script.created_at,
+    updatedAt: script.updated_at
+  }));
+
+  return NextResponse.json({
+    items,
+    pagination: pagination.getMetadata(count || 0)
+  });
 });
 
 // POST /api/scripts - Create new script (manual)

@@ -29,11 +29,15 @@ export const GET = createApiHandler(async (req) => {
   const { data: sessions, error } = await query;
 
   if (error) {
-    throw new ApiError('Failed to fetch research sessions', 500);
+    console.error('Database error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch research sessions' },
+      { status: 500 }
+    );
   }
 
-  return {
-    sessions: sessions.map(s => ({
+  return NextResponse.json({
+    sessions: sessions?.map(s => ({
       id: s.id,
       title: s.title,
       createdAt: s.created_at,
@@ -41,15 +45,22 @@ export const GET = createApiHandler(async (req) => {
       messageCount: s.research_messages?.[0]?.count || 0,
       sourceCount: s.research_sources?.[0]?.count || 0,
       metadata: s.metadata
-    }))
-  };
+    })) || []
+  });
 });
 
 // POST /api/research/sessions - Create new research session
 export const POST = createApiHandler(async (req) => {
   const { user, supabase } = await getAuthenticatedUser();
 
-  const { title = 'New Research Session' } = await req.json();
+  let body;
+  try {
+    body = await req.json();
+  } catch (e) {
+    body = {};
+  }
+  
+  const { title = 'New Research Session' } = body;
 
   const { data, error } = await supabase
     .from('research_sessions')
@@ -66,10 +77,14 @@ export const POST = createApiHandler(async (req) => {
     .single();
 
   if (error) {
-    throw new ApiError('Failed to create research session', 500);
+    console.error('Database error:', error);
+    return NextResponse.json(
+      { error: 'Failed to create research session' },
+      { status: 500 }
+    );
   }
 
-  return {
+  return NextResponse.json({
     session: {
       id: data.id,
       title: data.title,
@@ -79,5 +94,5 @@ export const POST = createApiHandler(async (req) => {
       sourceCount: 0,
       metadata: data.metadata
     }
-  };
+  });
 });

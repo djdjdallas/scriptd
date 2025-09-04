@@ -67,10 +67,10 @@ export function ChannelConnectForm({ onSuccess }) {
       if (onSuccess) {
         onSuccess(result.channel);
       } else {
-        // Redirect to channel analysis
+        // Redirect to channel analysis with a smoother delay
         setTimeout(() => {
           router.push(`/channels/${result.channel.id}/analyze`);
-        }, 1500);
+        }, 2000);
       }
     } catch (error) {
       console.error('Error connecting channel:', error);
@@ -95,11 +95,14 @@ export function ChannelConnectForm({ onSuccess }) {
       <CardContent>
         {step === 'success' ? (
           <div className="text-center py-8">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Channel Connected!</h3>
-            <p className="text-muted-foreground">
-              Redirecting to analysis...
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4 animate-in zoom-in duration-300" />
+            <h3 className="text-lg font-semibold mb-2">Channel Connected Successfully!</h3>
+            <p className="text-muted-foreground mb-4">
+              Preparing your channel analysis...
             </p>
+            <div className="flex justify-center">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

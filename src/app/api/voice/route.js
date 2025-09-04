@@ -10,11 +10,34 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get voice profiles for the user
+    // First get user's channels
+    const { data: channels } = await supabase
+      .from('channels')
+      .select('id')
+      .eq('user_id', user.id);
+
+    if (!channels || channels.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: []
+      });
+    }
+
+    const channelIds = channels.map(c => c.id);
+
+    // Get voice profiles for the user's channels
     const { data: profiles, error } = await supabase
       .from('voice_profiles')
-      .select('*')
-      .eq('user_id', user.id)
+      .select(`
+        *,
+        channels:channel_id (
+          id,
+          name,
+          youtube_channel_id,
+          analytics_data
+        )
+      `)
+      .in('channel_id', channelIds)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -32,7 +55,7 @@ export async function GET(request) {
     // Transform data for frontend compatibility
     const transformedProfiles = (profiles || []).map(profile => ({
       ...profile,
-      status: profile.is_active ? 'trained' : 'training',
+      status: profile.training_data?.status || profile.parameters?.status || 'trained',
       accuracy: profile.parameters?.accuracy || 85
     }));
 
@@ -55,13 +78,23 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const file = formData.get('file');
-    const name = formData.get('name') || 'Untitled Voice';
-    const type = formData.get('type') || 'audio'; // audio, text, youtube
+    const body = await request.json();
+    const { profileName, samples, channelId, description } = body;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    if (!profileName || !channelId) {
+      return NextResponse.json({ error: 'Profile name and channel ID are required' }, { status: 400 });
+    }
+
+    // Verify user owns the channel
+    const { data: channel } = await supabase
+      .from('channels')
+      .select('id')
+      .eq('id', channelId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!channel) {
+      return NextResponse.json({ error: 'Channel not found or unauthorized' }, { status: 403 });
     }
 
     // In a real implementation, you would:
@@ -70,20 +103,22 @@ export async function POST(request) {
     // 3. Create a job in a queue for ML processing
     // 4. Store the voice profile in the database
 
-    // For now, we'll create a mock profile
+    // Create voice profile
     const { data: profile, error } = await supabase
       .from('voice_profiles')
       .insert({
-        user_id: user.id,
-        name,
-        type,
-        status: 'training',
-        accuracy: 0,
-        samples_count: 1,
-        metadata: {
-          file_name: file.name,
-          file_size: file.size,
-          file_type: file.type
+        channel_id: channelId,
+        profile_name: profileName,
+        training_data: {
+          sampleCount: samples?.length || 0,
+          description: description || ''
+        },
+        parameters: {
+          accuracy: Math.floor(Math.random() * 20) + 80,
+          pitch: Math.random() * 2 - 1,
+          tone: Math.random() * 2 - 1,
+          speed: Math.random() * 0.5 + 0.75,
+          status: 'training'
         }
       })
       .select()
@@ -94,16 +129,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Failed to create voice profile' }, { status: 500 });
     }
 
-    // Simulate training process (in real app, this would be async)
+    // Update status to trained after a short delay (in production, this would be done by a background job)
     setTimeout(async () => {
       await supabase
         .from('voice_profiles')
         .update({ 
-          status: 'trained',
-          accuracy: Math.floor(Math.random() * 20) + 80 // 80-100%
+          parameters: {
+            ...profile.parameters,
+            status: 'trained'
+          }
         })
         .eq('id', profile.id);
-    }, 30000); // 30 seconds
+    }, 5000); // 5 seconds for demo
 
     return NextResponse.json({
       success: true,

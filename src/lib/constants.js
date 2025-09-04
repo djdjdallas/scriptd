@@ -12,12 +12,15 @@ export const AI_PROVIDERS = {
 };
 
 export const AI_MODELS = {
-  GPT4_TURBO: 'gpt-4-turbo-preview',
+  GPT5: 'gpt-5',
+  GPT41: 'gpt-4.1',
+  GPT4_TURBO: 'gpt-4-turbo',
   GPT4: 'gpt-4',
-  GPT35_TURBO: 'gpt-3.5-turbo',
-  CLAUDE_3_OPUS: 'claude-3-opus-20240229',
-  CLAUDE_3_SONNET: 'claude-3-sonnet-20240229',
+  CLAUDE_4_OPUS: 'claude-4-opus-20250522',
+  CLAUDE_4_OPUS_41: 'claude-opus-4-1-20250805',
+  CLAUDE_37_SONNET: 'claude-3.7-sonnet-20250224',
   CLAUDE_3_HAIKU: 'claude-3-haiku-20240307',
+  MIXTRAL_LARGE: 'mistral-large-2',
   MIXTRAL: 'mixtral-8x7b-32768'
 };
 
@@ -46,12 +49,15 @@ export const SCRIPT_LENGTHS = {
 // Credit Costs
 export const CREDIT_COSTS = {
   SCRIPT_GENERATION: {
+    [AI_MODELS.GPT5]: 25,
+    [AI_MODELS.GPT41]: 18,
     [AI_MODELS.GPT4_TURBO]: 10,
     [AI_MODELS.GPT4]: 15,
-    [AI_MODELS.GPT35_TURBO]: 3,
-    [AI_MODELS.CLAUDE_3_OPUS]: 20,
-    [AI_MODELS.CLAUDE_3_SONNET]: 10,
+    [AI_MODELS.CLAUDE_4_OPUS_41]: 30,
+    [AI_MODELS.CLAUDE_4_OPUS]: 25,
+    [AI_MODELS.CLAUDE_37_SONNET]: 12,
     [AI_MODELS.CLAUDE_3_HAIKU]: 5,
+    [AI_MODELS.MIXTRAL_LARGE]: 8,
     [AI_MODELS.MIXTRAL]: 2
   },
   RESEARCH_CHAT: 1, // per message

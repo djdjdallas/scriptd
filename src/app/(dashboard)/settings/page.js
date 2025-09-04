@@ -29,7 +29,8 @@ import {
   AlertCircle,
   CheckCircle,
   ExternalLink,
-  Trash2
+  Trash2,
+  FileText
 } from 'lucide-react';
 
 export default function SettingsPage() {

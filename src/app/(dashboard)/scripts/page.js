@@ -194,26 +194,26 @@ export default function ScriptsPage() {
             </div>
             
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="glass-button w-[180px] text-white">
+              <SelectTrigger className="glass-button w-[180px] text-white border-white/20 bg-white/10 [&>span]:text-white">
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
-              <SelectContent className="glass bg-gray-900/90 border-white/20">
-                <SelectItem value="all">All types</SelectItem>
+              <SelectContent className="glass bg-gray-900/95 border-white/20 backdrop-blur-md">
+                <SelectItem value="all" className="text-white hover:bg-white/10">All types</SelectItem>
                 {Object.entries(SCRIPT_TYPES).map(([key, value]) => (
-                  <SelectItem key={key} value={value}>{value}</SelectItem>
+                  <SelectItem key={key} value={value} className="text-white hover:bg-white/10">{value}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="glass-button w-[180px] text-white">
-                <SelectValue />
+              <SelectTrigger className="glass-button w-[180px] text-white border-white/20 bg-white/10 [&>span]:text-white">
+                <SelectValue placeholder="Sort by" />
               </SelectTrigger>
-              <SelectContent className="glass bg-gray-900/90 border-white/20">
-                <SelectItem value="created_at">Newest</SelectItem>
-                <SelectItem value="updated_at">Recently updated</SelectItem>
-                <SelectItem value="title">Title (A-Z)</SelectItem>
-                <SelectItem value="length">Length</SelectItem>
+              <SelectContent className="glass bg-gray-900/95 border-white/20 backdrop-blur-md">
+                <SelectItem value="created_at" className="text-white hover:bg-white/10">Newest</SelectItem>
+                <SelectItem value="updated_at" className="text-white hover:bg-white/10">Recently updated</SelectItem>
+                <SelectItem value="title" className="text-white hover:bg-white/10">Title (A-Z)</SelectItem>
+                <SelectItem value="length" className="text-white hover:bg-white/10">Length</SelectItem>
               </SelectContent>
             </Select>
           </div>

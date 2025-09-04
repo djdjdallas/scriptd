@@ -13,7 +13,7 @@ export class OpenAIProvider extends BaseAIProvider {
   /**
    * @param {Object} config - Provider configuration
    * @param {string} config.apiKey - OpenAI API key
-   * @param {string} [config.model='gpt-4-turbo-preview'] - Default model to use
+   * @param {string} [config.model='gpt-4.1'] - Default model to use
    * @param {string} [config.baseURL='https://api.openai.com/v1'] - Base URL for API
    * @param {string} [config.organization] - OpenAI organization ID
    */
@@ -21,11 +21,13 @@ export class OpenAIProvider extends BaseAIProvider {
     super(config);
     this.baseURL = config.baseURL || 'https://api.openai.com/v1';
     this.organization = config.organization;
-    this.model = config.model || 'gpt-4-turbo-preview';
+    this.model = config.model || 'gpt-4.1';
     
-    // Model pricing (per 1K tokens)
+    // Model pricing (per 1K tokens) - Updated for 2025 models
     this.pricing = {
-      'gpt-4-turbo-preview': { input: 0.01, output: 0.03 },
+      'gpt-5': { input: 0.015, output: 0.045 },
+      'gpt-4.1': { input: 0.012, output: 0.035 },
+      'gpt-4-turbo': { input: 0.01, output: 0.03 },
       'gpt-4': { input: 0.03, output: 0.06 },
       'gpt-4-32k': { input: 0.06, output: 0.12 },
       'gpt-3.5-turbo': { input: 0.0005, output: 0.0015 },

@@ -40,15 +40,18 @@ export async function POST(request) {
       .insert({
         user_id: user.id,
         youtube_channel_id: parsedChannel.id,
-        title: parsedChannel.title,
-        description: parsedChannel.description,
-        custom_url: parsedChannel.customUrl,
-        thumbnail_url: parsedChannel.thumbnails?.default?.url,
-        subscriber_count: parsedChannel.statistics.subscriberCount,
-        video_count: parsedChannel.statistics.videoCount,
-        view_count: parsedChannel.statistics.viewCount,
-        published_at: parsedChannel.publishedAt,
-        raw_data: channelData,
+        name: parsedChannel.title || 'Unknown Channel',
+        subscriber_count: parsedChannel.statistics?.subscriberCount || 0,
+        voice_profile: {},
+        analytics_data: {
+          description: parsedChannel.description,
+          custom_url: parsedChannel.customUrl,
+          thumbnail_url: parsedChannel.thumbnails?.default?.url,
+          video_count: parsedChannel.statistics?.videoCount,
+          view_count: parsedChannel.statistics?.viewCount,
+          published_at: parsedChannel.publishedAt,
+          raw_data: channelData,
+        },
       })
       .select()
       .single();

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { TiltCard } from '@/components/ui/tilt-card';
 import { Button } from '@/components/ui/button';
+import { getChannelGrowthMetrics, storeChannelMetrics } from '@/lib/youtube/growth-metrics';
 import { 
   Plus, 
   Youtube, 
@@ -21,6 +22,7 @@ import {
 
 export default function ChannelsPage() {
   const [channels, setChannels] = useState([]);
+  const [channelGrowth, setChannelGrowth] = useState({});
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [hoveredChannel, setHoveredChannel] = useState(null);
@@ -44,12 +46,61 @@ export default function ChannelsPage() {
 
         if (error) throw error;
         setChannels(channels || []);
+        
+        // Fetch growth metrics for each channel
+        if (channels && channels.length > 0) {
+          await fetchGrowthMetrics(channels);
+          // Store current metrics as snapshots for future comparison
+          await storeMetricsSnapshots(channels);
+        }
       }
     } catch (error) {
       console.error('Error fetching channels:', error);
       setChannels([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchGrowthMetrics = async (channels) => {
+    const growth = {};
+    
+    await Promise.all(
+      channels.map(async (channel) => {
+        const metrics = await getChannelGrowthMetrics(
+          channel.id,
+          {
+            subscriber_count: channel.subscriber_count,
+            view_count: channel.view_count,
+            video_count: channel.video_count,
+            engagement_rate: channel.analytics_data?.engagement_rate
+          },
+          30 // 30-day period
+        );
+        growth[channel.id] = metrics;
+      })
+    );
+    
+    setChannelGrowth(growth);
+  };
+
+  const storeMetricsSnapshots = async (channels) => {
+    // Store metrics snapshots for future growth calculations
+    // This should ideally be done by a scheduled job
+    try {
+      await Promise.all(
+        channels.map(async (channel) => {
+          await storeChannelMetrics(channel.id, {
+            subscriberCount: channel.subscriber_count,
+            viewCount: channel.view_count,
+            videoCount: channel.video_count,
+            averageViews: channel.analytics_data?.avgViewsPerVideo,
+            engagementRate: channel.analytics_data?.engagement_rate
+          });
+        })
+      );
+    } catch (error) {
+      console.error('Error storing metrics snapshots:', error);
     }
   };
 
@@ -148,8 +199,8 @@ export default function ChannelsPage() {
                   <div className="flex items-start gap-4 mb-4">
                     <div className="relative">
                       <img 
-                        src={channel.thumbnail_url || '/youtube-default.png'} 
-                        alt={channel.title}
+                        src={channel.analytics_data?.thumbnail_url || channel.thumbnail_url || '/youtube-default.svg'} 
+                        alt={channel.name || channel.title}
                         className="w-16 h-16 rounded-full object-cover ring-2 ring-red-400/50"
                       />
                       {channel.is_verified && (
@@ -194,11 +245,22 @@ export default function ChannelsPage() {
                     <div className="glass p-3 rounded-lg">
                       <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
                         <TrendingUp className="h-3 w-3" />
-                        Growth
+                        Growth (30d)
                       </div>
-                      <p className="text-green-400 font-semibold">
-                        +{Math.round(Math.random() * 20 + 5)}%
-                      </p>
+                      {channelGrowth[channel.id] ? (
+                        <p className={`font-semibold ${
+                          channelGrowth[channel.id].subscriberGrowth > 0 
+                            ? 'text-green-400' 
+                            : channelGrowth[channel.id].subscriberGrowth < 0 
+                            ? 'text-red-400' 
+                            : 'text-gray-400'
+                        }`}>
+                          {channelGrowth[channel.id].subscriberGrowth > 0 ? '+' : ''}
+                          {channelGrowth[channel.id].subscriberGrowth.toFixed(1)}%
+                        </p>
+                      ) : (
+                        <p className="text-gray-400 font-semibold text-xs">Calculating...</p>
+                      )}
                     </div>
                   </div>
 

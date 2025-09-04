@@ -72,10 +72,17 @@ export function ChannelAnalyzer({ channelId }) {
       <Card className="w-full max-w-4xl mx-auto">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center justify-center py-8">
-            <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+            <AlertCircle className="h-12 w-12 text-destructive mb-4 animate-in zoom-in" />
             <h3 className="text-lg font-semibold mb-2">Analysis Failed</h3>
-            <p className="text-muted-foreground text-center mb-4">{error}</p>
-            <Button onClick={startAnalysis}>Try Again</Button>
+            <p className="text-muted-foreground text-center mb-4 max-w-md">
+              {error === 'Failed to analyze channel' 
+                ? 'We encountered an issue analyzing your channel. This might be due to YouTube API limits or connectivity issues.'
+                : error}
+            </p>
+            <div className="flex gap-3">
+              <Button onClick={startAnalysis}>Try Again</Button>
+              <Button variant="outline" onClick={() => router.push('/channels')}>Back to Channels</Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -97,12 +104,17 @@ export function ChannelAnalyzer({ channelId }) {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-            <p className="text-center text-sm text-muted-foreground">
-              {progress < 30 && 'Fetching channel data...'}
-              {progress >= 30 && progress < 60 && 'Analyzing video content...'}
-              {progress >= 60 && progress < 90 && 'Generating audience insights...'}
-              {progress >= 90 && 'Finalizing analysis...'}
-            </p>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-2">
+                {progress < 30 && 'Fetching channel data...'}
+                {progress >= 30 && progress < 60 && 'Analyzing video content...'}
+                {progress >= 60 && progress < 90 && 'Generating audience insights...'}
+                {progress >= 90 && 'Finalizing analysis...'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {progress}% complete
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -231,12 +243,16 @@ export function ChannelAnalyzer({ channelId }) {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
-                  {insights.opportunities.map((opportunity, index) => (
-                    <li key={index} className="flex items-start">
-                      <Badge variant="outline" className="mr-2">!</Badge>
-                      <span className="text-sm">{opportunity}</span>
-                    </li>
-                  ))}
+                  {insights.opportunities && insights.opportunities.length > 0 ? (
+                    insights.opportunities.map((opportunity, index) => (
+                      <li key={index} className="flex items-start">
+                        <Badge variant="outline" className="mr-2">!</Badge>
+                        <span className="text-sm">{opportunity}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-sm text-muted-foreground">Analyzing for improvement opportunities...</li>
+                  )}
                 </ul>
               </CardContent>
             </Card>

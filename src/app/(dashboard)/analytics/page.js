@@ -151,14 +151,14 @@ export default function AnalyticsPage() {
         
         <div className="flex items-center gap-3">
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="glass-button w-[180px] text-white">
-              <SelectValue />
+            <SelectTrigger className="glass-button w-[180px] text-white border-white/20 bg-white/10 [&>span]:text-white">
+              <SelectValue placeholder="Select period" />
             </SelectTrigger>
-            <SelectContent className="glass bg-gray-900/90 border-white/20">
-              <SelectItem value="24h">Last 24 hours</SelectItem>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
+            <SelectContent className="glass bg-gray-900/95 border-white/20 backdrop-blur-md">
+              <SelectItem value="24h" className="text-white hover:bg-white/10">Last 24 hours</SelectItem>
+              <SelectItem value="7d" className="text-white hover:bg-white/10">Last 7 days</SelectItem>
+              <SelectItem value="30d" className="text-white hover:bg-white/10">Last 30 days</SelectItem>
+              <SelectItem value="90d" className="text-white hover:bg-white/10">Last 90 days</SelectItem>
             </SelectContent>
           </Select>
           

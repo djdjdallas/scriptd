@@ -7,7 +7,7 @@ import { generateChannelAnalytics, generateAudiencePersona, generateInsights } f
 export async function POST(request, { params }) {
   try {
     const supabase = await createClient();
-    const { id } = params;
+    const { id } = await params;
     
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser();

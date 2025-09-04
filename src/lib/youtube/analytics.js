@@ -141,26 +141,99 @@ export function generateInsights(analytics, persona) {
     },
   };
 
-  // Calculate performance score (0-100)
+  // Get base metrics
   const subCount = analytics.channel.subscriberCount;
+  const viewCount = analytics.channel.totalViews;
+  const videoCount = analytics.channel.videoCount;
   const avgViews = analytics.performance.avgViewsPerVideo;
   const engagementRate = parseFloat(analytics.performance.avgEngagementRate);
 
-  insights.metrics.performanceScore = Math.min(100, Math.round(
-    (Math.log10(avgViews + 1) * 10) +
-    (engagementRate * 5) +
-    (persona.behavior.loyaltyScore * 0.3)
-  ));
+  // Calculate Performance Score (0-100) - similar to channel-metrics.js
+  let performancePoints = 0;
+  
+  // Views per video score (max 40 points)
+  if (avgViews > 10000) performancePoints += 40;
+  else if (avgViews > 5000) performancePoints += 35;
+  else if (avgViews > 1000) performancePoints += 30;
+  else if (avgViews > 500) performancePoints += 25;
+  else if (avgViews > 100) performancePoints += 20;
+  else performancePoints += Math.min(15, avgViews / 10);
+  
+  // Engagement score (max 30 points)
+  if (engagementRate > 10) performancePoints += 30;
+  else if (engagementRate > 5) performancePoints += 25;
+  else if (engagementRate > 3) performancePoints += 20;
+  else if (engagementRate > 2) performancePoints += 15;
+  else if (engagementRate > 1) performancePoints += 10;
+  else performancePoints += Math.min(8, engagementRate * 3);
+  
+  // Channel size score (max 30 points)
+  if (subCount > 100000) performancePoints += 30;
+  else if (subCount > 10000) performancePoints += 25;
+  else if (subCount > 1000) performancePoints += 20;
+  else if (subCount > 500) performancePoints += 15;
+  else if (subCount > 100) performancePoints += 10;
+  else performancePoints += Math.min(8, subCount / 20);
+  
+  insights.metrics.performanceScore = Math.round(Math.min(100, performancePoints));
 
-  // Calculate growth potential
-  insights.metrics.growthPotential = Math.min(100, Math.round(
-    (100 - insights.metrics.performanceScore) * 0.5 +
-    (engagementRate > 3 ? 30 : 0) +
-    (avgViews / subCount > 0.1 ? 20 : 0)
-  ));
+  // Calculate Growth Potential (0-100)
+  let growthPoints = 0;
+  
+  // Small channel bonus (max 40 points)
+  if (subCount < 100) growthPoints += 40;
+  else if (subCount < 500) growthPoints += 35;
+  else if (subCount < 1000) growthPoints += 30;
+  else if (subCount < 5000) growthPoints += 25;
+  else if (subCount < 10000) growthPoints += 20;
+  else if (subCount < 50000) growthPoints += 15;
+  else if (subCount < 100000) growthPoints += 10;
+  else growthPoints += 5;
+  
+  // Engagement potential (max 30 points)
+  const viewToSubRatio = viewCount / Math.max(1, subCount);
+  if (viewToSubRatio > 100) growthPoints += 30;
+  else if (viewToSubRatio > 50) growthPoints += 25;
+  else if (viewToSubRatio > 20) growthPoints += 20;
+  else if (viewToSubRatio > 10) growthPoints += 15;
+  else if (viewToSubRatio > 5) growthPoints += 10;
+  else growthPoints += Math.min(8, viewToSubRatio * 2);
+  
+  // Content consistency bonus (max 30 points)
+  if (videoCount >= 50) growthPoints += 30;
+  else if (videoCount >= 25) growthPoints += 25;
+  else if (videoCount >= 10) growthPoints += 20;
+  else if (videoCount >= 5) growthPoints += 15;
+  else growthPoints += Math.min(10, videoCount * 2);
+  
+  insights.metrics.growthPotential = Math.round(Math.min(100, growthPoints));
 
-  // Calculate audience quality
-  insights.metrics.audienceQuality = persona.behavior.loyaltyScore;
+  // Calculate Audience Quality (0-100)
+  let qualityPoints = 0;
+  
+  // Engagement quality (max 40 points)
+  if (engagementRate > 8) qualityPoints += 40;
+  else if (engagementRate > 5) qualityPoints += 32;
+  else if (engagementRate > 3) qualityPoints += 25;
+  else if (engagementRate > 2) qualityPoints += 18;
+  else if (engagementRate > 1) qualityPoints += 12;
+  else qualityPoints += Math.min(10, engagementRate * 4);
+  
+  // Loyalty score contribution (max 30 points)
+  qualityPoints += Math.min(30, persona.behavior.loyaltyScore * 0.3);
+  
+  // View consistency (max 30 points)
+  if (subCount > 0) {
+    const avgViewsPerSub = viewCount / subCount;
+    if (avgViewsPerSub > 50) qualityPoints += 30;
+    else if (avgViewsPerSub > 20) qualityPoints += 24;
+    else if (avgViewsPerSub > 10) qualityPoints += 18;
+    else if (avgViewsPerSub > 5) qualityPoints += 12;
+    else if (avgViewsPerSub > 2) qualityPoints += 8;
+    else qualityPoints += Math.min(6, avgViewsPerSub * 3);
+  }
+  
+  insights.metrics.audienceQuality = Math.round(Math.min(100, qualityPoints));
 
   // Generate strengths
   if (engagementRate > 3) {
@@ -172,8 +245,24 @@ export function generateInsights(analytics, persona) {
   if (Object.keys(analytics.content.contentTypes || {}).length > 2) {
     insights.strengths.push('Diverse content portfolio');
   }
+  
+  // Always provide at least 2 strengths
+  if (insights.strengths.length === 0) {
+    if (analytics.channel.subscriberCount > 100) {
+      insights.strengths.push('Established subscriber base');
+    }
+    if (analytics.channel.videoCount > 10) {
+      insights.strengths.push('Consistent content library');
+    }
+    if (!insights.strengths.length) {
+      insights.strengths.push('Growing channel with potential');
+    }
+  }
+  if (insights.strengths.length === 1) {
+    insights.strengths.push('Active YouTube presence');
+  }
 
-  // Generate opportunities
+  // Generate opportunities - always provide some suggestions
   if (engagementRate < 2) {
     insights.opportunities.push('Improve audience engagement through CTAs');
   }
@@ -182,6 +271,18 @@ export function generateInsights(analytics, persona) {
   }
   if (analytics.analysisMetadata.transcriptsAnalyzed < analytics.analysisMetadata.videosAnalyzed * 0.5) {
     insights.opportunities.push('Add captions/transcripts to improve accessibility');
+  }
+  
+  // Always provide at least 3 opportunities
+  if (insights.opportunities.length === 0) {
+    insights.opportunities.push('Experiment with trending topics in your niche');
+    insights.opportunities.push('Collaborate with other creators for cross-promotion');
+    insights.opportunities.push('Create series or playlists to increase watch time');
+  } else if (insights.opportunities.length === 1) {
+    insights.opportunities.push('Analyze competitor channels for content gaps');
+    insights.opportunities.push('Improve video SEO with better descriptions and tags');
+  } else if (insights.opportunities.length === 2) {
+    insights.opportunities.push('Test different video lengths to find optimal duration');
   }
 
   // Generate recommendations

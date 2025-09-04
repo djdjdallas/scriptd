@@ -42,11 +42,19 @@ export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [credits, setCredits] = useState(0);
+  const [creditsLoading, setCreditsLoading] = useState(true);
   const pathname = usePathname();
 
   useEffect(() => {
     checkUser();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchCredits();
+    }
+  }, [user]);
 
   const checkUser = async () => {
     const supabase = createClient();
@@ -59,6 +67,30 @@ export default function DashboardLayout({ children }) {
     
     setUser(user);
     setLoading(false);
+  };
+
+  const fetchCredits = async () => {
+    try {
+      const supabase = createClient();
+      // Get credit balance using the RPC function
+      const { data: balance } = await supabase
+        .rpc('get_available_credit_balance', { p_user_id: user.id });
+      
+      setCredits(balance || 0);
+    } catch (error) {
+      console.error('Error fetching credits:', error);
+      // Fallback to fetch from users table
+      const supabase = createClient();
+      const { data: userData } = await supabase
+        .from('users')
+        .select('credits')
+        .eq('id', user.id)
+        .single();
+      
+      setCredits(userData?.credits || 0);
+    } finally {
+      setCreditsLoading(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -184,10 +216,17 @@ export default function DashboardLayout({ children }) {
             <div className="glass-card p-4 mt-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-400">Credits</span>
-                <span className="text-lg font-bold gradient-text">1,250</span>
+                {creditsLoading ? (
+                  <span className="text-lg font-bold text-gray-500 animate-pulse">...</span>
+                ) : (
+                  <span className="text-lg font-bold gradient-text">{credits.toLocaleString()}</span>
+                )}
               </div>
               <div className="w-full h-2 glass rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 animate-shimmer" style={{ width: '75%' }} />
+                <div 
+                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500 animate-shimmer" 
+                  style={{ width: `${Math.min((credits / 1000) * 100, 100)}%` }} 
+                />
               </div>
               <Link href="/credits">
                 <Button className="w-full mt-3 glass-button text-white text-sm">

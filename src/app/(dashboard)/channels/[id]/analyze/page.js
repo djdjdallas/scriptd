@@ -1,11 +1,15 @@
 'use client';
 
+import { use } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChannelAnalyzer } from '@/components/channel/channel-analyzer';
 
 export default function AnalyzeChannelPage({ params }) {
+  // Unwrap params using React.use()
+  const resolvedParams = use(params);
+  
   return (
     <div>
       <div className="mb-8">
@@ -22,7 +26,7 @@ export default function AnalyzeChannelPage({ params }) {
         </p>
       </div>
 
-      <ChannelAnalyzer channelId={params.id} />
+      <ChannelAnalyzer channelId={resolvedParams.id} />
     </div>
   );
 }
