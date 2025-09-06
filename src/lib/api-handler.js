@@ -36,6 +36,20 @@ export function withErrorHandler(handler) {
       return await handler(req, ...args);
     } catch (error) {
       console.error('API Error:', error);
+      console.error('Error stack:', error.stack);
+      
+      // Handle ApiError specifically
+      if (error instanceof ApiError || error.name === 'ApiError') {
+        return Response.json(
+          { 
+            error: error.message,
+            details: error.details,
+            // Include more info in development
+            ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+          },
+          { status: error.statusCode || 500 }
+        );
+      }
       
       if (error.name === 'ValidationError') {
         return Response.json(
@@ -66,7 +80,14 @@ export function withErrorHandler(handler) {
       }
       
       return Response.json(
-        { error: 'Internal server error' },
+        { 
+          error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+          // Include more info in development
+          ...(process.env.NODE_ENV === 'development' && { 
+            stack: error.stack,
+            details: error.toString()
+          })
+        },
         { status: 500 }
       );
     }

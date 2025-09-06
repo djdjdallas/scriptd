@@ -40,10 +40,10 @@ export const SCRIPT_TYPES = {
 
 // Script Lengths
 export const SCRIPT_LENGTHS = {
-  SHORT: { min: 0, max: 5, label: 'Short (< 5 min)' },
-  MEDIUM: { min: 5, max: 15, label: 'Medium (5-15 min)' },
-  LONG: { min: 15, max: 30, label: 'Long (15-30 min)' },
-  EXTENDED: { min: 30, max: null, label: 'Extended (30+ min)' }
+  SHORT: { min: 0, max: 5, label: 'Short (< 5 min)', tokens: '~2k tokens', credits: 2 },
+  MEDIUM: { min: 5, max: 15, label: 'Medium (5-15 min)', tokens: '~5k tokens', credits: 5 },
+  LONG: { min: 15, max: 30, label: 'Long (15-30 min)', tokens: '~10k tokens', credits: 10 },
+  EXTENDED: { min: 30, max: null, label: 'Extended (30+ min)', tokens: '~15k tokens', credits: 15 }
 };
 
 // Credit Costs

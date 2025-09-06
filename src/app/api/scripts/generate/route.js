@@ -5,7 +5,7 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { validateSchema, schemas } from '@/lib/validators';
 import { getAIService } from '@/lib/ai';
-import { scriptPrompts } from '@/lib/prompts/script-generation';
+import { generateScript } from '@/lib/prompts/script-generation';
 import { CREDIT_COSTS, AI_MODELS } from '@/lib/constants';
 import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
 
@@ -43,9 +43,15 @@ export const POST = createApiHandler(async (req) => {
   }
 
   // Check user credits with bypass option
-  const creditValidation = validateCreditsWithBypass(userData.credits, creditCost, user);
-  if (!creditValidation.isValid) {
-    throw new ApiError(creditValidation.message, 402);
+  console.log('[Generate] Checking credits - User:', user.id, 'Cost:', creditCost, 'Balance:', userData.credits);
+  console.log('[Generate] NODE_ENV:', process.env.NODE_ENV);
+  
+  const creditValidation = await validateCreditsWithBypass(user.id, 'SCRIPT_GENERATION', creditCost);
+  console.log('[Generate] Credit validation result:', creditValidation);
+  
+  if (!creditValidation.valid) {
+    const message = creditValidation.error || `Insufficient credits. You need ${creditCost} credits but only have ${creditValidation.balance || userData.credits}.`;
+    throw new ApiError(message, 402);
   }
 
   // Get channel context if provided
@@ -79,9 +85,13 @@ export const POST = createApiHandler(async (req) => {
   }
 
   try {
-    // Generate script using AI
-    const ai = getAIService();
-    const prompt = scriptPrompts.generateScript({
+    console.log('[Generate] Starting script generation with model:', validated.model);
+    
+    // Generate script using AI (select provider based on model)
+    const ai = getAIService(validated.model);
+    console.log('[Generate] AI service initialized');
+    
+    const prompt = generateScript({
       title: validated.title,
       type: validated.type,
       length: validated.length,
@@ -92,34 +102,96 @@ export const POST = createApiHandler(async (req) => {
       voiceProfile
     });
 
-    const result = await ai.generateChat({
-      model: validated.model,
-      messages: [
-        { role: 'system', content: prompt.system },
-        { role: 'user', content: prompt.user }
-      ],
-      maxTokens: 4000,
-      temperature: 0.8
-    });
+    console.log('[Generate] Prompt created, length:', prompt.user?.length || 0);
+    
+    // Check if this is an Anthropic model or OpenAI model
+    const isAnthropic = validated.model.includes('claude');
+    console.log('[Generate] Is Anthropic model:', isAnthropic);
+    
+    let result;
+    if (isAnthropic) {
+      console.log('[Generate] Calling Anthropic API...');
+      // AnthropicProvider returns object with text, usage, cost
+      result = await ai.generateCompletion({
+        prompt: prompt.user,
+        system: prompt.system,
+        model: validated.model,
+        maxTokens: 4000,
+        temperature: 0.8
+      });
+      console.log('[Generate] Anthropic response received');
+    } else {
+      // OpenAI returns string directly
+      const text = await ai.generateCompletion(
+        prompt.user,
+        {
+          model: validated.model,
+          systemPrompt: prompt.system,
+          maxTokens: 4000,
+          temperature: 0.8
+        }
+      );
+      // Format OpenAI response to match Anthropic structure
+      result = {
+        text: text,
+        usage: { totalTokens: 4000 }, // Estimate for OpenAI
+        cost: 0.01 // Estimate for OpenAI
+      };
+    }
+    
+    // Result is now consistently formatted with text, usage, and cost properties
+    const formattedResult = result;
+
+    // Get or create default channel
+    let channelId = validated.channelId;
+    if (!channelId) {
+      // Try to get user's first channel
+      const { data: channels } = await supabase
+        .from('channels')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+      
+      if (channels && channels.length > 0) {
+        channelId = channels[0].id;
+      } else {
+        // Create a default channel
+        const { data: newChannel } = await supabase
+          .from('channels')
+          .insert({
+            user_id: user.id,
+            youtube_channel_id: `default_${user.id}`,
+            name: 'My Channel'
+          })
+          .select()
+          .single();
+        
+        if (newChannel) {
+          channelId = newChannel.id;
+        }
+      }
+    }
 
     // Save script to database
     const { data: script, error: scriptError } = await supabase
       .from('scripts')
       .insert({
-        user_id: user.id,
+        channel_id: channelId, // Required field
         title: validated.title,
-        type: validated.type,
-        length: validated.length,
-        content: result.text,
+        content: formattedResult.text,
+        hook: '',
+        description: '',
+        tags: [],
         metadata: {
+          type: validated.type,
+          length: validated.length,
           tone: validated.tone,
           targetAudience: validated.targetAudience,
           keyPoints: validated.keyPoints,
           model: validated.model,
-          channelId: validated.channelId,
           voiceProfileId: validated.voiceProfileId,
-          tokenUsage: result.usage,
-          cost: result.cost
+          tokenUsage: formattedResult.usage,
+          cost: formattedResult.cost
         }
       })
       .select()
@@ -131,11 +203,9 @@ export const POST = createApiHandler(async (req) => {
 
     // Deduct credits (with bypass check)
     const creditDeduction = await conditionalCreditDeduction(
-      supabase,
       user.id,
-      userData.credits,
-      creditCost,
-      user
+      'SCRIPT_GENERATION',
+      { amount: creditCost }
     );
 
     if (!creditDeduction.success && !creditDeduction.bypassed) {
@@ -159,33 +229,47 @@ export const POST = createApiHandler(async (req) => {
         });
     }
 
-    return {
+    return NextResponse.json({
+      scriptId: script.id, // Frontend expects scriptId
       script: {
         id: script.id,
         title: script.title,
-        type: script.type,
-        length: script.length,
         content: script.content,
         createdAt: script.created_at
       },
       usage: {
         creditsUsed: creditDeduction.bypassed ? 0 : creditCost,
-        remainingCredits: creditDeduction.bypassed ? userData.credits : creditDeduction.remainingCredits,
+        remainingCredits: creditDeduction.bypassed ? userData.credits : (userData.credits - creditCost),
         tokenUsage: result.usage,
         creditsBypassed: creditDeduction.bypassed
       }
-    };
+    });
 
   } catch (error) {
     console.error('Script generation error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     
     if (error instanceof ApiError) {
       throw error;
     }
     
-    throw new ApiError(
-      'Failed to generate script. Please try again.',
-      500
-    );
+    // Check for specific error types
+    let errorMessage = 'Failed to generate script. Please try again.';
+    if (error.message?.includes('ANTHROPIC_API_KEY')) {
+      errorMessage = 'Anthropic API key is not configured. Please add ANTHROPIC_API_KEY to your environment variables.';
+    } else if (error.message?.includes('OPENAI_API_KEY')) {
+      errorMessage = 'OpenAI API key is not configured. Please add OPENAI_API_KEY to your environment variables.';
+    } else if (error.message?.includes('API key')) {
+      errorMessage = `API key error: ${error.message}`;
+    } else if (error.message?.includes('rate limit')) {
+      errorMessage = 'API rate limit exceeded. Please try again later.';
+    } else if (error.message?.includes('model')) {
+      errorMessage = 'Invalid AI model selected.';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    throw new ApiError(errorMessage, 500);
   }
 });

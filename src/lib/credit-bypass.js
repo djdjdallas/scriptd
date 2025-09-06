@@ -5,6 +5,9 @@ import { createClient } from '@/lib/supabase/client';
 
 // Log credit usage without deducting
 export async function logCreditUsage(userId, feature, amount, metadata = {}) {
+  // Credit usage logging disabled - table doesn't exist yet
+  // Uncomment when credit_usage_logs table is created
+  /*
   const supabase = createClient();
   
   try {
@@ -28,6 +31,10 @@ export async function logCreditUsage(userId, feature, amount, metadata = {}) {
     console.error('Failed to log credit usage:', err);
     return { success: false, error: err.message };
   }
+  */
+  
+  // For now, just return success
+  return { success: true, bypassed: true };
 }
 
 // Check if feature should bypass credits

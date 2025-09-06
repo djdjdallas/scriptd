@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { redirect, usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -45,66 +45,124 @@ export default function DashboardLayout({ children }) {
   const [credits, setCredits] = useState(0);
   const [creditsLoading, setCreditsLoading] = useState(true);
   const pathname = usePathname();
-
+  const router = useRouter();
+  
+  // Debug: Track component lifecycle
   useEffect(() => {
-    checkUser();
+    console.log(`[DashboardLayout] Mounted at ${new Date().toISOString()}`);
+    console.log(`[DashboardLayout] Current path: ${pathname}`);
+    
+    return () => {
+      console.log('[DashboardLayout] Unmounting');
+    };
   }, []);
 
   useEffect(() => {
-    if (user) {
+    // IMPORTANT: Let middleware handle auth
+    // This component just needs to get the current user for display
+    const checkUser = async () => {
+      console.log('[DashboardLayout] Checking current user');
+      const supabase = createClient();
+      
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) {
+          console.error('[DashboardLayout] Error getting user:', error);
+          // Don't redirect here - let middleware handle it
+          // The middleware will redirect to login if needed
+        }
+        
+        console.log(`[DashboardLayout] User: ${user?.email || 'not authenticated'}`);
+        setUser(user);
+      } catch (error) {
+        console.error('[DashboardLayout] Unexpected error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkUser();
+  }, []); // Only run once on mount
+
+  useEffect(() => {
+    // Fetch credits when user is available
+    if (user && !creditsLoading) {
+      console.log('[DashboardLayout] Fetching credits for user:', user.email);
       fetchCredits();
     }
   }, [user]);
 
-  const checkUser = async () => {
-    const supabase = createClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
-    
-    if (error || !user) {
-      window.location.href = '/login';
-      return;
-    }
-    
-    setUser(user);
-    setLoading(false);
-  };
-
   const fetchCredits = async () => {
+    if (!user) return;
+    
+    setCreditsLoading(true);
     try {
       const supabase = createClient();
       // Get credit balance using the RPC function
-      const { data: balance } = await supabase
+      const { data: balance, error: rpcError } = await supabase
         .rpc('get_available_credit_balance', { p_user_id: user.id });
       
-      setCredits(balance || 0);
-    } catch (error) {
-      console.error('Error fetching credits:', error);
-      // Fallback to fetch from users table
-      const supabase = createClient();
-      const { data: userData } = await supabase
-        .from('users')
-        .select('credits')
-        .eq('id', user.id)
-        .single();
+      if (rpcError) {
+        console.error('[DashboardLayout] RPC error fetching credits:', rpcError);
+        // Fallback to fetch from users table
+        const { data: userData } = await supabase
+          .from('users')
+          .select('credits')
+          .eq('id', user.id)
+          .single();
+        
+        setCredits(userData?.credits || 0);
+      } else {
+        setCredits(balance || 0);
+      }
       
-      setCredits(userData?.credits || 0);
+      console.log('[DashboardLayout] Credits loaded:', balance || 0);
+    } catch (error) {
+      console.error('[DashboardLayout] Error fetching credits:', error);
+      setCredits(0);
     } finally {
       setCreditsLoading(false);
     }
   };
 
   const handleSignOut = async () => {
+    console.log('[DashboardLayout] Signing out');
     const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = '/login';
+    
+    try {
+      await supabase.auth.signOut();
+      // The auth provider or middleware will handle the redirect
+      console.log('[DashboardLayout] Sign out successful');
+      
+      // Use router.push instead of window.location for smoother navigation
+      router.push('/login');
+    } catch (error) {
+      console.error('[DashboardLayout] Sign out error:', error);
+    }
   };
 
+  // Show loading state while checking auth
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center">
         <div className="glass-card p-8">
           <Sparkles className="h-12 w-12 text-purple-400 animate-spin mx-auto" />
           <p className="mt-4 text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user after loading, show a message (middleware will redirect if needed)
+  if (!loading && !user) {
+    console.log('[DashboardLayout] No user found after loading');
+    // Don't render the dashboard, middleware will redirect
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center">
+        <div className="glass-card p-8">
+          <Sparkles className="h-12 w-12 text-purple-400 animate-pulse mx-auto" />
+          <p className="mt-4 text-gray-300">Authenticating...</p>
         </div>
       </div>
     );
@@ -157,10 +215,10 @@ export default function DashboardLayout({ children }) {
           </div>
 
           {/* User Info */}
-          {!sidebarCollapsed && (
+          {!sidebarCollapsed && user && (
             <div className="glass-card p-4 mb-6">
               <p className="text-sm text-gray-400">Logged in as</p>
-              <p className="text-white font-medium truncate">{user?.email}</p>
+              <p className="text-white font-medium truncate">{user.email}</p>
             </div>
           )}
 

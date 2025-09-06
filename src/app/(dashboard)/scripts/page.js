@@ -1,115 +1,229 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { TiltCard } from '@/components/ui/tilt-card';
-import { 
-  Plus, 
-  Search, 
-  FileText, 
-  Clock, 
+import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { TiltCard } from "@/components/ui/tilt-card";
+import {
+  Plus,
+  Search,
+  FileText,
+  Clock,
   Calendar,
   Trash2,
   Edit,
   Loader2,
-  Filter,
   Sparkles,
   Zap,
   TrendingUp,
   Eye,
-  Download,
-  Share2
-} from 'lucide-react';
-import { SCRIPT_TYPES } from '@/lib/constants';
-import { useToast } from '@/components/ui/use-toast';
-import { formatDistanceToNow } from 'date-fns';
+  Share2,
+} from "lucide-react";
+import { SCRIPT_TYPES } from "@/lib/constants";
+import { useToast } from "@/components/ui/use-toast";
+import { formatDistanceToNow } from "date-fns";
 
 export default function ScriptsPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [scripts, setScripts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('created_at');
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("created_at");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [hoveredScript, setHoveredScript] = useState(null);
+  const abortControllerRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
+  const isMountedRef = useRef(true);
+  const hasInitialLoadRef = useRef(false); // Prevent double initial load
+  const renderCountRef = useRef(0); // Debug: track renders
+  
+  // Debug: Log component renders
+  renderCountRef.current++;
+  console.log(`[ScriptsPage] Render #${renderCountRef.current} at ${new Date().toISOString()}`);
 
-  useEffect(() => {
-    fetchScripts();
-  }, [search, typeFilter, sortBy, page]);
+  // Stable fetch function - memoized with no dependencies
+  const fetchScripts = useCallback(async (searchTerm, filter, sort, pageNum) => {
+    console.log(`[ScriptsPage] Fetching scripts - search: "${searchTerm}", filter: ${filter}, sort: ${sort}, page: ${pageNum}`);
+    
+    // Cancel any in-flight requests
+    if (abortControllerRef.current) {
+      console.log('[ScriptsPage] Aborting previous request');
+      abortControllerRef.current.abort();
+    }
 
-  const fetchScripts = async () => {
-    setLoading(true);
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+
     try {
       const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-        sortBy,
-        sortOrder: 'desc'
+        page: pageNum.toString(),
+        limit: "20",
+        sortBy: sort,
+        sortOrder: "desc",
       });
 
-      if (search) params.append('search', search);
-      if (typeFilter && typeFilter !== 'all') params.append('type', typeFilter);
+      if (searchTerm) params.append("search", searchTerm);
+      if (filter && filter !== "all") params.append("type", filter);
 
-      const response = await fetch(`/api/scripts?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch scripts');
+      const response = await fetch(`/api/scripts?${params}`, {
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch scripts");
+      }
 
       const result = await response.json();
       
-      if (result.success && result.data) {
-        setScripts(result.data.items || []);
-        setTotalPages(result.data.pagination?.pages || 1);
+      console.log(`[ScriptsPage] Fetched ${result.items?.length || 0} scripts`);
+
+      // The API returns { items, pagination } directly
+      if (result.items) {
+        setScripts(result.items);
+        setTotalPages(result.pagination?.pages || 1);
       } else {
         setScripts([]);
-        throw new Error(result.error?.message || 'Failed to fetch scripts');
+        console.warn('[ScriptsPage] No items in response:', result);
       }
     } catch (error) {
-      console.error('Error fetching scripts:', error);
-      setScripts([]);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to load scripts",
-        variant: "destructive"
-      });
+      // Ignore abort errors
+      if (error.name === "AbortError") {
+        console.log('[ScriptsPage] Request was aborted');
+        return;
+      }
+
+      console.error("[ScriptsPage] Error fetching scripts:", error);
+
+      // Only show error if component is still mounted
+      if (isMountedRef.current) {
+        setScripts([]);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setInitialLoadComplete(true);
+      }
     }
-  };
+  }, []); // Empty deps - function never changes
+
+  // Initial load - runs ONCE on component mount
+  useEffect(() => {
+    // Prevent double initial load (React StrictMode in dev)
+    if (hasInitialLoadRef.current) {
+      console.log('[ScriptsPage] Skipping duplicate initial load');
+      return;
+    }
+    
+    hasInitialLoadRef.current = true;
+    console.log('[ScriptsPage] Performing initial load');
+    
+    // Fetch initial scripts
+    fetchScripts("", "all", "created_at", 1);
+
+    // Cleanup function
+    return () => {
+      console.log('[ScriptsPage] Component unmounting - cleaning up');
+      
+      // Cancel any pending requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
+      // Clear any pending timeouts
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      
+      // Set unmounted flag AFTER cancelling requests
+      isMountedRef.current = false;
+    };
+  }, [fetchScripts]); // Include fetchScripts but it never changes due to useCallback with []
+
+  // Handle search changes with debouncing
+  useEffect(() => {
+    // Skip on initial mount
+    if (!hasInitialLoadRef.current) {
+      console.log('[ScriptsPage] Skipping search effect - not initialized yet');
+      return;
+    }
+    
+    console.log(`[ScriptsPage] Search changed to: "${search}"`);
+
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Debounce search input (500ms delay)
+    searchTimeoutRef.current = setTimeout(() => {
+      console.log('[ScriptsPage] Executing debounced search');
+      fetchScripts(search, typeFilter, sortBy, 1); // Reset to page 1 on search
+      setPage(1);
+    }, 500);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [search]); // Only depend on search
+  
+  // Handle filter/sort/page changes (no debouncing needed)
+  useEffect(() => {
+    // Skip on initial mount
+    if (!hasInitialLoadRef.current) {
+      console.log('[ScriptsPage] Skipping filter effect - not initialized yet');
+      return;
+    }
+    
+    console.log(`[ScriptsPage] Filter/sort/page changed - filter: ${typeFilter}, sort: ${sortBy}, page: ${page}`);
+    
+    // Fetch immediately for filter/sort/page changes
+    fetchScripts(search, typeFilter, sortBy, page);
+  }, [typeFilter, sortBy, page]); // Separate from search to avoid debouncing these
 
   const handleDelete = async (scriptId) => {
-    if (!confirm('Are you sure you want to delete this script?')) return;
+    if (!confirm("Are you sure you want to delete this script?")) return;
+    
+    console.log(`[ScriptsPage] Deleting script: ${scriptId}`);
 
     try {
       const response = await fetch(`/api/scripts/${scriptId}`, {
-        method: 'DELETE'
+        method: "DELETE",
       });
 
-      if (!response.ok) throw new Error('Failed to delete script');
+      if (!response.ok) throw new Error("Failed to delete script");
 
       toast({
         title: "Script Deleted",
-        description: "The script has been deleted successfully."
+        description: "The script has been deleted successfully.",
       });
 
-      fetchScripts();
+      // Remove the script from the list locally
+      setScripts((prevScripts) => prevScripts.filter((s) => s.id !== scriptId));
     } catch (error) {
+      console.error(`[ScriptsPage] Delete failed:`, error);
       toast({
         title: "Delete Failed",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
-  if (loading && scripts.length === 0) {
+  // Show loading spinner only during the very first load before any data is fetched
+  if (!initialLoadComplete && scripts.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="glass-card p-8 animate-pulse-slow">
@@ -125,7 +239,10 @@ export default function ScriptsPage() {
       {/* Background Effects */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="gradient-orb w-96 h-96 bg-purple-600 -top-48 -right-48 opacity-20" />
-        <div className="gradient-orb w-96 h-96 bg-pink-600 -bottom-48 -left-48 opacity-20" style={{ animationDelay: '10s' }} />
+        <div
+          className="gradient-orb w-96 h-96 bg-pink-600 -bottom-48 -left-48 opacity-20"
+          style={{ animationDelay: "10s" }}
+        />
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
       </div>
 
@@ -142,7 +259,7 @@ export default function ScriptsPage() {
               Manage and create your viral YouTube scripts
             </p>
           </div>
-          
+
           <Link href="/scripts/new">
             <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white group">
               <Plus className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform" />
@@ -152,14 +269,25 @@ export default function ScriptsPage() {
         </div>
 
         {/* Stats Bar */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
+        <div
+          className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-reveal"
+          style={{ animationDelay: "0.1s" }}
+        >
           <div className="glass-card p-4 text-center">
-            <div className="text-2xl font-bold gradient-text">{scripts.length}</div>
+            <div className="text-2xl font-bold gradient-text">
+              {scripts.length}
+            </div>
             <p className="text-sm text-gray-400">Total Scripts</p>
           </div>
           <div className="glass-card p-4 text-center">
             <div className="text-2xl font-bold gradient-text">
-              {scripts.filter(s => new Date(s.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length}
+              {
+                scripts.filter(
+                  (s) =>
+                    new Date(s.createdAt) >
+                    new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                ).length
+              }
             </div>
             <p className="text-sm text-gray-400">This Week</p>
           </div>
@@ -179,7 +307,10 @@ export default function ScriptsPage() {
         </div>
 
         {/* Filters */}
-        <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.2s' }}>
+        <div
+          className="glass-card p-6 animate-reveal"
+          style={{ animationDelay: "0.2s" }}
+        >
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -192,28 +323,59 @@ export default function ScriptsPage() {
                 />
               </div>
             </div>
-            
+
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="glass-button w-[180px] text-white border-white/20 bg-white/10 [&>span]:text-white">
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
               <SelectContent className="glass bg-gray-900/95 border-white/20 backdrop-blur-md">
-                <SelectItem value="all" className="text-white hover:bg-white/10">All types</SelectItem>
+                <SelectItem
+                  value="all"
+                  className="text-white hover:bg-white/10"
+                >
+                  All types
+                </SelectItem>
                 {Object.entries(SCRIPT_TYPES).map(([key, value]) => (
-                  <SelectItem key={key} value={value} className="text-white hover:bg-white/10">{value}</SelectItem>
+                  <SelectItem
+                    key={key}
+                    value={value}
+                    className="text-white hover:bg-white/10"
+                  >
+                    {value}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            
+
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="glass-button w-[180px] text-white border-white/20 bg-white/10 [&>span]:text-white">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent className="glass bg-gray-900/95 border-white/20 backdrop-blur-md">
-                <SelectItem value="created_at" className="text-white hover:bg-white/10">Newest</SelectItem>
-                <SelectItem value="updated_at" className="text-white hover:bg-white/10">Recently updated</SelectItem>
-                <SelectItem value="title" className="text-white hover:bg-white/10">Title (A-Z)</SelectItem>
-                <SelectItem value="length" className="text-white hover:bg-white/10">Length</SelectItem>
+                <SelectItem
+                  value="created_at"
+                  className="text-white hover:bg-white/10"
+                >
+                  Newest
+                </SelectItem>
+                <SelectItem
+                  value="updated_at"
+                  className="text-white hover:bg-white/10"
+                >
+                  Recently updated
+                </SelectItem>
+                <SelectItem
+                  value="title"
+                  className="text-white hover:bg-white/10"
+                >
+                  Title (A-Z)
+                </SelectItem>
+                <SelectItem
+                  value="length"
+                  className="text-white hover:bg-white/10"
+                >
+                  Length
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -221,12 +383,17 @@ export default function ScriptsPage() {
 
         {/* Scripts Grid */}
         {scripts.length === 0 ? (
-          <div className="glass-card p-12 text-center animate-reveal" style={{ animationDelay: '0.3s' }}>
+          <div
+            className="glass-card p-12 text-center animate-reveal"
+            style={{ animationDelay: "0.3s" }}
+          >
             <div className="relative inline-block">
               <FileText className="h-20 w-20 mx-auto text-purple-400 neon-glow" />
               <Sparkles className="h-8 w-8 text-yellow-400 absolute -top-2 -right-2 animate-pulse" />
             </div>
-            <h3 className="text-2xl font-bold text-white mt-6 mb-2">No scripts yet</h3>
+            <h3 className="text-2xl font-bold text-white mt-6 mb-2">
+              No scripts yet
+            </h3>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
               Start creating viral content with AI-powered script generation
             </p>
@@ -241,7 +408,7 @@ export default function ScriptsPage() {
           <div className="grid gap-6 stagger-children">
             {scripts.map((script, index) => (
               <TiltCard key={script.id}>
-                <div 
+                <div
                   className="glass-card glass-hover overflow-hidden group"
                   onMouseEnter={() => setHoveredScript(script.id)}
                   onMouseLeave={() => setHoveredScript(null)}
@@ -249,12 +416,12 @@ export default function ScriptsPage() {
                 >
                   {/* Background gradient on hover */}
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  
+
                   <div className="relative p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="text-xl font-semibold text-white mb-2 flex items-center gap-2">
-                          <Link 
+                          <Link
                             href={`/scripts/${script.id}`}
                             className="hover:text-purple-400 transition-colors"
                           >
@@ -264,11 +431,11 @@ export default function ScriptsPage() {
                             <Zap className="h-4 w-4 text-yellow-400 animate-pulse" />
                           )}
                         </h3>
-                        
+
                         <p className="text-gray-400 mb-4 line-clamp-2">
                           {script.excerpt}
                         </p>
-                        
+
                         <div className="flex items-center gap-4 text-sm">
                           <Badge className="glass border-purple-400/50 text-purple-300">
                             {script.type}
@@ -279,15 +446,20 @@ export default function ScriptsPage() {
                           </span>
                           <span className="flex items-center gap-1 text-gray-400">
                             <Calendar className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(script.createdAt), { addSuffix: true })}
+                            {formatDistanceToNow(new Date(script.createdAt), {
+                              addSuffix: true,
+                            })}
                           </span>
                           <span className="flex items-center gap-1 text-gray-400">
                             <Eye className="h-3 w-3" />
-                            {Math.round(Math.random() * 10000)}
+                            {Math.round(
+                              (script.id ? script.id.charCodeAt(0) : 1) *
+                                123.456
+                            )}
                           </span>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-2 ml-6">
                         <Link href={`/scripts/${script.id}`}>
                           <Button
@@ -329,19 +501,20 @@ export default function ScriptsPage() {
           <div className="flex items-center justify-center gap-4 animate-reveal">
             <Button
               className="glass-button text-white"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
             >
               Previous
             </Button>
             <div className="glass-card px-4 py-2">
               <span className="text-sm text-gray-300">
-                Page <span className="gradient-text font-bold">{page}</span> of <span className="gradient-text font-bold">{totalPages}</span>
+                Page <span className="gradient-text font-bold">{page}</span> of{" "}
+                <span className="gradient-text font-bold">{totalPages}</span>
               </span>
             </div>
             <Button
               className="glass-button text-white"
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
             >
               Next

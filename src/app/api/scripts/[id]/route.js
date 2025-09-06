@@ -5,39 +5,54 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 
 // GET /api/scripts/[id] - Get single script
-export const GET = createApiHandler(async (req, { params }) => {
+export const GET = createApiHandler(async (req, context) => {
   const { user, supabase } = await getAuthenticatedUser();
+  const { id } = await context.params;
 
+  // Join with channels to get user's scripts
   const { data: script, error } = await supabase
     .from('scripts')
-    .select('*')
-    .eq('id', params.id)
-    .eq('user_id', user.id)
+    .select(`
+      *,
+      channels!inner(
+        id,
+        name,
+        user_id
+      )
+    `)
+    .eq('id', id)
+    .eq('channels.user_id', user.id)
     .single();
 
   if (error || !script) {
     throw new ApiError('Script not found', 404);
   }
 
-  return script;
+  return NextResponse.json(script);
 });
 
 // PUT /api/scripts/[id] - Update script
-export const PUT = createApiHandler(async (req, { params }) => {
+export const PUT = createApiHandler(async (req, context) => {
   const { user, supabase } = await getAuthenticatedUser();
+  const { id } = await context.params;
 
   const body = await req.json();
   
-  // Check ownership
+  // Verify ownership through channel
   const { data: existing } = await supabase
     .from('scripts')
-    .select('id')
-    .eq('id', params.id)
-    .eq('user_id', user.id)
+    .select(`
+      id,
+      channels!inner(
+        user_id
+      )
+    `)
+    .eq('id', id)
+    .eq('channels.user_id', user.id)
     .single();
 
   if (!existing) {
-    throw new ApiError('Script not found', 404);
+    throw new ApiError('Script not found or unauthorized', 404);
   }
 
   // Update script
@@ -45,13 +60,14 @@ export const PUT = createApiHandler(async (req, { params }) => {
     .from('scripts')
     .update({
       title: body.title,
-      type: body.type,
-      length: body.length,
       content: body.content,
+      hook: body.hook,
+      description: body.description,
+      tags: body.tags,
       metadata: body.metadata,
       updated_at: new Date().toISOString()
     })
-    .eq('id', params.id)
+    .eq('id', id)
     .select()
     .single();
 
@@ -59,23 +75,40 @@ export const PUT = createApiHandler(async (req, { params }) => {
     throw new ApiError('Failed to update script', 500);
   }
 
-  return script;
+  return NextResponse.json(script);
 });
 
 // DELETE /api/scripts/[id] - Delete script
-export const DELETE = createApiHandler(async (req, { params }) => {
+export const DELETE = createApiHandler(async (req, context) => {
   const { user, supabase } = await getAuthenticatedUser();
+  const { id } = await context.params;
 
-  // Check ownership and delete
+  // First verify ownership through channel
+  const { data: script } = await supabase
+    .from('scripts')
+    .select(`
+      id,
+      channels!inner(
+        user_id
+      )
+    `)
+    .eq('id', id)
+    .eq('channels.user_id', user.id)
+    .single();
+
+  if (!script) {
+    throw new ApiError('Script not found or unauthorized', 404);
+  }
+
+  // Delete the script
   const { error } = await supabase
     .from('scripts')
     .delete()
-    .eq('id', params.id)
-    .eq('user_id', user.id);
+    .eq('id', id);
 
   if (error) {
     throw new ApiError('Failed to delete script', 500);
   }
 
-  return { success: true };
+  return NextResponse.json({ success: true });
 });

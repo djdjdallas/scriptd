@@ -1,26 +1,42 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { ScriptEditor } from '@/components/script-builder/script-editor';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
+import { 
+  ChevronLeft, 
+  Loader2, 
+  Clock, 
+  Calendar, 
+  Copy, 
+  Download,
+  Trash2,
+  Sparkles,
+  FileText
+} from 'lucide-react';
+import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function ScriptPage({ params }) {
   const router = useRouter();
   const { toast } = useToast();
   const [script, setScript] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [copying, setCopying] = useState(false);
+  
+  // Unwrap params Promise
+  const resolvedParams = use(params);
+  const scriptId = resolvedParams.id;
 
   useEffect(() => {
     fetchScript();
-  }, [params.id]);
+  }, [scriptId]);
 
   const fetchScript = async () => {
     try {
-      const response = await fetch(`/api/scripts/${params.id}`);
+      const response = await fetch(`/api/scripts/${scriptId}`);
       if (!response.ok) {
         throw new Error('Script not found');
       }
@@ -39,66 +55,244 @@ export default function ScriptPage({ params }) {
     }
   };
 
-  const handleSave = async (updatedScript) => {
-    const response = await fetch(`/api/scripts/${params.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedScript)
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to save script');
+  const handleCopy = async () => {
+    setCopying(true);
+    try {
+      await navigator.clipboard.writeText(script.content);
+      toast({
+        title: "Copied!",
+        description: "Script copied to clipboard"
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to copy",
+        description: "Please try again",
+        variant: "destructive"
+      });
+    } finally {
+      setCopying(false);
     }
-
-    const data = await response.json();
-    setScript(data);
-    return data;
   };
 
-  const handleExport = async (format) => {
-    const response = await fetch(`/api/scripts/${params.id}/export`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ format })
+  const handleDownload = () => {
+    const blob = new Blob([script.content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${script.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Downloaded!",
+      description: "Script saved to your downloads"
     });
+  };
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Export failed');
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this script?')) return;
+    
+    try {
+      const response = await fetch(`/api/scripts/${scriptId}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete script');
+      }
+      
+      toast({
+        title: "Script Deleted",
+        description: "The script has been deleted successfully"
+      });
+      
+      router.push('/scripts');
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: error.message,
+        variant: "destructive"
+      });
     }
-
-    return response.json();
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[600px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="glass-card p-8 animate-pulse-slow">
+          <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto" />
+          <p className="mt-4 text-gray-300">Loading script...</p>
+        </div>
       </div>
     );
   }
 
   if (!script) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="glass-card p-8 text-center">
+          <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-white mb-2">Script Not Found</h2>
+          <p className="text-gray-400 mb-4">This script doesn't exist or you don't have access to it.</p>
+          <Link href="/scripts">
+            <Button className="glass-button">
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Back to Scripts
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Back button */}
-      <Button variant="ghost" asChild>
-        <Link href="/scripts">
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Back to Scripts
-        </Link>
-      </Button>
+    <div className="min-h-screen p-6">
+      {/* Background Effects */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div className="gradient-orb w-96 h-96 bg-purple-600 -top-48 -right-48 opacity-20" />
+        <div className="gradient-orb w-96 h-96 bg-pink-600 -bottom-48 -left-48 opacity-20" />
+      </div>
 
-      {/* Script editor */}
-      <ScriptEditor
-        script={script}
-        onSave={handleSave}
-        onExport={handleExport}
-        readOnly={false}
-      />
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <Link href="/scripts">
+            <Button variant="ghost" className="glass-button">
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Back to Scripts
+            </Button>
+          </Link>
+          
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={handleCopy}
+              className="glass-button"
+              disabled={copying}
+            >
+              {copying ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Copy className="h-4 w-4 mr-2" />
+              )}
+              Copy
+            </Button>
+            <Button 
+              onClick={handleDownload}
+              className="glass-button"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
+            <Button 
+              onClick={handleDelete}
+              className="glass-button hover:bg-red-500/20"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        </div>
+
+        {/* Script Info Card */}
+        <div className="glass-card p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                {script.title}
+                <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
+              </h1>
+              <div className="flex items-center gap-4 mt-3 text-sm text-gray-400">
+                <Badge className="glass border-purple-400/50 text-purple-300">
+                  {script.metadata?.type || 'Script'}
+                </Badge>
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {script.metadata?.length || 5} min
+                </span>
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {formatDistanceToNow(new Date(script.created_at), { addSuffix: true })}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Tags */}
+          {script.tags && script.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {script.tags.map((tag, index) => (
+                <Badge key={index} className="glass border-blue-400/50 text-blue-300">
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Hook */}
+          {script.hook && (
+            <div className="mb-4 p-4 glass-card bg-purple-500/10 border-l-4 border-purple-500">
+              <p className="text-sm font-semibold text-purple-300 mb-1">Hook</p>
+              <p className="text-white">{script.hook}</p>
+            </div>
+          )}
+
+          {/* Description */}
+          {script.description && (
+            <div className="mb-4">
+              <p className="text-sm font-semibold text-gray-400 mb-1">Description</p>
+              <p className="text-gray-300">{script.description}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Script Content */}
+        <div className="glass-card p-6">
+          <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+            <FileText className="h-5 w-5 text-purple-400" />
+            Script Content
+          </h2>
+          <div className="prose prose-invert max-w-none">
+            <pre className="whitespace-pre-wrap text-gray-300 font-mono text-sm leading-relaxed">
+              {script.content}
+            </pre>
+          </div>
+        </div>
+
+        {/* Metadata */}
+        {script.metadata && (
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-3">Generation Details</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              {script.metadata.tone && (
+                <div>
+                  <p className="text-gray-400">Tone</p>
+                  <p className="text-white capitalize">{script.metadata.tone}</p>
+                </div>
+              )}
+              {script.metadata.targetAudience && (
+                <div>
+                  <p className="text-gray-400">Target Audience</p>
+                  <p className="text-white capitalize">{script.metadata.targetAudience}</p>
+                </div>
+              )}
+              {script.metadata.model && (
+                <div>
+                  <p className="text-gray-400">AI Model</p>
+                  <p className="text-white">{script.metadata.model}</p>
+                </div>
+              )}
+              {script.metadata.tokenUsage && (
+                <div>
+                  <p className="text-gray-400">Tokens Used</p>
+                  <p className="text-white">{script.metadata.tokenUsage.totalTokens || 'N/A'}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
