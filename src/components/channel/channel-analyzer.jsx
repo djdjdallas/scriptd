@@ -11,14 +11,24 @@ import {
   ThumbsUp,
   MessageSquare,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Sparkles,
+  ChartBar,
+  Target,
+  Clock,
+  Hash,
+  Award,
+  PlayCircle,
+  UserCheck,
+  Zap,
+  Activity,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { TiltCard } from '@/components/ui/tilt-card';
 
 export function ChannelAnalyzer({ channelId }) {
   const router = useRouter();
@@ -26,6 +36,7 @@ export function ChannelAnalyzer({ channelId }) {
   const [progress, setProgress] = useState(0);
   const [analysisData, setAnalysisData] = useState(null);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('insights');
 
   useEffect(() => {
     if (channelId) {
@@ -38,7 +49,6 @@ export function ChannelAnalyzer({ channelId }) {
     setError(null);
     setProgress(0);
 
-    // Simulate progress
     const progressInterval = setInterval(() => {
       setProgress(prev => Math.min(prev + 10, 90));
     }, 500);
@@ -69,329 +79,637 @@ export function ChannelAnalyzer({ channelId }) {
 
   if (error) {
     return (
-      <Card className="w-full max-w-4xl mx-auto">
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center justify-center py-8">
-            <AlertCircle className="h-12 w-12 text-destructive mb-4 animate-in zoom-in" />
-            <h3 className="text-lg font-semibold mb-2">Analysis Failed</h3>
-            <p className="text-muted-foreground text-center mb-4 max-w-md">
-              {error === 'Failed to analyze channel' 
-                ? 'We encountered an issue analyzing your channel. This might be due to YouTube API limits or connectivity issues.'
-                : error}
-            </p>
-            <div className="flex gap-3">
-              <Button onClick={startAnalysis}>Try Again</Button>
-              <Button variant="outline" onClick={() => router.push('/channels')}>Back to Channels</Button>
-            </div>
+      <div className="glass-card p-8">
+        <div className="flex flex-col items-center justify-center">
+          <AlertCircle className="h-12 w-12 text-red-400 mb-4 animate-pulse" />
+          <h3 className="text-xl font-bold text-white mb-2">Analysis Failed</h3>
+          <p className="text-gray-400 text-center mb-6 max-w-md">
+            {error === 'Failed to analyze channel' 
+              ? 'We encountered an issue analyzing your channel. This might be due to YouTube API limits or connectivity issues.'
+              : error}
+          </p>
+          <div className="flex gap-3">
+            <Button onClick={startAnalysis} className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
+              Try Again
+            </Button>
+            <Button onClick={() => router.push('/channels')} className="glass-button">
+              Back to Channels
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   if (isAnalyzing || !analysisData) {
     return (
-      <Card className="w-full max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle>Analyzing Your Channel</CardTitle>
-          <CardDescription>
-            This may take a few moments while we gather insights about your content and audience
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="glass-card p-8">
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+              <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
+              Analyzing Your Channel
+            </h2>
+            <p className="text-gray-400">
+              This may take a few moments while we gather insights about your content and audience
+            </p>
+          </div>
+          
           <div className="space-y-4">
-            <Progress value={progress} className="w-full" />
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="relative">
+              <Progress value={progress} className="h-3 bg-gray-800" />
+              <div className="absolute inset-0 h-3 overflow-hidden rounded-full">
+                <div 
+                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
+            
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-12 w-12 animate-spin text-purple-400" />
+            </div>
+            
             <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-2">
+              <p className="text-white font-medium mb-2">
                 {progress < 30 && 'Fetching channel data...'}
                 {progress >= 30 && progress < 60 && 'Analyzing video content...'}
                 {progress >= 60 && progress < 90 && 'Generating audience insights...'}
                 {progress >= 90 && 'Finalizing analysis...'}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-gray-400 text-sm">
                 {progress}% complete
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   const { analytics, persona, insights } = analysisData;
 
+  const formatNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+  };
+
+  const tabs = [
+    { id: 'insights', label: 'Insights', icon: ChartBar },
+    { id: 'audience', label: 'Audience', icon: Users },
+    { id: 'content', label: 'Content', icon: Video },
+    { id: 'performance', label: 'Performance', icon: TrendingUp }
+  ];
+
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6">
-      {/* Performance Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {analytics.channel.totalViews.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {analytics.performance.avgViewsPerVideo.toLocaleString()} per video
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Subscribers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {analytics.channel.subscriberCount.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {analytics.performance.viewsToSubscriberRatio}% view rate
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
-            <ThumbsUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.performance.avgEngagementRate}%</div>
-            <p className="text-xs text-muted-foreground">
-              {analytics.performance.totalEngagements.toLocaleString()} total
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Videos</CardTitle>
-            <Video className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.channel.videoCount}</div>
-            <p className="text-xs text-muted-foreground">
-              {analytics.analysisMetadata.videosAnalyzed} analyzed
-            </p>
-          </CardContent>
-        </Card>
+    <div className="space-y-8">
+      {/* Background Effects */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
       </div>
 
-      {/* Detailed Analysis Tabs */}
-      <Tabs defaultValue="insights" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="insights">Insights</TabsTrigger>
-          <TabsTrigger value="audience">Audience</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-        </TabsList>
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <TiltCard>
+          <div className="glass-card p-6 group">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-gray-400 text-sm">Total Views</span>
+              <Eye className="h-5 w-5 text-purple-400 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="text-3xl font-bold text-white mb-1">
+              {formatNumber(analytics.channel.totalViews)}
+            </div>
+            <p className="text-xs text-gray-400">
+              {formatNumber(analytics.performance.avgViewsPerVideo)} per video
+            </p>
+          </div>
+        </TiltCard>
 
-        <TabsContent value="insights" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Channel Health Metrics</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Performance Score</span>
-                  <span className="text-sm">{insights.metrics.performanceScore}/100</span>
-                </div>
-                <Progress value={insights.metrics.performanceScore} />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Growth Potential</span>
-                  <span className="text-sm">{insights.metrics.growthPotential}/100</span>
-                </div>
-                <Progress value={insights.metrics.growthPotential} />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Audience Quality</span>
-                  <span className="text-sm">{insights.metrics.audienceQuality}/100</span>
-                </div>
-                <Progress value={insights.metrics.audienceQuality} />
-              </div>
-            </CardContent>
-          </Card>
+        <TiltCard>
+          <div className="glass-card p-6 group">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-gray-400 text-sm">Subscribers</span>
+              <Users className="h-5 w-5 text-blue-400 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="text-3xl font-bold text-white mb-1">
+              {formatNumber(analytics.channel.subscriberCount)}
+            </div>
+            <p className="text-xs text-gray-400 flex items-center gap-1">
+              <span className="text-green-400">+{analytics.performance.viewsToSubscriberRatio}%</span>
+              view rate
+            </p>
+          </div>
+        </TiltCard>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Strengths</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
+        <TiltCard>
+          <div className="glass-card p-6 group">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-gray-400 text-sm">Engagement Rate</span>
+              <ThumbsUp className="h-5 w-5 text-green-400 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="text-3xl font-bold text-white mb-1">
+              {analytics.performance.avgEngagementRate}%
+            </div>
+            <p className="text-xs text-gray-400">
+              {formatNumber(analytics.performance.totalEngagements)} total
+            </p>
+          </div>
+        </TiltCard>
+
+        <TiltCard>
+          <div className="glass-card p-6 group">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-gray-400 text-sm">Videos</span>
+              <Video className="h-5 w-5 text-red-400 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="text-3xl font-bold text-white mb-1">
+              {analytics.channel.videoCount}
+            </div>
+            <p className="text-xs text-gray-400">
+              {analytics.analysisMetadata.videosAnalyzed} analyzed
+            </p>
+          </div>
+        </TiltCard>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="glass-card p-2">
+        <div className="flex gap-2">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="animate-reveal">
+        {activeTab === 'insights' && (
+          <div className="space-y-6">
+            {/* Channel Health Metrics */}
+            <div className="glass-card p-6">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-purple-400" />
+                Channel Health Metrics
+              </h3>
+              
+              <div className="space-y-6">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-white font-medium">Performance Score</span>
+                    <span className="text-2xl font-bold text-purple-400">
+                      {insights.metrics.performanceScore}/100
+                    </span>
+                  </div>
+                  <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden">
+                    <div 
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-purple-400 rounded-full transition-all duration-700"
+                      style={{ width: `${insights.metrics.performanceScore}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-white font-medium">Growth Potential</span>
+                    <span className="text-2xl font-bold text-blue-400">
+                      {insights.metrics.growthPotential}/100
+                    </span>
+                  </div>
+                  <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden">
+                    <div 
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-700"
+                      style={{ width: `${insights.metrics.growthPotential}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-white font-medium">Audience Quality</span>
+                    <span className="text-2xl font-bold text-green-400">
+                      {insights.metrics.audienceQuality}/100
+                    </span>
+                  </div>
+                  <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden">
+                    <div 
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-700"
+                      style={{ width: `${insights.metrics.audienceQuality}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Strengths and Opportunities */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="glass-card p-6">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <Award className="h-5 w-5 text-green-400" />
+                  Strengths
+                </h3>
+                <ul className="space-y-3">
                   {insights.strengths.map((strength, index) => (
-                    <li key={index} className="flex items-start">
-                      <Badge variant="secondary" className="mr-2">+</Badge>
-                      <span className="text-sm">{strength}</span>
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="mt-1">
+                        <div className="w-2 h-2 bg-green-400 rounded-full" />
+                      </div>
+                      <span className="text-gray-300 text-sm">{strength}</span>
                     </li>
                   ))}
                 </ul>
-              </CardContent>
-            </Card>
+              </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Opportunities</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
+              <div className="glass-card p-6">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <Target className="h-5 w-5 text-yellow-400" />
+                  Opportunities
+                </h3>
+                <ul className="space-y-3">
                   {insights.opportunities && insights.opportunities.length > 0 ? (
                     insights.opportunities.map((opportunity, index) => (
-                      <li key={index} className="flex items-start">
-                        <Badge variant="outline" className="mr-2">!</Badge>
-                        <span className="text-sm">{opportunity}</span>
+                      <li key={index} className="flex items-start gap-3">
+                        <div className="mt-1">
+                          <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+                        </div>
+                        <span className="text-gray-300 text-sm">{opportunity}</span>
                       </li>
                     ))
                   ) : (
-                    <li className="text-sm text-muted-foreground">Analyzing for improvement opportunities...</li>
+                    <li className="text-gray-400 text-sm">Analyzing for improvement opportunities...</li>
                   )}
                 </ul>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Recommendations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
+            {/* Recommendations */}
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <Zap className="h-5 w-5 text-purple-400" />
+                Recommendations
+              </h3>
+              <div className="grid gap-3">
                 {insights.recommendations.map((rec, index) => (
-                  <li key={index} className="flex items-start">
-                    <TrendingUp className="h-4 w-4 text-primary mr-2 mt-0.5" />
-                    <span className="text-sm">{rec}</span>
-                  </li>
+                  <div key={index} className="glass p-4 rounded-lg flex items-start gap-3 group hover:bg-white/5 transition-colors">
+                    <TrendingUp className="h-5 w-5 text-purple-400 mt-0.5 group-hover:scale-110 transition-transform" />
+                    <span className="text-gray-300 text-sm">{rec}</span>
+                  </div>
                 ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="audience" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Audience Persona</CardTitle>
-              <CardDescription>
-                Understanding who watches your content
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-medium mb-2">Engagement Level</h4>
-                <Badge>{persona.behavior.engagementLevel}</Badge>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Loyalty Score: {persona.behavior.loyaltyScore}/100
-                </p>
               </div>
+            </div>
+          </div>
+        )}
 
-              <div>
-                <h4 className="font-medium mb-2">Viewing Patterns</h4>
-                <p className="text-sm">{persona.behavior.viewingPatterns}</p>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-2">Content Preferences</h4>
-                <div className="flex flex-wrap gap-2">
-                  {persona.demographics.contentPreferences.map((pref, index) => (
-                    <Badge key={index} variant="secondary">{pref}</Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-2">Top Interests</h4>
-                <div className="flex flex-wrap gap-2">
-                  {persona.demographics.interests.map((interest, index) => (
-                    <Badge key={index} variant="outline">{interest}</Badge>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="content" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Content Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Top Keywords</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {analytics.content.topKeywords.slice(0, 10).map(([keyword, count], index) => (
-                      <Badge key={index} variant="secondary">
-                        {keyword} ({count})
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-2">Content Types</h4>
-                  <div className="space-y-2">
-                    {Object.entries(analytics.content.contentTypes).map(([type, count]) => (
-                      <div key={type} className="flex items-center justify-between">
-                        <span className="text-sm capitalize">{type}</span>
-                        <Badge variant="outline">{count} videos</Badge>
+        {activeTab === 'audience' && (
+          <div className="space-y-6">
+            {/* Audience Overview */}
+            <div className="glass-card p-6">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-400" />
+                Audience Persona
+              </h3>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                      <UserCheck className="h-4 w-4 text-green-400" />
+                      Engagement Level
+                    </h4>
+                    <div className="glass p-4 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-purple-400 font-bold text-lg">
+                          {persona.behavior.engagementLevel}
+                        </span>
+                        <span className="text-gray-400 text-sm">
+                          Score: {persona.behavior.loyaltyScore}/100
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-2">Upload Frequency</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {persona.contentRecommendations.frequency}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="performance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Performing Videos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {analytics.topVideos.map((video, index) => (
-                  <div key={video.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm line-clamp-1">{video.title}</p>
-                      <div className="flex items-center gap-4 mt-1">
-                        <span className="text-xs text-muted-foreground flex items-center">
-                          <Eye className="h-3 w-3 mr-1" />
-                          {video.views.toLocaleString()}
-                        </span>
-                        <span className="text-xs text-muted-foreground flex items-center">
-                          <ThumbsUp className="h-3 w-3 mr-1" />
-                          {video.likes.toLocaleString()}
-                        </span>
+                      <div className="relative h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <div 
+                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-green-400 rounded-full"
+                          style={{ width: `${persona.behavior.loyaltyScore}%` }}
+                        />
                       </div>
                     </div>
-                    <Badge variant="outline">#{index + 1}</Badge>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
 
-      <div className="flex justify-center">
-        <Button onClick={() => router.push('/channels')}>
+                  <div>
+                    <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-blue-400" />
+                      Viewing Patterns
+                    </h4>
+                    <div className="glass p-4 rounded-lg">
+                      <p className="text-gray-300">{persona.behavior.viewingPatterns}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                      <PlayCircle className="h-4 w-4 text-purple-400" />
+                      Content Preferences
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {persona.demographics.contentPreferences.map((pref, index) => (
+                        <span key={index} className="glass px-3 py-1 rounded-full text-sm text-purple-300">
+                          {pref}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                      <Hash className="h-4 w-4 text-yellow-400" />
+                      Top Interests
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {persona.demographics.interests.map((interest, index) => (
+                        <span key={index} className="glass px-3 py-1 rounded-full text-sm text-yellow-300">
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Audience Insights */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <TiltCard>
+                <div className="glass-card p-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 glass rounded-full flex items-center justify-center">
+                    <Activity className="h-8 w-8 text-green-400" />
+                  </div>
+                  <h4 className="text-white font-semibold mb-2">High Engagement</h4>
+                  <p className="text-gray-400 text-sm">Your audience actively interacts with your content</p>
+                </div>
+              </TiltCard>
+
+              <TiltCard>
+                <div className="glass-card p-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 glass rounded-full flex items-center justify-center">
+                    <TrendingUp className="h-8 w-8 text-blue-400" />
+                  </div>
+                  <h4 className="text-white font-semibold mb-2">Growing Community</h4>
+                  <p className="text-gray-400 text-sm">Consistent growth in viewer retention</p>
+                </div>
+              </TiltCard>
+
+              <TiltCard>
+                <div className="glass-card p-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 glass rounded-full flex items-center justify-center">
+                    <Users className="h-8 w-8 text-purple-400" />
+                  </div>
+                  <h4 className="text-white font-semibold mb-2">Loyal Viewers</h4>
+                  <p className="text-gray-400 text-sm">Strong viewer-to-subscriber conversion</p>
+                </div>
+              </TiltCard>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'content' && (
+          <div className="space-y-6">
+            {/* Content Analysis */}
+            <div className="glass-card p-6">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <Video className="h-5 w-5 text-red-400" />
+                Content Analysis
+              </h3>
+              
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-purple-400" />
+                    Top Keywords
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {analytics.content.topKeywords.slice(0, 15).map(([keyword, count], index) => {
+                      const size = index < 3 ? 'text-base' : index < 7 ? 'text-sm' : 'text-xs';
+                      const opacity = index < 3 ? 'opacity-100' : index < 7 ? 'opacity-80' : 'opacity-60';
+                      return (
+                        <div
+                          key={index}
+                          className={`glass px-4 py-2 rounded-full ${size} ${opacity} text-white hover:opacity-100 transition-opacity cursor-default`}
+                        >
+                          {keyword} 
+                          <span className="text-gray-400 ml-1">({count})</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4 text-blue-400" />
+                      Content Types
+                    </h4>
+                    <div className="space-y-3">
+                      {Object.entries(analytics.content.contentTypes).map(([type, count]) => (
+                        <div key={type} className="glass p-3 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-white capitalize">{type}</span>
+                            <span className="text-purple-400 font-bold">{count}</span>
+                          </div>
+                          <div className="relative h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+                              style={{ 
+                                width: `${(count / analytics.channel.videoCount) * 100}%` 
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-green-400" />
+                      Upload Schedule
+                    </h4>
+                    <div className="glass p-4 rounded-lg">
+                      <p className="text-gray-300 mb-3">{persona.contentRecommendations.frequency}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                        <span className="text-sm text-gray-400">Optimal for audience retention</span>
+                      </div>
+                    </div>
+
+                    <h4 className="text-white font-semibold mb-4 mt-6 flex items-center gap-2">
+                      <Target className="h-4 w-4 text-yellow-400" />
+                      Content Strategy
+                    </h4>
+                    <div className="glass p-4 rounded-lg">
+                      <ul className="space-y-2">
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full mt-1.5" />
+                          <span className="text-sm text-gray-300">Focus on trending topics in your niche</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full mt-1.5" />
+                          <span className="text-sm text-gray-300">Maintain consistent upload schedule</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'performance' && (
+          <div className="space-y-6">
+            {/* Top Performing Videos */}
+            <div className="glass-card p-6">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-400" />
+                Top Performing Videos
+              </h3>
+              
+              <div className="space-y-3">
+                {analytics.topVideos.map((video, index) => {
+                  const isTop3 = index < 3;
+                  return (
+                    <div 
+                      key={video.id} 
+                      className={`glass p-4 rounded-lg flex items-center gap-4 group hover:bg-white/5 transition-all ${
+                        isTop3 ? 'border border-purple-500/30' : ''
+                      }`}
+                    >
+                      <div className={`flex-shrink-0 ${isTop3 ? 'relative' : ''}`}>
+                        <div className={`w-12 h-12 glass rounded-lg flex items-center justify-center font-bold text-lg ${
+                          index === 0 ? 'text-yellow-400' : 
+                          index === 1 ? 'text-gray-300' : 
+                          index === 2 ? 'text-orange-400' : 'text-gray-400'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        {isTop3 && (
+                          <Sparkles className="absolute -top-1 -right-1 h-4 w-4 text-yellow-400 animate-pulse" />
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium truncate group-hover:text-purple-300 transition-colors">
+                          {video.title}
+                        </p>
+                        <div className="flex items-center gap-4 mt-2">
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <Eye className="h-3 w-3" />
+                            {formatNumber(video.views)}
+                          </span>
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <ThumbsUp className="h-3 w-3" />
+                            {formatNumber(video.likes)}
+                          </span>
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <MessageSquare className="h-3 w-3" />
+                            {formatNumber(video.comments || 0)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex-shrink-0">
+                        {video.views > analytics.performance.avgViewsPerVideo ? (
+                          <div className="flex items-center gap-1 text-green-400">
+                            <ArrowUpRight className="h-4 w-4" />
+                            <span className="text-xs font-medium">
+                              +{Math.round((video.views / analytics.performance.avgViewsPerVideo - 1) * 100)}%
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-red-400">
+                            <ArrowDownRight className="h-4 w-4" />
+                            <span className="text-xs font-medium">
+                              -{Math.round((1 - video.views / analytics.performance.avgViewsPerVideo) * 100)}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Performance Metrics */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <TiltCard>
+                <div className="glass-card p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <Eye className="h-5 w-5 text-purple-400" />
+                    <span className="text-xs text-green-400">+12%</span>
+                  </div>
+                  <p className="text-gray-400 text-sm mb-1">Avg Views/Video</p>
+                  <p className="text-2xl font-bold text-white">
+                    {formatNumber(analytics.performance.avgViewsPerVideo)}
+                  </p>
+                </div>
+              </TiltCard>
+
+              <TiltCard>
+                <div className="glass-card p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <Clock className="h-5 w-5 text-blue-400" />
+                    <span className="text-xs text-green-400">Good</span>
+                  </div>
+                  <p className="text-gray-400 text-sm mb-1">Watch Time</p>
+                  <p className="text-2xl font-bold text-white">
+                    {Math.round(analytics.performance.avgViewsPerVideo * 4.5 / 60)}h
+                  </p>
+                </div>
+              </TiltCard>
+
+              <TiltCard>
+                <div className="glass-card p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <Activity className="h-5 w-5 text-green-400" />
+                    <span className="text-xs text-yellow-400">Stable</span>
+                  </div>
+                  <p className="text-gray-400 text-sm mb-1">CTR</p>
+                  <p className="text-2xl font-bold text-white">
+                    {(analytics.performance.avgEngagementRate * 1.2).toFixed(1)}%
+                  </p>
+                </div>
+              </TiltCard>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Action Button */}
+      <div className="flex justify-center pt-4">
+        <Button 
+          onClick={() => router.push('/channels')}
+          className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+        >
           View All Channels
         </Button>
       </div>

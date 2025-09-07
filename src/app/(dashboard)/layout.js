@@ -21,7 +21,8 @@ import {
   Home,
   ChevronRight,
   ChevronLeft,
-  Zap
+  Zap,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +30,7 @@ const sidebarItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/scripts', label: 'Scripts', icon: FileText },
   { href: '/channels', label: 'Channels', icon: Play },
+  { href: '/trending', label: 'Trending', icon: TrendingUp },
   { href: '/research', label: 'Research', icon: Brain },
   { href: '/voice', label: 'Voice Training', icon: Mic },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
