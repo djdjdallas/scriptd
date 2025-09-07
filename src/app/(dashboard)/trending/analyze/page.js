@@ -34,143 +34,115 @@ import Link from 'next/link';
 
 export default function AnalyzeChannelPage() {
   const searchParams = useSearchParams();
-  const channelName = searchParams.get('channel') || 'TechVision Pro';
+  const channelId = searchParams.get('channelId');
+  const channelName = searchParams.get('channel') || 'Channel';
   const [channelData, setChannelData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    fetchChannelAnalysis();
-  }, [channelName]);
+    if (channelId) {
+      fetchChannelAnalysis();
+    } else {
+      setError('No channel ID provided');
+      setLoading(false);
+    }
+  }, [channelId]);
 
   const fetchChannelAnalysis = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // Mock comprehensive channel analysis data
-      const mockChannelData = {
-        name: channelName,
-        handle: '@' + channelName.toLowerCase().replace(/\s+/g, ''),
-        thumbnail: '/youtube-default.svg',
-        verified: true,
-        category: 'Technology',
-        description: 'Tech reviews, AI tutorials, and cutting-edge technology insights',
-        
-        // Basic stats
-        stats: {
-          subscribers: '2.5M',
-          totalViews: '185M',
-          totalVideos: '342',
-          joinedDate: 'Jan 2019',
-          growth: '+45K/week',
-          avgViews: '500K',
-          uploadFreq: '3/week',
-          engagementRate: '8.5%'
-        },
-        
-        // Growth metrics
-        growth: {
-          subscriberGrowth: [
-            { month: 'Jan', count: 2100000 },
-            { month: 'Feb', count: 2200000 },
-            { month: 'Mar', count: 2350000 },
-            { month: 'Apr', count: 2500000 }
-          ],
-          viewsGrowth: [
-            { month: 'Jan', views: 15000000 },
-            { month: 'Feb', views: 18000000 },
-            { month: 'Mar', views: 22000000 },
-            { month: 'Apr', views: 25000000 }
-          ]
-        },
-        
-        // Performance scores
-        scores: {
-          overall: 92,
-          content: 88,
-          consistency: 95,
-          engagement: 85,
-          growth: 90,
-          potential: 94
-        },
-        
-        // Recent videos
-        recentVideos: [
-          {
-            id: 1,
-            title: 'ChatGPT vs Claude: Ultimate Comparison',
-            views: '2.3M',
-            likes: '98K',
-            comments: '8.5K',
-            duration: '15:42',
-            uploadedAt: '2 days ago',
-            performance: 'above'
-          },
-          {
-            id: 2,
-            title: 'Apple Vision Pro: 30 Days Later',
-            views: '1.5M',
-            likes: '62K',
-            comments: '4.2K',
-            duration: '18:30',
-            uploadedAt: '5 days ago',
-            performance: 'average'
-          },
-          {
-            id: 3,
-            title: 'The Future of AI is Here',
-            views: '890K',
-            likes: '41K',
-            comments: '2.8K',
-            duration: '12:15',
-            uploadedAt: '1 week ago',
-            performance: 'below'
-          }
-        ],
-        
-        // Content patterns
-        contentPatterns: {
-          bestPerforming: ['AI Tools', 'Product Reviews', 'Comparisons'],
-          uploadSchedule: ['Tuesday', 'Thursday', 'Saturday'],
-          optimalLength: '12-18 minutes',
-          topKeywords: ['AI', 'ChatGPT', 'Technology', 'Review', 'Tutorial'],
-          thumbnailStyle: 'High contrast, face + product, bold text'
-        },
-        
-        // Strengths and weaknesses
-        analysis: {
-          strengths: [
-            'Consistent upload schedule',
-            'High production quality',
-            'Strong audience engagement',
-            'Trending topic coverage',
-            'Clear value proposition'
-          ],
-          weaknesses: [
-            'Limited shorts content',
-            'Could improve CTR on older videos',
-            'Opportunity for more collaborations'
-          ],
-          opportunities: [
-            'Expand into YouTube Shorts',
-            'Create series-based content',
-            'Develop signature format',
-            'Build email list',
-            'Launch membership program'
-          ]
-        },
-        
-        // Competitor comparison
-        competitors: [
-          { name: 'Tech Guru', subscribers: '3.1M', growth: '+38K/week', engagement: '7.2%' },
-          { name: 'Digital Pro', subscribers: '1.8M', growth: '+22K/week', engagement: '9.1%' },
-          { name: 'AI Master', subscribers: '2.2M', growth: '+41K/week', engagement: '6.8%' }
-        ]
-      };
+      const response = await fetch(`/api/trending/channel?channelId=${channelId}&channelName=${encodeURIComponent(channelName)}`);
+      const result = await response.json();
       
-      setChannelData(mockChannelData);
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch channel data');
+      }
+      
+      if (result.success && result.data) {
+        // Transform the API response to match the page's expected format
+        const transformedData = {
+          name: result.data.name,
+          handle: result.data.handle,
+          thumbnail: result.data.thumbnail || '/youtube-default.svg',
+          verified: result.data.stats.subscriberCount > 100000,
+          category: result.data.category || 'Content Creator',
+          description: result.data.description || 'No description available',
+        
+          // Basic stats from real data
+          stats: {
+            subscribers: result.data.stats.subscribers,
+            totalViews: result.data.stats.totalViews,
+            totalVideos: result.data.stats.totalVideos,
+            joinedDate: new Date(result.data.publishedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+            growth: 'Calculating...',
+            avgViews: result.data.metrics.avgViews,
+            uploadFreq: result.data.metrics.uploadFrequency,
+            engagementRate: result.data.metrics.engagementRate
+          },
+        
+          // Growth metrics (simplified for now)
+          growth: {
+            subscriberGrowth: generateGrowthData(result.data.stats.subscriberCount),
+            viewsGrowth: generateViewsGrowth(result.data.stats.viewCount)
+          },
+        
+          // Performance scores from real analysis
+          scores: result.data.scores || {
+            overall: 75,
+            content: 70,
+            consistency: 70,
+            engagement: 70,
+            growth: 70,
+            potential: 70
+          },
+        
+          // Recent videos from real data
+          recentVideos: result.data.recentVideos && result.data.recentVideos.length > 0 
+            ? result.data.recentVideos.map((video, index) => ({
+              id: video.id || index + 1,
+              title: video.title,
+              views: video.views,
+              likes: video.likes,
+              comments: video.comments,
+              duration: formatDuration(video.duration),
+              uploadedAt: getTimeAgo(video.publishedAt),
+              performance: getVideoPerformance(video.viewsRaw, result.data.metrics.avgViewsRaw)
+            }))
+            : [],
+        
+          // Content patterns from real insights
+          contentPatterns: result.data.insights ? {
+            bestPerforming: result.data.insights.contentPatterns?.topCategories || ['General Content'],
+            uploadSchedule: result.data.insights.bestUploadTimes || ['Regular uploads'],
+            optimalLength: 'Varies by content',
+            topKeywords: extractKeywords(result.data.recentVideos),
+            thumbnailStyle: 'Channel specific style'
+          } : {
+            bestPerforming: ['General Content'],
+            uploadSchedule: ['Regular uploads'],
+            optimalLength: 'Varies',
+            topKeywords: [],
+            thumbnailStyle: 'Standard'
+          },
+        
+          // Strengths and weaknesses based on real data
+          analysis: generateAnalysis(result.data),
+          
+          // Competitor comparison (would need additional data)
+          competitors: []
+        };
+        
+        setChannelData(transformedData);
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (error) {
       console.error('Error analyzing channel:', error);
-      toast.error('Failed to analyze channel');
+      setError(error.message);
+      toast.error(error.message || 'Failed to analyze channel');
     } finally {
       setLoading(false);
     }
@@ -184,13 +156,28 @@ export default function AnalyzeChannelPage() {
     { id: 'compete', label: 'Competition', icon: Users }
   ];
 
+  if (error) {
+    return (
+      <div className="min-h-[600px] flex items-center justify-center">
+        <div className="glass-card p-8 text-center">
+          <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <p className="text-white text-lg mb-2">Failed to analyze channel</p>
+          <p className="text-gray-400 text-sm">{error}</p>
+          <Link href="/trending">
+            <Button className="glass-button mt-4">Back to Trending</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (loading || !channelData) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
         <div className="glass-card p-8 text-center">
           <Youtube className="h-12 w-12 text-red-400 animate-pulse mx-auto mb-4" />
           <p className="text-white text-lg">Analyzing channel...</p>
-          <p className="text-gray-400 text-sm mt-2">This may take a moment</p>
+          <p className="text-gray-400 text-sm mt-2">Fetching real-time data from YouTube</p>
         </div>
       </div>
     );
@@ -540,4 +527,227 @@ export default function AnalyzeChannelPage() {
       </div>
     </div>
   );
+}
+
+// Helper functions
+function generateGrowthData(subscriberCount) {
+  // Generate mock growth data based on current count
+  const base = subscriberCount || 1000;
+  return [
+    { month: 'Month 1', count: Math.round(base * 0.7) },
+    { month: 'Month 2', count: Math.round(base * 0.8) },
+    { month: 'Month 3', count: Math.round(base * 0.9) },
+    { month: 'Current', count: base }
+  ];
+}
+
+function generateViewsGrowth(viewCount) {
+  const base = viewCount || 10000;
+  return [
+    { month: 'Month 1', views: Math.round(base * 0.7) },
+    { month: 'Month 2', views: Math.round(base * 0.8) },
+    { month: 'Month 3', views: Math.round(base * 0.9) },
+    { month: 'Current', views: base }
+  ];
+}
+
+function formatDuration(duration) {
+  if (!duration || duration === 'N/A') return 'N/A';
+  
+  // Parse ISO 8601 duration (PT15M33S)
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return duration;
+  
+  const hours = match[1] || 0;
+  const minutes = match[2] || 0;
+  const seconds = match[3] || 0;
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function getTimeAgo(dateString) {
+  if (!dateString) return 'Recently';
+  
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+  
+  const intervals = {
+    year: 31536000,
+    month: 2592000,
+    week: 604800,
+    day: 86400,
+    hour: 3600,
+    minute: 60
+  };
+  
+  for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+    const interval = Math.floor(seconds / secondsInUnit);
+    if (interval >= 1) {
+      return `${interval} ${unit}${interval === 1 ? '' : 's'} ago`;
+    }
+  }
+  
+  return 'Just now';
+}
+
+function getVideoPerformance(views, avgViews) {
+  if (!avgViews || avgViews === 0) return 'average';
+  const ratio = views / avgViews;
+  if (ratio > 1.5) return 'above';
+  if (ratio < 0.5) return 'below';
+  return 'average';
+}
+
+function extractKeywords(videos) {
+  if (!videos || videos.length === 0) return [];
+  
+  // Extract common words from video titles
+  const words = {};
+  videos.forEach(video => {
+    if (video.title) {
+      video.title.split(/\s+/).forEach(word => {
+        const cleaned = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (cleaned.length > 3) {
+          words[cleaned] = (words[cleaned] || 0) + 1;
+        }
+      });
+    }
+  });
+  
+  // Sort by frequency and return top 5
+  return Object.entries(words)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([word]) => word.charAt(0).toUpperCase() + word.slice(1));
+}
+
+function extractInterests(description, videos) {
+  const interests = new Set();
+  
+  // Common tech/gaming/lifestyle keywords
+  const categories = {
+    'Technology': ['tech', 'ai', 'software', 'hardware', 'computer', 'phone', 'gadget'],
+    'Gaming': ['game', 'gaming', 'play', 'stream', 'esports', 'console'],
+    'Education': ['learn', 'tutorial', 'how to', 'guide', 'teach', 'course'],
+    'Entertainment': ['funny', 'comedy', 'react', 'challenge', 'vlog'],
+    'Lifestyle': ['life', 'day', 'routine', 'fashion', 'beauty', 'travel'],
+    'Business': ['business', 'money', 'finance', 'invest', 'startup', 'entrepreneur']
+  };
+  
+  const combinedText = (description + ' ' + videos.map(v => v.title || '').join(' ')).toLowerCase();
+  
+  for (const [category, keywords] of Object.entries(categories)) {
+    if (keywords.some(keyword => combinedText.includes(keyword))) {
+      interests.add(category);
+    }
+  }
+  
+  return Array.from(interests).slice(0, 5);
+}
+
+function generateAnalysis(data) {
+  const analysis = {
+    strengths: [],
+    weaknesses: [],
+    opportunities: []
+  };
+  
+  // Analyze strengths
+  if (data.stats.subscriberCount > 100000) {
+    analysis.strengths.push('Large subscriber base');
+  }
+  if (data.metrics.engagementRateRaw > 5) {
+    analysis.strengths.push('High audience engagement');
+  }
+  if (data.metrics.uploadFrequency && data.metrics.uploadFrequency !== 'Irregular') {
+    analysis.strengths.push('Consistent upload schedule');
+  }
+  if (data.recentVideos && data.recentVideos.length >= 5) {
+    analysis.strengths.push('Active content creation');
+  }
+  if (data.metrics.viewsPerSubscriber > 50) {
+    analysis.strengths.push('Strong view-to-subscriber ratio');
+  }
+  
+  // Identify weaknesses
+  if (data.metrics.engagementRateRaw < 2) {
+    analysis.weaknesses.push('Low engagement rate');
+  }
+  if (data.metrics.uploadFrequency === 'Irregular') {
+    analysis.weaknesses.push('Inconsistent upload schedule');
+  }
+  if (data.stats.subscriberCount < 10000) {
+    analysis.weaknesses.push('Small subscriber base');
+  }
+  if (data.metrics.avgViewsRaw < 1000) {
+    analysis.weaknesses.push('Low average views');
+  }
+  
+  // Suggest opportunities
+  if (data.stats.subscriberCount < 100000) {
+    analysis.opportunities.push('Focus on subscriber growth strategies');
+  }
+  if (data.metrics.engagementRateRaw < 5) {
+    analysis.opportunities.push('Improve audience engagement tactics');
+  }
+  analysis.opportunities.push('Experiment with YouTube Shorts');
+  analysis.opportunities.push('Collaborate with similar channels');
+  analysis.opportunities.push('Optimize video SEO and thumbnails');
+  
+  // Ensure we have at least some items in each category
+  if (analysis.strengths.length === 0) {
+    analysis.strengths.push('Active YouTube channel');
+  }
+  if (analysis.weaknesses.length === 0) {
+    analysis.weaknesses.push('Room for improvement in metrics');
+  }
+  
+  return analysis;
+}
+
+function generateRecommendations(data) {
+  const recommendations = [];
+  
+  // Content recommendations
+  if (data.metrics.avgViewsRaw > 10000) {
+    recommendations.push({
+      type: 'content',
+      title: 'Maintain successful content strategy',
+      description: 'Your videos are performing well, keep the current approach',
+      priority: 'high'
+    });
+  } else {
+    recommendations.push({
+      type: 'content',
+      title: 'Analyze top-performing videos',
+      description: 'Study what makes your best videos successful and replicate',
+      priority: 'high'
+    });
+  }
+  
+  // Engagement recommendations
+  if (data.metrics.engagementRateRaw < 3) {
+    recommendations.push({
+      type: 'optimization',
+      title: 'Boost engagement rate',
+      description: `Current rate is ${data.metrics.engagementRate}, aim for 5%+`,
+      priority: 'high'
+    });
+  }
+  
+  // Growth recommendations
+  if (data.stats.subscriberCount < 100000) {
+    recommendations.push({
+      type: 'growth',
+      title: 'Focus on subscriber acquisition',
+      description: 'Implement CTAs, create compelling channel trailers',
+      priority: 'medium'
+    });
+  }
+  
+  return recommendations;
 }

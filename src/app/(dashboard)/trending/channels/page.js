@@ -32,16 +32,21 @@ export default function AllRisingChannelsPage() {
 
   useEffect(() => {
     fetchAllChannels();
-  }, []);
+  }, [filterCategory]); // Re-fetch when category changes
 
   useEffect(() => {
     filterAndSortChannels();
-  }, [channels, searchQuery, sortBy, filterCategory]);
+  }, [channels, searchQuery, sortBy]); // Remove filterCategory from here since we're fetching new data
 
   const fetchAllChannels = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/trending?limit=50');
+      // Include category parameter in API call
+      const params = new URLSearchParams({
+        limit: '50',
+        category: filterCategory
+      });
+      const response = await fetch(`/api/trending?${params}`);
       const data = await response.json();
       
       if (data.success) {
@@ -119,12 +124,7 @@ export default function AllRisingChannelsPage() {
       );
     }
 
-    // Apply category filter
-    if (filterCategory !== 'all') {
-      filtered = filtered.filter(channel =>
-        channel.category.toLowerCase() === filterCategory.toLowerCase()
-      );
-    }
+    // Category filtering is now handled by the API, no need to filter here
 
     // Apply sorting
     switch (sortBy) {

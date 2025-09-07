@@ -22,7 +22,8 @@ import {
   ChevronRight,
   ChevronLeft,
   Zap,
-  TrendingUp
+  TrendingUp,
+  Bookmark
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,7 @@ const sidebarItems = [
   { href: '/scripts', label: 'Scripts', icon: FileText },
   { href: '/channels', label: 'Channels', icon: Play },
   { href: '/trending', label: 'Trending', icon: TrendingUp },
+  { href: '/saved', label: 'Saved Videos', icon: Bookmark },
   { href: '/research', label: 'Research', icon: Brain },
   { href: '/voice', label: 'Voice Training', icon: Mic },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
@@ -237,7 +239,8 @@ export default function DashboardLayout({ children }) {
                 onMouseEnter={() => setHoveredItem(item.href)}
                 onMouseLeave={() => setHoveredItem(null)}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group relative",
+                  "flex items-center gap-3 rounded-xl transition-all duration-300 group relative",
+                  sidebarCollapsed ? "justify-center px-3 py-3" : "px-4 py-3",
                   isActive
                     ? "glass bg-purple-500/20 text-white"
                     : "hover:glass hover:bg-white/10 text-gray-300 hover:text-white"

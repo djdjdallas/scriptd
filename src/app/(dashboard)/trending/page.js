@@ -579,13 +579,13 @@ export default function TrendingPage() {
                       </div>
 
                       <div className="flex gap-2">
-                        <Link href={`/trending/analyze?channel=${encodeURIComponent(channel.name)}`} className="flex-1">
+                        <Link href={`/trending/analyze?channelId=${channel.id}&channel=${encodeURIComponent(channel.name)}`} className="flex-1">
                           <Button size="sm" className="glass-button w-full text-white">
                             <Eye className="mr-1 h-3 w-3" />
                             Analyze
                           </Button>
                         </Link>
-                        <Link href={`/trending/follow?channel=${encodeURIComponent(channel.name)}`} className="flex-1">
+                        <Link href={`/trending/follow?channelId=${channel.id}&channel=${encodeURIComponent(channel.name)}`} className="flex-1">
                           <Button size="sm" className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 w-full text-white">
                             <Users className="mr-1 h-3 w-3" />
                             Follow Trend

@@ -31,6 +31,31 @@ import {
   Trophy
 } from 'lucide-react';
 
+// Helper function to calculate weekly activity from actual scripts
+const calculateWeeklyActivity = (scripts) => {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekActivity = Array.from({ length: 7 }, (_, i) => ({
+    day: days[i],
+    scripts: 0,
+    views: 0
+  }));
+
+  // Get scripts from the last 7 days
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+  scripts.forEach(script => {
+    const scriptDate = new Date(script.created_at);
+    if (scriptDate >= oneWeekAgo) {
+      const dayIndex = scriptDate.getDay();
+      weekActivity[dayIndex].scripts += 1;
+      weekActivity[dayIndex].views += script.metadata?.views || script.views || 0;
+    }
+  });
+
+  return weekActivity;
+};
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -53,37 +78,56 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
-        // Fetch user stats
-        const [scriptsResponse, channelsResponse, userResponse] = await Promise.all([
-          supabase.from('scripts').select('*').eq('user_id', user.id),
-          supabase.from('channels').select('*').eq('user_id', user.id),
-          supabase.from('users').select('credits').eq('id', user.id).single()
-        ]);
-
-        const scripts = scriptsResponse.data || [];
+        // First fetch user's channels
+        const channelsResponse = await supabase
+          .from('channels')
+          .select('*')
+          .eq('user_id', user.id);
+        
         const channels = channelsResponse.data || [];
+        const channelIds = channels.map(c => c.id);
+        
+        // Fetch scripts for all user's channels
+        let scripts = [];
+        if (channelIds.length > 0) {
+          const scriptsResponse = await supabase
+            .from('scripts')
+            .select('*, channels(name)')
+            .in('channel_id', channelIds)
+            .order('created_at', { ascending: false });
+          scripts = scriptsResponse.data || [];
+        }
+        
+        // Fetch user credits
+        const userResponse = await supabase
+          .from('users')
+          .select('credits')
+          .eq('id', user.id)
+          .single();
+        
         const userData = userResponse.data || { credits: 0 };
 
-        // Calculate total views (mock data for now)
-        const totalViews = scripts.reduce((sum, script) => sum + (script.views || Math.floor(Math.random() * 1000)), 0);
+        // Calculate total views (use metadata if available, otherwise 0)
+        const totalViews = scripts.reduce((sum, script) => {
+          const views = script.metadata?.views || script.views || 0;
+          return sum + views;
+        }, 0);
 
-        // Get recent scripts
-        const recentScripts = scripts
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          .slice(0, 5);
+        // Get recent scripts (already sorted by created_at from query)
+        const recentScripts = scripts.slice(0, 5);
 
-        // Get popular scripts (mock data)
+        // Get popular scripts (based on available data)
         const popularScripts = scripts
-          .map(script => ({ ...script, views: script.views || Math.floor(Math.random() * 1000) }))
+          .map(script => ({ 
+            ...script, 
+            views: script.metadata?.views || script.views || 0 
+          }))
+          .filter(script => script.views > 0) // Only show scripts with actual view data
           .sort((a, b) => b.views - a.views)
           .slice(0, 3);
 
-        // Generate weekly activity (mock data)
-        const weeklyActivity = Array.from({ length: 7 }, (_, i) => ({
-          day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i],
-          scripts: Math.floor(Math.random() * 5),
-          views: Math.floor(Math.random() * 200)
-        }));
+        // Calculate weekly activity based on actual script creation dates
+        const weeklyActivity = calculateWeeklyActivity(scripts);
 
         setStats({
           totalScripts: scripts.length,

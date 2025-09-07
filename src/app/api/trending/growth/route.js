@@ -10,25 +10,89 @@ export async function GET(request) {
     const supabase = await createClient();
 
     // Get trending topics with growth rates
-    const { data: topicsWithGrowth, error: topicsError } = await supabase
-      .rpc('get_trending_topics_with_growth', {
-        p_category: category === 'all' ? null : category,
-        p_limit: limit
-      });
-
-    if (topicsError) {
-      console.error('Error fetching topics with growth:', topicsError);
+    // Note: RPC functions have SQL ambiguity issues, using direct queries instead
+    let topicsWithGrowth = [];
+    let channelsWithGrowth = [];
+    
+    try {
+      // Fetch recent topic history data
+      const { data: recentTopics, error: topicsError } = await supabase
+        .from('trending_topics_history')
+        .select('*')
+        .order('recorded_at', { ascending: false })
+        .limit(limit * 2);
+      
+      if (topicsError) {
+        console.error('Error fetching topics:', topicsError);
+      } else if (recentTopics && recentTopics.length > 0) {
+        // Group by topic and calculate growth
+        const topicGroups = {};
+        recentTopics.forEach(record => {
+          if (!topicGroups[record.topic_name]) {
+            topicGroups[record.topic_name] = [];
+          }
+          topicGroups[record.topic_name].push(record);
+        });
+        
+        topicsWithGrowth = Object.entries(topicGroups)
+          .map(([topicName, records]) => {
+            const latestScore = records[0]?.score || 0;
+            const previousScore = records[1]?.score || latestScore;
+            const growthRate = previousScore > 0 ? ((latestScore - previousScore) / previousScore * 100) : 0;
+            
+            return {
+              topic_name: topicName,
+              category: records[0]?.category || 'unknown',
+              current_score: latestScore,
+              growth_rate: growthRate.toFixed(2)
+            };
+          })
+          .sort((a, b) => b.growth_rate - a.growth_rate)
+          .slice(0, limit);
+      }
+    } catch (err) {
+      console.error('Error processing topics:', err);
     }
-
-    // Get trending channels with growth rates
-    const { data: channelsWithGrowth, error: channelsError } = await supabase
-      .rpc('get_trending_channels_with_growth', {
-        p_category: category === 'all' ? null : category,
-        p_limit: limit
-      });
-
-    if (channelsError) {
-      console.error('Error fetching channels with growth:', channelsError);
+    
+    try {
+      // Fetch recent channel history data
+      const { data: recentChannels, error: channelsError } = await supabase
+        .from('trending_channels_history')
+        .select('*')
+        .order('recorded_at', { ascending: false })
+        .limit(limit * 2);
+      
+      if (channelsError) {
+        console.error('Error fetching channels:', channelsError);
+      } else if (recentChannels && recentChannels.length > 0) {
+        // Group by channel and calculate growth
+        const channelGroups = {};
+        recentChannels.forEach(record => {
+          if (!channelGroups[record.channel_name]) {
+            channelGroups[record.channel_name] = [];
+          }
+          channelGroups[record.channel_name].push(record);
+        });
+        
+        channelsWithGrowth = Object.entries(channelGroups)
+          .map(([channelName, records]) => {
+            const latestViews = records[0]?.avg_views || 0;
+            const previousViews = records[1]?.avg_views || latestViews;
+            const growthRate = previousViews > 0 ? ((latestViews - previousViews) / previousViews * 100) : 0;
+            
+            return {
+              channel_name: channelName,
+              channel_id: records[0]?.channel_id,
+              category: records[0]?.category || 'unknown',
+              current_views: latestViews,
+              view_growth_rate: growthRate.toFixed(2)
+            };
+          })
+          .sort((a, b) => b.view_growth_rate - a.view_growth_rate)
+          .slice(0, limit);
+      }
+    } catch (err) {
+      console.error('Error processing channels:', err);
     }
 
     // Calculate historical growth trends
