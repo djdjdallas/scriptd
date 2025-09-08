@@ -24,7 +24,8 @@ import {
   Volume2,
   FileAudio,
   Clock,
-  TrendingUp
+  TrendingUp,
+  Trash2
 } from 'lucide-react';
 
 export default function VoiceTrainingPage() {
@@ -37,6 +38,8 @@ export default function VoiceTrainingPage() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isTraining, setIsTraining] = useState(false);
   const [activeProfile, setActiveProfile] = useState(null);
+  const [deletingProfile, setDeletingProfile] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -109,6 +112,37 @@ export default function VoiceTrainingPage() {
     }
   };
 
+  const deleteVoiceProfile = async (profileId) => {
+    try {
+      const response = await fetch(`/api/voice/${profileId}`, {
+        method: 'DELETE'
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        toast({
+          title: "Profile Deleted",
+          description: "Voice profile has been deleted successfully"
+        });
+        
+        // Remove from local state
+        setVoiceProfiles(voiceProfiles.filter(p => p.id !== profileId));
+        setShowDeleteConfirm(false);
+        setDeletingProfile(null);
+      } else {
+        throw new Error(result.error || 'Failed to delete profile');
+      }
+    } catch (error) {
+      console.error('Error deleting voice profile:', error);
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete voice profile",
+        variant: "destructive"
+      });
+    }
+  };
+
   const startTraining = async () => {
     if (!selectedChannel) {
       toast({
@@ -132,19 +166,19 @@ export default function VoiceTrainingPage() {
     setTrainingStatus('Preparing training data...');
     
     try {
-      // In a real implementation, you would:
-      // 1. Extract text from audio/video files
-      // 2. Process and prepare samples
-      // 3. Send to the training API
+      // Prepare training data
+      let trainingSamples = [];
       
-      // For now, we'll use mock samples
-      const mockSamples = [
-        "Hey everyone, welcome back to my channel! Today we're going to explore something really exciting that I've been working on for the past few weeks. I know you've been asking about this topic in the comments, so I'm thrilled to finally share it with you.",
-        "So let me break this down for you in a way that's super easy to understand. I always like to start with the basics because I know not everyone watching has the same level of experience, and that's totally okay! We all start somewhere, right?",
-        "What I love about this approach is how practical it is. You don't need any fancy equipment or years of experience. Anyone can do this from home, and I'm going to show you exactly how step by step. Make sure you stick around until the end because I have a special bonus tip that will really take your results to the next level.",
-        "Before we dive in, I want to thank everyone who's been supporting the channel. Your comments and feedback mean the world to me, and they help me create better content for you. If you're new here, consider subscribing and hitting that notification bell so you don't miss any future videos."
-      ];
-
+      // Use uploaded file content if available
+      if (selectedFile) {
+        // In a real implementation, extract text from the file
+        // For now, we'll pass an indicator that a file was uploaded
+        trainingSamples = [`Content from uploaded file: ${selectedFile.name}`];
+      }
+      
+      // If no file but channel has videos, the API will fetch from YouTube
+      // The API now handles fetching real video data and analyzing it
+      
       const profileName = `${selectedChannel.title || selectedChannel.name} Voice`;
       
       const response = await fetch('/api/voice/train', {
@@ -155,7 +189,7 @@ export default function VoiceTrainingPage() {
         body: JSON.stringify({
           channelId: selectedChannel.id,
           profileName: profileName,
-          samples: mockSamples,
+          samples: trainingSamples, // Empty array will trigger YouTube fetch in API
           description: `Voice profile for ${selectedChannel.title || selectedChannel.name} channel`
         })
       });
@@ -462,11 +496,81 @@ export default function VoiceTrainingPage() {
                   </div>
                 </div>
 
-                {activeProfile === profile.id && (
-                  <div className="mt-4 pt-4 border-t border-white/10 animate-reveal">
+                {/* Style Analysis Details */}
+                {activeProfile === profile.id && profile.parameters && (
+                  <div className="mt-4 pt-4 border-t border-white/10 animate-reveal space-y-4">
+                    {/* Style Characteristics */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="glass p-3 rounded-lg">
+                        <p className="text-xs text-gray-400 mb-1">Tone</p>
+                        <p className="text-sm text-white capitalize">{profile.parameters.formality || 'Neutral'}</p>
+                      </div>
+                      <div className="glass p-3 rounded-lg">
+                        <p className="text-xs text-gray-400 mb-1">Enthusiasm</p>
+                        <p className="text-sm text-white capitalize">{profile.parameters.enthusiasm || 'Medium'}</p>
+                      </div>
+                      <div className="glass p-3 rounded-lg">
+                        <p className="text-xs text-gray-400 mb-1">Avg Words/Sentence</p>
+                        <p className="text-sm text-white">{profile.parameters.avgWordsPerSentence || 15}</p>
+                      </div>
+                      <div className="glass p-3 rounded-lg">
+                        <p className="text-xs text-gray-400 mb-1">Readability</p>
+                        <p className="text-sm text-white">{profile.parameters.readability || 70}/100</p>
+                      </div>
+                    </div>
+
+                    {/* Common Patterns */}
+                    {(profile.parameters.catchphrases?.length > 0 || profile.parameters.greetings?.length > 0) && (
+                      <div className="glass p-4 rounded-lg">
+                        <h4 className="text-sm font-medium text-white mb-2">Detected Patterns</h4>
+                        <div className="space-y-2">
+                          {profile.parameters.greetings?.length > 0 && (
+                            <div>
+                              <p className="text-xs text-gray-400 mb-1">Common Greetings:</p>
+                              <div className="flex flex-wrap gap-2">
+                                {profile.parameters.greetings.map((greeting, i) => (
+                                  <span key={i} className="text-xs glass px-2 py-1 rounded text-purple-300">
+                                    {greeting}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {profile.parameters.catchphrases?.length > 0 && (
+                            <div>
+                              <p className="text-xs text-gray-400 mb-1">Catchphrases:</p>
+                              <div className="flex flex-wrap gap-2">
+                                {profile.parameters.catchphrases.map((phrase, i) => (
+                                  <span key={i} className="text-xs glass px-2 py-1 rounded text-pink-300">
+                                    {phrase}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Top Words */}
+                    {profile.parameters.topWords?.length > 0 && (
+                      <div className="glass p-4 rounded-lg">
+                        <h4 className="text-sm font-medium text-white mb-2">Vocabulary Focus</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.parameters.topWords.slice(0, 8).map((item, i) => (
+                            <span key={i} className="text-xs glass px-2 py-1 rounded">
+                              <span className="text-white">{item.word || item}</span>
+                              {item.count && <span className="text-gray-400 ml-1">({item.count})</span>}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actions */}
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-gray-400">
-                        This voice profile is optimized for {profile.name.toLowerCase()} content
+                        Based on {profile.training_data?.totalWords || 0} words analyzed
                       </p>
                       <div className="flex gap-2">
                         <Button size="sm" className="glass-button text-white">
@@ -475,7 +579,19 @@ export default function VoiceTrainingPage() {
                         </Button>
                         <Button size="sm" className="glass-button text-white">
                           <Zap className="h-3 w-3 mr-1" />
-                          Enhance
+                          Use Style
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          className="glass-button text-red-400 hover:text-red-300"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingProfile(profile);
+                            setShowDeleteConfirm(true);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
                         </Button>
                       </div>
                     </div>
@@ -514,6 +630,37 @@ export default function VoiceTrainingPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && deletingProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-reveal">
+          <div className="glass-card p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold text-white mb-4">Delete Voice Profile?</h3>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to delete the voice profile "{deletingProfile.profile_name || deletingProfile.name}"? 
+              This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                className="glass-button text-gray-300"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeletingProfile(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="glass-button bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                onClick={() => deleteVoiceProfile(deletingProfile.id)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Profile
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

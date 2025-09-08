@@ -146,3 +146,38 @@ export async function GET(request) {
     );
   }
 }
+
+/**
+ * Calculate accuracy score based on analysis quality
+ */
+function calculateAccuracy(analysis) {
+  let score = 0;
+  let maxScore = 0;
+  
+  // Word count contributes to accuracy (more data = better)
+  if (analysis.metrics.totalWords > 1000) score += 30;
+  else if (analysis.metrics.totalWords > 500) score += 20;
+  else if (analysis.metrics.totalWords > 100) score += 10;
+  maxScore += 30;
+  
+  // Sentence variety
+  if (analysis.metrics.totalSentences > 50) score += 20;
+  else if (analysis.metrics.totalSentences > 20) score += 15;
+  else if (analysis.metrics.totalSentences > 10) score += 10;
+  maxScore += 20;
+  
+  // Pattern detection
+  if (analysis.patterns.greetings.length > 0) score += 10;
+  if (analysis.patterns.catchphrases.length > 0) score += 10;
+  if (Object.keys(analysis.patterns.fillerWords).length > 0) score += 10;
+  maxScore += 30;
+  
+  // Vocabulary richness
+  if (analysis.vocabulary.topWords.length >= 10) score += 10;
+  if (analysis.vocabulary.topPhrases.length >= 5) score += 10;
+  maxScore += 20;
+  
+  // Calculate percentage
+  const accuracy = Math.round((score / maxScore) * 100);
+  return Math.max(20, Math.min(100, accuracy)); // Clamp between 20-100
+}
