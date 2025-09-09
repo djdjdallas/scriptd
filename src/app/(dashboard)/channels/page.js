@@ -137,10 +137,10 @@ export default function ChannelsPage() {
             Connect and manage your YouTube channels
           </p>
         </div>
-        <Link href="/channels/connect">
+        <Link href="/channels/add">
           <Button className="glass-button bg-gradient-to-r from-red-500/50 to-pink-500/50 text-white group">
             <Plus className="mr-2 h-4 w-4 group-hover:rotate-90 transition-transform" />
-            Connect Channel
+            Add Channel
           </Button>
         </Link>
       </div>
@@ -155,10 +155,10 @@ export default function ChannelsPage() {
           <p className="text-gray-400 max-w-md mx-auto mb-8">
             Connect your YouTube channel to start analyzing your content and growing your audience with AI-powered insights
           </p>
-          <Link href="/channels/connect">
+          <Link href="/channels/add">
             <Button size="lg" className="glass-button bg-gradient-to-r from-red-500/50 to-pink-500/50 text-white">
               <Plus className="mr-2 h-5 w-5" />
-              Connect Your First Channel
+              Add Your First Channel
             </Button>
           </Link>
           
@@ -300,14 +300,14 @@ export default function ChannelsPage() {
 
           {/* Add New Channel Card */}
           <TiltCard>
-            <Link href="/channels/connect">
+            <Link href="/channels/add">
               <div className="glass-card glass-hover h-full flex flex-col items-center justify-center p-8 group cursor-pointer">
                 <div className="glass w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Plus className="h-8 w-8 text-purple-400" />
                 </div>
                 <h3 className="text-white font-semibold mb-2">Add Channel</h3>
                 <p className="text-sm text-gray-400 text-center">
-                  Connect another YouTube channel
+                  Add or connect a channel
                 </p>
               </div>
             </Link>

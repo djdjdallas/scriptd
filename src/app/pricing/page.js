@@ -119,7 +119,7 @@ export default function PricingPage() {
               <span className="text-2xl font-bold gradient-text">GenScript</span>
             </Link>
             <div className="flex items-center gap-4">
-              <Link href="/auth/login">
+              <Link href="/login">
                 <Button className="glass-button text-white">
                   Sign In
                 </Button>
@@ -182,7 +182,7 @@ export default function PricingPage() {
       </div>
 
       {/* Subscription Plans */}
-      <div className="max-w-7xl mx-auto px-4 mb-20">
+      <div className="max-w-7xl mx-auto px-4 mb-20 overflow-visible">
         <h2 className="text-2xl font-bold text-white mb-8 text-center flex items-center justify-center gap-2">
           <Crown className="h-6 w-6 text-purple-400" />
           Subscription Plans
@@ -195,13 +195,13 @@ export default function PricingPage() {
             return (
               <TiltCard key={plan.id}>
                 <div 
-                  className={`glass-card h-full relative ${
+                  className={`glass-card h-full relative overflow-visible ${
                     isPopular ? "ring-2 ring-purple-400" : ""
                   } animate-reveal`}
                   style={{ animationDelay: `${0.2 + index * 0.1}s` }}
                 >
                   {isPopular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 glass px-3 py-1 rounded-full">
+                    <div className="absolute top-3 left-1/2 -translate-x-1/2 glass px-4 py-1 rounded-full z-10 whitespace-nowrap bg-purple-500/20 border border-purple-400/50">
                       <span className="text-xs text-purple-300 font-semibold flex items-center gap-1">
                         <Star className="h-3 w-3" />
                         Most Popular
@@ -209,7 +209,7 @@ export default function PricingPage() {
                     </div>
                   )}
 
-                  <div className="p-6">
+                  <div className="p-6 pt-12">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-2xl font-bold text-white">{plan.name}</h3>
                     {plan.id === "enterprise" && <Crown className="h-5 w-5 text-yellow-400" />}
@@ -354,7 +354,7 @@ export default function PricingPage() {
                 One-Time Credit Packages
               </h3>
               <div className="space-y-3">
-                {CREDIT_PACKAGES.map((pkg) => {
+                {Object.values(CREDIT_PACKAGES).map((pkg) => {
                   const avgScriptsGPT4 = Math.floor(pkg.credits / 15);
                   const avgScriptsClaude = Math.floor(pkg.credits / 12);
                   const avgScriptsMixtral = Math.floor(pkg.credits / 2);
@@ -412,36 +412,36 @@ export default function PricingPage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {CREDIT_PACKAGES.map((pkg, index) => {
+          {Object.values(CREDIT_PACKAGES).map((pkg, index) => {
             const iconMap = {
-              credits_50: Zap,
-              credits_100: Gem,
-              credits_500: Crown,
+              pack_50: Zap,
+              pack_100: Gem,
+              pack_500: Crown,
             };
             const Icon = iconMap[pkg.id] || CreditCard;
             const colorMap = {
-              credits_50: "from-blue-500/20",
-              credits_100: "from-purple-500/20",
-              credits_500: "from-yellow-500/20",
+              pack_50: "from-blue-500/20",
+              pack_100: "from-purple-500/20",
+              pack_500: "from-yellow-500/20",
             };
 
             return (
               <TiltCard key={pkg.id}>
                 <div 
-                  className={`glass-card glass-hover h-full relative ${
-                    pkg.popular ? "ring-2 ring-purple-400" : ""
+                  className={`glass-card glass-hover h-full relative overflow-visible ${
+                    pkg.badge ? "ring-2 ring-purple-400" : ""
                   } animate-reveal`}
                   style={{ animationDelay: `${0.6 + index * 0.1}s` }}
                 >
-                  {pkg.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 glass px-3 py-1 rounded-full">
+                  {pkg.badge && (
+                    <div className="absolute top-3 left-1/2 -translate-x-1/2 glass px-4 py-1 rounded-full z-10 whitespace-nowrap bg-purple-500/20 border border-purple-400/50">
                       <span className="text-xs text-purple-300 font-semibold">
-                        Best Value
+                        {pkg.badge}
                       </span>
                     </div>
                   )}
 
-                  <div className="p-6 text-center">
+                  <div className="p-6 pt-12 text-center">
                     <div className={`w-16 h-16 glass rounded-xl flex items-center justify-center mx-auto mb-4 bg-gradient-to-br ${colorMap[pkg.id]} to-transparent`}>
                       <Icon className="h-8 w-8 text-white" />
                     </div>
@@ -454,15 +454,10 @@ export default function PricingPage() {
                       <p className="text-3xl font-bold gradient-text">
                         {formatPrice(pkg.price)}
                       </p>
-                      {pkg.savings && (
-                        <Badge className="glass px-2 py-1 text-xs text-green-300 mt-2">
-                          Save {pkg.savings}
-                        </Badge>
-                      )}
                     </div>
                     
                     <p className="text-sm text-gray-400 mb-4">
-                      ${(pkg.price / pkg.credits).toFixed(2)} per credit
+                      ${pkg.perCredit} per credit
                     </p>
 
                     <Button 

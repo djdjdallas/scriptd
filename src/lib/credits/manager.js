@@ -5,8 +5,9 @@ export class CreditManager {
   static async checkBalance(userId) {
     const supabase = createClient();
     
+    // Use the new function that checks for expired credits
     const { data, error } = await supabase
-      .rpc('get_available_credit_balance', { p_user_id: userId });
+      .rpc('get_available_credits', { p_user_id: userId });
     
     if (error) {
       console.error('Error checking credit balance:', error);

@@ -239,32 +239,27 @@ export default function BillingPage() {
       <div>
         <h2 className="text-2xl font-bold mb-4">Buy Credits</h2>
         <div className="grid gap-4 md:grid-cols-3">
-          {CREDIT_PACKAGES.map((pkg) => (
-            <Card key={pkg.id} className={pkg.popular ? 'border-primary' : ''}>
+          {Object.values(CREDIT_PACKAGES).map((pkg) => (
+            <Card key={pkg.id} className={pkg.badge ? 'border-primary' : ''}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">{pkg.credits} Credits</CardTitle>
-                  {pkg.popular && (
-                    <Badge>Most Popular</Badge>
+                  {pkg.badge && (
+                    <Badge>{pkg.badge}</Badge>
                   )}
                 </div>
                 <CardDescription>
                   ${pkg.price}
-                  {pkg.savings && (
-                    <Badge variant="secondary" className="ml-2">
-                      Save {pkg.savings}
-                    </Badge>
-                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    ${(pkg.price / pkg.credits).toFixed(2)} per credit
+                    ${pkg.perCredit} per credit
                   </p>
                   <Button 
                     className="w-full" 
-                    variant={pkg.popular ? 'default' : 'outline'}
+                    variant={pkg.badge === 'Most Popular' ? 'default' : 'outline'}
                     onClick={() => purchaseCredits(pkg.id)}
                     disabled={purchasing}
                   >

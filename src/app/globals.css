@@ -337,5 +337,25 @@
   .stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
   .stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
   .stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
+
+  /* Select Component Styling Fixes */
+  /* Make select trigger text white */
+  button[role="combobox"] span {
+    color: white !important;
+  }
+
+  /* Select dropdown content text */
+  [data-radix-collection-item] {
+    color: white !important;
+  }
+
+  /* Select trigger placeholder and value */
+  [data-placeholder] {
+    color: rgb(156, 163, 175) !important;
+  }
+
+  button[aria-haspopup="listbox"][data-state] > span {
+    color: white !important;
+  }
 }
 

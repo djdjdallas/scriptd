@@ -2,18 +2,10 @@
 
 import { useState, useEffect } from "react";
 import YouTubeTools from "@/components/youtube-tools";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Search,
@@ -27,9 +19,7 @@ import {
   Zap,
   Target,
   Eye,
-  Link2,
   AtSign,
-  FileText,
   Lightbulb,
   Hash,
   Users,
@@ -38,16 +28,7 @@ import {
   Clock,
   ChevronRight,
   Loader2,
-  Plus,
   Wrench,
-  Video,
-  ThumbsUp,
-  Tag,
-  Image,
-  FileVideo,
-  PenTool,
-  Download,
-  AlertCircle,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -164,7 +145,6 @@ export default function YouTubeResearchPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [channelInput, setChannelInput] = useState("");
   const [videoUrlInput, setVideoUrlInput] = useState("");
   const [activeTab, setActiveTab] = useState("chat");
@@ -243,7 +223,6 @@ export default function YouTubeResearchPage() {
   };
 
   const handleTemplateClick = (template) => {
-    setSelectedTemplate(template);
     let prompt = template.prompt;
 
     // Replace placeholders based on template
@@ -293,155 +272,174 @@ export default function YouTubeResearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="p-3 bg-red-600 rounded-full">
-              <Youtube className="h-8 w-8 text-white" />
+    <div className="space-y-6">
+      {/* Background Effects */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 right-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-red-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
+      </div>
+
+      {/* Header */}
+      <div className="animate-reveal">
+        <h1 className="text-4xl font-bold text-white flex items-center gap-3">
+          <Youtube className="h-10 w-10 text-red-400 neon-glow" />
+          YouTube Research
+          <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
+        </h1>
+        <p className="text-gray-400 mt-2">
+          AI-powered insights for viral content and channel growth
+        </p>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
+        {/* Analyze Channel */}
+        <div className="glass-card p-6 glass-hover group">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <AtSign className="h-5 w-5 text-purple-400" />
             </div>
-            <h1 className="text-4xl font-bold text-white">
-              YouTube Research Hub
-            </h1>
+            <div>
+              <h3 className="text-lg font-semibold text-white">
+                Analyze Channel
+              </h3>
+              <p className="text-xs text-gray-400">Deep dive into any YouTube channel</p>
+            </div>
           </div>
-          <p className="text-gray-400 text-lg">
-            Your AI partner for viral YouTube content ideas and channel analysis
-          </p>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter @handle or channel name..."
+              value={channelInput}
+              onChange={(e) => setChannelInput(e.target.value)}
+              onKeyPress={(e) =>
+                e.key === "Enter" && handleChannelAnalysis()
+              }
+              className="glass-input text-white"
+            />
+            <Button
+              onClick={handleChannelAnalysis}
+              disabled={!channelInput.trim() || isLoading}
+              className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {/* Channel Analysis */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <AtSign className="h-5 w-5 text-purple-400" />
-                <h3 className="text-lg font-semibold text-white">
-                  Analyze Channel
-                </h3>
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="@MrBeast or channel name..."
-                  value={channelInput}
-                  onChange={(e) => setChannelInput(e.target.value)}
-                  onKeyPress={(e) =>
-                    e.key === "Enter" && handleChannelAnalysis()
-                  }
-                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                />
-                <Button
-                  onClick={handleChannelAnalysis}
-                  disabled={!channelInput.trim() || isLoading}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Video Analysis */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Link2 className="h-5 w-5 text-red-400" />
-                <h3 className="text-lg font-semibold text-white">
-                  Analyze Video
-                </h3>
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Paste YouTube video URL..."
-                  value={videoUrlInput}
-                  onChange={(e) => setVideoUrlInput(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleVideoAnalysis()}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                />
-                <Button
-                  onClick={handleVideoAnalysis}
-                  disabled={!videoUrlInput.trim() || isLoading}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  <PlayCircle className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Analyze Video */}
+        <div className="glass-card p-6 glass-hover group">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <PlayCircle className="h-5 w-5 text-red-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">
+                Analyze Video
+              </h3>
+              <p className="text-xs text-gray-400">Break down viral video strategies</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Paste YouTube video URL..."
+              value={videoUrlInput}
+              onChange={(e) => setVideoUrlInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleVideoAnalysis()}
+              className="glass-input text-white"
+            />
+            <Button
+              onClick={handleVideoAnalysis}
+              disabled={!videoUrlInput.trim() || isLoading}
+              className="glass-button bg-gradient-to-r from-red-500/50 to-orange-500/50 text-white"
+            >
+              <PlayCircle className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
+      </div>
 
-        {/* Research Templates */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-yellow-400" />
-            Quick Research Templates
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {RESEARCH_TEMPLATES.map((template) => (
-              <Card
-                key={template.id}
-                className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/15 cursor-pointer transition-all group"
-                onClick={() => handleTemplateClick(template)}
+      {/* Research Templates */}
+      <div className="animate-reveal" style={{ animationDelay: '0.2s' }}>
+        <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+          <Zap className="h-5 w-5 text-yellow-400" />
+          Quick Research Templates
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {RESEARCH_TEMPLATES.map((template, index) => (
+            <div
+              key={template.id}
+              className="glass-card p-4 glass-hover cursor-pointer group"
+              onClick={() => handleTemplateClick(template)}
+              style={{ animationDelay: `${0.2 + index * 0.05}s` }}
+            >
+              <div className="flex items-start gap-3">
+                <div className="glass w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform text-purple-400">
+                  {template.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-medium text-white mb-1 truncate">
+                    {template.title}
+                  </h4>
+                  <p className="text-xs text-gray-400 line-clamp-2">
+                    {template.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Chat/Library Interface */}
+      <div className="glass-card overflow-hidden animate-reveal" style={{ animationDelay: '0.3s' }}>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="border-b border-white/10 p-4">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'chat'
+                    ? 'bg-purple-500/20 text-white ring-2 ring-purple-400'
+                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                }`}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-white/10 rounded-lg text-purple-400 group-hover:text-purple-300">
-                      {template.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-white mb-1">
-                        {template.title}
-                      </h4>
-                      <p className="text-xs text-gray-400">
-                        {template.description}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                <MessageSquare className="h-4 w-4" />
+                Research Chat
+              </button>
+              <button
+                onClick={() => setActiveTab('library')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'library'
+                    ? 'bg-purple-500/20 text-white ring-2 ring-purple-400'
+                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <BookOpen className="h-4 w-4" />
+                Prompt Library
+              </button>
+              <button
+                onClick={() => setActiveTab('tools')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'tools'
+                    ? 'bg-purple-500/20 text-white ring-2 ring-purple-400'
+                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Wrench className="h-4 w-4" />
+                YouTube Tools
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Main Chat/Library Interface */}
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <CardHeader className="border-b border-white/10">
-              <TabsList className="bg-white/5">
-                <TabsTrigger
-                  value="chat"
-                  className="data-[state=active]:bg-white/10"
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Research Chat
-                </TabsTrigger>
-                <TabsTrigger
-                  value="library"
-                  className="data-[state=active]:bg-white/10"
-                >
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Prompt Library
-                </TabsTrigger>
-                <TabsTrigger
-                  value="tools"
-                  className="data-[state=active]:bg-white/10"
-                >
-                  <Wrench className="h-4 w-4 mr-2" />
-                  YouTube Tools
-                </TabsTrigger>
-              </TabsList>
-            </CardHeader>
-
-            <CardContent className="p-0">
-              <TabsContent value="chat" className="m-0">
+          <div className="p-0">
+            <TabsContent value="chat" className="m-0">
               <div className="flex flex-col h-[500px]">
                 {/* Messages Area */}
                 <ScrollArea className="flex-1 p-6">
                   {messages.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="inline-flex items-center justify-center p-3 bg-purple-500/20 rounded-full mb-4">
-                        <Sparkles className="h-8 w-8 text-purple-400" />
+                      <div className="glass w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Sparkles className="h-10 w-10 text-purple-400 animate-pulse" />
                       </div>
                       <h3 className="text-lg font-semibold text-white mb-2">
                         Start Your Research
@@ -456,15 +454,13 @@ export default function YouTubeResearchPage() {
                           "Generate 10 tech review video ideas",
                           "Best upload schedule for gaming content",
                         ].map((example, i) => (
-                          <Button
+                          <button
                             key={i}
-                            variant="outline"
-                            size="sm"
                             onClick={() => sendMessage(example)}
-                            className="text-xs border-white/20 text-gray-300 hover:text-white hover:bg-white/10"
+                            className="glass-button text-sm px-3 py-2 text-gray-300 hover:text-white"
                           >
                             {example}
-                          </Button>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -482,8 +478,8 @@ export default function YouTubeResearchPage() {
                           <div
                             className={`max-w-[80%] p-4 rounded-lg ${
                               message.role === "user"
-                                ? "bg-purple-600 text-white"
-                                : "bg-white/10 text-white"
+                                ? "glass bg-purple-500/20 text-white"
+                                : "glass text-white"
                             }`}
                           >
                             <p className="whitespace-pre-wrap">
@@ -514,7 +510,7 @@ export default function YouTubeResearchPage() {
                       ))}
                       {isLoading && (
                         <div className="flex justify-start">
-                          <div className="bg-white/10 p-4 rounded-lg">
+                          <div className="glass p-4 rounded-lg">
                             <Loader2 className="h-5 w-5 animate-spin text-purple-400" />
                           </div>
                         </div>
@@ -536,13 +532,13 @@ export default function YouTubeResearchPage() {
                           sendMessage(input);
                         }
                       }}
-                      className="min-h-[60px] bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                      className="glass-input min-h-[60px] text-white"
                       rows={2}
                     />
                     <Button
                       onClick={() => sendMessage(input)}
                       disabled={!input.trim() || isLoading}
-                      className="bg-purple-600 hover:bg-purple-700"
+                      className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
@@ -566,15 +562,16 @@ export default function YouTubeResearchPage() {
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {category.prompts.map((prompt, i) => (
-                          <Button
+                          <button
                             key={i}
-                            variant="outline"
-                            className="justify-start text-left h-auto py-3 px-4 border-white/10 hover:bg-white/10 text-gray-300 hover:text-white"
+                            className="glass glass-hover p-3 text-left text-gray-300 hover:text-white transition-all group"
                             onClick={() => handlePromptClick(prompt)}
                           >
-                            <Copy className="h-4 w-4 mr-2 flex-shrink-0" />
-                            <span className="text-sm">{prompt}</span>
-                          </Button>
+                            <div className="flex items-start gap-2">
+                              <Copy className="h-4 w-4 flex-shrink-0 mt-0.5 group-hover:text-purple-400" />
+                              <span className="text-sm">{prompt}</span>
+                            </div>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -588,67 +585,66 @@ export default function YouTubeResearchPage() {
                 <YouTubeTools />
               </div>
             </TabsContent>
-            </CardContent>
-          </Tabs>
-        </Card>
+          </div>
+        </Tabs>
+      </div>
 
-        {/* Stats Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Research Sessions</p>
-                  <p className="text-xl font-bold text-white">
-                    {messages.filter((m) => m.role === "user").length}
-                  </p>
-                </div>
-                <MessageSquare className="h-5 w-5 text-purple-400" />
-              </div>
-            </CardContent>
-          </Card>
+      {/* Stats Bar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-reveal" style={{ animationDelay: '0.4s' }}>
+        <div className="glass-card p-4 glass-hover group">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-400">Research Sessions</p>
+              <p className="text-2xl font-bold text-white">
+                {messages.filter((m) => m.role === "user").length}
+              </p>
+            </div>
+            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <MessageSquare className="h-5 w-5 text-purple-400" />
+            </div>
+          </div>
+        </div>
 
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Ideas Generated</p>
-                  <p className="text-xl font-bold text-white">
-                    {messages.filter((m) => m.role === "assistant").length * 5}
-                  </p>
-                </div>
-                <Lightbulb className="h-5 w-5 text-yellow-400" />
-              </div>
-            </CardContent>
-          </Card>
+        <div className="glass-card p-4 glass-hover group">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-400">Ideas Generated</p>
+              <p className="text-2xl font-bold text-white">
+                {messages.filter((m) => m.role === "assistant").length * 5}
+              </p>
+            </div>
+            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Lightbulb className="h-5 w-5 text-yellow-400" />
+            </div>
+          </div>
+        </div>
 
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Channels Analyzed</p>
-                  <p className="text-xl font-bold text-white">
-                    {messages.filter((m) => m.content.includes("@")).length}
-                  </p>
-                </div>
-                <Users className="h-5 w-5 text-green-400" />
-              </div>
-            </CardContent>
-          </Card>
+        <div className="glass-card p-4 glass-hover group">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-400">Channels Analyzed</p>
+              <p className="text-2xl font-bold text-white">
+                {messages.filter((m) => m.content.includes("@")).length}
+              </p>
+            </div>
+            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Users className="h-5 w-5 text-green-400" />
+            </div>
+          </div>
+        </div>
 
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Time Saved</p>
-                  <p className="text-xl font-bold text-white">
-                    {Math.round(messages.length * 15)} min
-                  </p>
-                </div>
-                <Clock className="h-5 w-5 text-blue-400" />
-              </div>
-            </CardContent>
-          </Card>
+        <div className="glass-card p-4 glass-hover group">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-400">Time Saved</p>
+              <p className="text-2xl font-bold text-white">
+                {Math.round(messages.length * 15)} min
+              </p>
+            </div>
+            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Clock className="h-5 w-5 text-blue-400" />
+            </div>
+          </div>
         </div>
       </div>
     </div>

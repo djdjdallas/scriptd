@@ -21,9 +21,12 @@ import {
   Home,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   Zap,
   TrendingUp,
-  Bookmark
+  Bookmark,
+  Youtube,
+  Wrench
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,7 +36,15 @@ const sidebarItems = [
   { href: '/channels', label: 'Channels', icon: Play },
   { href: '/trending', label: 'Trending', icon: TrendingUp },
   { href: '/saved', label: 'Saved Videos', icon: Bookmark },
-  { href: '/research', label: 'Research', icon: Brain },
+  { 
+    href: '/research', 
+    label: 'Research', 
+    icon: Brain,
+    subItems: [
+      { href: '/research', label: 'Research Chat', icon: Brain },
+      { href: '/research/youtube-tools', label: 'YouTube Tools', icon: Wrench }
+    ]
+  },
   { href: '/voice', label: 'Voice Training', icon: Mic },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/credits', label: 'Credits', icon: CreditCard },
@@ -46,6 +57,7 @@ export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [expandedItems, setExpandedItems] = useState(['research']); // Keep research expanded by default
   const [credits, setCredits] = useState(0);
   const [creditsLoading, setCreditsLoading] = useState(true);
   const pathname = usePathname();
@@ -229,47 +241,96 @@ export default function DashboardLayout({ children }) {
         {/* Navigation */}
         <nav className="space-y-2">
           {sidebarItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || (item.subItems && item.subItems.some(sub => pathname === sub.href));
+            const isExpanded = expandedItems.includes(item.label.toLowerCase());
             const Icon = item.icon;
             
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onMouseEnter={() => setHoveredItem(item.href)}
-                onMouseLeave={() => setHoveredItem(null)}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl transition-all duration-300 group relative",
-                  sidebarCollapsed ? "justify-center px-3 py-3" : "px-4 py-3",
-                  isActive
-                    ? "glass bg-purple-500/20 text-white"
-                    : "hover:glass hover:bg-white/10 text-gray-300 hover:text-white"
-                )}
-              >
-                <Icon className={cn(
-                  "h-5 w-5 transition-transform flex-shrink-0",
-                  isActive && "text-purple-400",
-                  hoveredItem === item.href && "scale-110"
-                )} />
-                {!sidebarCollapsed && (
-                  <>
-                    <span className="font-medium">{item.label}</span>
-                    {isActive && (
-                      <ChevronRight className="h-4 w-4 ml-auto text-purple-400" />
-                    )}
-                    {hoveredItem === item.href && !isActive && (
-                      <Sparkles className="h-3 w-3 ml-auto text-yellow-400 animate-pulse" />
-                    )}
-                  </>
-                )}
+              <div key={item.href}>
+                <div
+                  onClick={() => {
+                    if (item.subItems && !sidebarCollapsed) {
+                      setExpandedItems(prev => 
+                        prev.includes(item.label.toLowerCase())
+                          ? prev.filter(i => i !== item.label.toLowerCase())
+                          : [...prev, item.label.toLowerCase()]
+                      );
+                    } else {
+                      router.push(item.href);
+                    }
+                  }}
+                  onMouseEnter={() => setHoveredItem(item.href)}
+                  onMouseLeave={() => setHoveredItem(null)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl transition-all duration-300 group relative cursor-pointer",
+                    sidebarCollapsed ? "justify-center px-3 py-3" : "px-4 py-3",
+                    isActive
+                      ? "glass bg-purple-500/20 text-white"
+                      : "hover:glass hover:bg-white/10 text-gray-300 hover:text-white"
+                  )}
+                >
+                  <Icon className={cn(
+                    "h-5 w-5 transition-transform flex-shrink-0",
+                    isActive && "text-purple-400",
+                    hoveredItem === item.href && "scale-110"
+                  )} />
+                  {!sidebarCollapsed && (
+                    <>
+                      <span className="font-medium">{item.label}</span>
+                      {item.subItems ? (
+                        <ChevronDown className={cn(
+                          "h-4 w-4 ml-auto transition-transform",
+                          isExpanded ? "rotate-180" : "",
+                          isActive ? "text-purple-400" : "text-gray-400"
+                        )} />
+                      ) : (
+                        isActive && (
+                          <ChevronRight className="h-4 w-4 ml-auto text-purple-400" />
+                        )
+                      )}
+                      {hoveredItem === item.href && !isActive && !item.subItems && (
+                        <Sparkles className="h-3 w-3 ml-auto text-yellow-400 animate-pulse" />
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Tooltip for collapsed state */}
+                  {sidebarCollapsed && hoveredItem === item.href && (
+                    <div className="absolute left-full ml-2 px-3 py-1 glass rounded-lg whitespace-nowrap z-50">
+                      <span className="text-sm text-white">{item.label}</span>
+                    </div>
+                  )}
+                </div>
                 
-                {/* Tooltip for collapsed state */}
-                {sidebarCollapsed && hoveredItem === item.href && (
-                  <div className="absolute left-full ml-2 px-3 py-1 glass rounded-lg whitespace-nowrap z-50">
-                    <span className="text-sm text-white">{item.label}</span>
+                {/* Sub-items */}
+                {item.subItems && !sidebarCollapsed && isExpanded && (
+                  <div className="ml-6 mt-1 space-y-1">
+                    {item.subItems.map((subItem) => {
+                      const SubIcon = subItem.icon;
+                      const isSubActive = pathname === subItem.href;
+                      
+                      return (
+                        <Link
+                          key={subItem.href}
+                          href={subItem.href}
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-2 rounded-lg transition-all",
+                            isSubActive
+                              ? "glass bg-purple-500/20 text-white"
+                              : "hover:glass hover:bg-white/5 text-gray-400 hover:text-white"
+                          )}
+                        >
+                          <SubIcon className={cn(
+                            "h-4 w-4",
+                            isSubActive && "text-purple-400"
+                          )} />
+                          <span className="text-sm">{subItem.label}</span>
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
-              </Link>
+              </div>
             );
           })}
         </nav>

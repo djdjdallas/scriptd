@@ -1,7 +1,24 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { createAIService } from '@/lib/ai';
+import { checkCredits, deductCredits } from '@/lib/credits';
 
 export async function POST(request) {
   try {
+    const supabase = await createClient();
+    
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check credits
+    const hasCredits = await checkCredits(user.id, 2);
+    if (!hasCredits) {
+      return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 });
+    }
+
     const { videoTopic, keywords, style, includeHashtags, includeCTA } = await request.json();
 
     if (!videoTopic?.trim()) {
@@ -11,58 +28,37 @@ export async function POST(request) {
       );
     }
 
-    // In a real implementation, this would use OpenAI or another AI service
-    // For now, we'll generate a mock description
+    // Generate description using Claude Sonnet
+    const aiService = createAIService('claude-3-5-sonnet-20241022');
     
-    const descriptionParts = [];
+    const styleGuide = {
+      professional: 'Use a professional, informative tone with clear structure',
+      casual: 'Use a friendly, conversational tone like talking to a friend',
+      educational: 'Use an educational, instructive tone with detailed explanations',
+      entertaining: 'Use an engaging, fun tone with enthusiasm and excitement'
+    };
     
-    // Opening hook
-    descriptionParts.push('🎯 ' + generateOpeningHook(videoTopic, style));
-    descriptionParts.push('');
-    
-    // Main description
-    descriptionParts.push(generateMainDescription(videoTopic, keywords, style));
-    descriptionParts.push('');
-    
-    // What you'll learn section
-    descriptionParts.push('🔥 What You\'ll Learn:');
-    const learningPoints = generateLearningPoints(videoTopic);
-    learningPoints.forEach(point => {
-      descriptionParts.push('• ' + point);
-    });
-    descriptionParts.push('');
-    
-    // Timestamps (placeholder)
-    descriptionParts.push('⏰ Timestamps:');
-    descriptionParts.push('00:00 - Introduction');
-    descriptionParts.push('02:30 - Main content begins');
-    descriptionParts.push('08:00 - Key techniques');
-    descriptionParts.push('12:00 - Tips and troubleshooting');
-    descriptionParts.push('15:30 - Conclusion');
-    descriptionParts.push('');
-    
-    // Resources section
-    descriptionParts.push('📚 Resources Mentioned:');
-    descriptionParts.push('• Free guide: [link]');
-    descriptionParts.push('• Recommended tools: [link]');
-    descriptionParts.push('• Join our community: [link]');
-    descriptionParts.push('');
-    
-    // Call to action
-    if (includeCTA) {
-      descriptionParts.push('👍 If this video helped you, please give it a thumbs up and subscribe for more tutorials!');
-      descriptionParts.push('');
-      descriptionParts.push('🔔 Turn on notifications so you never miss new content!');
-      descriptionParts.push('');
-    }
-    
-    // Hashtags
-    if (includeHashtags) {
-      const hashtags = generateHashtags(videoTopic, keywords);
-      descriptionParts.push(hashtags.join(' '));
-    }
+    const prompt = `Generate a comprehensive YouTube video description for a video about: "${videoTopic}"
 
-    const description = descriptionParts.join('\n');
+${keywords ? `Target Keywords to naturally include: ${keywords}` : ''}
+Writing Style: ${styleGuide[style] || styleGuide.professional}
+
+Create a well-structured description with:
+
+1. Opening hook (with emoji)
+2. Main description paragraph explaining what the video covers
+3. "What You'll Learn" section with 5-7 bullet points
+4. Timestamps section (create realistic placeholder timestamps)
+5. Resources section with placeholders
+${includeCTA ? '6. Call-to-action to subscribe and engage' : ''}
+${includeHashtags ? '7. Relevant hashtags (15-20 hashtags)' : ''}
+
+Make it engaging, SEO-optimized, and informative. Use emojis appropriately to make it visually appealing.`;
+
+    const description = await aiService.generateText(prompt);
+    
+    // Deduct credits
+    await deductCredits(user.id, 2, 'youtube_description');
 
     return NextResponse.json({
       success: true,
@@ -78,67 +74,4 @@ export async function POST(request) {
       { status: 500 }
     );
   }
-}
-
-function generateOpeningHook(topic, style) {
-  const hooks = {
-    professional: `Master ${topic} with this comprehensive guide!`,
-    casual: `Ready to learn ${topic}? Let's dive in!`,
-    educational: `Understanding ${topic}: A Complete Tutorial`,
-    entertaining: `You won't believe how easy ${topic} can be!`
-  };
-  
-  return hooks[style] || hooks.professional;
-}
-
-function generateMainDescription(topic, keywords, style) {
-  const templates = {
-    professional: `In this comprehensive tutorial, you'll learn everything you need to know about ${topic}. Whether you're a beginner or looking to improve your skills, this step-by-step guide covers all the essential techniques and best practices.`,
-    casual: `Hey there! Today we're diving deep into ${topic} and I'm going to show you exactly how to get amazing results. I've been doing this for years and I'm excited to share all my favorite tips and tricks with you!`,
-    educational: `This educational video provides a thorough exploration of ${topic}, covering fundamental concepts, practical applications, and advanced techniques. Perfect for learners at any level.`,
-    entertaining: `Get ready for the most fun you'll ever have learning about ${topic}! We're going to break it down step by step, and I guarantee you'll be amazed at how simple it really is.`
-  };
-  
-  return templates[style] || templates.professional;
-}
-
-function generateLearningPoints(topic) {
-  // Generic learning points that work for most topics
-  return [
-    `The fundamentals of ${topic}`,
-    'Step-by-step techniques',
-    'Common mistakes to avoid',
-    'Pro tips and tricks',
-    'Troubleshooting guide'
-  ];
-}
-
-function generateHashtags(topic, keywords) {
-  const topicWords = topic.toLowerCase().split(' ');
-  const keywordList = keywords ? keywords.split(',').map(k => k.trim()) : [];
-  
-  const hashtags = new Set();
-  
-  // Add main topic words
-  topicWords.forEach(word => {
-    if (word.length > 3) {
-      hashtags.add('#' + word.replace(/[^a-zA-Z0-9]/g, ''));
-    }
-  });
-  
-  // Add keywords
-  keywordList.forEach(keyword => {
-    if (keyword.length > 3) {
-      hashtags.add('#' + keyword.replace(/[^a-zA-Z0-9]/g, ''));
-    }
-  });
-  
-  // Add some generic popular hashtags
-  hashtags.add('#tutorial');
-  hashtags.add('#howto');
-  hashtags.add('#tips');
-  hashtags.add('#diy');
-  hashtags.add('#guide');
-  
-  return Array.from(hashtags).slice(0, 15); // Limit to 15 hashtags
 }

@@ -7,7 +7,6 @@ import { CREDIT_PACKAGES, CREDIT_COSTS } from "@/lib/constants";
 import { loadStripe } from "@stripe/stripe-js";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
@@ -40,9 +39,6 @@ export default function CreditsPage() {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
-  const [transactions, setTransactions] = useState([]);
-  const [promoCode, setPromoCode] = useState("");
-  const [promoError, setPromoError] = useState("");
   const [userDetails, setUserDetails] = useState(null);
   const { toast } = useToast();
 
@@ -84,23 +80,14 @@ export default function CreditsPage() {
 
         setUserDetails(userData);
 
-        // Get credit balance using the RPC function
+        // Get credit balance using the RPC function (checks for expired credits)
         const { data: balance } = await supabase.rpc(
-          "get_available_credit_balance",
+          "get_available_credits",
           { p_user_id: user.id }
         );
 
         setCurrentCredits(balance || 0);
 
-        // Fetch recent transactions
-        const { data: transactionsData } = await supabase
-          .from("credits_transactions")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(5);
-
-        setTransactions(transactionsData || []);
       }
     } catch (error) {
       console.error("Error fetching credits data:", error);
@@ -119,7 +106,6 @@ export default function CreditsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           packageId,
-          promoCode: promoCode || undefined,
         }),
       });
 
@@ -214,21 +200,6 @@ export default function CreditsPage() {
           </p>
           <p className="text-sm text-gray-400">credits available</p>
 
-          {/* Usage Stats */}
-          <div className="grid grid-cols-3 gap-4 mt-8">
-            <div className="glass p-4 rounded-xl">
-              <p className="text-2xl font-bold text-white">23</p>
-              <p className="text-xs text-gray-400">Scripts Created</p>
-            </div>
-            <div className="glass p-4 rounded-xl">
-              <p className="text-2xl font-bold text-white">850</p>
-              <p className="text-xs text-gray-400">Credits Used</p>
-            </div>
-            <div className="glass p-4 rounded-xl">
-              <p className="text-2xl font-bold text-white">37</p>
-              <p className="text-xs text-gray-400">Avg per Script</p>
-            </div>
-          </div>
         </div>
       </TiltCard>
 
@@ -363,84 +334,6 @@ export default function CreditsPage() {
           })}
         </div>
 
-        {/* Promo Code Section */}
-        <div className="glass-card p-6 mt-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Gift className="h-5 w-5 text-purple-400" />
-            Have a promo code?
-          </h3>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Enter promo code"
-              value={promoCode}
-              onChange={(e) => {
-                setPromoCode(e.target.value.toUpperCase());
-                setPromoError("");
-              }}
-              className="max-w-xs bg-black/20 border-gray-700 text-white"
-            />
-            <Badge variant="outline" className="px-3 py-2 border-gray-700">
-              Applied at checkout
-            </Badge>
-          </div>
-          {promoError && (
-            <p className="text-sm text-red-400 mt-2">{promoError}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Recent Transactions */}
-      <div
-        className="glass-card p-6 animate-reveal"
-        style={{ animationDelay: "0.3s" }}
-      >
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <Clock className="h-5 w-5 text-purple-400" />
-          Recent Transactions
-        </h3>
-
-        {transactions.length === 0 ? (
-          <p className="text-gray-400 text-center py-8">No transactions yet</p>
-        ) : (
-          <div className="space-y-3">
-            {transactions.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="flex items-center justify-between glass p-4 rounded-xl"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-10 h-10 glass rounded-lg flex items-center justify-center ${
-                      transaction.amount > 0 ? "text-green-400" : "text-red-400"
-                    }`}
-                  >
-                    {transaction.amount > 0 ? (
-                      <Plus className="h-5 w-5" />
-                    ) : (
-                      <Zap className="h-5 w-5" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">
-                      {transaction.description}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(transaction.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-                <p
-                  className={`font-semibold ${
-                    transaction.amount > 0 ? "text-green-400" : "text-red-400"
-                  }`}
-                >
-                  {transaction.amount > 0 ? "+" : ""}
-                  {transaction.amount}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Benefits Section */}

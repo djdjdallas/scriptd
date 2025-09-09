@@ -1,6 +1,7 @@
 // AI Service exports
 import { OpenAIService } from './openai.js';
 import { AnthropicProvider } from './providers/anthropic.js';
+import { GroqProvider } from './providers/groq.js';
 import { AI_MODELS, AI_PROVIDERS } from '../constants.js';
 
 // Determine which model belongs to which provider
@@ -24,6 +25,7 @@ const MODEL_TO_PROVIDER = {
 
 let openaiService = null;
 let anthropicService = null;
+let groqService = null;
 
 export function getAIService(model = AI_MODELS.GPT4_TURBO) {
   const provider = MODEL_TO_PROVIDER[model] || AI_PROVIDERS.OPENAI;
@@ -43,6 +45,20 @@ export function getAIService(model = AI_MODELS.GPT4_TURBO) {
       }
       return anthropicService;
       
+    case AI_PROVIDERS.GROQ:
+      if (!groqService) {
+        const apiKey = process.env.GROQ_API_KEY;
+        console.log('[AI Service] Initializing GROQ provider, API key present:', !!apiKey);
+        if (!apiKey) {
+          throw new Error('GROQ_API_KEY environment variable is not set');
+        }
+        groqService = new GroqProvider({
+          apiKey: apiKey,
+          model: model
+        });
+      }
+      return groqService;
+      
     case AI_PROVIDERS.OPENAI:
     default:
       if (!openaiService) {
@@ -59,3 +75,4 @@ export function getAIService(model = AI_MODELS.GPT4_TURBO) {
 
 export { OpenAIService } from './openai.js';
 export { AnthropicProvider } from './providers/anthropic.js';
+export { GroqProvider } from './providers/groq.js';

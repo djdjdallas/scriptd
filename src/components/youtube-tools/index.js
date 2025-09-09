@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,7 +36,6 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { TiltCard } from '@/components/ui/tilt-card';
 
 // YouTube Tools Data
 const youtubeTools = [
@@ -48,7 +46,7 @@ const youtubeTools = [
     icon: BarChart3,
     badge: 'Analytics',
     features: ['Content structure analysis', 'Engagement metrics', 'Strategy insights'],
-    color: 'from-blue-500 to-cyan-500'
+    color: 'from-purple-500/20 to-pink-500/20'
   },
   {
     id: 'description-generator',
@@ -57,7 +55,7 @@ const youtubeTools = [
     icon: FileText,
     badge: 'SEO',
     features: ['SEO optimization', 'Call-to-action templates', 'Hashtag suggestions'],
-    color: 'from-green-500 to-emerald-500'
+    color: 'from-purple-500/20 to-pink-500/20'
   },
   {
     id: 'hook-generator',
@@ -66,7 +64,7 @@ const youtubeTools = [
     icon: Zap,
     badge: 'Most Popular',
     features: ['Multiple styles', 'Engagement focused', 'Time-tested formulas'],
-    color: 'from-yellow-500 to-orange-500'
+    color: 'from-purple-500/20 to-pink-500/20'
   },
   {
     id: 'keyword-research',
@@ -75,7 +73,7 @@ const youtubeTools = [
     icon: Search,
     badge: 'Research',
     features: ['Search volume data', 'Competition analysis', 'Trend insights'],
-    color: 'from-purple-500 to-pink-500'
+    color: 'from-purple-500/20 to-pink-500/20'
   },
   {
     id: 'title-generator',
@@ -84,7 +82,7 @@ const youtubeTools = [
     icon: Type,
     badge: 'Essential',
     features: ['Click-worthy titles', 'A/B testing ready', 'Character counter'],
-    color: 'from-red-500 to-rose-500'
+    color: 'from-purple-500/20 to-pink-500/20'
   },
   {
     id: 'tag-generator',
@@ -93,7 +91,7 @@ const youtubeTools = [
     icon: Hash,
     badge: 'Discovery',
     features: ['Relevance scoring', 'Competition level', 'Trending tags'],
-    color: 'from-indigo-500 to-purple-500'
+    color: 'from-purple-500/20 to-pink-500/20'
   },
   {
     id: 'thumbnail-grabber',
@@ -102,7 +100,7 @@ const youtubeTools = [
     icon: Image,
     badge: 'Utility',
     features: ['Multiple resolutions', 'High quality', 'Instant download'],
-    color: 'from-teal-500 to-cyan-500'
+    color: 'from-purple-500/20 to-pink-500/20'
   },
   {
     id: 'transcript-generator',
@@ -111,7 +109,7 @@ const youtubeTools = [
     icon: FileAudio,
     badge: 'Content',
     features: ['Auto-generated captions', 'Timestamp support', 'Export options'],
-    color: 'from-violet-500 to-purple-500'
+    color: 'from-purple-500/20 to-pink-500/20'
   }
 ];
 
@@ -164,7 +162,7 @@ function VideoBreakdownTool() {
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <Label htmlFor="video-url">YouTube Video URL</Label>
+        <Label htmlFor="video-url" className="text-gray-300">YouTube Video URL</Label>
         <div className="flex gap-2">
           <Input
             id="video-url"
@@ -172,8 +170,9 @@ function VideoBreakdownTool() {
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
             disabled={loading}
+            className="glass-input text-white placeholder:text-gray-500"
           />
-          <Button onClick={analyzeVideo} disabled={loading || !videoUrl.trim()}>
+          <Button onClick={analyzeVideo} disabled={loading || !videoUrl.trim()} className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
             Analyze
           </Button>
@@ -182,72 +181,66 @@ function VideoBreakdownTool() {
 
       {analysis && (
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PlayCircle className="h-5 w-5" />
-                Video Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <PlayCircle className="h-5 w-5 text-purple-400" />
+              Video Overview
+            </h3>
+            <div className="space-y-3">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-primary">{analysis.views}</p>
-                  <p className="text-sm text-muted-foreground">Views</p>
+                  <p className="text-2xl font-bold text-white">{analysis.views}</p>
+                  <p className="text-sm text-gray-400">Views</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-primary">{analysis.likes}</p>
-                  <p className="text-sm text-muted-foreground">Likes</p>
+                  <p className="text-2xl font-bold text-white">{analysis.likes}</p>
+                  <p className="text-sm text-gray-400">Likes</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-primary">{analysis.duration}</p>
-                  <p className="text-sm text-muted-foreground">Duration</p>
+                  <p className="text-2xl font-bold text-white">{analysis.duration}</p>
+                  <p className="text-sm text-gray-400">Duration</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-primary">4.2%</p>
-                  <p className="text-sm text-muted-foreground">Engagement</p>
+                  <p className="text-2xl font-bold text-white">4.2%</p>
+                  <p className="text-sm text-gray-400">Engagement</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Content Structure</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Content Structure</h3>
+            <div>
               <div className="space-y-3">
                 {analysis.structure.map((section, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 border rounded-lg">
-                    <Badge variant="outline">{section.section}</Badge>
+                  <div key={index} className="flex items-start gap-3 p-3 glass rounded-lg">
+                    <Badge className="glass bg-purple-500/20 text-purple-300 border-purple-400/50">{section.section}</Badge>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">{section.duration}</span>
+                        <Clock className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm font-medium text-white">{section.duration}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">{section.description}</p>
+                      <p className="text-sm text-gray-400">{section.description}</p>
                     </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Key Insights</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Key Insights</h3>
+            <div>
               <ul className="space-y-2">
                 {analysis.insights.map((insight, index) => (
                   <li key={index} className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                    <span className="text-sm">{insight}</span>
+                    <CheckCircle className="h-4 w-4 text-green-400 mt-0.5" />
+                    <span className="text-sm text-gray-300">{insight}</span>
                   </li>
                 ))}
               </ul>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -328,67 +321,69 @@ function DescriptionGeneratorTool() {
     <div className="space-y-6">
       <div className="grid gap-4">
         <div className="space-y-2">
-          <Label htmlFor="video-topic">Video Topic</Label>
+          <Label htmlFor="video-topic" className="text-gray-300">Video Topic</Label>
           <Input
             id="video-topic"
             placeholder="e.g., How to make sourdough bread"
             value={videoTopic}
             onChange={(e) => setVideoTopic(e.target.value)}
             disabled={loading}
+            className="glass-input text-white placeholder:text-gray-500"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="keywords">Target Keywords</Label>
+          <Label htmlFor="keywords" className="text-gray-300">Target Keywords</Label>
           <Input
             id="keywords"
             placeholder="e.g., sourdough, bread making, homemade"
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
             disabled={loading}
+            className="glass-input text-white placeholder:text-gray-500"
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="style">Writing Style</Label>
+            <Label htmlFor="style" className="text-gray-300">Writing Style</Label>
             <Select value={style} onValueChange={setStyle}>
-              <SelectTrigger>
-                <SelectValue />
+              <SelectTrigger className="glass-input text-white [&>span]:text-white">
+                <SelectValue placeholder="Select a writing style" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="professional">Professional</SelectItem>
-                <SelectItem value="casual">Casual & Friendly</SelectItem>
-                <SelectItem value="educational">Educational</SelectItem>
-                <SelectItem value="entertaining">Entertaining</SelectItem>
+              <SelectContent className="glass-card border-white/20 bg-black/95">
+                <SelectItem value="professional" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 cursor-pointer">Professional</SelectItem>
+                <SelectItem value="casual" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 cursor-pointer">Casual & Friendly</SelectItem>
+                <SelectItem value="educational" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 cursor-pointer">Educational</SelectItem>
+                <SelectItem value="entertaining" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 cursor-pointer">Entertaining</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label>Include Hashtags</Label>
+            <Label className="text-gray-300">Include Hashtags</Label>
             <div className="flex items-center space-x-2">
               <Switch
                 checked={includeHashtags}
                 onCheckedChange={setIncludeHashtags}
               />
-              <span className="text-sm">Add relevant hashtags</span>
+              <span className="text-sm text-gray-300">Add relevant hashtags</span>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Call-to-Action</Label>
+            <Label className="text-gray-300">Call-to-Action</Label>
             <div className="flex items-center space-x-2">
               <Switch
                 checked={includeCTA}
                 onCheckedChange={setIncludeCTA}
               />
-              <span className="text-sm">Include subscribe CTA</span>
+              <span className="text-sm text-gray-300">Include subscribe CTA</span>
             </div>
           </div>
         </div>
 
-        <Button onClick={generateDescription} disabled={loading || !videoTopic.trim()} className="w-full">
+        <Button onClick={generateDescription} disabled={loading || !videoTopic.trim()} className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -404,30 +399,28 @@ function DescriptionGeneratorTool() {
       </div>
 
       {description && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Generated Description</CardTitle>
-              <Button variant="outline" size="sm" onClick={copyDescription}>
-                <Copy className="h-4 w-4 mr-2" />
-                Copy
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Generated Description</h3>
+            <Button className="glass-button text-white" size="sm" onClick={copyDescription}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copy
+            </Button>
+          </div>
+          <div>
             <div className="relative">
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="min-h-[400px] font-mono text-sm"
+                className="glass-input min-h-[400px] font-mono text-sm text-white"
                 placeholder="Your generated description will appear here..."
               />
-              <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
+              <div className="absolute bottom-2 right-2 text-xs text-gray-400">
                 {description.length} characters
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -510,18 +503,19 @@ function HookGeneratorTool() {
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="hook-topic">Video Topic</Label>
+          <Label htmlFor="hook-topic" className="text-gray-300">Video Topic</Label>
           <Input
             id="hook-topic"
             placeholder="e.g., Making sourdough bread for beginners"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             disabled={loading}
+            className="glass-input text-white placeholder:text-gray-500"
           />
         </div>
 
         <div className="space-y-3">
-          <Label>Hook Style</Label>
+          <Label className="text-gray-300">Hook Style</Label>
           <RadioGroup value={hookStyle} onValueChange={setHookStyle}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {hookStyles.map((style) => (
@@ -533,10 +527,10 @@ function HookGeneratorTool() {
                   />
                   <Label
                     htmlFor={style.id}
-                    className="flex flex-col gap-1 rounded-md border-2 border-muted bg-transparent p-4 hover:bg-muted/50 peer-data-[state=checked]:border-primary cursor-pointer"
+                    className="flex flex-col gap-1 rounded-md border-2 border-white/20 glass p-4 hover:bg-white/10 peer-data-[state=checked]:border-purple-400 peer-data-[state=checked]:bg-purple-500/20 cursor-pointer text-white"
                   >
-                    <span className="font-medium">{style.label}</span>
-                    <span className="text-xs text-muted-foreground">{style.example}</span>
+                    <span className="font-medium text-white">{style.label}</span>
+                    <span className="text-xs text-gray-400">{style.example}</span>
                   </Label>
                 </div>
               ))}
@@ -544,7 +538,7 @@ function HookGeneratorTool() {
           </RadioGroup>
         </div>
 
-        <Button onClick={generateHooks} disabled={loading || !topic.trim()} className="w-full">
+        <Button onClick={generateHooks} disabled={loading || !topic.trim()} className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -561,27 +555,27 @@ function HookGeneratorTool() {
 
       {hooks.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold">Generated Hooks</h3>
+          <h3 className="text-lg font-semibold text-white">Generated Hooks</h3>
           {hooks.map((hook, index) => (
-            <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => copyHook(hook.text)}>
-              <CardContent className="pt-6">
+            <div key={index} className="glass-card p-6 glass-hover cursor-pointer" onClick={() => copyHook(hook.text)}>
+              <div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
-                    <p className="font-medium mb-2">{hook.text}</p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <Badge variant="secondary">{hook.type}</Badge>
+                    <p className="font-medium mb-2 text-white">{hook.text}</p>
+                    <div className="flex items-center gap-4 text-sm">
+                      <Badge className="glass bg-purple-500/20 text-purple-300 border-purple-400/50">{hook.type}</Badge>
                       <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-yellow-500" />
-                        <span>{hook.engagement}/10</span>
+                        <Star className="h-4 w-4 text-yellow-400" />
+                        <span className="text-gray-300">{hook.engagement}/10</span>
                       </div>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon">
+                  <Button className="glass-button text-white" size="icon">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -653,7 +647,7 @@ function KeywordResearchTool() {
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="seed-keyword">Seed Keyword</Label>
+          <Label htmlFor="seed-keyword" className="text-gray-300">Seed Keyword</Label>
           <div className="flex gap-2">
             <Input
               id="seed-keyword"
@@ -661,8 +655,9 @@ function KeywordResearchTool() {
               value={seedKeyword}
               onChange={(e) => setSeedKeyword(e.target.value)}
               disabled={loading}
+              className="glass-input text-white placeholder:text-gray-500"
             />
-            <Button onClick={researchKeywords} disabled={loading || !seedKeyword.trim()}>
+            <Button onClick={researchKeywords} disabled={loading || !seedKeyword.trim()} className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               Research
             </Button>
@@ -671,30 +666,28 @@ function KeywordResearchTool() {
       </div>
 
       {keywords.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Keyword Opportunities</CardTitle>
-            <CardDescription>
-              Keywords related to "{seedKeyword}" with search volume and difficulty
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div className="glass-card p-6">
+          <h3 className="text-lg font-semibold text-white mb-2">Keyword Opportunities</h3>
+          <p className="text-sm text-gray-400 mb-4">
+            Keywords related to "{seedKeyword}" with search volume and difficulty
+          </p>
+          <div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2">Keyword</th>
-                    <th className="text-center py-2">Volume</th>
-                    <th className="text-center py-2">Difficulty</th>
-                    <th className="text-center py-2">Trend</th>
-                    <th className="text-center py-2">Action</th>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left py-2 text-gray-300">Keyword</th>
+                    <th className="text-center py-2 text-gray-300">Volume</th>
+                    <th className="text-center py-2 text-gray-300">Difficulty</th>
+                    <th className="text-center py-2 text-gray-300">Trend</th>
+                    <th className="text-center py-2 text-gray-300">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {keywords.map((item, index) => (
-                    <tr key={index} className="border-b">
-                      <td className="py-3 font-medium">{item.keyword}</td>
-                      <td className="text-center py-3">{item.volume}</td>
+                    <tr key={index} className="border-b border-white/10">
+                      <td className="py-3 font-medium text-white">{item.keyword}</td>
+                      <td className="text-center py-3 text-gray-300">{item.volume}</td>
                       <td className="text-center py-3">
                         <Badge className={getDifficultyColor(item.difficulty)}>
                           {item.difficulty}
@@ -705,7 +698,7 @@ function KeywordResearchTool() {
                       </td>
                       <td className="text-center py-3">
                         <Button
-                          variant="ghost"
+                          className="glass-button text-white"
                           size="sm"
                           onClick={() => navigator.clipboard.writeText(item.keyword)}
                         >
@@ -717,8 +710,8 @@ function KeywordResearchTool() {
                 </tbody>
               </table>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -794,29 +787,31 @@ function TitleGeneratorTool() {
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="title-topic">Video Topic</Label>
+          <Label htmlFor="title-topic" className="text-gray-300">Video Topic</Label>
           <Input
             id="title-topic"
             placeholder="e.g., Making sourdough bread at home"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             disabled={loading}
+            className="glass-input text-white placeholder:text-gray-500"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="title-keywords">Target Keywords</Label>
+          <Label htmlFor="title-keywords" className="text-gray-300">Target Keywords</Label>
           <Input
             id="title-keywords"
             placeholder="e.g., sourdough, bread recipe, homemade"
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
             disabled={loading}
+            className="glass-input text-white placeholder:text-gray-500"
           />
         </div>
 
         <div className="space-y-3">
-          <Label>Title Style</Label>
+          <Label className="text-gray-300">Title Style</Label>
           <RadioGroup value={style} onValueChange={setStyle}>
             <div className="grid grid-cols-2 gap-3">
               {titleStyles.map((s) => (
@@ -828,11 +823,11 @@ function TitleGeneratorTool() {
                   />
                   <Label
                     htmlFor={s.id}
-                    className="flex items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-muted/50 peer-data-[state=checked]:border-primary cursor-pointer"
+                    className="flex items-center justify-between rounded-md border-2 border-white/20 glass p-4 hover:bg-white/10 peer-data-[state=checked]:border-purple-400 peer-data-[state=checked]:bg-purple-500/20 cursor-pointer text-white"
                   >
                     <div>
-                      <p className="font-medium">{s.label}</p>
-                      <p className="text-xs text-muted-foreground">{s.example}</p>
+                      <p className="font-medium text-white">{s.label}</p>
+                      <p className="text-xs text-gray-400">{s.example}</p>
                     </div>
                   </Label>
                 </div>
@@ -841,7 +836,7 @@ function TitleGeneratorTool() {
           </RadioGroup>
         </div>
 
-        <Button onClick={generateTitles} disabled={loading || !topic.trim()} className="w-full">
+        <Button onClick={generateTitles} disabled={loading || !topic.trim()} className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -858,26 +853,26 @@ function TitleGeneratorTool() {
 
       {titles.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold">Generated Titles</h3>
+          <h3 className="text-lg font-semibold text-white">Generated Titles</h3>
           {titles.map((title, index) => (
-            <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => copyTitle(title.text)}>
-              <CardContent className="pt-6">
+            <div key={index} className="glass-card p-6 glass-hover cursor-pointer" onClick={() => copyTitle(title.text)}>
+              <div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
-                    <p className="font-medium mb-2">{title.text}</p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{title.text.length} characters</span>
-                      <Badge variant="secondary">
+                    <p className="font-medium mb-2 text-white">{title.text}</p>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-gray-400">{title.text.length} characters</span>
+                      <Badge className="glass bg-purple-500/20 text-purple-300 border-purple-400/50">
                         Score: {title.score}/10
                       </Badge>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon">
+                  <Button className="glass-button text-white" size="icon">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -961,7 +956,7 @@ function TagGeneratorTool() {
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="tag-topic">Video Topic</Label>
+          <Label htmlFor="tag-topic" className="text-gray-300">Video Topic</Label>
           <div className="flex gap-2">
             <Input
               id="tag-topic"
@@ -969,8 +964,9 @@ function TagGeneratorTool() {
               value={videoTopic}
               onChange={(e) => setVideoTopic(e.target.value)}
               disabled={loading}
+              className="glass-input text-white placeholder:text-gray-500"
             />
-            <Button onClick={generateTags} disabled={loading || !videoTopic.trim()}>
+            <Button onClick={generateTags} disabled={loading || !videoTopic.trim()} className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Hash className="h-4 w-4" />}
               Generate
             </Button>
@@ -979,33 +975,31 @@ function TagGeneratorTool() {
       </div>
 
       {tags.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Generated Tags</CardTitle>
-                <CardDescription>
-                  Optimized tags for "{videoTopic}" ranked by relevance
-                </CardDescription>
-              </div>
-              <Button variant="outline" size="sm" onClick={copyAllTags}>
-                <Copy className="h-4 w-4 mr-2" />
-                Copy All
-              </Button>
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Generated Tags</h3>
+              <p className="text-sm text-gray-400">
+                Optimized tags for "{videoTopic}" ranked by relevance
+              </p>
             </div>
-          </CardHeader>
-          <CardContent>
+            <Button className="glass-button text-white" size="sm" onClick={copyAllTags}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copy All
+            </Button>
+          </div>
+          <div>
             <div className="grid gap-3">
               {tags.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 glass rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="text-center">
-                      <div className="text-lg font-bold text-primary">{item.relevance}</div>
-                      <div className="text-xs text-muted-foreground">relevance</div>
+                      <div className="text-lg font-bold text-white">{item.relevance}</div>
+                      <div className="text-xs text-gray-400">relevance</div>
                     </div>
                     <div>
-                      <div className="font-medium">#{item.tag}</div>
-                      <div className="text-sm text-muted-foreground">{item.volume} monthly searches</div>
+                      <div className="font-medium text-white">#{item.tag}</div>
+                      <div className="text-sm text-gray-400">{item.volume} monthly searches</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1013,7 +1007,7 @@ function TagGeneratorTool() {
                       {item.competition}
                     </Badge>
                     <Button
-                      variant="ghost"
+                      className="glass-button text-white"
                       size="sm"
                       onClick={() => navigator.clipboard.writeText(item.tag)}
                     >
@@ -1023,8 +1017,8 @@ function TagGeneratorTool() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1129,7 +1123,7 @@ function ThumbnailGrabberTool() {
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="thumbnail-url">YouTube Video URL</Label>
+          <Label htmlFor="thumbnail-url" className="text-gray-300">YouTube Video URL</Label>
           <div className="flex gap-2">
             <Input
               id="thumbnail-url"
@@ -1137,8 +1131,9 @@ function ThumbnailGrabberTool() {
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
               disabled={loading}
+              className="glass-input text-white placeholder:text-gray-500"
             />
-            <Button onClick={grabThumbnails} disabled={loading || !videoUrl.trim()}>
+            <Button onClick={grabThumbnails} disabled={loading || !videoUrl.trim()} className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Image className="h-4 w-4" />}
               Grab
             </Button>
@@ -1148,13 +1143,13 @@ function ThumbnailGrabberTool() {
 
       {thumbnails.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Available Thumbnails</h3>
+          <h3 className="text-lg font-semibold text-white">Available Thumbnails</h3>
           <div className="grid gap-4">
             {thumbnails.map((thumbnail, index) => (
-              <Card key={index}>
-                <CardContent className="pt-6">
+              <div key={index} className="glass-card p-6">
+                <div>
                   <div className="flex items-center gap-4">
-                    <div className="w-32 h-24 border rounded-lg overflow-hidden bg-gray-100">
+                    <div className="w-32 h-24 glass rounded-lg overflow-hidden">
                       <img
                         src={thumbnail.url}
                         alt={`${thumbnail.quality} thumbnail`}
@@ -1165,15 +1160,15 @@ function ThumbnailGrabberTool() {
                       />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold">{thumbnail.quality}</h4>
-                      <div className="text-sm text-muted-foreground space-y-1">
+                      <h4 className="font-semibold text-white">{thumbnail.quality}</h4>
+                      <div className="text-sm text-gray-400 space-y-1">
                         <div>Resolution: {thumbnail.dimensions}</div>
                         <div>File Size: {thumbnail.size}</div>
                       </div>
                     </div>
                     <div className="flex gap-2">
                       <Button
-                        variant="outline"
+                        className="glass-button text-white"
                         size="sm"
                         onClick={() => navigator.clipboard.writeText(thumbnail.url)}
                       >
@@ -1181,6 +1176,7 @@ function ThumbnailGrabberTool() {
                         Copy URL
                       </Button>
                       <Button
+                        className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
                         size="sm"
                         onClick={() => downloadThumbnail(thumbnail)}
                       >
@@ -1189,8 +1185,8 @@ function ThumbnailGrabberTool() {
                       </Button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -1284,7 +1280,7 @@ function TranscriptGeneratorTool() {
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="transcript-url">YouTube Video URL</Label>
+          <Label htmlFor="transcript-url" className="text-gray-300">YouTube Video URL</Label>
           <div className="flex gap-2">
             <Input
               id="transcript-url"
@@ -1292,8 +1288,9 @@ function TranscriptGeneratorTool() {
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
               disabled={loading}
+              className="glass-input text-white placeholder:text-gray-500"
             />
-            <Button onClick={generateTranscript} disabled={loading || !videoUrl.trim()}>
+            <Button onClick={generateTranscript} disabled={loading || !videoUrl.trim()} className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileAudio className="h-4 w-4" />}
               Extract
             </Button>
@@ -1305,46 +1302,44 @@ function TranscriptGeneratorTool() {
             checked={includeTimestamps}
             onCheckedChange={setIncludeTimestamps}
           />
-          <Label>Include timestamps</Label>
+          <Label className="text-gray-300">Include timestamps</Label>
         </div>
       </div>
 
       {transcript && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Generated Transcript</CardTitle>
-                <CardDescription>
-                  Transcript extracted with {includeTimestamps ? 'timestamps' : 'no timestamps'}
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={copyTranscript}>
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy
-                </Button>
-                <Button variant="outline" size="sm" onClick={downloadTranscript}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-              </div>
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Generated Transcript</h3>
+              <p className="text-sm text-gray-400">
+                Transcript extracted with {includeTimestamps ? 'timestamps' : 'no timestamps'}
+              </p>
             </div>
-          </CardHeader>
-          <CardContent>
+            <div className="flex gap-2">
+              <Button className="glass-button text-white" size="sm" onClick={copyTranscript}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy
+              </Button>
+              <Button className="glass-button text-white" size="sm" onClick={downloadTranscript}>
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            </div>
+          </div>
+          <div>
             <div className="relative">
               <Textarea
                 value={transcript}
                 onChange={(e) => setTranscript(e.target.value)}
-                className="min-h-[400px] font-mono text-sm"
+                className="glass-input min-h-[400px] font-mono text-sm text-white"
                 placeholder="Extracted transcript will appear here..."
               />
-              <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
+              <div className="absolute bottom-2 right-2 text-xs text-gray-400">
                 {transcript.split(' ').length} words
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1394,80 +1389,79 @@ export default function YouTubeTools() {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
-        <h1 className="text-4xl sm:text-5xl font-bold gradient-text">
+        <h1 className="text-3xl font-bold text-white">
           YouTube Creator Tools
         </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-gray-400 max-w-2xl mx-auto">
           Professional-grade tools to optimize your YouTube content, boost engagement, and grow your channel
         </p>
       </div>
 
       {/* Tools Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {youtubeTools.map((tool) => {
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {youtubeTools.map((tool, index) => {
           const Icon = tool.icon;
           return (
-            <TiltCard key={tool.id} className="h-full">
-              <Card 
-                className="h-full cursor-pointer transition-all duration-300 hover:shadow-2xl border-0 glass-card relative overflow-hidden group"
-                onClick={() => openTool(tool)}
-              >
-                {/* Gradient Background */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${tool.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+            <div
+              key={tool.id}
+              className="glass-card p-6 glass-hover cursor-pointer group animate-reveal"
+              onClick={() => openTool(tool)}
+              style={{ animationDelay: `${index * 0.05}s` }}
+            >
+              {/* Background gradient on hover */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${tool.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-lg`} />
+              
+              <div className="relative">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="glass w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Icon className="h-6 w-6 text-purple-400" />
+                  </div>
+                  {tool.badge && (
+                    <Badge className="glass bg-purple-500/20 text-purple-300 border-purple-400/50 text-xs">
+                      {tool.badge}
+                    </Badge>
+                  )}
+                </div>
                 
-                <CardHeader>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={`p-3 rounded-xl bg-gradient-to-br ${tool.color} shadow-lg`}>
-                      <Icon className="h-6 w-6 text-white" />
-                    </div>
-                    {tool.badge && (
-                      <Badge variant="secondary" className="text-xs animate-pulse-slow">
-                        {tool.badge}
-                      </Badge>
-                    )}
-                  </div>
-                  <CardTitle className="text-lg group-hover:text-glow transition-all duration-300">
-                    {tool.title}
-                  </CardTitle>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {tool.description}
-                  </CardDescription>
-                </CardHeader>
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  {tool.title}
+                </h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  {tool.description}
+                </p>
 
-                <CardContent className="pb-6">
-                  <ul className="space-y-2 text-sm text-muted-foreground mb-4">
-                    {tool.features.map((feature, index) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <div className={`h-1.5 w-1.5 rounded-full bg-gradient-to-r ${tool.color}`} />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <div className="flex items-center text-sm font-medium text-primary group-hover:gap-3 transition-all duration-300">
-                    <span>Try it free</span>
-                    <ExternalLink className="h-4 w-4 ml-1 group-hover:ml-0 group-hover:translate-x-1 transition-transform duration-300" />
-                  </div>
-                </CardContent>
-              </Card>
-            </TiltCard>
+                <ul className="space-y-2 mb-4">
+                  {tool.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-center gap-2 text-xs text-gray-300">
+                      <div className="h-1 w-1 bg-purple-400 rounded-full" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                
+                <div className="flex items-center text-sm font-medium text-purple-400 group-hover:text-purple-300 transition-colors">
+                  <span>Try it free</span>
+                  <ExternalLink className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </div>
           );
         })}
       </div>
 
       {/* Tool Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-white/20 bg-gradient-to-br from-gray-900 via-purple-900/50 to-gray-900">
           {selectedTool && (
             <>
               <DialogHeader>
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg bg-gradient-to-br ${selectedTool.color}`}>
-                    <selectedTool.icon className="h-5 w-5 text-white" />
+                  <div className="glass w-10 h-10 rounded-lg flex items-center justify-center">
+                    <selectedTool.icon className="h-5 w-5 text-purple-400" />
                   </div>
                   <div>
-                    <DialogTitle className="text-2xl">{selectedTool.title}</DialogTitle>
-                    <DialogDescription className="text-base">
+                    <DialogTitle className="text-2xl text-white">{selectedTool.title}</DialogTitle>
+                    <DialogDescription className="text-base text-gray-400">
                       {selectedTool.description}
                     </DialogDescription>
                   </div>

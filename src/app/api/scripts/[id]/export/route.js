@@ -3,8 +3,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
-import { EXPORT_FORMATS, CREDIT_COSTS } from '@/lib/constants';
-import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
+import { EXPORT_FORMATS } from '@/lib/constants';
 import { exportToPDF } from '@/lib/export/pdf-exporter';
 import { exportToDOCX } from '@/lib/export/docx-exporter';
 import { exportToGoogleDocs } from '@/lib/export/google-docs-exporter';
@@ -97,56 +96,8 @@ export const POST = createApiHandler(async (req, { params }) => {
     throw new ApiError('Script not found', 404);
   }
 
-  // Check credits for premium formats
-  const creditCost = [EXPORT_FORMATS.PDF, EXPORT_FORMATS.DOCX].includes(format) 
-    ? CREDIT_COSTS.EXPORT_PDF 
-    : 0;
-
-  // Check credits if needed
-  if (creditCost > 0) {
-    const { data: userData } = await supabase
-      .from('users')
-      .select('credits')
-      .eq('id', user.id)
-      .single();
-
-    if (!userData) {
-      throw new ApiError('Failed to fetch user data', 500);
-    }
-
-    // Check user credits with bypass option
-    const creditValidation = validateCreditsWithBypass(userData.credits, creditCost, user);
-    if (!creditValidation.isValid) {
-      throw new ApiError(creditValidation.message, 402);
-    }
-
-    // Deduct credits (with bypass check)
-    const creditDeduction = await conditionalCreditDeduction(
-      supabase,
-      user.id,
-      userData.credits,
-      creditCost,
-      user
-    );
-
-    if (!creditDeduction.success && !creditDeduction.bypassed) {
-      console.error('Failed to deduct credits:', creditDeduction.error);
-      // Don't throw error, export can continue
-    }
-
-    // Record transaction (only if credits weren't bypassed)
-    if (!creditDeduction.bypassed) {
-      await supabase
-        .from('credit_transactions')
-        .insert({
-          user_id: user.id,
-          amount: -creditCost,
-          type: 'export',
-          description: `Exported script: ${script.title} as ${format}`,
-          metadata: { scriptId: script.id, format }
-        });
-    }
-  }
+  // File exports are now free - no credit cost
+  const creditCost = 0;
 
   try {
     // Record export
@@ -156,7 +107,7 @@ export const POST = createApiHandler(async (req, { params }) => {
         script_id: script.id,
         user_id: user.id,
         format,
-        metadata: { creditCost }
+        metadata: { creditCost: 0 }
       });
 
     // Handle PDF export
@@ -170,7 +121,7 @@ export const POST = createApiHandler(async (req, { params }) => {
         content: buffer.toString('base64'),
         contentType,
         encoding: 'base64',
-        creditCost
+        creditCost: 0
       };
     }
 
@@ -186,7 +137,7 @@ export const POST = createApiHandler(async (req, { params }) => {
         content: buffer.toString('base64'),
         contentType,
         encoding: 'base64',
-        creditCost
+        creditCost: 0
       };
     }
 
@@ -218,7 +169,7 @@ export const POST = createApiHandler(async (req, { params }) => {
         documentId: result.documentId,
         url: result.url,
         title: result.title,
-        creditCost: 0 // Google Docs export is free
+        creditCost: 0: 0 // Google Docs export is free
       };
     }
 

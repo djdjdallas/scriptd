@@ -25,10 +25,13 @@ import {
   Zap,
   AlertCircle,
   CheckCircle2,
-  Lightbulb
+  Lightbulb,
+  Lock,
+  Crown
 } from 'lucide-react';
-import { SCRIPT_TYPES, SCRIPT_LENGTHS, AI_MODELS, CREDIT_COSTS } from '@/lib/constants';
+import { SCRIPT_TYPES, SCRIPT_LENGTHS, AI_MODELS, CREDIT_COSTS, PREMIUM_AI_MODELS } from '@/lib/constants';
 import { getKeyPointRecommendations, filterNewRecommendations } from '@/lib/key-points-recommendations';
+import { hasAccessToModel, isPremiumModel, getMinimumTierForModel, getTierDisplayName } from '@/lib/subscription-helpers';
 
 const STEPS = [
   { 
@@ -79,7 +82,8 @@ export default function NewScriptPage() {
   const [userData, setUserData] = useState({
     credits: 0,
     channels: [],
-    voiceProfiles: []
+    voiceProfiles: [],
+    subscriptionTier: 'free'
   });
   
   const [formData, setFormData] = useState({
@@ -113,7 +117,8 @@ export default function NewScriptPage() {
       setUserData({
         credits: userData.data?.credits || 0,
         channels: channelsData.data || [],
-        voiceProfiles: voiceData.data || []
+        voiceProfiles: voiceData.data || [],
+        subscriptionTier: userData.data?.subscription_tier || 'free'
       });
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -583,26 +588,54 @@ export default function NewScriptPage() {
                 <div className="grid gap-3 mt-2">
                   {Object.entries(AI_MODELS).map(([key, value]) => {
                     const cost = CREDIT_COSTS.SCRIPT_GENERATION[value];
+                    const hasAccess = hasAccessToModel(value, userData.subscriptionTier);
+                    const isPremium = isPremiumModel(value);
+                    const minimumTier = getMinimumTierForModel(value);
+                    
                     return (
                       <button
                         key={key}
-                        onClick={() => updateFormData('model', value)}
-                        className={`glass-button p-4 text-left transition-all ${
+                        onClick={() => hasAccess && updateFormData('model', value)}
+                        disabled={!hasAccess}
+                        className={`glass-button p-4 text-left transition-all relative ${
                           formData.model === value
                             ? 'bg-purple-500/20 ring-2 ring-purple-400'
-                            : 'hover:bg-white/10'
+                            : hasAccess ? 'hover:bg-white/10' : 'opacity-50 cursor-not-allowed'
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-white font-medium">{value}</p>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-white font-medium">{value}</p>
+                              {isPremium && (
+                                <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-400/50 text-yellow-300">
+                                  <Crown className="h-3 w-3 mr-1" />
+                                  Premium
+                                </Badge>
+                              )}
+                              {!hasAccess && (
+                                <Badge variant="outline" className="border-red-400/50 text-red-300">
+                                  <Lock className="h-3 w-3 mr-1" />
+                                  {getTierDisplayName(minimumTier)}+
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-sm text-gray-400 mt-1">
-                              {key.includes('TURBO') ? 'Fast & efficient' : 'Most capable'}
+                              {key.includes('GPT5') ? 'Most advanced GPT model' :
+                               key.includes('CLAUDE_4_OPUS') ? 'Most capable Claude model' :
+                               key.includes('GPT4') && !key.includes('TURBO') ? 'Powerful reasoning' :
+                               key.includes('TURBO') ? 'Fast & efficient' :
+                               key.includes('SONNET') ? 'Balanced performance' :
+                               key.includes('HAIKU') ? 'Quick & affordable' :
+                               key.includes('MIXTRAL') ? 'Open-source alternative' :
+                               'Advanced capabilities'}
                             </p>
                           </div>
-                          <Badge className="glass border-purple-400/50 text-purple-300">
-                            {cost} credits
-                          </Badge>
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge className="glass border-purple-400/50 text-purple-300">
+                              {cost} credits
+                            </Badge>
+                          </div>
                         </div>
                       </button>
                     );

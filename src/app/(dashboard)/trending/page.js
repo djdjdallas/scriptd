@@ -22,20 +22,27 @@ import {
   Activity,
   Settings,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Lock,
+  Crown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TiltCard } from '@/components/ui/tilt-card';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export default function TrendingPage() {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedTimeframe, setSelectedTimeframe] = useState('today');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [useUserNiche, setUseUserNiche] = useState(false);
   const [userPreferences, setUserPreferences] = useState(null);
+  const [userTier, setUserTier] = useState('free');
+  const [hasAccess, setHasAccess] = useState(false);
   
   // Data states
   const [trendingTopics, setTrendingTopics] = useState([]);
@@ -68,9 +75,38 @@ export default function TrendingPage() {
   ];
 
   useEffect(() => {
-    fetchUserPreferences();
-    fetchTrendingData();
-  }, [selectedCategory, selectedTimeframe, useUserNiche]);
+    checkAccess();
+  }, []);
+
+  useEffect(() => {
+    if (hasAccess) {
+      fetchUserPreferences();
+      fetchTrendingData();
+    }
+  }, [selectedCategory, selectedTimeframe, useUserNiche, hasAccess]);
+
+  const checkAccess = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      const { data } = await supabase
+        .from('users')
+        .select('subscription_tier')
+        .eq('id', user.id)
+        .single();
+      
+      const tier = data?.subscription_tier || 'free';
+      setUserTier(tier);
+      setHasAccess(tier !== 'free');
+      
+      if (tier === 'free') {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+    }
+  };
 
   const fetchUserPreferences = async () => {
     try {
@@ -256,6 +292,55 @@ export default function TrendingPage() {
           <Loader2 className="h-12 w-12 text-purple-400 animate-spin mx-auto mb-4" />
           <p className="text-white text-lg">Loading trending data...</p>
           <p className="text-gray-400 text-sm mt-2">Analyzing YouTube trends</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Premium gate for free users
+  if (!hasAccess) {
+    return (
+      <div className="min-h-[600px] flex items-center justify-center">
+        <div className="glass-card p-12 text-center max-w-2xl mx-auto animate-reveal">
+          <div className="inline-flex items-center justify-center w-20 h-20 glass rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 mb-6">
+            <Crown className="h-10 w-10 text-yellow-400" />
+          </div>
+          
+          <h1 className="text-3xl font-bold text-white mb-4">
+            Trending Analytics
+          </h1>
+          
+          <p className="text-gray-400 mb-8 max-w-md mx-auto">
+            Access real-time YouTube trending data, discover viral topics, and stay ahead of the competition with our premium trending analytics.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="glass p-4 rounded-lg">
+              <TrendingUp className="h-8 w-8 text-green-400 mx-auto mb-2" />
+              <h3 className="text-white font-semibold mb-1">Real-Time Trends</h3>
+              <p className="text-sm text-gray-400">Track what's hot right now</p>
+            </div>
+            <div className="glass p-4 rounded-lg">
+              <Hash className="h-8 w-8 text-purple-400 mx-auto mb-2" />
+              <h3 className="text-white font-semibold mb-1">Viral Topics</h3>
+              <p className="text-sm text-gray-400">Find trending hashtags & topics</p>
+            </div>
+            <div className="glass p-4 rounded-lg">
+              <Users className="h-8 w-8 text-blue-400 mx-auto mb-2" />
+              <h3 className="text-white font-semibold mb-1">Top Channels</h3>
+              <p className="text-sm text-gray-400">Discover fast-growing creators</p>
+            </div>
+          </div>
+
+          <Link href="/pricing">
+            <Button 
+              size="lg"
+              className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+            >
+              <Lock className="mr-2 h-5 w-5" />
+              Upgrade to Premium
+            </Button>
+          </Link>
         </div>
       </div>
     );

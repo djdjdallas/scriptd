@@ -8,6 +8,7 @@ import { getAIService } from '@/lib/ai';
 import { generateScript } from '@/lib/prompts/script-generation';
 import { CREDIT_COSTS, AI_MODELS } from '@/lib/constants';
 import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
+import { hasAccessToModel, checkUpgradeRequirement, getTierDisplayName } from '@/lib/subscription-helpers';
 
 // POST /api/scripts/generate
 export const POST = createApiHandler(async (req) => {
@@ -29,17 +30,29 @@ export const POST = createApiHandler(async (req) => {
     channelId: { required: false, validator: (v) => v }
   });
 
-  // Check user credits
+  // Check user data and subscription
   const creditCost = CREDIT_COSTS.SCRIPT_GENERATION[validated.model] || 10;
   
   const { data: userData, error: userError } = await supabase
     .from('users')
-    .select('credits')
+    .select('credits, subscription_tier, subscription_status')
     .eq('id', user.id)
     .single();
 
   if (userError || !userData) {
     throw new ApiError('Failed to fetch user data', 500);
+  }
+
+  // Check model access based on subscription tier
+  const userTier = userData.subscription_tier || 'free';
+  const upgradeCheck = checkUpgradeRequirement(validated.model, userTier);
+  
+  if (upgradeCheck.needsUpgrade) {
+    const requiredTier = getTierDisplayName(upgradeCheck.minimumTier);
+    throw new ApiError(
+      `This AI model requires a ${requiredTier} subscription or higher. Please upgrade your plan to access ${validated.model}.`,
+      403
+    );
   }
 
   // Check user credits with bypass option
@@ -104,14 +117,15 @@ export const POST = createApiHandler(async (req) => {
 
     console.log('[Generate] Prompt created, length:', prompt.user?.length || 0);
     
-    // Check if this is an Anthropic model or OpenAI model
+    // Check if this is an Anthropic model, GROQ model, or OpenAI model
     const isAnthropic = validated.model.includes('claude');
-    console.log('[Generate] Is Anthropic model:', isAnthropic);
+    const isGroq = validated.model.includes('mistral') || validated.model.includes('mixtral');
+    console.log('[Generate] Model type - Anthropic:', isAnthropic, 'GROQ:', isGroq);
     
     let result;
-    if (isAnthropic) {
-      console.log('[Generate] Calling Anthropic API...');
-      // AnthropicProvider returns object with text, usage, cost
+    if (isAnthropic || isGroq) {
+      console.log('[Generate] Calling', isAnthropic ? 'Anthropic' : 'GROQ', 'API...');
+      // Both AnthropicProvider and GroqProvider return object with text, usage, cost
       result = await ai.generateCompletion({
         prompt: prompt.user,
         system: prompt.system,
@@ -119,7 +133,7 @@ export const POST = createApiHandler(async (req) => {
         maxTokens: 4000,
         temperature: 0.8
       });
-      console.log('[Generate] Anthropic response received');
+      console.log('[Generate]', isAnthropic ? 'Anthropic' : 'GROQ', 'response received');
     } else {
       // OpenAI returns string directly
       const text = await ai.generateCompletion(
@@ -131,7 +145,7 @@ export const POST = createApiHandler(async (req) => {
           temperature: 0.8
         }
       );
-      // Format OpenAI response to match Anthropic structure
+      // Format OpenAI response to match Anthropic/GROQ structure
       result = {
         text: text,
         usage: { totalTokens: 4000 }, // Estimate for OpenAI

@@ -23,32 +23,42 @@ const PRICE_IDS = {
   credits_500: process.env.STRIPE_PRICE_CREDITS_500,
 };
 
-// Credit packages
-export const CREDIT_PACKAGES = [
-  {
-    id: 'credits_50',
+// Credit packages with updated pricing
+export const CREDIT_PACKAGES = {
+  pack_50: {
+    id: 'pack_50',
+    name: 'Starter Pack',
+    description: 'Perfect for trying out',
     credits: 50,
-    price: 5,
-    priceId: PRICE_IDS.credits_50,
-    popular: false
+    price: 15,
+    perCredit: '0.30',
+    badge: null,
+    stripeProductId: 'prod_T1ICocdNCYayyY',
+    stripePriceId: PRICE_IDS.credits_50
   },
-  {
-    id: 'credits_100',
+  pack_100: {
+    id: 'pack_100',
+    name: 'Popular Pack',
+    description: 'Most popular choice',
     credits: 100,
-    price: 9,
-    priceId: PRICE_IDS.credits_100,
-    popular: true,
-    savings: '10%'
+    price: 25,
+    perCredit: '0.25',
+    badge: 'Most Popular',
+    stripeProductId: 'prod_T1ICAOiPIcPLeh',
+    stripePriceId: PRICE_IDS.credits_100
   },
-  {
-    id: 'credits_500',
+  pack_500: {
+    id: 'pack_500',
+    name: 'Pro Pack',
+    description: 'Best value for professionals',
     credits: 500,
-    price: 40,
-    priceId: PRICE_IDS.credits_500,
-    popular: false,
-    savings: '20%'
+    price: 99,
+    perCredit: '0.198',
+    badge: 'Best Value',
+    stripeProductId: 'prod_T1ICGMiLqVLkeB',
+    stripePriceId: PRICE_IDS.credits_500
   }
-];
+};
 
 // Stripe service class
 export class StripeService {
@@ -94,7 +104,7 @@ export class StripeService {
 
   // Create checkout session for credit purchase
   async createCreditsCheckout(userId, packageId, successUrl, cancelUrl) {
-    const creditPackage = CREDIT_PACKAGES.find(p => p.id === packageId);
+    const creditPackage = CREDIT_PACKAGES[packageId] || Object.values(CREDIT_PACKAGES).find(p => p.id === packageId);
     if (!creditPackage) {
       throw new Error('Invalid credit package');
     }

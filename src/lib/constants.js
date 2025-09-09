@@ -24,6 +24,39 @@ export const AI_MODELS = {
   MIXTRAL: 'mixtral-8x7b-32768'
 };
 
+// Premium AI Models (require paid subscription)
+export const PREMIUM_AI_MODELS = [
+  AI_MODELS.GPT5,
+  AI_MODELS.CLAUDE_4_OPUS,
+  AI_MODELS.CLAUDE_4_OPUS_41
+];
+
+// Models available for each subscription tier
+export const MODEL_ACCESS_BY_TIER = {
+  free: [
+    AI_MODELS.MIXTRAL,
+    AI_MODELS.CLAUDE_3_HAIKU
+  ],
+  starter: [
+    AI_MODELS.MIXTRAL,
+    AI_MODELS.CLAUDE_3_HAIKU,
+    AI_MODELS.GPT4_TURBO,
+    AI_MODELS.CLAUDE_37_SONNET,
+    AI_MODELS.MIXTRAL_LARGE
+  ],
+  professional: [
+    AI_MODELS.MIXTRAL,
+    AI_MODELS.CLAUDE_3_HAIKU,
+    AI_MODELS.GPT4_TURBO,
+    AI_MODELS.GPT4,
+    AI_MODELS.GPT41,
+    AI_MODELS.CLAUDE_37_SONNET,
+    AI_MODELS.MIXTRAL_LARGE
+  ],
+  business: Object.values(AI_MODELS), // All models
+  enterprise: Object.values(AI_MODELS) // All models
+};
+
 // Script Types
 export const SCRIPT_TYPES = {
   EDUCATIONAL: 'educational',
@@ -64,8 +97,8 @@ export const CREDIT_COSTS = {
   CHANNEL_ANALYSIS: 5,
   TREND_ANALYSIS: 3,
   VOICE_TRAINING: 10,
-  EXPORT_PDF: 2,
-  EXPORT_DOCX: 2
+  EXPORT_PDF: 0,  // File exports are now free
+  EXPORT_DOCX: 0  // File exports are now free
 };
 
 // Subscription Plans
@@ -266,31 +299,42 @@ export const TEAM_ROLES = {
 };
 
 // Credit Packages (imported from stripe config)
-export const CREDIT_PACKAGES = [
-  {
-    id: 'credits_50',
+// Credit Packages with updated pricing
+export const CREDIT_PACKAGES = {
+  pack_50: {
+    id: 'pack_50',
+    name: 'Starter Pack',
+    description: 'Perfect for trying out',
     credits: 50,
-    price: 5,
-    priceId: process.env.STRIPE_PRICE_CREDITS_50,
-    popular: false
+    price: 15,
+    perCredit: '0.30',
+    badge: null,
+    stripeProductId: 'prod_T1ICocdNCYayyY',
+    stripePriceId: process.env.STRIPE_PRICE_CREDITS_50
   },
-  {
-    id: 'credits_100',
+  pack_100: {
+    id: 'pack_100',
+    name: 'Popular Pack',
+    description: 'Most popular choice',
     credits: 100,
-    price: 9,
-    priceId: process.env.STRIPE_PRICE_CREDITS_100,
-    popular: true,
-    savings: '10%'
+    price: 25,
+    perCredit: '0.25',
+    badge: 'Most Popular',
+    stripeProductId: 'prod_T1ICAOiPIcPLeh',
+    stripePriceId: process.env.STRIPE_PRICE_CREDITS_100
   },
-  {
-    id: 'credits_500',
+  pack_500: {
+    id: 'pack_500',
+    name: 'Pro Pack',
+    description: 'Best value for professionals',
     credits: 500,
-    price: 40,
-    priceId: process.env.STRIPE_PRICE_CREDITS_500,
-    popular: false,
-    savings: '20%'
+    price: 99,
+    perCredit: '0.198',
+    badge: 'Best Value',
+    stripeProductId: 'prod_T1ICGMiLqVLkeB',
+    stripePriceId: process.env.STRIPE_PRICE_CREDITS_500
   }
-];
+};
 
 // Error Codes
 export const ERROR_CODES = {
