@@ -1,23 +1,28 @@
 import { NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 
 export async function middleware(request) {
   // Update the session
   const response = await updateSession(request)
 
+  // Create a Supabase client configured to use cookies
+  const supabase = createMiddlewareClient({ req: request, res: response })
+
   // Protected routes
-  const protectedRoutes = ['/scripts', '/channels', '/research', '/settings', '/billing']
+  const protectedRoutes = ['/scripts', '/channels', '/research', '/settings', '/billing', '/dashboard', '/teams', '/admin']
   const authRoutes = ['/login', '/signup']
   const pathname = request.nextUrl.pathname
 
-  // Skip middleware for auth callback
-  if (pathname.startsWith('/auth/callback')) {
+  // Skip middleware for auth callback and onboarding
+  if (pathname.startsWith('/auth/callback') || pathname.startsWith('/api/')) {
     return response
   }
 
   // Check if the current route is protected
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
+  const isOnboardingRoute = pathname.startsWith('/onboarding')
 
   // Check for Supabase auth cookies (they start with sb-)
   const cookies = request.cookies.getAll()
@@ -26,13 +31,81 @@ export async function middleware(request) {
     cookie.name.includes('auth-token')
   )
 
-  // Redirect logic
-  if (isProtectedRoute && !hasSession) {
+  // Redirect logic for unauthenticated users
+  if ((isProtectedRoute || isOnboardingRoute) && !hasSession) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  // Redirect authenticated users away from auth pages
   if (isAuthRoute && hasSession) {
-    return NextResponse.redirect(new URL('/scripts', request.url))
+    // Check if user needs onboarding
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        // Get user's onboarding status
+        const { data: userData } = await supabase
+          .from('users')
+          .select('onboarding_completed')
+          .eq('id', user.id)
+          .single()
+
+        // Redirect to onboarding if not completed
+        if (!userData?.onboarding_completed) {
+          return NextResponse.redirect(new URL('/onboarding', request.url))
+        }
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error)
+    }
+
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // Check onboarding status for protected routes
+  if (isProtectedRoute && hasSession && !isOnboardingRoute) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('onboarding_completed')
+          .eq('id', user.id)
+          .single()
+
+        // Redirect to onboarding if not completed (except for certain routes)
+        const skipOnboardingRoutes = ['/settings', '/billing']
+        const shouldSkipOnboarding = skipOnboardingRoutes.some(route => pathname.startsWith(route))
+        
+        if (!userData?.onboarding_completed && !shouldSkipOnboarding) {
+          return NextResponse.redirect(new URL('/onboarding', request.url))
+        }
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error)
+    }
+  }
+
+  // Prevent access to onboarding if already completed
+  if (isOnboardingRoute && hasSession) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('onboarding_completed')
+          .eq('id', user.id)
+          .single()
+
+        if (userData?.onboarding_completed) {
+          return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error)
+    }
   }
 
   return response
@@ -46,8 +119,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
-     * - api routes
+     * - api routes (now handled in middleware)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

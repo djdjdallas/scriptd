@@ -7,7 +7,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gray-950 text-foreground;
   }
   
   :root {
@@ -75,7 +75,7 @@
   }
   
   .glass-card {
-    @apply glass rounded-2xl p-8 shadow-2xl relative overflow-hidden;
+    @apply backdrop-blur-xl bg-gray-900/40 dark:bg-gray-900/60 border border-gray-700/50 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl relative overflow-hidden;
   }
   
   .glass-nav {
@@ -87,7 +87,7 @@
   }
   
   .glass-input {
-    @apply glass rounded-xl px-6 py-4 w-full focus:outline-none focus:ring-2 focus:ring-purple-400/50 placeholder-gray-400 dark:placeholder-gray-500;
+    @apply backdrop-blur-xl bg-gray-900/40 dark:bg-gray-900/60 border border-gray-700/50 dark:border-gray-600/30 rounded-xl px-6 py-4 w-full focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-500/50 placeholder-gray-500 dark:placeholder-gray-400 text-white transition-all duration-200 hover:bg-gray-900/50 dark:hover:bg-gray-900/70;
   }
   
   /* Gradient Orbs */
@@ -123,8 +123,36 @@
     100% { transform: translateY(-50px); }
   }
   
+  @keyframes reveal {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes pulse-slow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
   .animate-float {
     animation: float 20s ease-in-out infinite;
+  }
+  
+  .animate-reveal {
+    animation: reveal 0.6s ease-out forwards;
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse-slow 3s ease-in-out infinite;
   }
   
   .animate-shimmer {
@@ -147,6 +175,31 @@
   
   .gradient-text {
     @apply bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent animate-shimmer;
+  }
+  
+  /* Custom Scrollbar Styles */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-gray-700 rounded-full hover:bg-gray-600 transition-colors;
+  }
+  
+  /* Firefox scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #4a5568 transparent;
+  }
+  
+  /* Textarea and Input dark theme overrides */
+  textarea, input {
+    color-scheme: dark;
   }
   
   /* Interactive States */

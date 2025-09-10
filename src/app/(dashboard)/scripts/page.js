@@ -27,6 +27,7 @@ import {
   TrendingUp,
   Eye,
   Share2,
+  History,
 } from "lucide-react";
 import { SCRIPT_TYPES } from "@/lib/constants";
 import { useToast } from "@/components/ui/use-toast";
@@ -463,22 +464,43 @@ export default function ScriptsPage() {
                       <div className="flex items-center gap-2 ml-6">
                         <Link href={`/scripts/${script.id}`}>
                           <Button
+                            className="glass-button hover:bg-blue-500/20"
+                            size="icon"
+                            title="View Script"
+                          >
+                            <Eye className="h-4 w-4 text-white" />
+                          </Button>
+                        </Link>
+                        <Link href={`/scripts/${script.id}/edit`}>
+                          <Button
                             className="glass-button hover:bg-purple-500/20"
                             size="icon"
+                            title="Edit Script"
                           >
                             <Edit className="h-4 w-4 text-white" />
+                          </Button>
+                        </Link>
+                        <Link href={`/scripts/${script.id}/history`}>
+                          <Button
+                            className="glass-button hover:bg-yellow-500/20"
+                            size="icon"
+                            title="Version History"
+                          >
+                            <History className="h-4 w-4 text-white" />
                           </Button>
                         </Link>
                         <Button
                           className="glass-button hover:bg-pink-500/20"
                           size="icon"
                           onClick={() => handleDelete(script.id)}
+                          title="Delete Script"
                         >
                           <Trash2 className="h-4 w-4 text-white" />
                         </Button>
                         <Button
-                          className="glass-button hover:bg-blue-500/20"
+                          className="glass-button hover:bg-green-500/20"
                           size="icon"
+                          title="Share Script"
                         >
                           <Share2 className="h-4 w-4 text-white" />
                         </Button>

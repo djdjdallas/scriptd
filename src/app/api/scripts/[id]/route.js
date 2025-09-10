@@ -6,29 +6,19 @@ import { createApiHandler, ApiError } from '@/lib/api-handler';
 
 // GET /api/scripts/[id] - Get single script
 export const GET = createApiHandler(async (req, context) => {
-  const { user, supabase } = await getAuthenticatedUser();
+  const { user } = await getAuthenticatedUser();
   const { id } = await context.params;
+  const { scriptService } = await import('@/lib/scripts/script-service');
 
-  // Join with channels to get user's scripts
-  const { data: script, error } = await supabase
-    .from('scripts')
-    .select(`
-      *,
-      channels!inner(
-        id,
-        name,
-        user_id
-      )
-    `)
-    .eq('id', id)
-    .eq('channels.user_id', user.id)
-    .single();
-
-  if (error || !script) {
-    throw new ApiError('Script not found', 404);
+  try {
+    const script = await scriptService.getScript(id, user.id);
+    return NextResponse.json(script);
+  } catch (error) {
+    if (error.message.includes('not found') || error.message.includes('access denied')) {
+      throw new ApiError(error.message, 404);
+    }
+    throw new ApiError('Failed to fetch script', 500);
   }
-
-  return NextResponse.json(script);
 });
 
 // PUT /api/scripts/[id] - Update script
@@ -37,78 +27,54 @@ export const PUT = createApiHandler(async (req, context) => {
   const { id } = await context.params;
 
   const body = await req.json();
+  const { scriptService } = await import('@/lib/scripts/script-service');
   
-  // Verify ownership through channel
-  const { data: existing } = await supabase
-    .from('scripts')
-    .select(`
-      id,
-      channels!inner(
-        user_id
-      )
-    `)
-    .eq('id', id)
-    .eq('channels.user_id', user.id)
-    .single();
-
-  if (!existing) {
-    throw new ApiError('Script not found or unauthorized', 404);
-  }
-
-  // Update script
-  const { data: script, error } = await supabase
-    .from('scripts')
-    .update({
+  try {
+    const script = await scriptService.updateScript(id, user.id, {
       title: body.title,
       content: body.content,
       hook: body.hook,
       description: body.description,
       tags: body.tags,
-      metadata: body.metadata,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id)
-    .select()
-    .single();
+      metadata: body.metadata
+    }, {
+      createVersion: body.createVersion !== false, // Default to true unless explicitly false
+      isAutoSave: body.isAutoSave === true
+    });
 
-  if (error) {
+    // Clean up old auto-save versions periodically
+    if (body.isAutoSave) {
+      scriptService.cleanupOldAutoSaves(id, 10).catch(console.warn);
+    }
+
+    return NextResponse.json(script);
+  } catch (error) {
+    if (error.message.includes('not found') || error.message.includes('access denied')) {
+      throw new ApiError(error.message, 404);
+    }
+    if (error.message.includes('permission')) {
+      throw new ApiError(error.message, 403);
+    }
     throw new ApiError('Failed to update script', 500);
   }
-
-  return NextResponse.json(script);
 });
 
 // DELETE /api/scripts/[id] - Delete script
 export const DELETE = createApiHandler(async (req, context) => {
-  const { user, supabase } = await getAuthenticatedUser();
+  const { user } = await getAuthenticatedUser();
   const { id } = await context.params;
+  const { scriptService } = await import('@/lib/scripts/script-service');
 
-  // First verify ownership through channel
-  const { data: script } = await supabase
-    .from('scripts')
-    .select(`
-      id,
-      channels!inner(
-        user_id
-      )
-    `)
-    .eq('id', id)
-    .eq('channels.user_id', user.id)
-    .single();
-
-  if (!script) {
-    throw new ApiError('Script not found or unauthorized', 404);
-  }
-
-  // Delete the script
-  const { error } = await supabase
-    .from('scripts')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
+  try {
+    const result = await scriptService.deleteScript(id, user.id);
+    return NextResponse.json(result);
+  } catch (error) {
+    if (error.message.includes('not found') || error.message.includes('access denied')) {
+      throw new ApiError(error.message, 404);
+    }
+    if (error.message.includes('permission')) {
+      throw new ApiError(error.message, 403);
+    }
     throw new ApiError('Failed to delete script', 500);
   }
-
-  return NextResponse.json({ success: true });
 });

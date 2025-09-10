@@ -64,6 +64,9 @@ export function getSystemPrompt(type) {
   return prompt.system;
 }
 
+// Import enhanced generation functions
+import { generateEnhancedScript } from './script-generation-v2';
+
 // Improved YouTube Script Generation with Web Search Requirements
 export function generateScript(options) {
   const {
@@ -74,8 +77,17 @@ export function generateScript(options) {
     targetAudience = 'general',
     keyPoints = [],
     channelContext = '',
-    voiceProfile = null
+    voiceProfile = null,
+    useEnhanced = true, // Use enhanced 2025 version by default
+    platform = 'youtube_long',
+    trendingTopics = [],
+    performanceGoals = {}
   } = options;
+
+  // Use enhanced version if enabled
+  if (useEnhanced) {
+    return generateEnhancedScript(options);
+  }
 
   // Calculate script duration based on length
   const getDuration = (length) => {

@@ -169,7 +169,7 @@ export const POST = createApiHandler(async (req, { params }) => {
         documentId: result.documentId,
         url: result.url,
         title: result.title,
-        creditCost: 0: 0 // Google Docs export is free
+        creditCost: 0 // Google Docs export is free
       };
     }
 
