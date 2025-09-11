@@ -14,13 +14,16 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
+            cookiesToSet.forEach(({ name, value, options }) => {
+              // Ensure value is a string
+              const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value)
+              cookieStore.set(name, stringValue, options)
+            })
           } catch (error) {
             // The `set` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
+            console.warn('Cookie set error (can be ignored in Server Components):', error.message)
           }
         },
       },

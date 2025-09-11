@@ -6,6 +6,7 @@ import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { validateSchema, schemas } from '@/lib/validators';
 import { getAIService } from '@/lib/ai';
 import { generateScript } from '@/lib/prompts/script-generation';
+import { validateScriptFactChecking, extractFactCheckData } from '@/lib/prompts/fact-checking-config';
 import { CREDIT_COSTS, AI_MODELS } from '@/lib/constants';
 import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
 import { hasAccessToModel, checkUpgradeRequirement, getTierDisplayName } from '@/lib/subscription-helpers';
@@ -20,6 +21,7 @@ export const POST = createApiHandler(async (req) => {
   // Validate request
   const validated = validateSchema(body, {
     title: { required: true, validator: (v) => v.trim() },
+    topic: { required: false, validator: (v) => v || '' }, // Optional topic field
     type: { required: true, validator: (v) => v },
     length: { required: true, validator: (v) => parseInt(v) },
     tone: { required: false, validator: (v) => v || 'professional' },
@@ -27,11 +29,26 @@ export const POST = createApiHandler(async (req) => {
     keyPoints: { required: false, validator: (v) => Array.isArray(v) ? v : [] },
     model: { required: false, validator: (v) => v || AI_MODELS.GPT4_TURBO },
     voiceProfileId: { required: false, validator: (v) => v },
-    channelId: { required: false, validator: (v) => v }
+    channelId: { required: false, validator: (v) => v },
+    enableFactChecking: { required: false, validator: (v) => v !== false } // Default to true
   });
 
-  // Check user data and subscription
-  const creditCost = CREDIT_COSTS.SCRIPT_GENERATION[validated.model] || 10;
+  // Calculate credit cost based on model and length
+  const baseModelCost = CREDIT_COSTS.SCRIPT_GENERATION[validated.model] || 10;
+  const lengthMultiplier = getLengthMultiplier(validated.length);
+  const creditCost = Math.ceil(baseModelCost * lengthMultiplier);
+  
+  // Helper function to calculate length multiplier based on minutes
+  function getLengthMultiplier(minutes) {
+    if (minutes <= 5) return 1.0;
+    if (minutes <= 10) return 1.2;
+    if (minutes <= 15) return 1.5;
+    if (minutes <= 20) return 1.8;
+    if (minutes <= 30) return 2.2;
+    if (minutes <= 40) return 2.8;
+    if (minutes <= 50) return 3.5;
+    return 4.0; // 60 minutes
+  }
   
   const { data: userData, error: userError } = await supabase
     .from('users')
@@ -85,15 +102,40 @@ export const POST = createApiHandler(async (req) => {
   // Get voice profile if provided
   let voiceProfile = null;
   if (validated.voiceProfileId) {
+    // First get user's channels to verify ownership
+    const { data: userChannels } = await supabase
+      .from('channels')
+      .select('id')
+      .eq('user_id', user.id);
+    
+    const userChannelIds = userChannels?.map(c => c.id) || [];
+    
+    // Get the voice profile ensuring user owns the channel
     const { data: profile } = await supabase
       .from('voice_profiles')
-      .select('profile_data')
+      .select('*')
       .eq('id', validated.voiceProfileId)
-      .eq('user_id', user.id)
+      .in('channel_id', userChannelIds)
       .single();
 
     if (profile) {
-      voiceProfile = profile.profile_data;
+      // Extract voice characteristics for script generation
+      voiceProfile = {
+        name: profile.profile_name,
+        parameters: profile.parameters || {},
+        training_data: profile.training_data || {},
+        // Include specific voice characteristics
+        tone: profile.parameters?.tone,
+        pitch: profile.parameters?.pitch,
+        speed: profile.parameters?.speed,
+        emphasis: profile.parameters?.emphasis,
+        // Include any style analysis from training
+        formality: profile.parameters?.formality,
+        enthusiasm: profile.parameters?.enthusiasm,
+        catchphrases: profile.parameters?.catchphrases,
+        greetings: profile.parameters?.greetings,
+        topWords: profile.parameters?.topWords
+      };
     }
   }
 
@@ -106,13 +148,15 @@ export const POST = createApiHandler(async (req) => {
     
     const prompt = generateScript({
       title: validated.title,
+      topic: validated.topic, // Pass topic for better context
       type: validated.type,
       length: validated.length,
       tone: validated.tone,
       targetAudience: validated.targetAudience,
       keyPoints: validated.keyPoints,
       channelContext,
-      voiceProfile
+      voiceProfile,
+      enableFactChecking: validated.enableFactChecking
     });
 
     console.log('[Generate] Prompt created, length:', prompt.user?.length || 0);
@@ -155,6 +199,33 @@ export const POST = createApiHandler(async (req) => {
     
     // Result is now consistently formatted with text, usage, and cost properties
     const formattedResult = result;
+    
+    // Validate fact-checking if enabled
+    let factCheckValidation = null;
+    let factCheckData = null;
+    
+    if (validated.enableFactChecking !== false) {
+      console.log('[Generate] Validating fact-checking in generated script...');
+      factCheckValidation = validateScriptFactChecking(formattedResult.text);
+      factCheckData = extractFactCheckData(formattedResult.text);
+      
+      console.log('[Generate] Fact-check validation:', factCheckValidation.status);
+      console.log('[Generate] Fact-check score:', factCheckValidation.score);
+      
+      // Log warnings if any
+      if (factCheckValidation.warnings.length > 0) {
+        console.warn('[Generate] Fact-check warnings:', factCheckValidation.warnings);
+      }
+      
+      // Reject script if fact-checking failed
+      if (!factCheckValidation.passed) {
+        console.error('[Generate] Script failed fact-checking:', factCheckValidation.errors);
+        throw new ApiError(
+          `Script generation failed fact-checking requirements: ${factCheckValidation.errors.join(', ')}. Please try again with accurate information.`,
+          400
+        );
+      }
+    }
 
     // Get or create default channel
     let channelId = validated.channelId;
@@ -205,7 +276,10 @@ export const POST = createApiHandler(async (req) => {
           model: validated.model,
           voiceProfileId: validated.voiceProfileId,
           tokenUsage: formattedResult.usage,
-          cost: formattedResult.cost
+          cost: formattedResult.cost,
+          factCheckEnabled: validated.enableFactChecking !== false,
+          factCheckValidation: factCheckValidation,
+          factCheckData: factCheckData
         }
       })
       .select()
@@ -256,6 +330,14 @@ export const POST = createApiHandler(async (req) => {
         remainingCredits: creditDeduction.bypassed ? userData.credits : (userData.credits - creditCost),
         tokenUsage: result.usage,
         creditsBypassed: creditDeduction.bypassed
+      },
+      factCheck: validated.enableFactChecking !== false ? {
+        enabled: true,
+        validation: factCheckValidation,
+        data: factCheckData
+      } : {
+        enabled: false,
+        message: 'Fact-checking was disabled for this generation'
       }
     });
 

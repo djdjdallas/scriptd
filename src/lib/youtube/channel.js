@@ -18,24 +18,46 @@ export async function getChannelByUrl(url) {
     if (channelInfo.type === 'id') {
       channelId = channelInfo.value;
     } else {
-      // Need to resolve the channel ID from username/handle
+      // For @handles, we need to use a different approach
+      // First try searching by the handle/username
+      console.log('Searching for channel with identifier:', channelInfo.value);
+      
+      // Clean the handle (remove @ if present)
+      const cleanHandle = channelInfo.value.replace('@', '');
+      
+      // Try searching for the channel
       const searchResponse = await withRateLimit('search', () =>
         youtube.search.list({
           part: ['snippet'],
-          q: channelInfo.value,
+          q: cleanHandle,
           type: ['channel'],
-          maxResults: 5,
+          maxResults: 10,
         })
       );
 
-      const channel = searchResponse.data.items?.find(
-        item => 
-          item.snippet.channelTitle.toLowerCase() === channelInfo.value.toLowerCase() ||
-          item.snippet.customUrl?.toLowerCase() === channelInfo.value.toLowerCase()
-      );
+      console.log('Search response items:', searchResponse.data.items?.length || 0);
+
+      // Try to find exact match or closest match
+      let channel = searchResponse.data.items?.find(item => {
+        const title = item.snippet.channelTitle.toLowerCase();
+        const searchTerm = cleanHandle.toLowerCase();
+        
+        // Check for exact match or if title contains the search term
+        return title === searchTerm || 
+               title.includes(searchTerm) ||
+               item.snippet.description?.toLowerCase().includes(searchTerm);
+      });
+
+      // If no exact match, try to use forHandle parameter (YouTube API v3)
+      if (!channel && searchResponse.data.items?.length > 0) {
+        // Use the first result as fallback
+        channel = searchResponse.data.items[0];
+        console.log('Using first search result as fallback:', channel.snippet.channelTitle);
+      }
 
       if (!channel) {
-        throw new Error('Channel not found');
+        console.error('No channel found for identifier:', channelInfo.value);
+        throw new Error(`Channel not found for: ${channelInfo.value}`);
       }
 
       channelId = channel.snippet.channelId;

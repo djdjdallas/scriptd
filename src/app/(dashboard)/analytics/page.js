@@ -63,23 +63,34 @@ export default function AnalyticsPage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
-        // Fetch user's channels
-        const { data: channels } = await supabase
+        // First fetch user's channels
+        const { data: userChannels, error: channelsError } = await supabase
           .from('channels')
-          .select('*')
+          .select('id, name')
           .eq('user_id', user.id);
         
-        const channelIds = channels?.map(c => c.id) || [];
+        console.log('[Analytics] User ID:', user.id);
+        console.log('[Analytics] User channels:', userChannels);
+        console.log('[Analytics] Channels error:', channelsError);
         
-        // Fetch scripts for all user's channels
         let scripts = [];
-        if (channelIds.length > 0) {
-          const { data: scriptsData } = await supabase
+        
+        if (userChannels && userChannels.length > 0) {
+          // Then fetch scripts for those channels
+          const channelIds = userChannels.map(c => c.id);
+          const { data: scriptsData, error: scriptsError } = await supabase
             .from('scripts')
-            .select('*, channels(name)')
+            .select('*')
             .in('channel_id', channelIds)
             .order('created_at', { ascending: false });
+          
+          console.log('[Analytics] Scripts query error:', scriptsError);
+          console.log('[Analytics] Scripts data:', scriptsData);
+          console.log('[Analytics] Scripts count:', scriptsData?.length || 0);
+          
           scripts = scriptsData || [];
+        } else {
+          console.log('[Analytics] No channels found for user');
         }
         
         // Calculate date range
@@ -136,12 +147,17 @@ export default function AnalyticsPage() {
           ? ((totalViews - previousViews) / previousViews * 100).toFixed(1)
           : 0;
         
-        setMetrics({
+        const metricsData = {
           totalScripts: filteredScripts.length,
           totalViews,
           avgEngagement: avgEngagement.toFixed(1),
           growthRate: parseFloat(growthRate)
-        });
+        };
+        
+        console.log('[Analytics] Filtered scripts:', filteredScripts.length);
+        console.log('[Analytics] Metrics calculated:', metricsData);
+        
+        setMetrics(metricsData);
         
         // Generate views data for chart
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -174,24 +190,24 @@ export default function AnalyticsPage() {
         // Calculate performance metrics
         const performanceMetrics = [];
         
-        // Calculate average metrics from scripts
+        // Calculate average metrics from scripts (use 0 if no metadata)
         const avgHookRate = filteredScripts.length > 0
           ? filteredScripts.reduce((sum, script) => {
-              const hookRate = script.metadata?.hook_rate || Math.random() * 100;
+              const hookRate = script.metadata?.hook_rate || 0;
               return sum + hookRate;
             }, 0) / filteredScripts.length
           : 0;
         
         const avgRetention = filteredScripts.length > 0
           ? filteredScripts.reduce((sum, script) => {
-              const retention = script.metadata?.retention || Math.random() * 100;
+              const retention = script.metadata?.retention || 0;
               return sum + retention;
             }, 0) / filteredScripts.length
           : 0;
         
         const avgCTR = filteredScripts.length > 0
           ? filteredScripts.reduce((sum, script) => {
-              const ctr = script.metadata?.ctr || Math.random() * 20;
+              const ctr = script.metadata?.ctr || 0;
               return sum + ctr;
             }, 0) / filteredScripts.length
           : 0;
@@ -210,16 +226,34 @@ export default function AnalyticsPage() {
           .map(script => ({
             title: script.title,
             views: script.metadata?.views || script.views || 0,
-            growth: script.metadata?.growth || (Math.random() * 50 - 10).toFixed(1)
+            growth: script.metadata?.growth || 0
           }))
           .sort((a, b) => b.views - a.views)
           .slice(0, 4);
         
         setTopScripts(sortedScripts);
+      } else {
+        // No user logged in
+        console.log('[Analytics] No user found');
+        setMetrics({
+          totalScripts: 0,
+          totalViews: 0,
+          avgEngagement: 0,
+          growthRate: 0
+        });
+        setViewsData([]);
+        setPerformanceData([]);
+        setTopScripts([]);
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
       // Set empty data on error
+      setMetrics({
+        totalScripts: 0,
+        totalViews: 0,
+        avgEngagement: 0,
+        growthRate: 0
+      });
       setViewsData([]);
       setPerformanceData([]);
       setTopScripts([]);

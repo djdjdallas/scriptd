@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
+import { VoiceTrainingNotifications } from '@/components/notifications/voice-training-notification';
 import {
   FileText,
   Play,
@@ -186,6 +187,9 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900">
+      {/* Voice Training Notifications */}
+      {user && <VoiceTrainingNotifications userId={user.id} />}
+      
       {/* Background Effects */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="gradient-orb w-96 h-96 bg-purple-600 -top-48 -left-48 opacity-10" />

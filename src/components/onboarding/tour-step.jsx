@@ -37,7 +37,7 @@ export function TourStep({ userData, onComplete }) {
     {
       icon: TrendingUp,
       title: 'Trending Topics',
-      description: 'Discover what's hot in your niche',
+      description: 'Discover what\'s hot in your niche',
       location: '/trending',
       color: 'text-blue-400'
     },

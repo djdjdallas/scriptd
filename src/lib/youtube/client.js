@@ -64,25 +64,37 @@ export function setCache(key, data) {
 
 // Extract channel ID from various YouTube URL formats
 export function extractChannelId(url) {
+  if (!url) return null;
+  
+  // Clean the URL
+  const cleanUrl = url.trim();
+  
   const patterns = [
-    // youtube.com/channel/ID
-    /youtube\.com\/channel\/([a-zA-Z0-9_-]+)/,
+    // youtube.com/channel/ID (24 character ID)
+    { regex: /youtube\.com\/channel\/([a-zA-Z0-9_-]{24})/, type: 'id' },
     // youtube.com/c/customname
-    /youtube\.com\/c\/([a-zA-Z0-9_-]+)/,
+    { regex: /youtube\.com\/c\/([a-zA-Z0-9_-]+)/, type: 'identifier' },
     // youtube.com/@handle
-    /youtube\.com\/@([a-zA-Z0-9_.-]+)/,
+    { regex: /youtube\.com\/@([a-zA-Z0-9_.-]+)/, type: 'identifier' },
     // youtube.com/user/username
-    /youtube\.com\/user\/([a-zA-Z0-9_-]+)/,
-    // Direct channel ID
-    /^([a-zA-Z0-9_-]{24})$/,
+    { regex: /youtube\.com\/user\/([a-zA-Z0-9_-]+)/, type: 'identifier' },
+    // youtu.be/c/customname or youtu.be/@handle
+    { regex: /youtu\.be\/[@c]\/([a-zA-Z0-9_.-]+)/, type: 'identifier' },
+    // Direct channel ID (24 characters)
+    { regex: /^UC[a-zA-Z0-9_-]{22}$/, type: 'id', fullMatch: true },
+    // Direct handle (with or without @)
+    { regex: /^@?([a-zA-Z0-9_.-]+)$/, type: 'identifier', fullMatch: true },
   ];
 
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
+  for (const { regex, type, fullMatch } of patterns) {
+    const match = fullMatch ? cleanUrl.match(regex) : cleanUrl.match(regex);
     if (match) {
-      return { type: pattern.source.includes('channel') ? 'id' : 'identifier', value: match[1] };
+      const value = match[fullMatch ? 0 : 1];
+      console.log(`Extracted ${type}: ${value} from URL: ${cleanUrl}`);
+      return { type, value: fullMatch && type === 'id' ? value : value.replace('@', '') };
     }
   }
 
+  console.error('Could not extract channel ID from URL:', cleanUrl);
   return null;
 }

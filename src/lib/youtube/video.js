@@ -1,4 +1,4 @@
-import { YoutubeTranscript } from 'youtube-transcript';
+import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
 import { getYouTubeClient, withRateLimit, getCached, setCache } from './client.js';
 
 export async function getVideoById(videoId) {
@@ -35,7 +35,48 @@ export async function getVideoTranscript(videoId) {
   if (cached) return cached;
 
   try {
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    let transcript = null;
+    let lastError = null;
+    
+    // The youtube-transcript package has issues with language codes
+    // Try without any config first - this often works best
+    try {
+      console.log(`Fetching transcript for ${videoId} (default/auto-detect)...`);
+      transcript = await YoutubeTranscript.fetchTranscript(videoId);
+      
+      if (transcript && transcript.length > 0) {
+        console.log(`✓ Found transcript for ${videoId} using auto-detect`);
+      }
+    } catch (e) {
+      lastError = e;
+      console.log(`Auto-detect failed for ${videoId}: ${e.message}`);
+      
+      // Try different approaches based on error
+      const attempts = [
+        { config: { lang: 'en' }, name: 'lang: en' },
+        { config: { country: 'US' }, name: 'country: US' },
+        { config: { lang: 'en', country: 'US' }, name: 'lang: en, country: US' }
+      ];
+      
+      for (const attempt of attempts) {
+        try {
+          console.log(`Trying ${attempt.name} for ${videoId}...`);
+          transcript = await YoutubeTranscript.fetchTranscript(videoId, attempt.config);
+          
+          if (transcript && transcript.length > 0) {
+            console.log(`✓ Found transcript for ${videoId} using ${attempt.name}`);
+            break;
+          }
+        } catch (e2) {
+          console.log(`Failed with ${attempt.name}: ${e2.message}`);
+          lastError = e2;
+        }
+      }
+    }
+    
+    if (!transcript || transcript.length === 0) {
+      throw lastError || new Error('No transcript found');
+    }
     
     // Combine transcript segments into full text
     const fullText = transcript
@@ -53,7 +94,7 @@ export async function getVideoTranscript(videoId) {
     setCache(cacheKey, result);
     return result;
   } catch (error) {
-    console.error('Error fetching transcript:', error);
+    console.error(`Error fetching transcript for ${videoId}:`, error.message);
     return {
       segments: [],
       fullText: '',

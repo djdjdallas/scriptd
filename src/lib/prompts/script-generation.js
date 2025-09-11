@@ -67,10 +67,11 @@ export function getSystemPrompt(type) {
 // Import enhanced generation functions
 import { generateEnhancedScript } from './script-generation-v2';
 
-// Improved YouTube Script Generation with Web Search Requirements
+// Improved YouTube Script Generation with MANDATORY Web Search & Fact-Checking Requirements
 export function generateScript(options) {
   const {
     title,
+    topic = '', // Optional topic for additional context
     type = 'educational',
     length = 10,
     tone = 'professional',
@@ -81,7 +82,8 @@ export function generateScript(options) {
     useEnhanced = true, // Use enhanced 2025 version by default
     platform = 'youtube_long',
     trendingTopics = [],
-    performanceGoals = {}
+    performanceGoals = {},
+    enableFactChecking = true // Enable mandatory fact-checking by default
   } = options;
 
   // Use enhanced version if enabled
@@ -108,28 +110,77 @@ export function generateScript(options) {
 
   const duration = getDuration(length);
 
-  // Build the system prompt
-  const systemPrompt = `You are an expert YouTube script writer and content researcher specializing in creating engaging, factual, and educational video scripts. You have access to web search capabilities and must use them to ensure accuracy and current information.
+  // Build the system prompt with MANDATORY fact-checking requirements
+  const systemPrompt = `You are an expert YouTube script writer and FACT-CHECKING SPECIALIST who MUST verify all information through web searches before including it in scripts. You specialize in creating engaging, 100% factually accurate video content that can be trusted by viewers.
+
+CRITICAL REQUIREMENTS:
+- You MUST perform web searches to verify EVERY statistic, company name, product name, price, or specific claim
+- You MUST NEVER create fictional companies or products - only use real, verifiable entities
+- You MUST flag any unverified information with [NEEDS VERIFICATION] tags
+- You MUST include source citations for all major claims
+- Failure to fact-check will result in rejection of the script
 
 Your scripts should be ${tone} in tone, targeted at ${targetAudience} audience, and approximately ${duration} minutes long when read aloud.
 ${channelContext ? `\nChannel Context: ${channelContext}` : ''}
-${voiceProfile ? `\nVoice Style: Match the speaking style and personality described in the voice profile.` : ''}`;
+${voiceProfile ? `
+VOICE PROFILE INTEGRATION:
+You are writing for "${voiceProfile.name}" with these specific characteristics:
+${voiceProfile.formality ? `- Formality Level: ${voiceProfile.formality}` : ''}
+${voiceProfile.enthusiasm ? `- Enthusiasm Level: ${voiceProfile.enthusiasm}` : ''}
+${voiceProfile.speed ? `- Speaking Speed: ${voiceProfile.speed}x normal` : ''}
+${voiceProfile.catchphrases?.length ? `- Signature Catchphrases: ${voiceProfile.catchphrases.join(', ')}` : ''}
+${voiceProfile.greetings?.length ? `- Typical Greetings: ${voiceProfile.greetings.join(', ')}` : ''}
+${voiceProfile.topWords?.length ? `- Frequently Used Words: ${voiceProfile.topWords.slice(0, 5).map(w => w.word || w).join(', ')}` : ''}
+
+IMPORTANT: Naturally incorporate these voice characteristics into the script to match the creator's authentic style.` : ''}`;
 
   // Build the enhanced user prompt with research requirements
   const userPrompt = `<context>
 You're creating a ${duration}-minute ${type.toLowerCase()} script for YouTube with a ${tone} tone, targeting ${targetAudience}. The script must be factually accurate, engaging, and provide real educational value. Web research is required to ensure all claims are verifiable and current.
+${topic ? `\nTopic Context: ${topic}` : ''}
+${voiceProfile ? `
+Voice Profile Active: "${voiceProfile.name}"
+- Write in the first person as this creator
+- Match their speaking style and vocabulary patterns
+- Include their signature phrases naturally where appropriate
+- Maintain their typical energy and enthusiasm level` : ''}
 </context>
 
-<research_requirements>
-BEFORE writing the script, you MUST:
-1. Search the web for current, factual information about: "${title}"
-2. Verify that any products, technologies, or concepts mentioned actually exist
-3. Find recent developments, statistics, or examples related to the topic
-4. Identify authoritative sources and expert opinions
-5. Check for any controversies or alternative viewpoints
+<mandatory_fact_verification>
+🚨 CRITICAL: YOU MUST PERFORM THE FOLLOWING WEB SEARCHES BEFORE WRITING ANY CONTENT:
 
-${keyPoints.length > 0 ? `If the title is too generic, search for: "${keyPoints.join(", ")}" to understand what specific information to include.` : ''}
-</research_requirements>
+1. COMPANY/PRODUCT VERIFICATION (REQUIRED):
+   - Search: "[company name] official website 2024 2025"
+   - Search: "[product name] exists real verification"
+   - Search: "[service name] pricing features 2025"
+   - If ANY company/product cannot be verified, mark as [HYPOTHETICAL EXAMPLE]
+
+2. STATISTICAL VERIFICATION (REQUIRED):
+   - Search: "[specific statistic] source study 2024 2025"
+   - Search: "[claim] fact check verification"
+   - Every number MUST have a verifiable source from the last 2 years
+   - Include source date in format: <!-- Source: [URL] [Date] -->
+
+3. CURRENT INFORMATION (REQUIRED):
+   - Search: "${title} latest news 2024 2025"
+   - Search: "${title} recent developments updates"
+   - Prioritize information from the last 12 months
+
+4. PRICE/OFFERING VERIFICATION (REQUIRED):
+   - Search: "[company] pricing plans 2025"
+   - Search: "[product] features specifications current"
+   - Never guess prices - only use verified current pricing
+
+5. CONTROVERSY CHECK (REQUIRED):
+   - Search: "${title} controversy problems issues"
+   - Search: "${title} fact check debunked myths"
+   - Include balanced perspectives if controversies exist
+
+${keyPoints.length > 0 ? `6. KEY POINTS VERIFICATION:
+${keyPoints.map((point, i) => `   - Search ${i+1}: "${point} facts statistics 2024 2025"`).join('\n')}` : ''}
+
+⚠️ MINIMUM REQUIRED SEARCHES: ${5 + keyPoints.length} searches MUST be performed
+</mandatory_fact_verification>
 
 <enhanced_research_instructions>
 When researching "${title}", specifically look for:
@@ -254,43 +305,100 @@ Add smooth transitions between sections:
 - "Before we wrap up, there's one more thing you need to know..."
 </transition_improvements>
 
-<accuracy_requirements>
-- Every factual claim must be researched and verifiable
-- Include phrases like "according to [source]" for statistics
-- If you cannot find current information, state "as of [date]" or "recent research indicates"
-- Never invent products, companies, or statistics
-- If uncertain about any claim, either research it or omit it
-- For technical content, include proper terminology and explain complex concepts clearly
-</accuracy_requirements>
+<strict_accuracy_protocol>
+🔴 MANDATORY ACCURACY RULES (VIOLATION = SCRIPT REJECTION):
 
-<formatting>
-Format the output as follows:
+1. NEVER CREATE FICTIONAL ENTITIES:
+   - ❌ FORBIDDEN: "TechBoost AI" (if it doesn't exist)
+   - ✅ REQUIRED: Only mention companies verified through web search
+   - ✅ ALTERNATIVE: Use "a hypothetical company" or "Company X" for examples
 
-**RESEARCH SUMMARY**
-[Brief summary of key findings from web research, including sources]
+2. STATISTICAL ACCURACY:
+   - ❌ FORBIDDEN: Rounding 3% to 35% for dramatic effect
+   - ❌ FORBIDDEN: Using outdated statistics (>2 years old)
+   - ✅ REQUIRED: Exact figures with source: "According to [Source, Date], X% of..."
+   - ✅ REQUIRED: If conflicting stats exist, use most recent reputable source
+
+3. VERIFICATION TAGS:
+   - [VERIFIED] - Information confirmed through web search
+   - [LIKELY ACCURATE] - Multiple indirect sources support this
+   - [UNVERIFIED] - Could not confirm through search
+   - [HYPOTHETICAL] - Example created for illustration only
+
+4. SOURCE CITATIONS:
+   - In-script mention: "According to [Source Name]..."
+   - HTML comment: <!-- Source: [URL] [Access Date] -->
+   - Fact-check note: List search performed and result
+
+5. CONFIDENCE LEVELS:
+   - High confidence: 3+ reputable sources confirm
+   - Medium confidence: 1-2 sources found
+   - Low confidence: No direct sources, mark as [NEEDS VERIFICATION]
+
+6. TRANSPARENCY REQUIREMENTS:
+   - If a claim cannot be verified, YOU MUST:
+     a) Remove it entirely, OR
+     b) Replace with verified information, OR
+     c) Clearly mark as "estimated" or "hypothetical example"
+   - NEVER present speculation as fact
+   - NEVER use phrases like "studies show" without citing the actual study
+</strict_accuracy_protocol>
+
+<mandatory_output_format>
+Your output MUST include ALL of the following sections:
+
+**🔍 WEB SEARCHES PERFORMED** (REQUIRED)
+1. [Search Query] → [Key Finding] [Verification Status]
+2. [Search Query] → [Key Finding] [Verification Status]
+3. [Search Query] → [Key Finding] [Verification Status]
+(Minimum ${5 + keyPoints.length} searches required)
+
+**📊 VERIFICATION SUMMARY** (REQUIRED)
+- Companies/Products Mentioned: [List] - All [VERIFIED] or [HYPOTHETICAL]
+- Statistics Used: [Count] - All with sources dated within 2 years
+- Unverified Claims: [List any] - Marked with [NEEDS VERIFICATION]
+- Hypothetical Examples: [List any] - Clearly labeled
 
 **SCRIPT**
-[HOOK]
-[Your compelling 30-45 second opening]
+[HOOK] <!-- Include verification tags -->
+[Your compelling 30-45 second opening with factual claims verified]
 
-[INTRO] 
-[30-60 second overview]
+[INTRO] <!-- Source citations as HTML comments -->
+[30-60 second overview with verified information]
 
 [MAIN]
-[Main educational content with clear sections for each key point]
+[Main content with [VERIFIED] tags and source citations]
+<!-- Source: [URL] [Date] --> for each major claim
 
 [CONCLUSION]
-[30-45 second summary with actionable takeaways]
+[Summary with verified takeaways]
 
 [END SCREEN]
-[15-30 second call-to-action]
+[Call-to-action]
 
 **VISUAL SUGGESTIONS**
-[Specific recommendations for graphics, demonstrations, or visual elements]
+[Specific recommendations with source attributions where applicable]
 
-**FACT-CHECK NOTES**
-[List of key claims made and their sources for verification]
-</formatting>
+**📋 FACT-CHECK NOTES** (REQUIRED)
+├─ VERIFIED CLAIMS:
+│  • [Claim 1]: Source: [Name, Date, URL]
+│  • [Claim 2]: Source: [Name, Date, URL]
+├─ STATISTICS USED:
+│  • [Stat 1]: [Exact figure] - Source: [Name, Date]
+│  • [Stat 2]: [Exact figure] - Source: [Name, Date]
+├─ COMPANIES/PRODUCTS VERIFIED:
+│  • [Company 1]: ✅ Exists - [Official website]
+│  • [Product 1]: ✅ Real - [Verified features and pricing]
+├─ HYPOTHETICAL EXAMPLES:
+│  • [If any]: Clearly marked in script
+└─ CONFIDENCE ASSESSMENT:
+   • Overall Factual Accuracy: [High/Medium/Low]
+   • Claims Needing Further Verification: [List]
+
+**⚠️ DISCLAIMER**
+Any information marked [NEEDS VERIFICATION] should be fact-checked before publishing.
+All statistics are current as of ${new Date().toISOString().split('T')[0]}.
+</mandatory_output_format>
 
 <quality_standards>
 - Script must provide genuine educational value to the target audience
@@ -310,15 +418,53 @@ Make CTAs more specific and valuable:
 - Provide specific resources: "Download the [specific guide/tool] in the description"
 </call_to_action_specificity>
 
-<uncertainty_handling>
-If you cannot find sufficient factual information about the topic:
-- State clearly what information is limited or unavailable
-- Suggest alternative angles or related topics that have better source material
-- Focus on general principles or foundational concepts instead of specific claims
-- Recommend that the creator verify any claims before publishing
-</uncertainty_handling>
+<mandatory_uncertainty_protocol>
+WHEN INFORMATION CANNOT BE VERIFIED:
 
-Now, research the topic thoroughly and create an engaging, factually accurate YouTube script titled "${title}".`;
+1. IMMEDIATE ACTIONS (REQUIRED):
+   ❌ DO NOT make up companies, products, or statistics
+   ❌ DO NOT present guesses as facts
+   ✅ DO explicitly state: "[COULD NOT VERIFY: searching for X yielded no results]"
+   ✅ DO suggest alternative verified information
+
+2. REPLACEMENT STRATEGIES:
+   - Instead of unverifiable specific company → Use verified industry leader
+   - Instead of unverifiable statistic → Use verified trend or range
+   - Instead of unverifiable product → Use hypothetical clearly marked
+   - Instead of unverifiable price → State "pricing varies" or "contact for quote"
+
+3. HYPOTHETICAL EXAMPLES (WHEN NECESSARY):
+   - MUST be introduced as: "For example, let's imagine a hypothetical company..."
+   - MUST NOT use realistic-sounding names that could be confused with real entities
+   - MUST be clearly marked throughout: [HYPOTHETICAL EXAMPLE]
+
+4. TRANSPARENCY REQUIREMENTS:
+   - List all searches that returned no results
+   - Explain what information gaps exist
+   - Provide confidence level for script accuracy
+   - Recommend specific fact-checking steps before publishing
+
+5. SCRIPT REJECTION CRITERIA:
+   If more than 30% of key claims cannot be verified, you MUST:
+   - Stop script generation
+   - Report which information cannot be verified
+   - Suggest alternative topic angles with better verifiable information
+</mandatory_uncertainty_protocol>
+
+FINAL INSTRUCTIONS:
+1. Perform ALL required web searches (minimum ${5 + keyPoints.length})
+2. Verify EVERY company, product, statistic, and price mentioned
+3. Include [VERIFICATION] tags throughout the script
+4. Add source citations as HTML comments
+5. Create the FACT-CHECK NOTES section with all verifications
+6. Ensure 100% factual accuracy - no fictional entities allowed
+
+⚠️ REMEMBER: This script will be publicly published. False information damages credibility.
+Fictional companies/products presented as real will result in script rejection.
+
+Now, research the topic thoroughly through web searches and create an engaging, 100% factually accurate YouTube script titled "${title}".
+
+${enableFactChecking === false ? '\n⚠️ NOTE: Fact-checking has been disabled for this generation. Accuracy is not guaranteed.' : ''}`;
 
   return {
     system: systemPrompt,

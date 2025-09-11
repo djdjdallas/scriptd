@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { TiltCard } from '@/components/ui/tilt-card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
+import { VoiceTrainingStatus } from '@/components/voice/voice-training-status';
+import { Gift } from 'lucide-react';
 import {
   Mic,
   Upload,
@@ -257,15 +259,33 @@ export default function VoiceTrainingPage() {
 
       {/* Header */}
       <div className="animate-reveal">
-        <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-          <Mic className="h-10 w-10 text-purple-400 neon-glow" />
-          Voice Training
-          <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
-        </h1>
-        <p className="text-gray-400 mt-2">
-          Train AI to match your unique voice and style
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-white flex items-center gap-3">
+              <Mic className="h-10 w-10 text-purple-400 neon-glow" />
+              Voice Training
+              <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
+            </h1>
+            <p className="text-gray-400 mt-2">
+              Train AI to match your unique voice and style
+            </p>
+          </div>
+          <div className="flex items-center gap-2 bg-green-500/10 px-4 py-2 rounded-full">
+            <Gift className="h-5 w-5 text-green-400" />
+            <span className="text-lg font-semibold text-green-400">100% FREE</span>
+            <Sparkles className="h-4 w-4 text-yellow-400 animate-pulse" />
+          </div>
+        </div>
       </div>
+
+      {/* Voice Training Status for Active Channels */}
+      {channels.filter(c => c.voice_training_status && c.voice_training_status !== 'completed' && c.voice_training_status !== 'skipped').map(channel => (
+        <VoiceTrainingStatus 
+          key={channel.id} 
+          channelId={channel.id} 
+          initialStatus={channel.voice_training_status} 
+        />
+      ))}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
@@ -276,17 +296,31 @@ export default function VoiceTrainingPage() {
         </div>
         <div className="glass-card p-4 text-center">
           <FileAudio className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-          <div className="text-2xl font-bold gradient-text">20</div>
+          <div className="text-2xl font-bold gradient-text">
+            {voiceProfiles.reduce((total, profile) => 
+              total + (profile.training_data?.sampleCount || profile.samples || 0), 0
+            )}
+          </div>
           <p className="text-sm text-gray-400">Total Samples</p>
         </div>
         <div className="glass-card p-4 text-center">
           <TrendingUp className="h-8 w-8 text-green-400 mx-auto mb-2" />
-          <div className="text-2xl font-bold gradient-text">92%</div>
+          <div className="text-2xl font-bold gradient-text">
+            {voiceProfiles.length > 0 
+              ? Math.round(
+                  voiceProfiles.reduce((sum, profile) => 
+                    sum + (profile.parameters?.accuracy || profile.accuracy || 0), 0
+                  ) / voiceProfiles.length
+                ) || 0
+              : 0}%
+          </div>
           <p className="text-sm text-gray-400">Avg. Accuracy</p>
         </div>
         <div className="glass-card p-4 text-center">
           <Clock className="h-8 w-8 text-orange-400 mx-auto mb-2" />
-          <div className="text-2xl font-bold gradient-text">5m</div>
+          <div className="text-2xl font-bold gradient-text">
+            {voiceProfiles.length > 0 ? '~5m' : '0m'}
+          </div>
           <p className="text-sm text-gray-400">Training Time</p>
         </div>
       </div>
@@ -382,13 +416,22 @@ export default function VoiceTrainingPage() {
 
           {/* Training Button */}
           {(uploadProgress === 100 || selectedChannel) && !isTraining && (
-            <Button
-              onClick={startTraining}
-              className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white mt-6 w-full"
-            >
-              <Wand2 className="h-4 w-4 mr-2" />
-              Start Voice Training {selectedChannel ? `for ${selectedChannel.title || selectedChannel.name}` : ''}
-            </Button>
+            <div className="mt-6">
+              <Button
+                onClick={startTraining}
+                className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white w-full relative"
+              >
+                <Wand2 className="h-4 w-4 mr-2" />
+                Start Voice Training {selectedChannel ? `for ${selectedChannel.title || selectedChannel.name}` : ''}
+                <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                  <Gift className="h-3 w-3" />
+                  FREE
+                </div>
+              </Button>
+              <p className="text-xs text-center text-gray-400 mt-2">
+                No credits required - Voice training is always FREE!
+              </p>
+            </div>
           )}
 
           {/* Training Status */}

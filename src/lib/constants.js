@@ -71,12 +71,85 @@ export const SCRIPT_TYPES = {
   LIFESTYLE: 'lifestyle'
 };
 
-// Script Lengths
+// Script Lengths - Specific minute options with word counts
 export const SCRIPT_LENGTHS = {
-  SHORT: { min: 0, max: 5, label: 'Short (< 5 min)', tokens: '~2k tokens', credits: 2 },
-  MEDIUM: { min: 5, max: 15, label: 'Medium (5-15 min)', tokens: '~5k tokens', credits: 5 },
-  LONG: { min: 15, max: 30, label: 'Long (15-30 min)', tokens: '~10k tokens', credits: 10 },
-  EXTENDED: { min: 30, max: null, label: 'Extended (30+ min)', tokens: '~15k tokens', credits: 15 }
+  '5': { 
+    minutes: 5, 
+    label: '5 minutes', 
+    words: '~800 words', 
+    wordsMin: 700,
+    wordsMax: 900
+  },
+  '8': { 
+    minutes: 8, 
+    label: '8 minutes', 
+    words: '~1,300 words', 
+    wordsMin: 1200,
+    wordsMax: 1400
+  },
+  '10': { 
+    minutes: 10, 
+    label: '10 minutes', 
+    words: '~1,600 words', 
+    wordsMin: 1500,
+    wordsMax: 1700
+  },
+  '12': { 
+    minutes: 12, 
+    label: '12 minutes', 
+    words: '~2,000 words', 
+    wordsMin: 1900,
+    wordsMax: 2100
+  },
+  '15': { 
+    minutes: 15, 
+    label: '15 minutes', 
+    words: '~2,500 words', 
+    wordsMin: 2400,
+    wordsMax: 2600
+  },
+  '20': { 
+    minutes: 20, 
+    label: '20 minutes', 
+    words: '~3,200 words', 
+    wordsMin: 3000,
+    wordsMax: 3400
+  },
+  '25': { 
+    minutes: 25, 
+    label: '25 minutes', 
+    words: '~4,000 words', 
+    wordsMin: 3800,
+    wordsMax: 4200
+  },
+  '30': { 
+    minutes: 30, 
+    label: '30 minutes', 
+    words: '~4,800 words', 
+    wordsMin: 4600,
+    wordsMax: 5000
+  },
+  '40': { 
+    minutes: 40, 
+    label: '40 minutes', 
+    words: '~6,400 words', 
+    wordsMin: 6200,
+    wordsMax: 6600
+  },
+  '50': { 
+    minutes: 50, 
+    label: '50 minutes', 
+    words: '~8,000 words', 
+    wordsMin: 7800,
+    wordsMax: 8200
+  },
+  '60': { 
+    minutes: 60, 
+    label: '60 minutes', 
+    words: '~9,600 words', 
+    wordsMin: 9400,
+    wordsMax: 9800
+  }
 };
 
 // Credit Costs

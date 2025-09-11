@@ -127,10 +127,11 @@ export const scriptExamples = {
   }
 };
 
-// Enhanced script generation function with 2025 optimizations
+// Enhanced script generation function with 2025 optimizations + MANDATORY FACT-CHECKING
 export function generateEnhancedScript(options) {
   const {
     title,
+    topic = '', // Optional topic for additional context
     type = 'educational',
     length = 10,
     tone = 'professional',
@@ -141,7 +142,8 @@ export function generateEnhancedScript(options) {
     platform = 'youtube_long',
     trendingTopics = [],
     previousScripts = [],
-    performanceGoals = {}
+    performanceGoals = {},
+    enableFactChecking = true // MANDATORY fact-checking enabled by default
   } = options;
 
   // Determine video format
@@ -168,8 +170,17 @@ export function generateEnhancedScript(options) {
   // Generate retention checkpoints
   const retentionCheckpoints = generateRetentionCheckpoints(length * 60);
 
-  // Build the enhanced system prompt
-  const systemPrompt = `You are an elite YouTube script writer specializing in high-retention, algorithm-optimized content for 2025. You understand that viewer attention spans have decreased by 25% and that the first 3 seconds determine video success.
+  // Build the enhanced system prompt with MANDATORY fact-checking
+  const systemPrompt = `You are an elite YouTube script writer and MANDATORY FACT-CHECKER specializing in high-retention, algorithm-optimized, and 100% FACTUALLY ACCURATE content for 2025.
+
+CRITICAL REQUIREMENTS:
+🔴 You MUST verify ALL information through web searches BEFORE including it
+🔴 You MUST NEVER create fictional companies, products, or statistics
+🔴 You MUST mark any unverified claims with [NEEDS VERIFICATION]
+🔴 You MUST include source citations for every statistic and claim
+🔴 Scripts with unverified information will be REJECTED
+
+You understand that viewer attention spans have decreased by 25% and that the first 3 seconds determine video success. However, viral misinformation destroys channel credibility permanently.
 
 You write in a ${tone} tone that perfectly matches this profile:
 - Vocabulary: ${toneProfile.vocabulary}
@@ -192,6 +203,7 @@ CRITICAL SUCCESS METRICS FOR 2025:
   // Build the enhanced user prompt with all optimizations
   const userPrompt = `<context>
 You're creating a ${length}-minute ${type} YouTube video titled "${title}" optimized for ${videoFormat} format.
+${topic ? `\nTopic Description: ${topic}` : ''}
 
 Platform: ${platform}
 Target Audience: ${targetAudience}
@@ -286,20 +298,57 @@ EXAMPLES TO INCLUDE:
 - Before/after scenarios
 </audience_optimization>
 
-<research_requirements>
-BEFORE writing, research and include:
-1. Latest statistics (2024-2025) about ${title}
-2. Recent case studies or success stories
-3. Current tools, platforms, or solutions
-4. Expert opinions or study results
-5. Common mistakes or misconceptions
+<mandatory_fact_checking_protocol>
 
-FACT VERIFICATION:
-- Every statistic must have a source reference
-- All tools/platforms mentioned must currently exist
-- Include "as of [date]" for time-sensitive information
-- Cross-reference any controversial claims
-</research_requirements>
+🚨 MANDATORY WEB SEARCHES BEFORE WRITING (MINIMUM ${5 + keyPoints.length} SEARCHES):
+
+1. ENTITY VERIFICATION (REQUIRED FOR EVERY MENTION):
+   ✓ Search: "[company name] official website exists real 2025"
+   ✓ Search: "[product name] features pricing current 2024 2025"
+   ✓ Search: "[service name] reviews legitimate verification"
+   ⚠️ If cannot verify → Mark as [HYPOTHETICAL EXAMPLE] or remove
+
+2. STATISTICAL ACCURACY (REQUIRED FOR EVERY NUMBER):
+   ✓ Search: "[statistic] source study research 2024 2025"
+   ✓ Search: "[percentage claim] fact check accurate data"
+   ✓ Must find source within last 24 months
+   ✓ Include: <!-- Source: [URL] [Date Accessed] -->
+   ⚠️ NEVER round 3% to 35% for drama - use exact figures
+
+3. CURRENT INFORMATION VERIFICATION:
+   ✓ Search: "${title} latest news updates 2024 2025"
+   ✓ Search: "${title} recent developments breakthroughs"
+   ✓ Search: "${title} market leaders top companies 2025"
+   ✓ Prioritize last 12 months, max 18 months old
+
+4. PRICING/FEATURES VERIFICATION:
+   ✓ Search: "[product] pricing plans cost 2025"
+   ✓ Search: "[service] features comparison alternatives"
+   ✓ Never guess prices - only verified current pricing
+   ✓ If no pricing found, state "pricing available upon request"
+
+5. CONTROVERSY/ACCURACY CHECK:
+   ✓ Search: "${title} controversy debunked fact check"
+   ✓ Search: "${title} myths misconceptions false claims"
+   ✓ Search: "${title} problems issues complaints"
+   ✓ Include balanced perspective if controversies exist
+
+${keyPoints.length > 0 ? `6. KEY POINTS DEEP VERIFICATION:
+${keyPoints.map((point, i) => `   ✓ Search ${i+1}: "${point} facts data statistics 2024 2025 verified"
+   ✓ Search ${i+1}b: "${point} examples case studies real world"`).join('\n')}` : ''}
+
+VERIFICATION STATUS TAGS (REQUIRED):
+[VERIFIED] - Confirmed through 2+ reputable sources
+[LIKELY ACCURATE] - 1 source found, appears credible
+[UNVERIFIED] - No sources found, needs checking
+[HYPOTHETICAL] - Fictional example, clearly marked
+
+⛔ AUTOMATIC REJECTION TRIGGERS:
+- Any fictional company presented as real
+- Statistics without sources
+- Outdated information (>2 years) presented as current
+- More than 20% unverified claims
+</mandatory_fact_checking_protocol>
 
 <platform_specific_format>
 ${platformConfig.structure ? Object.entries(platformConfig.structure).map(([section, details]) => 
@@ -321,52 +370,117 @@ Write in ${tone} tone using these exact phrase patterns:
 ${toneProfile.examples.map(ex => `- "${ex}"`).join('\n')}
 </tone_examples>
 
-<quality_checklist>
+<enhanced_quality_checklist>
 Your script MUST include:
-✓ Hook within first 3 seconds that creates curiosity gap
-✓ At least 3 specific statistics or numbers
-✓ Minimum 2 real company/product examples
+✓ Hook within first 3 seconds with VERIFIED compelling fact
+✓ At least 3 VERIFIED statistics with sources (dated within 2 years)
+✓ Minimum 2 REAL, VERIFIED company/product examples (not fictional)
 ✓ Pattern interrupt every ${videoFormat === 'youtube_shorts' ? '15' : '60'} seconds
-✓ Clear value delivered every 30 seconds
-✓ Open loop that gets closed by the end
-✓ Specific, actionable takeaways
+✓ Clear FACTUAL value delivered every 30 seconds
+✓ Open loop that gets closed with VERIFIED information
+✓ Specific, actionable takeaways based on REAL tools/methods
 ✓ CTA that relates directly to content
-</quality_checklist>
+✓ [VERIFIED] tags for all factual claims
+✓ Source citations as HTML comments throughout
+✓ Complete FACT-CHECK NOTES section at end
 
-<output_format>
+⚠️ REJECTION CRITERIA:
+❌ Any fictional entity presented as real = INSTANT REJECTION
+❌ Statistics without sources = REJECTION
+❌ >20% unverified claims = REJECTION
+❌ Missing fact-check notes = REJECTION
+</enhanced_quality_checklist>
+
+<mandatory_enhanced_output_format>
+
+**🔍 WEB SEARCH VERIFICATION LOG** (REQUIRED - MINIMUM ${5 + keyPoints.length} SEARCHES)
+1. [Search Query] → [Result Summary] [VERIFIED/UNVERIFIED]
+2. [Search Query] → [Result Summary] [VERIFIED/UNVERIFIED]
+3. [Search Query] → [Result Summary] [VERIFIED/UNVERIFIED]
+(Continue for all searches performed...)
+
+**📊 FACT VERIFICATION SUMMARY** (REQUIRED)
+- Total Claims Made: [Number]
+- Verified Claims: [Number] ([Percentage]%)
+- Unverified Claims: [Number] - [List them]
+- Hypothetical Examples: [Number] - [List them]
+- Confidence Level: [HIGH/MEDIUM/LOW]
+
 **HOOK (0-${videoFormat === 'youtube_shorts' ? '3' : '15'} seconds)**
-[Attention-grabbing opening using one of the provided formulas]
+[Opening with [VERIFIED] fact] <!-- Source: [URL] [Date] -->
+[Creates curiosity using real, verified information]
 
 **INTRODUCTION (${videoFormat === 'youtube_shorts' ? '3-10' : '15-45'} seconds)**
-[Establish credibility, preview value, set expectations]
+[Credibility established with [VERIFIED] credentials]
+[Preview includes only verified claims] <!-- Sources in comments -->
 
 **MAIN CONTENT**
 ${keyPoints.length > 0 ? keyPoints.map((_, i) => 
-  `[SECTION ${i + 1}] - [Title]\n[Content with specific examples and pattern interrupts]`
-).join('\n\n') : '[Organized sections with clear value delivery]'}
+  `[SECTION ${i + 1}] - [Title]
+[Content with [VERIFIED] examples]
+<!-- Source: [URL] [Date] for each claim -->
+[Real companies/products only, marked [VERIFIED] or [HYPOTHETICAL]]`
+).join('\n\n') : '[Sections with verified information and source citations]'}
 
 **RETENTION CHECKPOINT**
-[Pattern interrupt or curiosity refresh]
+[Pattern interrupt with [VERIFIED] surprising fact]
 
 **CONCLUSION**
-[Recap key points, deliver on promises]
+[Recap of [VERIFIED] key points only]
+[Delivery on promises with factual information]
 
 **CALL TO ACTION**
-[Specific next steps related to content]
+[Next steps using [VERIFIED] resources/tools]
 
 **VISUAL SUGGESTIONS**
-- B-roll: [Specific suggestions]
-- Graphics: [Data visualizations needed]
-- Text overlays: [Key points to emphasize]
-- Transitions: [Where to add pattern interrupts]
+- B-roll: [Specific suggestions with attribution]
+- Graphics: [Data viz with source citations]
+- Text overlays: [Verified facts to emphasize]
+- Source attributions: [Where to show sources on screen]
 
-**PERFORMANCE NOTES**
-- Target 30-sec retention: __%
-- Key emotion triggers: [List moments]
-- Algorithm optimization: [SEO keywords included]
-</output_format>
+**📋 COMPREHENSIVE FACT-CHECK NOTES** (REQUIRED)
+├─ VERIFIED ENTITIES:
+│  • [Company 1]: ✅ Real - [Official Website URL]
+│  • [Product 1]: ✅ Exists - [Verification Source]
+│  • [Service 1]: ✅ Confirmed - [Current Pricing Page]
+├─ VERIFIED STATISTICS:
+│  • [Stat 1]: [Exact Figure] - Source: [Name, Date, URL]
+│  • [Stat 2]: [Exact Figure] - Source: [Name, Date, URL]
+├─ HYPOTHETICAL EXAMPLES (if any):
+│  • [Example 1]: Clearly marked as hypothetical in script
+├─ UNVERIFIED CLAIMS (if any):
+│  • [Claim 1]: Could not verify, marked [NEEDS VERIFICATION]
+└─ FACT-CHECK SUMMARY:
+   • Searches Performed: [Number]
+   • Claims Verified: [Percentage]%
+   • Recommended Additional Checks: [List]
+   • Publication Ready: [YES/NO - Why]
 
-Now create a script that will achieve >70% 30-second retention and >50% average view duration for "${title}".`;
+**⚠️ ACCURACY DISCLAIMER**
+All information accurate as of ${new Date().toISOString().split('T')[0]}
+Claims marked [NEEDS VERIFICATION] require fact-checking before publication
+Hypothetical examples are clearly marked and not presented as real
+</mandatory_enhanced_output_format>
+
+CRITICAL FINAL INSTRUCTIONS:
+
+1. ⚠️ PERFORM ALL REQUIRED WEB SEARCHES (Minimum ${5 + keyPoints.length})
+2. ✓ VERIFY every company, product, service, and statistic
+3. ✓ USE [VERIFIED], [UNVERIFIED], [HYPOTHETICAL] tags throughout
+4. ✓ ADD source citations as <!-- HTML comments -->
+5. ✓ CREATE comprehensive FACT-CHECK NOTES section
+6. ✓ ENSURE 100% accuracy - NO fictional entities as real
+7. ✓ COMPLETE the Web Search Verification Log
+
+🔴 REMEMBER: 
+- Fictional companies/products = INSTANT REJECTION
+- Missing fact-check notes = REJECTION
+- Unverified statistics = REJECTION
+- This script represents the channel's credibility
+
+${enableFactChecking === false ? '⚠️ WARNING: Fact-checking disabled. Accuracy not guaranteed. Enable for production use.' : '✅ FACT-CHECKING ENABLED: All information will be verified'}
+
+Now create a HIGH-RETENTION (>70% at 30sec, >50% AVD) and 100% FACTUALLY ACCURATE script for "${title}".`;
 
   return {
     system: systemPrompt,
@@ -476,10 +590,51 @@ function generateImprovementRecommendations(metrics) {
   return recommendations;
 }
 
+// Helper function to validate fact-checking in generated scripts
+export function validateFactChecking(scriptContent) {
+  const validation = {
+    hasSearchLog: scriptContent.includes('WEB SEARCH VERIFICATION LOG'),
+    hasFactSummary: scriptContent.includes('FACT VERIFICATION SUMMARY'),
+    hasSourceCitations: (scriptContent.match(/<!-- Source:/g) || []).length,
+    hasVerificationTags: (scriptContent.match(/\[VERIFIED\]/g) || []).length,
+    hasFactCheckNotes: scriptContent.includes('FACT-CHECK NOTES'),
+    hypotheticalCount: (scriptContent.match(/\[HYPOTHETICAL\]/g) || []).length,
+    unverifiedCount: (scriptContent.match(/\[UNVERIFIED\]|\[NEEDS VERIFICATION\]/g) || []).length
+  };
+
+  validation.isValid = 
+    validation.hasSearchLog && 
+    validation.hasFactSummary && 
+    validation.hasSourceCitations >= 3 &&
+    validation.hasVerificationTags >= 3 &&
+    validation.hasFactCheckNotes;
+
+  validation.score = 
+    (validation.hasSearchLog ? 20 : 0) +
+    (validation.hasFactSummary ? 20 : 0) +
+    (validation.hasSourceCitations >= 3 ? 20 : validation.hasSourceCitations * 5) +
+    (validation.hasVerificationTags >= 3 ? 20 : validation.hasVerificationTags * 5) +
+    (validation.hasFactCheckNotes ? 20 : 0);
+
+  validation.warnings = [];
+  if (validation.unverifiedCount > 0) {
+    validation.warnings.push(`${validation.unverifiedCount} unverified claims found`);
+  }
+  if (validation.hypotheticalCount > 3) {
+    validation.warnings.push(`High number of hypothetical examples (${validation.hypotheticalCount})`);
+  }
+  if (validation.hasSourceCitations < 5) {
+    validation.warnings.push(`Low source citation count (${validation.hasSourceCitations})`);
+  }
+
+  return validation;
+}
+
 export default {
   generateEnhancedScript,
   createChainPrompts,
   predictScriptPerformance,
+  validateFactChecking,
   advancedToneProfiles,
   platformOptimizations,
   scriptExamples

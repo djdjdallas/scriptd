@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getChannelById } from '@/lib/youtube/channel';
 import { getChannelVideos } from '@/lib/youtube/channel';
 import { generateChannelAnalytics, generateAudiencePersona, generateInsights } from '@/lib/youtube/analytics';
+import { analyzeChannelAudience } from '@/lib/youtube/audience-analyzer';
 
 export async function POST(request, { params }) {
   try {
@@ -37,6 +38,9 @@ export async function POST(request, { params }) {
     const analytics = await generateChannelAnalytics(channel, videos);
     const persona = await generateAudiencePersona(analytics);
     const insights = generateInsights(analytics, persona);
+    
+    // Generate detailed audience analysis
+    const audienceAnalysis = await analyzeChannelAudience(channel, videos);
 
     // Save analysis results to database
     const { data: analysis, error: saveError } = await supabase
@@ -46,6 +50,7 @@ export async function POST(request, { params }) {
         user_id: user.id,
         analytics_data: analytics,
         audience_persona: persona,
+        audience_description: audienceAnalysis.persona, // Detailed description for scripts
         insights: insights,
         videos_analyzed: videos.length,
         analysis_date: new Date().toISOString(),
@@ -58,15 +63,18 @@ export async function POST(request, { params }) {
       // Continue anyway - we can still return the analysis
     }
 
-    // Update channel with latest analytics
+    // Update channel with latest analytics and audience description
     await supabase
       .from('channels')
       .update({
         last_analyzed_at: new Date().toISOString(),
+        audience_description: audienceAnalysis.persona, // Store for auto-fill in scripts
         analytics_summary: {
           performance_score: insights.metrics.performanceScore,
           growth_potential: insights.metrics.growthPotential,
           audience_quality: insights.metrics.audienceQuality,
+          demographics: audienceAnalysis.demographics,
+          interests: audienceAnalysis.interests,
         },
       })
       .eq('id', id)
@@ -76,6 +84,7 @@ export async function POST(request, { params }) {
       analytics,
       persona,
       insights,
+      audienceAnalysis, // Include detailed audience analysis
       analysisId: analysis?.id,
     });
   } catch (error) {

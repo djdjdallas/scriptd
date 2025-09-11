@@ -36,7 +36,7 @@ import { formatDistanceToNow } from "date-fns";
 export default function ScriptsPage() {
   const { toast } = useToast();
   const [scripts, setScripts] = useState([]);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("created_at");
@@ -89,14 +89,16 @@ export default function ScriptsPage() {
       const result = await response.json();
       
       console.log(`[ScriptsPage] Fetched ${result.items?.length || 0} scripts`);
+      console.log('[ScriptsPage] Full response:', result);
+      console.log('[ScriptsPage] Response has items?', 'items' in result);
 
       // The API returns { items, pagination } directly
-      if (result.items) {
-        setScripts(result.items);
+      if ('items' in result) {
+        setScripts(result.items || []);
         setTotalPages(result.pagination?.pages || 1);
       } else {
         setScripts([]);
-        console.warn('[ScriptsPage] No items in response:', result);
+        console.warn('[ScriptsPage] No items property in response:', result);
       }
     } catch (error) {
       // Ignore abort errors
@@ -110,10 +112,16 @@ export default function ScriptsPage() {
       // Only show error if component is still mounted
       if (isMountedRef.current) {
         setScripts([]);
+        // Make sure to set loading to false on error
+        setIsLoading(false);
       }
     } finally {
+      // Always set loading to false if component is still mounted
       if (isMountedRef.current) {
-        setInitialLoadComplete(true);
+        console.log('[ScriptsPage] Finally block - setting loading to false');
+        setIsLoading(false);
+      } else {
+        console.log('[ScriptsPage] Finally block - component unmounted, not updating state');
       }
     }
   }, []); // Empty deps - function never changes
@@ -129,12 +137,23 @@ export default function ScriptsPage() {
     hasInitialLoadRef.current = true;
     console.log('[ScriptsPage] Performing initial load');
     
+    // Failsafe: Set loading to false after 5 seconds if still loading
+    const failsafeTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn('[ScriptsPage] Loading timeout - forcing loading to false');
+        setIsLoading(false);
+      }
+    }, 5000);
+    
     // Fetch initial scripts
     fetchScripts("", "all", "created_at", 1);
 
     // Cleanup function
     return () => {
       console.log('[ScriptsPage] Component unmounting - cleaning up');
+      
+      // Clear failsafe timeout
+      clearTimeout(failsafeTimeout);
       
       // Cancel any pending requests
       if (abortControllerRef.current) {
@@ -223,8 +242,13 @@ export default function ScriptsPage() {
     }
   };
 
-  // Show loading spinner only during the very first load before any data is fetched
-  if (!initialLoadComplete && scripts.length === 0) {
+  // Show loading spinner only during the very first load
+  console.log('[ScriptsPage] Loading check:', { 
+    isLoading,
+    scriptsLength: scripts.length
+  });
+  
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="glass-card p-8 animate-pulse-slow">

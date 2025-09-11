@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
@@ -27,9 +28,13 @@ import {
   CheckCircle2,
   Lightbulb,
   Lock,
-  Crown
+  Users,
+  Crown,
+  Shield,
+  ShieldCheck,
+  Search
 } from 'lucide-react';
-import { SCRIPT_TYPES, SCRIPT_LENGTHS, AI_MODELS, CREDIT_COSTS, PREMIUM_AI_MODELS } from '@/lib/constants';
+import { SCRIPT_TYPES, SCRIPT_LENGTHS, AI_MODELS, CREDIT_COSTS } from '@/lib/constants';
 import { getKeyPointRecommendations, filterNewRecommendations } from '@/lib/key-points-recommendations';
 import { hasAccessToModel, isPremiumModel, getMinimumTierForModel, getTierDisplayName } from '@/lib/subscription-helpers';
 
@@ -78,6 +83,9 @@ export default function NewScriptPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [enableFactChecking, setEnableFactChecking] = useState(true);
+  const [factCheckResults, setFactCheckResults] = useState(null);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
   const [userData, setUserData] = useState({
     credits: 0,
@@ -120,6 +128,16 @@ export default function NewScriptPage() {
         voiceProfiles: voiceData.data || [],
         subscriptionTier: userData.data?.subscription_tier || 'free'
       });
+      
+      // Auto-select first channel if available and set audience
+      if (channelsData.data && channelsData.data.length > 0) {
+        const firstChannel = channelsData.data[0];
+        setFormData(prev => ({
+          ...prev,
+          channelId: firstChannel.id,
+          targetAudience: firstChannel.audience_description || prev.targetAudience
+        }));
+      }
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
@@ -129,6 +147,39 @@ export default function NewScriptPage() {
 
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // If channel is changed, update audience description
+    if (field === 'channelId' && value) {
+      const selectedChannel = userData.channels.find(ch => ch.id === value);
+      if (selectedChannel && selectedChannel.audience_description) {
+        setFormData(prev => ({
+          ...prev,
+          targetAudience: selectedChannel.audience_description
+        }));
+      }
+    }
+  };
+  
+  const autoFillAudience = () => {
+    if (formData.channelId) {
+      const selectedChannel = userData.channels.find(ch => ch.id === formData.channelId);
+      if (selectedChannel && selectedChannel.audience_description) {
+        setFormData(prev => ({
+          ...prev,
+          targetAudience: selectedChannel.audience_description
+        }));
+        toast({
+          title: "Audience Auto-filled",
+          description: "Target audience has been populated from your channel analysis"
+        });
+      } else {
+        toast({
+          title: "No Audience Data",
+          description: "Please analyze your channel first to generate audience insights",
+          variant: "warning"
+        });
+      }
+    }
   };
 
   const addKeyPoint = () => {
@@ -151,13 +202,49 @@ export default function NewScriptPage() {
     }));
   };
 
-  const generateRecommendations = () => {
-    // Get recommendations based on current form data
-    const recs = getKeyPointRecommendations(formData);
-    // Filter out any that are already in key points
-    const filtered = filterNewRecommendations(recs, formData.keyPoints);
-    setRecommendations(filtered);
-    setShowRecommendations(true);
+  const generateRecommendations = async () => {
+    setLoadingSuggestions(true);
+    
+    try {
+      // Use AI-powered suggestions API
+      const response = await fetch('/api/scripts/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          type: formData.type,
+          targetAudience: formData.targetAudience,
+          existingPoints: formData.keyPoints.filter(p => p.trim())
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const suggestions = data.suggestions.map(s => s.text || s);
+        setRecommendations(suggestions);
+        setShowRecommendations(true);
+        
+        toast({
+          title: "AI Suggestions Generated!",
+          description: `Generated ${suggestions.length} smart suggestions based on your title`,
+        });
+      } else {
+        // Fallback to local recommendations
+        const recs = getKeyPointRecommendations(formData);
+        const filtered = filterNewRecommendations(recs, formData.keyPoints);
+        setRecommendations(filtered);
+        setShowRecommendations(true);
+      }
+    } catch (error) {
+      console.error('Failed to get AI suggestions:', error);
+      // Fallback to local recommendations
+      const recs = getKeyPointRecommendations(formData);
+      const filtered = filterNewRecommendations(recs, formData.keyPoints);
+      setRecommendations(filtered);
+      setShowRecommendations(true);
+    } finally {
+      setLoadingSuggestions(false);
+    }
   };
 
   const addRecommendation = (recommendation) => {
@@ -186,8 +273,24 @@ export default function NewScriptPage() {
     }
   };
 
-  const creditCost = CREDIT_COSTS.SCRIPT_GENERATION[formData.model] || 10;
+  // Calculate credit cost based on model and length multiplier
+  const baseModelCost = CREDIT_COSTS.SCRIPT_GENERATION[formData.model] || 10;
+  const lengthMultiplier = getLengthMultiplier(formData.length);
+  const creditCost = Math.ceil(baseModelCost * lengthMultiplier);
   const canGenerate = userData.credits >= creditCost;
+  
+  // Helper function to calculate length multiplier
+  function getLengthMultiplier(length) {
+    const minutes = SCRIPT_LENGTHS[length]?.minutes || 10;
+    if (minutes <= 5) return 1.0;
+    if (minutes <= 10) return 1.2;
+    if (minutes <= 15) return 1.5;
+    if (minutes <= 20) return 1.8;
+    if (minutes <= 30) return 2.2;
+    if (minutes <= 40) return 2.8;
+    if (minutes <= 50) return 3.5;
+    return 4.0; // 60 minutes
+  }
 
   const handleGenerate = async () => {
     if (!canGenerate) {
@@ -202,13 +305,15 @@ export default function NewScriptPage() {
     setIsGenerating(true);
     
     try {
-      // Convert length from key to actual minutes value
-      const lengthMinutes = SCRIPT_LENGTHS[formData.length]?.min || 10;
+      // Get the length in minutes
+      const lengthMinutes = SCRIPT_LENGTHS[formData.length]?.minutes || 10;
       
       const requestBody = {
         ...formData,
         length: lengthMinutes, // Send as number
-        keyPoints: formData.keyPoints.filter(p => p.trim())
+        keyPoints: formData.keyPoints.filter(p => p.trim()),
+        enableFactChecking: enableFactChecking,
+        topic: formData.topic // Include topic for better context
       };
       
       console.log('Sending script generation request:', requestBody);
@@ -234,9 +339,21 @@ export default function NewScriptPage() {
 
       const data = await response.json();
       
+      // Store fact-check results if available
+      if (data.factCheck && data.factCheck.enabled) {
+        setFactCheckResults(data.factCheck);
+      }
+
+      // Show fact-check status in toast
+      const factCheckStatus = data.factCheck?.enabled ? 
+        (data.factCheck.validation?.status === 'EXCELLENT' ? '✅ Fact-checked' : 
+         data.factCheck.validation?.status === 'GOOD' ? '✓ Fact-checked with warnings' : 
+         '⚠️ Fact-check passed with issues') : 
+        '⚠️ Fact-checking disabled';
+
       toast({
         title: "Script Generated!",
-        description: "Your script has been created successfully."
+        description: `Your script has been created successfully. ${factCheckStatus}`
       });
 
       router.push(`/scripts/${data.scriptId}`);
@@ -374,7 +491,7 @@ export default function NewScriptPage() {
           <h2 className="text-2xl font-semibold text-white mb-2">{STEPS[currentStep].title}</h2>
           <p className="text-gray-400 mb-6">{STEPS[currentStep].description}</p>
 
-          {/* Step 1: Basics */}
+          {/* Step 1: Basic Information */}
           {currentStep === 0 && (
             <div className="space-y-6">
               <div>
@@ -386,6 +503,19 @@ export default function NewScriptPage() {
                   placeholder="Enter your video title..."
                   className="glass-input text-white mt-2"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="topic" className="text-gray-300">Video Topic</Label>
+                <textarea
+                  id="topic"
+                  value={formData.topic}
+                  onChange={(e) => updateFormData('topic', e.target.value)}
+                  placeholder="Describe what your video is about, main themes, and any specific angles you want to explore..."
+                  className="glass-input text-white mt-2 min-h-[100px] resize-none"
+                  rows={4}
+                />
+                <p className="text-xs text-gray-400 mt-1">Provide context to help the AI generate a more relevant script</p>
               </div>
 
               <div>
@@ -401,7 +531,7 @@ export default function NewScriptPage() {
                           : 'text-gray-300 hover:text-white'
                       }`}
                     >
-                      {value}
+                      {value.charAt(0).toUpperCase() + value.slice(1)}
                     </button>
                   ))}
                 </div>
@@ -409,41 +539,85 @@ export default function NewScriptPage() {
             </div>
           )}
 
-          {/* Step 2: Details */}
+          {/* Step 2: Video Length */}
           {currentStep === 1 && (
             <div className="space-y-6">
               <div>
-                <Label htmlFor="length" className="text-gray-300">Video Length (minutes)</Label>
-                <Select value={formData.length} onValueChange={(value) => updateFormData('length', value)}>
-                  <SelectTrigger className="w-full px-3 py-2 mt-2 text-white bg-white/10 border border-white/20 rounded-lg hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 [&>span]:text-white">
-                    <SelectValue placeholder="Select video length" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-900 border border-white/20 [&_*]:text-white">
-                    {Object.entries(SCRIPT_LENGTHS).map(([key, value]) => (
-                      <SelectItem key={key} value={key} className="text-gray-300 hover:text-white hover:bg-white/20 focus:bg-white/20 focus:text-white cursor-pointer py-2 px-3">
-                        {value.label} - {value.credits} credits
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {formData.length && (
-                  <div className="mt-2 flex items-center gap-4 text-sm text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Zap className="h-3 w-3 text-yellow-400" />
-                      {SCRIPT_LENGTHS[formData.length].tokens}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 text-purple-400" />
-                      {SCRIPT_LENGTHS[formData.length].credits} credits
-                    </span>
-                  </div>
-                )}
+                <Label className="text-gray-300 mb-4 block">Select Video Duration</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {Object.entries(SCRIPT_LENGTHS).map(([key, value]) => (
+                    <button
+                      key={key}
+                      onClick={() => updateFormData('length', key)}
+                      className={`glass-button p-4 text-left transition-all relative ${
+                        formData.length === key
+                          ? 'bg-purple-500/20 ring-2 ring-purple-400'
+                          : 'hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-white font-semibold text-lg">{value.minutes} min</span>
+                          {formData.length === key && (
+                            <Check className="h-5 w-5 text-purple-400" />
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-400">{value.words}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
+            </div>
+          )}
 
+          {/* Step 3: Target Audience */}
+          {currentStep === 2 && (
+            <div className="space-y-6">
+              <div className="glass-card p-6">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="p-2 bg-blue-500/20 rounded-lg">
+                    <Users className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <Label htmlFor="audience" className="text-white text-lg font-semibold">Target Audience</Label>
+                    <p className="text-sm text-gray-400 mt-1">Describe who will watch your video - their interests, age, background, and what they're looking for</p>
+                  </div>
+                </div>
+                <textarea
+                  id="audience"
+                  value={formData.targetAudience}
+                  onChange={(e) => updateFormData('targetAudience', e.target.value)}
+                  placeholder="This channel appeals to young adults passionate about music, fashion, and urban culture who aspire to build a career in the creative arts. They are drawn to authentic storytelling, musical talent, and behind-the-scenes glimpses into modeling and performance life. The content resonates with viewers seeking inspiration, creative expression, and insight into the challenges and excitement of pursuing artistic ambitions in a vibrant city environment. Male, age 18-28."
+                  className="glass-input text-white w-full min-h-[150px] resize-none"
+                  rows={6}
+                />
+                <div className="flex justify-between items-center mt-2">
+                  <p className="text-xs text-gray-400">
+                    {formData.targetAudience.length} / 500 characters
+                  </p>
+                  {formData.channelId && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs text-blue-400 hover:text-blue-300"
+                      onClick={autoFillAudience}
+                    >
+                      Auto-fill from channel
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Tone & Style */}
+          {currentStep === 3 && (
+            <div className="space-y-6">
               <div>
-                <Label className="text-gray-300">Tone</Label>
+                <Label className="text-gray-300">Tone & Style</Label>
                 <div className="grid grid-cols-2 gap-3 mt-2">
-                  {['professional', 'casual', 'educational', 'entertaining'].map((tone) => (
+                  {['professional', 'casual', 'educational', 'entertaining', 'inspirational', 'conversational'].map((tone) => (
                     <button
                       key={tone}
                       onClick={() => updateFormData('tone', tone)}
@@ -458,22 +632,11 @@ export default function NewScriptPage() {
                   ))}
                 </div>
               </div>
-
-              <div>
-                <Label htmlFor="audience" className="text-gray-300">Target Audience</Label>
-                <Input
-                  id="audience"
-                  value={formData.targetAudience}
-                  onChange={(e) => updateFormData('targetAudience', e.target.value)}
-                  placeholder="e.g., Developers, Students, Entrepreneurs..."
-                  className="glass-input text-white mt-2"
-                />
-              </div>
             </div>
           )}
 
-          {/* Step 3: Content */}
-          {currentStep === 2 && (
+          {/* Step 5: Content Points */}
+          {currentStep === 4 && (
             <div className="space-y-6 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -484,11 +647,21 @@ export default function NewScriptPage() {
                   {formData.title && formData.type && (
                     <Button
                       onClick={generateRecommendations}
+                      disabled={loadingSuggestions}
                       className="glass-button bg-gradient-to-r from-yellow-500/20 to-orange-500/20 hover:from-yellow-500/30 hover:to-orange-500/30 text-white border-yellow-400/50"
                       variant="outline"
                     >
-                      <Lightbulb className="h-4 w-4 mr-2" />
-                      Get Suggestions
+                      {loadingSuggestions ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Get AI Suggestions
+                        </>
+                      )}
                     </Button>
                   )}
                 </div>
@@ -531,8 +704,8 @@ export default function NewScriptPage() {
                   <div className="mt-6 glass-card p-4 border border-yellow-400/30">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-medium text-yellow-400 flex items-center gap-2">
-                        <Lightbulb className="h-4 w-4" />
-                        Suggested Key Points
+                        <Sparkles className="h-4 w-4" />
+                        AI-Powered Suggestions
                       </h4>
                       <Button
                         onClick={() => setShowRecommendations(false)}
@@ -566,7 +739,7 @@ export default function NewScriptPage() {
                 )}
 
                 {/* Info message when no details provided */}
-                {(!formData.title || !formData.type) && currentStep === 2 && (
+                {(!formData.title || !formData.type) && currentStep === 4 && (
                   <div className="mt-4 p-3 glass-card border border-blue-400/30">
                     <div className="flex gap-2">
                       <AlertCircle className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
@@ -580,14 +753,42 @@ export default function NewScriptPage() {
             </div>
           )}
 
-          {/* Step 4: AI Settings */}
-          {currentStep === 3 && (
+          {/* Step 6: AI Settings */}
+          {currentStep === 5 && (
             <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+              {/* Credit Cost Info Box */}
+              <div className="glass-card p-4 border border-purple-400/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-purple-400" />
+                    <span className="text-white font-medium">Credit Cost Calculator</span>
+                  </div>
+                  <Badge className="bg-purple-500/20 border-purple-400 text-purple-300">
+                    Total: {creditCost} credits
+                  </Badge>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between text-gray-300">
+                    <span>Base Model Cost:</span>
+                    <span className="text-white">{CREDIT_COSTS.SCRIPT_GENERATION[formData.model]} credits</span>
+                  </div>
+                  <div className="flex justify-between text-gray-300">
+                    <span>Length Multiplier ({SCRIPT_LENGTHS[formData.length]?.minutes}min):</span>
+                    <span className="text-white">×{lengthMultiplier.toFixed(1)}</span>
+                  </div>
+                  <div className="pt-2 border-t border-purple-400/20 flex justify-between text-white font-medium">
+                    <span>Final Cost:</span>
+                    <span className="text-purple-300">{creditCost} credits</span>
+                  </div>
+                </div>
+              </div>
+              
               <div>
-                <Label className="text-gray-300">AI Model</Label>
+                <Label className="text-gray-300">Select AI Model</Label>
                 <div className="grid gap-3 mt-2">
                   {Object.entries(AI_MODELS).map(([key, value]) => {
-                    const cost = CREDIT_COSTS.SCRIPT_GENERATION[value];
+                    const baseModelCost = CREDIT_COSTS.SCRIPT_GENERATION[value];
+                    const totalCostForModel = Math.ceil(baseModelCost * lengthMultiplier);
                     const hasAccess = hasAccessToModel(value, userData.subscriptionTier);
                     const isPremium = isPremiumModel(value);
                     const minimumTier = getMinimumTierForModel(value);
@@ -632,9 +833,12 @@ export default function NewScriptPage() {
                             </p>
                           </div>
                           <div className="flex flex-col items-end gap-1">
-                            <Badge className="glass border-purple-400/50 text-purple-300">
-                              {cost} credits
-                            </Badge>
+                            <div className="text-right">
+                              <p className="text-xs text-gray-400">Total cost:</p>
+                              <Badge className="glass border-purple-400/50 text-purple-300">
+                                {totalCostForModel} credits
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </button>
@@ -666,8 +870,8 @@ export default function NewScriptPage() {
             </div>
           )}
 
-          {/* Step 5: Review */}
-          {currentStep === 4 && (
+          {/* Step 7: Review & Generate */}
+          {currentStep === 6 && (
             <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               <div className="glass p-6 rounded-xl space-y-4">
                 <h3 className="text-lg font-semibold text-white mb-4">Script Summary</h3>
@@ -683,11 +887,15 @@ export default function NewScriptPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Length:</span>
-                    <span className="text-white">{formData.length} minutes</span>
+                    <span className="text-white">{SCRIPT_LENGTHS[formData.length]?.label || formData.length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Tone:</span>
                     <span className="text-white capitalize">{formData.tone}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Audience:</span>
+                    <span className="text-white">{formData.targetAudience ? 'Defined' : 'Not set'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">AI Model:</span>
@@ -701,14 +909,27 @@ export default function NewScriptPage() {
               </div>
 
               <div className="glass p-4 rounded-xl border border-yellow-500/20">
-                <div className="flex items-center gap-2 text-yellow-400 mb-2">
+                <div className="flex items-center gap-2 text-yellow-400 mb-3">
                   <AlertCircle className="h-5 w-5" />
-                  <span className="font-medium">Credit Usage</span>
+                  <span className="font-medium">Final Credit Usage</span>
                 </div>
-                <p className="text-sm text-gray-300">
-                  This script will use <span className="font-bold text-white">{creditCost} credits</span>.
-                  You'll have <span className="font-bold text-white">{userData.credits - creditCost} credits</span> remaining.
-                </p>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Model ({formData.model}):</span>
+                    <span className="text-gray-300">{CREDIT_COSTS.SCRIPT_GENERATION[formData.model]} base credits</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Length ({SCRIPT_LENGTHS[formData.length]?.minutes}min):</span>
+                    <span className="text-gray-300">×{lengthMultiplier.toFixed(1)} multiplier</span>
+                  </div>
+                  <div className="pt-2 mt-2 border-t border-yellow-500/20 flex justify-between">
+                    <span className="text-white font-medium">Total Cost:</span>
+                    <span className="text-yellow-300 font-bold">{creditCost} credits</span>
+                  </div>
+                  <p className="text-sm text-gray-300 mt-2">
+                    You'll have <span className="font-bold text-white">{userData.credits - creditCost} credits</span> remaining after generation.
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -745,10 +966,17 @@ export default function NewScriptPage() {
                     Generating...
                   </>
                 ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Generate Script
-                  </>
+                  enableFactChecking ? (
+                    <>
+                      <ShieldCheck className="h-4 w-4 mr-2" />
+                      Generate Fact-Checked Script
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Generate Script
+                    </>
+                  )
                 )}
               </Button>
             )}
