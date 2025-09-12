@@ -4,6 +4,8 @@ import { getChannelById } from '@/lib/youtube/channel';
 import { getChannelVideos } from '@/lib/youtube/channel';
 import { generateChannelAnalytics, generateAudiencePersona, generateInsights } from '@/lib/youtube/analytics';
 import { analyzeChannelAudience } from '@/lib/youtube/audience-analyzer';
+import { analyzeChannelWithAI } from '@/lib/ai/audience-analysis';
+import { generateVideoIdeasWithAI } from '@/lib/ai/video-ideas';
 
 export async function POST(request, { params }) {
   try {
@@ -39,8 +41,41 @@ export async function POST(request, { params }) {
     const persona = await generateAudiencePersona(analytics);
     const insights = generateInsights(analytics, persona);
     
-    // Generate detailed audience analysis
-    const audienceAnalysis = await analyzeChannelAudience(channel, videos);
+    // Try AI-powered analysis first, fallback to keyword-based if needed
+    let audienceAnalysis;
+    const aiAnalysis = await analyzeChannelWithAI(channel, videos);
+    
+    if (aiAnalysis.success) {
+      // Use AI analysis
+      audienceAnalysis = {
+        persona: aiAnalysis.analysis.audiencePersona,
+        demographics: aiAnalysis.analysis.demographics,
+        interests: aiAnalysis.analysis.psychographics.interests,
+        psychographics: aiAnalysis.analysis.psychographics,
+        viewingBehavior: aiAnalysis.analysis.viewingBehavior,
+        contentPreferences: aiAnalysis.analysis.contentPreferences,
+        communityProfile: aiAnalysis.analysis.communityProfile,
+        aiInsights: aiAnalysis.analysis.insights,
+        aiRecommendations: aiAnalysis.analysis.recommendations
+      };
+    } else {
+      // Fallback to keyword-based analysis
+      audienceAnalysis = await analyzeChannelAudience(channel, videos);
+    }
+
+    // Generate content ideas based on channel analysis
+    const channelContext = {
+      niche: channel.snippet.description?.slice(0, 200) || 'General content',
+      subscriberCount: channel.statistics.subscriberCount,
+      averageViews: Math.round(videos.reduce((sum, v) => sum + (parseInt(v.statistics?.viewCount) || 0), 0) / videos.length)
+    };
+    
+    const contentIdeas = await generateVideoIdeasWithAI(
+      channelContext,
+      videos,
+      audienceAnalysis,
+      [] // Trends can be fetched separately if needed
+    );
 
     // Save analysis results to database
     const { data: analysis, error: saveError } = await supabase
@@ -52,6 +87,7 @@ export async function POST(request, { params }) {
         audience_persona: persona,
         audience_description: audienceAnalysis.persona, // Detailed description for scripts
         insights: insights,
+        content_ideas: contentIdeas.success ? contentIdeas.ideas : null,
         videos_analyzed: videos.length,
         analysis_date: new Date().toISOString(),
       })
@@ -85,6 +121,7 @@ export async function POST(request, { params }) {
       persona,
       insights,
       audienceAnalysis, // Include detailed audience analysis
+      contentIdeas: contentIdeas.success ? contentIdeas.ideas : null,
       analysisId: analysis?.id,
     });
   } catch (error) {

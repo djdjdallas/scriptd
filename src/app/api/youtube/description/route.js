@@ -29,7 +29,7 @@ export async function POST(request) {
     }
 
     // Generate description using Claude Sonnet
-    const aiService = createAIService('claude-3-5-sonnet-20241022');
+    const aiService = createAIService('claude-3-5-haiku-20241022');
     
     const styleGuide = {
       professional: 'Use a professional, informative tone with clear structure',

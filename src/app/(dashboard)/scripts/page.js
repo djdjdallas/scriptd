@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,23 +43,38 @@ export default function ScriptsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [hoveredScript, setHoveredScript] = useState(null);
+
+  // Refs for cleanup and debouncing
   const abortControllerRef = useRef(null);
   const searchTimeoutRef = useRef(null);
-  const isMountedRef = useRef(true);
-  const hasInitialLoadRef = useRef(false); // Prevent double initial load
-  const renderCountRef = useRef(0); // Debug: track renders
-  
-  // Debug: Log component renders
-  renderCountRef.current++;
-  console.log(`[ScriptsPage] Render #${renderCountRef.current} at ${new Date().toISOString()}`);
+  const hasMountedRef = useRef(false);
 
-  // Stable fetch function - memoized with no dependencies
-  const fetchScripts = useCallback(async (searchTerm, filter, sort, pageNum) => {
-    console.log(`[ScriptsPage] Fetching scripts - search: "${searchTerm}", filter: ${filter}, sort: ${sort}, page: ${pageNum}`);
-    
+  // CRITICAL: Store the last fetch parameters to prevent duplicate fetches
+  const lastFetchParamsRef = useRef(null);
+
+  // Fetch function - NOT wrapped in useCallback to avoid dependency issues
+  const fetchScripts = async (searchTerm, filter, sort, pageNum) => {
+    // Check if we're fetching with the same parameters
+    const fetchParams = `${searchTerm}-${filter}-${sort}-${pageNum}`;
+    if (lastFetchParamsRef.current === fetchParams && !hasMountedRef.current) {
+      console.log(
+        "[ScriptsPage] Skipping duplicate fetch with same params:",
+        fetchParams
+      );
+      return;
+    }
+    lastFetchParamsRef.current = fetchParams;
+
+    console.log(
+      `[ScriptsPage] Fetching scripts - search: "${searchTerm}", filter: ${filter}, sort: ${sort}, page: ${pageNum}`
+    );
+
+    // Set loading state
+    setIsLoading(true);
+
     // Cancel any in-flight requests
     if (abortControllerRef.current) {
-      console.log('[ScriptsPage] Aborting previous request');
+      console.log("[ScriptsPage] Aborting previous request");
       abortControllerRef.current.abort();
     }
 
@@ -82,140 +97,129 @@ export default function ScriptsPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch scripts");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error || `HTTP ${response.status}: Failed to fetch scripts`
+        );
       }
 
       const result = await response.json();
-      
-      console.log(`[ScriptsPage] Fetched ${result.items?.length || 0} scripts`);
-      console.log('[ScriptsPage] Full response:', result);
-      console.log('[ScriptsPage] Response has items?', 'items' in result);
 
-      // The API returns { items, pagination } directly
-      if ('items' in result) {
-        setScripts(result.items || []);
-        setTotalPages(result.pagination?.pages || 1);
-      } else {
-        setScripts([]);
-        console.warn('[ScriptsPage] No items property in response:', result);
-      }
+      console.log(`[ScriptsPage] API Response:`, result);
+
+      // Handle the response
+      const scriptsData = result.items || [];
+      const paginationData = result.pagination || {};
+
+      setScripts(scriptsData);
+      setTotalPages(paginationData.pages || 1);
+      console.log(
+        `[ScriptsPage] Set ${scriptsData.length} scripts, ${
+          paginationData.pages || 1
+        } pages`
+      );
     } catch (error) {
       // Ignore abort errors
       if (error.name === "AbortError") {
-        console.log('[ScriptsPage] Request was aborted');
+        console.log("[ScriptsPage] Request was aborted");
         return;
       }
 
       console.error("[ScriptsPage] Error fetching scripts:", error);
 
-      // Only show error if component is still mounted
-      if (isMountedRef.current) {
-        setScripts([]);
-        // Make sure to set loading to false on error
-        setIsLoading(false);
+      // Only show toast after initial mount
+      if (hasMountedRef.current) {
+        toast({
+          title: "Failed to load scripts",
+          description: error.message || "Please try refreshing the page",
+          variant: "destructive",
+        });
       }
-    } finally {
-      // Always set loading to false if component is still mounted
-      if (isMountedRef.current) {
-        console.log('[ScriptsPage] Finally block - setting loading to false');
-        setIsLoading(false);
-      } else {
-        console.log('[ScriptsPage] Finally block - component unmounted, not updating state');
-      }
-    }
-  }, []); // Empty deps - function never changes
 
-  // Initial load - runs ONCE on component mount
-  useEffect(() => {
-    // Prevent double initial load (React StrictMode in dev)
-    if (hasInitialLoadRef.current) {
-      console.log('[ScriptsPage] Skipping duplicate initial load');
-      return;
+      // Reset to empty state on error
+      setScripts([]);
+      setTotalPages(1);
+    } finally {
+      setIsLoading(false);
     }
-    
-    hasInitialLoadRef.current = true;
-    console.log('[ScriptsPage] Performing initial load');
-    
-    // Failsafe: Set loading to false after 5 seconds if still loading
-    const failsafeTimeout = setTimeout(() => {
-      if (isLoading) {
-        console.warn('[ScriptsPage] Loading timeout - forcing loading to false');
-        setIsLoading(false);
-      }
-    }, 5000);
-    
-    // Fetch initial scripts
+  };
+
+  // Initial load - ONLY runs once
+  useEffect(() => {
+    if (hasMountedRef.current) return; // Prevent double mount in dev mode
+
+    console.log("[ScriptsPage] Initial mount - fetching scripts");
+    hasMountedRef.current = true;
+
     fetchScripts("", "all", "created_at", 1);
 
     // Cleanup function
     return () => {
-      console.log('[ScriptsPage] Component unmounting - cleaning up');
-      
-      // Clear failsafe timeout
-      clearTimeout(failsafeTimeout);
-      
+      console.log("[ScriptsPage] Component unmounting");
+
       // Cancel any pending requests
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-      
+
       // Clear any pending timeouts
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
-      
-      // Set unmounted flag AFTER cancelling requests
-      isMountedRef.current = false;
     };
-  }, [fetchScripts]); // Include fetchScripts but it never changes due to useCallback with []
+  }, []); // Empty deps - only run once
 
-  // Handle search changes with debouncing
+  // Handle all parameter changes in a single effect
   useEffect(() => {
-    // Skip on initial mount
-    if (!hasInitialLoadRef.current) {
-      console.log('[ScriptsPage] Skipping search effect - not initialized yet');
-      return;
-    }
-    
-    console.log(`[ScriptsPage] Search changed to: "${search}"`);
+    // Skip the initial render
+    if (!hasMountedRef.current) return;
 
-    // Clear existing timeout
+    console.log(
+      `[ScriptsPage] Parameters changed - search: "${search}", filter: ${typeFilter}, sort: ${sortBy}, page: ${page}`
+    );
+
+    // Clear any existing search timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
-    // Debounce search input (500ms delay)
-    searchTimeoutRef.current = setTimeout(() => {
-      console.log('[ScriptsPage] Executing debounced search');
-      fetchScripts(search, typeFilter, sortBy, 1); // Reset to page 1 on search
-      setPage(1);
-    }, 500);
+    // For search changes, debounce; for others, execute immediately
+    const delay =
+      search !== "" ||
+      typeFilter !== "all" ||
+      sortBy !== "created_at" ||
+      page !== 1
+        ? 500
+        : 0;
+
+    searchTimeoutRef.current = setTimeout(
+      () => {
+        // Reset page to 1 if search, filter, or sort changed
+        const currentPage =
+          (search !== "" || typeFilter !== "all" || sortBy !== "created_at") &&
+          page !== 1
+            ? 1
+            : page;
+
+        if (currentPage !== page) {
+          setPage(1);
+        }
+
+        fetchScripts(search, typeFilter, sortBy, currentPage);
+      },
+      search !== "" ? 500 : 0
+    ); // Only debounce search
 
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [search]); // Only depend on search
-  
-  // Handle filter/sort/page changes (no debouncing needed)
-  useEffect(() => {
-    // Skip on initial mount
-    if (!hasInitialLoadRef.current) {
-      console.log('[ScriptsPage] Skipping filter effect - not initialized yet');
-      return;
-    }
-    
-    console.log(`[ScriptsPage] Filter/sort/page changed - filter: ${typeFilter}, sort: ${sortBy}, page: ${page}`);
-    
-    // Fetch immediately for filter/sort/page changes
-    fetchScripts(search, typeFilter, sortBy, page);
-  }, [typeFilter, sortBy, page]); // Separate from search to avoid debouncing these
+  }, [search, typeFilter, sortBy, page]); // Dependencies without fetchScripts
 
   const handleDelete = async (scriptId) => {
     if (!confirm("Are you sure you want to delete this script?")) return;
-    
+
     console.log(`[ScriptsPage] Deleting script: ${scriptId}`);
 
     try {
@@ -223,7 +227,10 @@ export default function ScriptsPage() {
         method: "DELETE",
       });
 
-      if (!response.ok) throw new Error("Failed to delete script");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to delete script");
+      }
 
       toast({
         title: "Script Deleted",
@@ -232,6 +239,11 @@ export default function ScriptsPage() {
 
       // Remove the script from the list locally
       setScripts((prevScripts) => prevScripts.filter((s) => s.id !== scriptId));
+
+      // If we deleted the last item on a page, go to previous page
+      if (scripts.length === 1 && page > 1) {
+        setPage(page - 1);
+      }
     } catch (error) {
       console.error(`[ScriptsPage] Delete failed:`, error);
       toast({
@@ -242,13 +254,8 @@ export default function ScriptsPage() {
     }
   };
 
-  // Show loading spinner only during the very first load
-  console.log('[ScriptsPage] Loading check:', { 
-    isLoading,
-    scriptsLength: scripts.length
-  });
-  
-  if (isLoading) {
+  // Show loading spinner only during the initial load
+  if (isLoading && scripts.length === 0 && !hasMountedRef.current) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="glass-card p-8 animate-pulse-slow">
@@ -406,8 +413,16 @@ export default function ScriptsPage() {
           </div>
         </div>
 
+        {/* Loading indicator for subsequent loads */}
+        {isLoading && hasMountedRef.current && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+            <span className="ml-2 text-gray-300">Loading scripts...</span>
+          </div>
+        )}
+
         {/* Scripts Grid */}
-        {scripts.length === 0 ? (
+        {!isLoading && scripts.length === 0 ? (
           <div
             className="glass-card p-12 text-center animate-reveal"
             style={{ animationDelay: "0.3s" }}
@@ -417,133 +432,146 @@ export default function ScriptsPage() {
               <Sparkles className="h-8 w-8 text-yellow-400 absolute -top-2 -right-2 animate-pulse" />
             </div>
             <h3 className="text-2xl font-bold text-white mt-6 mb-2">
-              No scripts yet
+              {search || typeFilter !== "all"
+                ? "No scripts found"
+                : "No scripts yet"}
             </h3>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
-              Start creating viral content with AI-powered script generation
+              {search || typeFilter !== "all"
+                ? "Try adjusting your search or filters"
+                : "Start creating viral content with AI-powered script generation"}
             </p>
-            <Link href="/scripts/new">
-              <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Script
-              </Button>
-            </Link>
+            {!(search || typeFilter !== "all") && (
+              <Link href="/scripts/new">
+                <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Script
+                </Button>
+              </Link>
+            )}
           </div>
         ) : (
-          <div className="grid gap-6 stagger-children">
-            {scripts.map((script, index) => (
-              <TiltCard key={script.id}>
-                <div
-                  className="glass-card glass-hover overflow-hidden group"
-                  onMouseEnter={() => setHoveredScript(script.id)}
-                  onMouseLeave={() => setHoveredScript(null)}
-                  style={{ animationDelay: `${0.3 + index * 0.05}s` }}
-                >
-                  {/* Background gradient on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          !isLoading && (
+            <div className="grid gap-6 stagger-children">
+              {scripts.map((script, index) => (
+                <TiltCard key={script.id}>
+                  <div
+                    className="glass-card glass-hover overflow-hidden group"
+                    onMouseEnter={() => setHoveredScript(script.id)}
+                    onMouseLeave={() => setHoveredScript(null)}
+                    style={{ animationDelay: `${0.3 + index * 0.05}s` }}
+                  >
+                    {/* Background gradient on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                  <div className="relative p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-semibold text-white mb-2 flex items-center gap-2">
-                          <Link
-                            href={`/scripts/${script.id}`}
-                            className="hover:text-purple-400 transition-colors"
-                          >
-                            {script.title}
-                          </Link>
-                          {hoveredScript === script.id && (
-                            <Zap className="h-4 w-4 text-yellow-400 animate-pulse" />
-                          )}
-                        </h3>
-
-                        <p className="text-gray-400 mb-4 line-clamp-2">
-                          {script.excerpt}
-                        </p>
-
-                        <div className="flex items-center gap-4 text-sm">
-                          <Badge className="glass border-purple-400/50 text-purple-300">
-                            {script.type}
-                          </Badge>
-                          <span className="flex items-center gap-1 text-gray-400">
-                            <Clock className="h-3 w-3" />
-                            {script.length} min
-                          </span>
-                          <span className="flex items-center gap-1 text-gray-400">
-                            <Calendar className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(script.createdAt), {
-                              addSuffix: true,
-                            })}
-                          </span>
-                          <span className="flex items-center gap-1 text-gray-400">
-                            <Eye className="h-3 w-3" />
-                            {Math.round(
-                              (script.id ? script.id.charCodeAt(0) : 1) *
-                                123.456
+                    <div className="relative p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                            <Link
+                              href={`/scripts/${script.id}`}
+                              className="hover:text-purple-400 transition-colors"
+                            >
+                              {script.title}
+                            </Link>
+                            {hoveredScript === script.id && (
+                              <Zap className="h-4 w-4 text-yellow-400 animate-pulse" />
                             )}
-                          </span>
+                          </h3>
+
+                          <p className="text-gray-400 mb-4 line-clamp-2">
+                            {script.excerpt || "No description available"}
+                          </p>
+
+                          <div className="flex items-center gap-4 text-sm">
+                            <Badge className="glass border-purple-400/50 text-purple-300">
+                              {script.type || "general"}
+                            </Badge>
+                            <span className="flex items-center gap-1 text-gray-400">
+                              <Clock className="h-3 w-3" />
+                              {script.length || 5} min
+                            </span>
+                            <span className="flex items-center gap-1 text-gray-400">
+                              <Calendar className="h-3 w-3" />
+                              {script.createdAt
+                                ? formatDistanceToNow(
+                                    new Date(script.createdAt),
+                                    {
+                                      addSuffix: true,
+                                    }
+                                  )
+                                : "Unknown"}
+                            </span>
+                            <span className="flex items-center gap-1 text-gray-400">
+                              <Eye className="h-3 w-3" />
+                              {Math.round(
+                                (script.id ? script.id.charCodeAt(0) : 1) *
+                                  123.456
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 ml-6">
+                          <Link href={`/scripts/${script.id}`}>
+                            <Button
+                              className="glass-button hover:bg-blue-500/20"
+                              size="icon"
+                              title="View Script"
+                            >
+                              <Eye className="h-4 w-4 text-white" />
+                            </Button>
+                          </Link>
+                          <Link href={`/scripts/${script.id}/edit`}>
+                            <Button
+                              className="glass-button hover:bg-purple-500/20"
+                              size="icon"
+                              title="Edit Script"
+                            >
+                              <Edit className="h-4 w-4 text-white" />
+                            </Button>
+                          </Link>
+                          <Link href={`/scripts/${script.id}/history`}>
+                            <Button
+                              className="glass-button hover:bg-yellow-500/20"
+                              size="icon"
+                              title="Version History"
+                            >
+                              <History className="h-4 w-4 text-white" />
+                            </Button>
+                          </Link>
+                          <Button
+                            className="glass-button hover:bg-pink-500/20"
+                            size="icon"
+                            onClick={() => handleDelete(script.id)}
+                            title="Delete Script"
+                          >
+                            <Trash2 className="h-4 w-4 text-white" />
+                          </Button>
+                          <Button
+                            className="glass-button hover:bg-green-500/20"
+                            size="icon"
+                            title="Share Script"
+                          >
+                            <Share2 className="h-4 w-4 text-white" />
+                          </Button>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 ml-6">
-                        <Link href={`/scripts/${script.id}`}>
-                          <Button
-                            className="glass-button hover:bg-blue-500/20"
-                            size="icon"
-                            title="View Script"
-                          >
-                            <Eye className="h-4 w-4 text-white" />
-                          </Button>
-                        </Link>
-                        <Link href={`/scripts/${script.id}/edit`}>
-                          <Button
-                            className="glass-button hover:bg-purple-500/20"
-                            size="icon"
-                            title="Edit Script"
-                          >
-                            <Edit className="h-4 w-4 text-white" />
-                          </Button>
-                        </Link>
-                        <Link href={`/scripts/${script.id}/history`}>
-                          <Button
-                            className="glass-button hover:bg-yellow-500/20"
-                            size="icon"
-                            title="Version History"
-                          >
-                            <History className="h-4 w-4 text-white" />
-                          </Button>
-                        </Link>
-                        <Button
-                          className="glass-button hover:bg-pink-500/20"
-                          size="icon"
-                          onClick={() => handleDelete(script.id)}
-                          title="Delete Script"
-                        >
-                          <Trash2 className="h-4 w-4 text-white" />
-                        </Button>
-                        <Button
-                          className="glass-button hover:bg-green-500/20"
-                          size="icon"
-                          title="Share Script"
-                        >
-                          <Share2 className="h-4 w-4 text-white" />
-                        </Button>
-                      </div>
+                      {/* Progress indicator */}
+                      {hoveredScript === script.id && (
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-pink-500 animate-shimmer" />
+                      )}
                     </div>
-
-                    {/* Progress indicator */}
-                    {hoveredScript === script.id && (
-                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-pink-500 animate-shimmer" />
-                    )}
                   </div>
-                </div>
-              </TiltCard>
-            ))}
-          </div>
+                </TiltCard>
+              ))}
+            </div>
+          )
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {totalPages > 1 && !isLoading && (
           <div className="flex items-center justify-center gap-4 animate-reveal">
             <Button
               className="glass-button text-white"
@@ -570,12 +598,14 @@ export default function ScriptsPage() {
       </div>
 
       {/* Floating action hints */}
-      <div className="fixed bottom-6 right-6 glass-card p-4 animate-float max-w-xs">
-        <p className="text-sm text-gray-300 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-yellow-400" />
-          Pro tip: Use AI to generate viral hooks!
-        </p>
-      </div>
+      {!isLoading && scripts.length > 0 && (
+        <div className="fixed bottom-6 right-6 glass-card p-4 animate-float max-w-xs">
+          <p className="text-sm text-gray-300 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-yellow-400" />
+            Pro tip: Use AI to generate viral hooks!
+          </p>
+        </div>
+      )}
     </div>
   );
 }
