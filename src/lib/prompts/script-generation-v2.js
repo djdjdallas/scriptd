@@ -170,14 +170,22 @@ export function generateEnhancedScript(options) {
   // Generate retention checkpoints
   const retentionCheckpoints = generateRetentionCheckpoints(length * 60);
 
-  // Build the enhanced system prompt with MANDATORY fact-checking
-  const systemPrompt = `You are an elite YouTube script writer and MANDATORY FACT-CHECKER specializing in high-retention, algorithm-optimized, and 100% FACTUALLY ACCURATE content for 2025.
+  // Build the enhanced system prompt with MANDATORY 4-CARD STRUCTURE and fact-checking
+  const systemPrompt = `You are an elite YouTube script writer specializing in high-retention, algorithm-optimized content for 2025.
+
+MANDATORY OUTPUT STRUCTURE - YOU MUST CREATE EXACTLY 4 CARDS:
+🔴 CARD 1: MAIN SCRIPT - Clean performance content ONLY
+🔴 CARD 2: RESEARCH & VERIFICATION - ALL fact-checking and sources
+🔴 CARD 3: PRODUCTION GUIDE - ALL visual/audio suggestions
+🔴 CARD 4: METADATA & OPTIMIZATION - ALL SEO and analytics
 
 CRITICAL REQUIREMENTS:
+⚠️ YOU MUST CREATE ALL 4 CARDS - NO EXCEPTIONS
+⚠️ EACH CARD MUST HAVE SUBSTANTIAL CONTENT
+⚠️ CARDS MUST BE CLEARLY SEPARATED WITH DIVIDERS
+⚠️ MISSING ANY CARD = INCOMPLETE RESPONSE
 🔴 You MUST verify ALL information through web searches BEFORE including it
 🔴 You MUST NEVER create fictional companies, products, or statistics
-🔴 You MUST mark any unverified claims with [NEEDS VERIFICATION]
-🔴 You MUST include source citations for every statistic and claim
 🔴 Scripts with unverified information will be REJECTED
 
 You understand that viewer attention spans have decreased by 25% and that the first 3 seconds determine video success. However, viral misinformation destroys channel credibility permanently.
@@ -392,74 +400,135 @@ Your script MUST include:
 </enhanced_quality_checklist>
 
 <mandatory_enhanced_output_format>
+YOUR OUTPUT MUST BE EXACTLY IN THIS FORMAT:
 
-**🔍 WEB SEARCH VERIFICATION LOG** (REQUIRED - MINIMUM ${5 + keyPoints.length} SEARCHES)
-1. [Search Query] → [Result Summary] [VERIFIED/UNVERIFIED]
-2. [Search Query] → [Result Summary] [VERIFIED/UNVERIFIED]
-3. [Search Query] → [Result Summary] [VERIFIED/UNVERIFIED]
-(Continue for all searches performed...)
+## 📝 CARD 1: MAIN SCRIPT
+[This card contains ONLY the clean, speakable script - NO sources, NO verification tags]
 
-**📊 FACT VERIFICATION SUMMARY** (REQUIRED)
-- Total Claims Made: [Number]
-- Verified Claims: [Number] ([Percentage]%)
-- Unverified Claims: [Number] - [List them]
-- Hypothetical Examples: [Number] - [List them]
-- Confidence Level: [HIGH/MEDIUM/LOW]
+**HOOK (0:00-0:15)**
+[Your compelling opening line - pure dialogue only]
 
-**HOOK (0-${videoFormat === 'youtube_shorts' ? '3' : '15'} seconds)**
-[Opening with [VERIFIED] fact] <!-- Source: [URL] [Date] -->
-[Creates curiosity using real, verified information]
+**PVSS STRUCTURE (0:15-0:30)**
+PROOF: [Your credibility statement]
+VALUE: [What they'll learn today]
+STRUCTURE: [How you'll teach it]
+STAKES: [Why this matters now]
 
-**INTRODUCTION (${videoFormat === 'youtube_shorts' ? '3-10' : '15-45'} seconds)**
-[Credibility established with [VERIFIED] credentials]
-[Preview includes only verified claims] <!-- Sources in comments -->
+**MAIN CONTENT (0:30-${Math.floor(length * 0.85)}:00)**
+[All spoken content organized by sections]
+[Include pattern interrupts marked simply]
+[Natural transitions between topics]
 
-**MAIN CONTENT**
-${keyPoints.length > 0 ? keyPoints.map((_, i) => 
-  `[SECTION ${i + 1}] - [Title]
-[Content with [VERIFIED] examples]
-<!-- Source: [URL] [Date] for each claim -->
-[Real companies/products only, marked [VERIFIED] or [HYPOTHETICAL]]`
-).join('\n\n') : '[Sections with verified information and source citations]'}
+**CONCLUSION (${Math.floor(length * 0.85)}:00-${length}:00)**
+[Summary and call to action]
 
-**RETENTION CHECKPOINT**
-[Pattern interrupt with [VERIFIED] surprising fact]
+---
 
-**CONCLUSION**
-[Recap of [VERIFIED] key points only]
-[Delivery on promises with factual information]
+## 🔍 CARD 2: RESEARCH & VERIFICATION
+[This card contains ALL fact-checking and source material]
 
-**CALL TO ACTION**
-[Next steps using [VERIFIED] resources/tools]
+### Web Search Verification Log
+**REQUIRED: Minimum ${5 + keyPoints.length} searches performed**
+1. Search: "[exact query]" → Result: [key finding]
+2. Search: "[exact query]" → Result: [key finding]
+3. Search: "[exact query]" → Result: [key finding]
+4. Search: "[exact query]" → Result: [key finding]
+5. Search: "[exact query]" → Result: [key finding]
+[Continue for all searches]
 
-**VISUAL SUGGESTIONS**
-- B-roll: [Specific suggestions with attribution]
-- Graphics: [Data viz with source citations]
-- Text overlays: [Verified facts to emphasize]
-- Source attributions: [Where to show sources on screen]
+### Verified Claims & Sources
+✅ **Claim 1**: [Specific claim from script]
+   - Source: [Publication name]
+   - URL: [Full URL]
+   - Date: [Publication date]
+   - Confidence: [High/Medium/Low]
 
-**📋 COMPREHENSIVE FACT-CHECK NOTES** (REQUIRED)
-├─ VERIFIED ENTITIES:
-│  • [Company 1]: ✅ Real - [Official Website URL]
-│  • [Product 1]: ✅ Exists - [Verification Source]
-│  • [Service 1]: ✅ Confirmed - [Current Pricing Page]
-├─ VERIFIED STATISTICS:
-│  • [Stat 1]: [Exact Figure] - Source: [Name, Date, URL]
-│  • [Stat 2]: [Exact Figure] - Source: [Name, Date, URL]
-├─ HYPOTHETICAL EXAMPLES (if any):
-│  • [Example 1]: Clearly marked as hypothetical in script
-├─ UNVERIFIED CLAIMS (if any):
-│  • [Claim 1]: Could not verify, marked [NEEDS VERIFICATION]
-└─ FACT-CHECK SUMMARY:
-   • Searches Performed: [Number]
-   • Claims Verified: [Percentage]%
-   • Recommended Additional Checks: [List]
-   • Publication Ready: [YES/NO - Why]
+✅ **Claim 2**: [Specific claim from script]
+   - Source: [Publication name]
+   - URL: [Full URL]
+   - Date: [Publication date]
+   - Confidence: [High/Medium/Low]
 
-**⚠️ ACCURACY DISCLAIMER**
-All information accurate as of ${new Date().toISOString().split('T')[0]}
-Claims marked [NEEDS VERIFICATION] require fact-checking before publication
-Hypothetical examples are clearly marked and not presented as real
+[Continue for ALL claims]
+
+### Statistics Used
+📊 **Stat 1**: [Exact number/percentage]
+   - Context: [How it's used in script]
+   - Source: [Where it came from]
+   - Year: [Data year]
+
+### Fact-Check Summary
+- Total searches performed: [#]
+- Total claims made: [#]
+- Claims verified: [#] ([%])
+- Confidence level: [High/Medium/Low]
+
+---
+
+## 🎬 CARD 3: PRODUCTION GUIDE
+[This card contains ALL visual and audio suggestions]
+
+### Visual Timeline
+**0:00-0:15 - HOOK**
+- B-roll needed: [Specific footage description]
+- Text overlay: "[Exact text to display]"
+- Graphics: [Any animations or graphics]
+
+**0:15-0:30 - PVSS**
+- Visual style: [How to present this section]
+- Text overlays: [Key points to emphasize]
+
+[Continue for EVERY section]
+
+### Audio Requirements
+**Background Music**
+- Intro (0:00-0:30): [Style/mood]
+- Main content: [Style/mood]
+- Outro: [Style/mood]
+
+**Sound Effects**
+- [Timestamp]: [Effect type] - [Purpose]
+
+### Pattern Interrupt Markers
+1. [Timestamp]: [Type of interrupt] - [Visual/audio change]
+2. [Timestamp]: [Type of interrupt] - [Visual/audio change]
+
+---
+
+## 📊 CARD 4: METADATA & OPTIMIZATION
+[This card contains ALL SEO and analytics information]
+
+### SEO Optimization
+**Primary Keyword**: [Main keyword]
+**Secondary Keywords**: 
+1. [Keyword 2]
+2. [Keyword 3]
+
+**Title Options for A/B Testing**:
+1. [Title variation 1]
+2. [Title variation 2]
+3. [Title variation 3]
+
+**Description Template**:
+[First 125 characters]
+[Rest of description]
+
+**Tags** (in order):
+1. [Tag 1]
+2. [Tag 2]
+[Up to 15 tags]
+
+### Performance Predictions
+- CTR: [X]%
+- 30-sec retention: [X]%
+- Average view duration: [X]%
+
+### Thumbnail Requirements
+1. [Visual element 1]
+2. [Text overlay]: "[Text]"
+3. [Color scheme]: [Colors]
+
+⚠️ END OF 4-CARD STRUCTURE - ALL CARDS MUST BE PRESENT
 </mandatory_enhanced_output_format>
 
 CRITICAL FINAL INSTRUCTIONS:

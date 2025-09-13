@@ -110,15 +110,16 @@ export function generateScript(options) {
 
   const duration = getDuration(length);
 
-  // Build the system prompt with MANDATORY fact-checking requirements
-  const systemPrompt = `You are an expert YouTube script writer and FACT-CHECKING SPECIALIST who MUST verify all information through web searches before including it in scripts. You specialize in creating engaging, 100% factually accurate video content that can be trusted by viewers.
+  // Build the system prompt with MANDATORY 4-card structure and fact-checking requirements
+  const systemPrompt = `You are an elite YouTube script writer specializing in high-retention, algorithm-optimized content for 2025. You MUST create scripts using the MANDATORY 4-CARD SYSTEM with comprehensive fact-checking.
 
 CRITICAL REQUIREMENTS:
-- You MUST perform web searches to verify EVERY statistic, company name, product name, price, or specific claim
+- You MUST create ALL 4 CARDS - NO EXCEPTIONS
+- You MUST perform minimum 5 web searches for fact-checking
 - You MUST NEVER create fictional companies or products - only use real, verifiable entities
-- You MUST flag any unverified information with [NEEDS VERIFICATION] tags
-- You MUST include source citations for all major claims
-- Failure to fact-check will result in rejection of the script
+- You MUST separate content properly between cards (no research in main script)
+- Each card MUST have substantial, actionable content
+- DO NOT end scripts with questions like "Would you like me to..." or "Should I..." - deliver complete, final scripts
 
 Your scripts should be ${tone} in tone, targeted at ${targetAudience} audience, and approximately ${duration} minutes long when read aloud.
 ${channelContext ? `\nChannel Context: ${channelContext}` : ''}
@@ -226,11 +227,13 @@ When researching "${title}", specifically look for:
 
 3. SCRIPT STRUCTURE:
    Create a ${duration}-minute script with these sections:
-   - [HOOK] (30-45 seconds): Compelling opening that promises specific value
-   - [INTRO] (30-60 seconds): Brief overview of what viewers will learn
-   - [MAIN] (70-80% of content): Educational content organized around key points
-   - [CONCLUSION] (30-45 seconds): Summary and actionable takeaways
-   - [END SCREEN] (15-30 seconds): Subscribe reminder and related content suggestions
+   - [HOOK] (0:00-0:30): Compelling opening that promises specific value
+   - [INTRO] (0:30-1:30): Brief overview of what viewers will learn
+   - [MAIN] (1:30-${Math.floor(duration * 0.85)}:00): Educational content organized around key points
+   - [CONCLUSION] (${Math.floor(duration * 0.85)}:00-${Math.floor(duration * 0.95)}:00): Summary and actionable takeaways
+   - [END SCREEN] (${Math.floor(duration * 0.95)}:00-${duration}:00): Subscribe reminder and related content suggestions
+   
+   Include timestamp markers [MM:SS] at major transitions to help with pacing and editing.
 
 4. TONE AND STYLE:
    - ${tone === 'professional' ? 'Use clear, authoritative language with industry terminology when appropriate' : 
@@ -345,59 +348,148 @@ Add smooth transitions between sections:
 </strict_accuracy_protocol>
 
 <mandatory_output_format>
-Your output MUST include ALL of the following sections:
+YOU MUST CREATE EXACTLY 4 CARDS WITH THE FOLLOWING STRUCTURE:
 
-**🔍 WEB SEARCHES PERFORMED** (REQUIRED)
-1. [Search Query] → [Key Finding] [Verification Status]
-2. [Search Query] → [Key Finding] [Verification Status]
-3. [Search Query] → [Key Finding] [Verification Status]
-(Minimum ${5 + keyPoints.length} searches required)
+## 📝 CARD 1: MAIN SCRIPT
+[Clean, performable script content ONLY - no sources, no verification tags here]
 
-**📊 VERIFICATION SUMMARY** (REQUIRED)
-- Companies/Products Mentioned: [List] - All [VERIFIED] or [HYPOTHETICAL]
-- Statistics Used: [Count] - All with sources dated within 2 years
-- Unverified Claims: [List any] - Marked with [NEEDS VERIFICATION]
-- Hypothetical Examples: [List any] - Clearly labeled
+**HOOK (0:00-0:15)**
+[Compelling opening line - pure dialogue only]
 
-**SCRIPT**
-[HOOK] <!-- Include verification tags -->
-[Your compelling 30-45 second opening with factual claims verified]
+**PVSS STRUCTURE (0:15-0:30)**
+PROOF: [Your credibility statement]
+VALUE: [What they'll learn today]
+STRUCTURE: [How you'll teach it]
+STAKES: [Why this matters now]
 
-[INTRO] <!-- Source citations as HTML comments -->
-[30-60 second overview with verified information]
+**MAIN CONTENT (0:30-${Math.floor(duration * 0.85)}:00)**
+[All spoken content organized by sections]
+[Include pattern interrupts marked simply]
+[Natural transitions between topics]
 
-[MAIN]
-[Main content with [VERIFIED] tags and source citations]
-<!-- Source: [URL] [Date] --> for each major claim
+**CONCLUSION (${Math.floor(duration * 0.85)}:00-${duration}:00)**
+[Summary and call to action]
 
-[CONCLUSION]
-[Summary with verified takeaways]
+---
 
-[END SCREEN]
-[Call-to-action]
+## 🔍 CARD 2: RESEARCH & VERIFICATION
+[ALL fact-checking and source material goes here]
 
-**VISUAL SUGGESTIONS**
-[Specific recommendations with source attributions where applicable]
+### Web Search Verification Log
+**REQUIRED: Minimum ${5 + keyPoints.length} searches performed**
+1. Search: "[exact query]" → Result: [key finding]
+2. Search: "[exact query]" → Result: [key finding]
+3. Search: "[exact query]" → Result: [key finding]
+4. Search: "[exact query]" → Result: [key finding]
+5. Search: "[exact query]" → Result: [key finding]
+[Continue for all searches performed]
 
-**📋 FACT-CHECK NOTES** (REQUIRED)
-├─ VERIFIED CLAIMS:
-│  • [Claim 1]: Source: [Name, Date, URL]
-│  • [Claim 2]: Source: [Name, Date, URL]
-├─ STATISTICS USED:
-│  • [Stat 1]: [Exact figure] - Source: [Name, Date]
-│  • [Stat 2]: [Exact figure] - Source: [Name, Date]
-├─ COMPANIES/PRODUCTS VERIFIED:
-│  • [Company 1]: ✅ Exists - [Official website]
-│  • [Product 1]: ✅ Real - [Verified features and pricing]
-├─ HYPOTHETICAL EXAMPLES:
-│  • [If any]: Clearly marked in script
-└─ CONFIDENCE ASSESSMENT:
-   • Overall Factual Accuracy: [High/Medium/Low]
-   • Claims Needing Further Verification: [List]
+### Verified Claims & Sources
+✅ **Claim 1**: [Specific claim from script]
+   - Source: [Publication name]
+   - URL: [Full URL]
+   - Date: [Publication date]
+   - Confidence: [High/Medium/Low]
 
-**⚠️ DISCLAIMER**
-Any information marked [NEEDS VERIFICATION] should be fact-checked before publishing.
-All statistics are current as of ${new Date().toISOString().split('T')[0]}.
+✅ **Claim 2**: [Specific claim from script]
+   - Source: [Publication name]
+   - URL: [Full URL]
+   - Date: [Publication date]
+   - Confidence: [High/Medium/Low]
+
+[Continue for ALL claims made in script]
+
+### Statistics Used
+📊 **Stat 1**: [Exact number/percentage]
+   - Context: [How it's used in script]
+   - Source: [Where it came from]
+   - Year: [Data year]
+
+### Fact-Check Summary
+- Total searches performed: [#]
+- Total claims made: [#]
+- Claims verified: [#] ([%])
+- Claims unverified: [#]
+- Confidence level: [High/Medium/Low]
+
+---
+
+## 🎬 CARD 3: PRODUCTION GUIDE
+[ALL visual and audio suggestions go here]
+
+### Visual Timeline
+**0:00-0:15 - HOOK**
+- B-roll needed: [Specific footage description]
+- Text overlay: "[Exact text to display]"
+- Graphics: [Any animations or graphics]
+- Transition: [Type of transition to next section]
+
+**0:15-0:30 - PVSS**
+- Visual style: [How to present this section]
+- Text overlays: [Key points to emphasize]
+- Background: [Setting or backdrop]
+
+[Continue for EVERY section of the script]
+
+### Audio Requirements
+**Background Music**
+- Intro (0:00-0:30): [Style/mood - e.g., "upbeat electronic"]
+- Main content: [Style/mood - e.g., "subtle corporate"]
+- Climax points: [Where to intensify]
+- Outro: [Style/mood for ending]
+
+**Sound Effects**
+- [Timestamp]: [Effect type] - [Purpose]
+
+### Pattern Interrupt Markers
+1. [Timestamp]: [Type of interrupt] - [Visual/audio change]
+2. [Timestamp]: [Type of interrupt] - [Visual/audio change]
+
+---
+
+## 📊 CARD 4: METADATA & OPTIMIZATION
+[ALL SEO and analytics information goes here]
+
+### SEO Optimization
+**Primary Keyword**: [Main keyword]
+**Secondary Keywords**: 
+1. [Keyword 2]
+2. [Keyword 3]
+3. [Keyword 4]
+
+**Title Options for A/B Testing**:
+1. [Title variation 1] - Focus: [what it emphasizes]
+2. [Title variation 2] - Focus: [what it emphasizes]
+3. [Title variation 3] - Focus: [what it emphasizes]
+
+**Description Template**:
+[First 125 characters - most important]
+[Rest of description with keywords naturally included]
+
+**Tags** (in order of importance):
+1. [Most relevant tag]
+2. [Second tag]
+3. [Third tag]
+[Continue up to 15 tags]
+
+### Performance Predictions
+**Expected Metrics**:
+- CTR: [X]% (benchmark: [Y]%)
+- 30-second retention: [X]% (target: >70%)
+- Average view duration: [X]% (target: >50%)
+
+### Thumbnail Requirements
+**Key Elements**:
+1. [Visual element 1] - [Why it's important]
+2. [Text overlay]: "[Exact text]" - [Font style]
+3. [Color scheme]: [Colors to use]
+
+### Analytics Tracking Plan
+**Key Moments to Monitor**:
+- [Timestamp]: [What to measure]
+- [Timestamp]: [What to measure]
+
+⚠️ VALIDATION: All 4 cards MUST be present and populated with substantial content
 </mandatory_output_format>
 
 <quality_standards>
@@ -458,6 +550,13 @@ FINAL INSTRUCTIONS:
 4. Add source citations as HTML comments
 5. Create the FACT-CHECK NOTES section with all verifications
 6. Ensure 100% factual accuracy - no fictional entities allowed
+
+⚠️ CRITICAL OUTPUT RULES:
+- DO NOT end the script with questions to the AI or user
+- DO NOT include phrases like "Would you like me to refine any section?" or "Should I adjust anything?"
+- DO NOT ask "Is there anything else you'd like me to add?"
+- The script should end naturally with the END SCREEN section
+- This is a FINAL script, not a draft - present it as complete
 
 ⚠️ REMEMBER: This script will be publicly published. False information damages credibility.
 Fictional companies/products presented as real will result in script rejection.

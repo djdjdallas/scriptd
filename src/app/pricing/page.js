@@ -4,7 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { PLANS, CREDIT_PACKAGES, CREDIT_COSTS } from "@/lib/constants";
+import {
+  PLANS,
+  CREDIT_PACKAGES,
+  MODEL_TIERS,
+  calculateScriptCost,
+  CREDIT_COSTS,
+} from "@/lib/constants";
+import { getScriptEstimates } from "@/lib/subscription-helpers";
 import { loadStripe } from "@stripe/stripe-js";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { Button } from "@/components/ui/button";
@@ -49,7 +56,9 @@ export default function PricingPage() {
 
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
         router.push("/auth/signup");
@@ -95,18 +104,22 @@ export default function PricingPage() {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-      minimumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(price);
   };
 
-  const plans = Object.values(PLANS).filter(plan => plan.id !== "free");
+  const plans = Object.values(PLANS); // Show all plans including FREE
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900">
       {/* Background Effects */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="gradient-orb w-96 h-96 bg-purple-600 -top-48 -left-48 opacity-10" />
-        <div className="gradient-orb w-96 h-96 bg-pink-600 -bottom-48 -right-48 opacity-10" style={{ animationDelay: '10s' }} />
+        <div
+          className="gradient-orb w-96 h-96 bg-pink-600 -bottom-48 -right-48 opacity-10"
+          style={{ animationDelay: "10s" }}
+        />
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
       </div>
 
@@ -116,13 +129,13 @@ export default function PricingPage() {
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2">
               <Zap className="h-8 w-8 text-purple-400 neon-glow" />
-              <span className="text-2xl font-bold gradient-text">GenScript</span>
+              <span className="text-2xl font-bold gradient-text">
+                GenScript
+              </span>
             </Link>
             <div className="flex items-center gap-4">
               <Link href="/login">
-                <Button className="glass-button text-white">
-                  Sign In
-                </Button>
+                <Button className="glass-button text-white">Sign In</Button>
               </Link>
               <Link href="/auth/signup">
                 <Button className="glass-button bg-purple-500/20 text-white">
@@ -139,19 +152,25 @@ export default function PricingPage() {
       <div className="pt-32 pb-16 px-4 text-center animate-reveal">
         <div className="inline-flex items-center justify-center glass px-4 py-2 rounded-full mb-6">
           <Sparkles className="h-4 w-4 mr-2 text-yellow-400 animate-pulse" />
-          <span className="text-purple-300 font-medium">Simple, Transparent Pricing</span>
+          <span className="text-purple-300 font-medium">
+            Simple, Transparent Pricing
+          </span>
         </div>
         <h1 className="text-5xl md:text-6xl font-bold gradient-text mb-4">
           Choose Your Plan
         </h1>
         <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-          Start with our free tier or unlock advanced features with a subscription. 
-          Purchase additional credits anytime.
+          Start creating amazing YouTube scripts for free or scale up with our
+          professional plans. Generate high-quality video scripts in minutes,
+          not hours.
         </p>
       </div>
 
       {/* Billing Toggle */}
-      <div className="flex justify-center mb-12 animate-reveal" style={{ animationDelay: "0.1s" }}>
+      <div
+        className="flex justify-center mb-12 animate-reveal"
+        style={{ animationDelay: "0.1s" }}
+      >
         <div className="glass-card p-2 rounded-xl">
           <div className="flex gap-2">
             <Button
@@ -189,12 +208,15 @@ export default function PricingPage() {
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map((plan, index) => {
-            const price = billingPeriod === "annual" ? plan.priceAnnual / 12 : plan.price;
-            const isPopular = plan.id === "professional";
+            const price =
+              billingPeriod === "annual"
+                ? (plan.priceAnnual || plan.price * 12) / 12
+                : plan.price;
+            const isPopular = plan.popular || plan.id === "creator";
 
             return (
               <TiltCard key={plan.id}>
-                <div 
+                <div
                   className={`glass-card h-full relative overflow-visible ${
                     isPopular ? "ring-2 ring-purple-400" : ""
                   } animate-reveal`}
@@ -211,13 +233,23 @@ export default function PricingPage() {
 
                   <div className="p-6 pt-12">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-2xl font-bold text-white">{plan.name}</h3>
-                    {plan.id === "enterprise" && <Crown className="h-5 w-5 text-yellow-400" />}
-                    {plan.id === "business" && <Trophy className="h-5 w-5 text-purple-400" />}
-                    {plan.id === "professional" && <Rocket className="h-5 w-5 text-blue-400" />}
-                    {plan.id === "starter" && <Zap className="h-5 w-5 text-green-400" />}
-                  </div>
-                  
+                      <h3 className="text-2xl font-bold text-white">
+                        {plan.name}
+                      </h3>
+                      {plan.id === "agency" && (
+                        <Crown className="h-5 w-5 text-yellow-400" />
+                      )}
+                      {plan.id === "professional" && (
+                        <Trophy className="h-5 w-5 text-purple-400" />
+                      )}
+                      {plan.id === "creator" && (
+                        <Rocket className="h-5 w-5 text-blue-400" />
+                      )}
+                      {plan.id === "free" && (
+                        <Zap className="h-5 w-5 text-green-400" />
+                      )}
+                    </div>
+
                     <div className="flex items-baseline gap-1">
                       <span className="text-4xl font-bold gradient-text">
                         {formatPrice(price)}
@@ -226,44 +258,53 @@ export default function PricingPage() {
                         /{billingPeriod === "annual" ? "mo" : "month"}
                       </span>
                     </div>
-                  
-                    {billingPeriod === "annual" && (
+
+                    {billingPeriod === "annual" && plan.priceAnnual && (
                       <p className="text-sm text-gray-500 mt-1">
-                        {formatPrice(plan.priceAnnual)} billed annually
+                        ${plan.priceAnnual.toFixed(2)} billed annually
                       </p>
                     )}
 
                     <div className="mt-4 mb-6">
-                      {plan.credits ? (
-                        <div className="flex items-center gap-2 glass p-3 rounded-lg">
-                          <Coins className="h-5 w-5 text-yellow-400" />
-                          <span className="text-white font-semibold">
-                            {plan.credits === null ? "Unlimited" : `${plan.credits}`}
-                          </span>
-                          <span className="text-gray-400">credits/month</span>
-                        </div>
-                      ) : (
-                        <p className="text-gray-400">Perfect for getting started</p>
+                      <div className="flex items-center gap-2 glass p-3 rounded-lg">
+                        <FileText className="h-5 w-5 text-blue-400" />
+                        <span className="text-white font-semibold">
+                          {plan.scriptsEstimate ||
+                            `${plan.credits} credits/month`}
+                        </span>
+                      </div>
+                      {plan.credits && (
+                        <p className="text-xs text-gray-500 mt-1 text-center">
+                          {plan.credits} credits included
+                        </p>
                       )}
                     </div>
 
                     <Button
-                      onClick={() => handleSubscribe(plan.id)}
-                      disabled={loading}
+                      onClick={() =>
+                        plan.id === "free"
+                          ? router.push("/auth/signup")
+                          : handleSubscribe(plan.id)
+                      }
+                      disabled={loading && plan.id !== "free"}
                       className={`w-full glass-button ${
-                        isPopular 
-                          ? "bg-gradient-to-r from-purple-500/50 to-pink-500/50" 
+                        isPopular
+                          ? "bg-gradient-to-r from-purple-500/50 to-pink-500/50"
+                          : plan.id === "free"
+                          ? "bg-gradient-to-r from-green-500/30 to-emerald-500/30"
                           : ""
                       } text-white`}
                     >
-                      {loading && selectedPlan === plan.id ? (
+                      {loading &&
+                      selectedPlan === plan.id &&
+                      plan.id !== "free" ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                           Processing...
                         </>
                       ) : (
                         <>
-                          Get Started
+                          {plan.id === "free" ? "Start Free" : "Get Started"}
                           <ArrowRight className="h-4 w-4 ml-2" />
                         </>
                       )}
@@ -273,7 +314,9 @@ export default function PricingPage() {
                       {plan.features.map((feature, index) => (
                         <li key={index} className="flex items-start gap-2">
                           <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-gray-300">{feature}</span>
+                          <span className="text-sm text-gray-300">
+                            {feature}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -287,7 +330,10 @@ export default function PricingPage() {
 
       {/* Script Generation Calculator */}
       <div className="max-w-7xl mx-auto px-4 mb-20">
-        <div className="glass-card p-8 animate-reveal" style={{ animationDelay: "0.5s" }}>
+        <div
+          className="glass-card p-8 animate-reveal"
+          style={{ animationDelay: "0.5s" }}
+        >
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-white mb-4 flex items-center justify-center gap-3">
               <Calculator className="h-8 w-8 text-purple-400 neon-glow" />
@@ -295,7 +341,8 @@ export default function PricingPage() {
               <FileText className="h-8 w-8 text-yellow-400" />
             </h2>
             <p className="text-gray-300">
-              See how many scripts you can generate with each plan or credit package
+              See how many scripts you can generate with each plan or credit
+              package
             </p>
           </div>
 
@@ -309,35 +356,55 @@ export default function PricingPage() {
               <div className="space-y-3">
                 {plans.map((plan) => {
                   if (!plan.credits) return null;
-                  const avgScriptsGPT4 = Math.floor((plan.credits || 0) / 15);
-                  const avgScriptsClaude = Math.floor((plan.credits || 0) / 12);
-                  const avgScriptsMixtral = Math.floor((plan.credits || 0) / 2);
+                  const fastEstimates = getScriptEstimates(
+                    plan.credits,
+                    "FAST"
+                  );
+                  const balancedEstimates = getScriptEstimates(
+                    plan.credits,
+                    "BALANCED"
+                  );
+                  const premiumEstimates = getScriptEstimates(
+                    plan.credits,
+                    "PREMIUM"
+                  );
 
                   return (
                     <div key={plan.id} className="glass p-4 rounded-xl">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-white">{plan.name}</span>
+                        <span className="font-medium text-white">
+                          {plan.name}
+                        </span>
                         <Badge className="glass text-purple-300">
-                          {plan.credits === null ? "Unlimited" : `${plan.credits} credits/mo`}
+                          {plan.credits === null
+                            ? "Unlimited"
+                            : `${plan.credits} credits/mo`}
                         </Badge>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-sm">
                         <div className="text-center">
-                          <p className="text-gray-400">GPT-4</p>
+                          <p className="text-gray-400">⚡ Fast</p>
                           <p className="text-white font-bold">
-                            {plan.credits === null ? "∞" : `~${avgScriptsGPT4}`} scripts
+                            {plan.credits === null ? "∞" : fastEstimates.range}{" "}
+                            scripts
                           </p>
                         </div>
                         <div className="text-center">
-                          <p className="text-gray-400">Claude Sonnet</p>
+                          <p className="text-gray-400">⭐ Professional</p>
                           <p className="text-white font-bold">
-                            {plan.credits === null ? "∞" : `~${avgScriptsClaude}`} scripts
+                            {plan.credits === null
+                              ? "∞"
+                              : balancedEstimates.range}{" "}
+                            scripts
                           </p>
                         </div>
                         <div className="text-center">
-                          <p className="text-gray-400">Mixtral</p>
+                          <p className="text-gray-400">💎 Premium</p>
                           <p className="text-white font-bold">
-                            {plan.credits === null ? "∞" : `~${avgScriptsMixtral}`} scripts
+                            {plan.credits === null
+                              ? "∞"
+                              : premiumEstimates.range}{" "}
+                            scripts
                           </p>
                         </div>
                       </div>
@@ -355,30 +422,44 @@ export default function PricingPage() {
               </h3>
               <div className="space-y-3">
                 {Object.values(CREDIT_PACKAGES).map((pkg) => {
-                  const avgScriptsGPT4 = Math.floor(pkg.credits / 15);
-                  const avgScriptsClaude = Math.floor(pkg.credits / 12);
-                  const avgScriptsMixtral = Math.floor(pkg.credits / 2);
+                  const fastEstimates = getScriptEstimates(pkg.credits, "FAST");
+                  const balancedEstimates = getScriptEstimates(
+                    pkg.credits,
+                    "BALANCED"
+                  );
+                  const premiumEstimates = getScriptEstimates(
+                    pkg.credits,
+                    "PREMIUM"
+                  );
 
                   return (
                     <div key={pkg.id} className="glass p-4 rounded-xl">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-white">{pkg.credits} Credits</span>
+                        <span className="font-medium text-white">
+                          {pkg.credits} Credits
+                        </span>
                         <Badge className="glass text-yellow-300">
                           {formatPrice(pkg.price)}
                         </Badge>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-sm">
                         <div className="text-center">
-                          <p className="text-gray-400">GPT-4</p>
-                          <p className="text-white font-bold">~{avgScriptsGPT4} scripts</p>
+                          <p className="text-gray-400">⚡ Fast</p>
+                          <p className="text-white font-bold">
+                            {fastEstimates.range} scripts
+                          </p>
                         </div>
                         <div className="text-center">
-                          <p className="text-gray-400">Claude Sonnet</p>
-                          <p className="text-white font-bold">~{avgScriptsClaude} scripts</p>
+                          <p className="text-gray-400">⭐ Professional</p>
+                          <p className="text-white font-bold">
+                            {balancedEstimates.range} scripts
+                          </p>
                         </div>
                         <div className="text-center">
-                          <p className="text-gray-400">Mixtral</p>
-                          <p className="text-white font-bold">~{avgScriptsMixtral} scripts</p>
+                          <p className="text-gray-400">💎 Premium</p>
+                          <p className="text-white font-bold">
+                            {premiumEstimates.range} scripts
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -391,92 +472,249 @@ export default function PricingPage() {
           <Alert className="mt-6 glass-card border-purple-500/30 bg-purple-500/10">
             <Calculator className="h-4 w-4 text-purple-400" />
             <AlertDescription className="text-purple-300">
-              <strong>Note:</strong> Script generation costs vary by AI model and length. These are estimates based on average usage. 
-              GPT-4: 15 credits, Claude 3.7 Sonnet: 12 credits, Mixtral: 2 credits per script on average.
+              <strong>Note:</strong> Script generation costs vary by quality
+              tier and length. These are estimates based on average usage. ⚡
+              Fast: 3-11 credits, ⭐ Professional: 8-28 credits, 💎 Premium:
+              15-53 credits per script.
             </AlertDescription>
           </Alert>
         </div>
       </div>
 
-      {/* Credit Packages */}
-      <div className="max-w-7xl mx-auto px-4 py-20 border-t border-white/10">
-        <div className="text-center mb-12 animate-reveal">
-          <h2 className="text-3xl font-bold text-white mb-4 flex items-center justify-center gap-3">
-            <CreditCard className="h-8 w-8 text-purple-400 neon-glow" />
-            Need More Credits?
-            <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
+      {/* Credit Packages - Coming Soon */}
+      {/* <div className="max-w-7xl mx-auto px-4 py-20 border-t border-white/10 relative">
+        <div className="text-center mb-12 animate-reveal opacity-50">
+          <h2 className="text-3xl font-bold text-gray-500 mb-4 flex items-center justify-center gap-3">
+            <CreditCard className="h-8 w-8 text-gray-600" />
+            Need More Scripts?
+            <Sparkles className="h-6 w-6 text-gray-600" />
           </h2>
-          <p className="text-gray-300">
-            Purchase additional credits anytime. No subscription required.
+          <p className="text-gray-500">
+            Purchase script credits anytime. No subscription required.
           </p>
+          <div className="mt-4">
+            <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-400 text-lg px-4 py-2">
+              <Clock className="h-4 w-4 mr-2 inline" />
+              Coming Soon
+            </Badge>
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto opacity-30 pointer-events-none">
           {Object.values(CREDIT_PACKAGES).map((pkg, index) => {
             const iconMap = {
-              pack_50: Zap,
-              pack_100: Gem,
-              pack_500: Crown,
+              starter: Zap,
+              popular: Gem,
+              bulk: Crown,
             };
-            const Icon = iconMap[pkg.id] || CreditCard;
+            const Icon = iconMap[pkg.id.toLowerCase()] || CreditCard;
             const colorMap = {
-              pack_50: "from-blue-500/20",
-              pack_100: "from-purple-500/20",
-              pack_500: "from-yellow-500/20",
+              starter: "from-blue-500/20",
+              popular: "from-purple-500/20",
+              bulk: "from-yellow-500/20",
             };
 
             return (
-              <TiltCard key={pkg.id}>
-                <div 
-                  className={`glass-card glass-hover h-full relative overflow-visible ${
-                    pkg.badge ? "ring-2 ring-purple-400" : ""
-                  } animate-reveal`}
+              <div key={pkg.id}>
+                <div
+                  className={`glass-card h-full relative overflow-visible grayscale animate-reveal`}
                   style={{ animationDelay: `${0.6 + index * 0.1}s` }}
                 >
                   {pkg.badge && (
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 glass px-4 py-1 rounded-full z-10 whitespace-nowrap bg-purple-500/20 border border-purple-400/50">
-                      <span className="text-xs text-purple-300 font-semibold">
+                    <div className="absolute top-3 left-1/2 -translate-x-1/2 glass px-4 py-1 rounded-full z-10 whitespace-nowrap bg-gray-500/20 border border-gray-600/50">
+                      <span className="text-xs text-gray-400 font-semibold">
                         {pkg.badge}
                       </span>
                     </div>
                   )}
 
                   <div className="p-6 pt-12 text-center">
-                    <div className={`w-16 h-16 glass rounded-xl flex items-center justify-center mx-auto mb-4 bg-gradient-to-br ${colorMap[pkg.id]} to-transparent`}>
-                      <Icon className="h-8 w-8 text-white" />
+                    <div
+                      className={`w-16 h-16 glass rounded-xl flex items-center justify-center mx-auto mb-4 bg-gradient-to-br from-gray-500/20 to-transparent`}
+                    >
+                      <Icon className="h-8 w-8 text-gray-500" />
                     </div>
 
-                    <h3 className="text-xl font-semibold text-white mb-2">
-                      {pkg.credits} Credits
+                    <h3 className="text-xl font-semibold text-gray-500 mb-2">
+                      {pkg.name}
                     </h3>
-                    
-                    <div className="mb-4">
-                      <p className="text-3xl font-bold gradient-text">
+
+                    <div className="mb-2">
+                      <p className="text-3xl font-bold text-gray-500">
                         {formatPrice(pkg.price)}
                       </p>
+                      <p className="text-sm text-gray-600">
+                        {pkg.credits} credits
+                      </p>
                     </div>
-                    
-                    <p className="text-sm text-gray-400 mb-4">
-                      ${pkg.perCredit} per credit
-                    </p>
 
-                    <Button 
-                      className="w-full glass-button text-white"
-                      onClick={() => router.push("/dashboard/credits")}
+                    <div className="mb-2 glass p-2 rounded-lg">
+                      <p className="text-sm text-gray-500 font-medium">
+                        {pkg.scripts}
+                      </p>
+                    </div>
+
+                    <div className="mb-4">
+                      <Badge className="glass text-xs text-gray-500">
+                        {pkg.savings}
+                      </Badge>
+                    </div>
+
+                    <Button
+                      className="w-full glass-button text-gray-500 cursor-not-allowed"
+                      disabled
                     >
-                      Purchase
+                      Coming Soon
                       <ChevronRight className="h-4 w-4 ml-2" />
                     </Button>
                   </div>
                 </div>
-              </TiltCard>
+              </div>
             );
           })}
+        </div>
+      </div> */}
+
+      {/* Competitor Comparison */}
+      <div className="max-w-7xl mx-auto px-4 py-20 border-t border-white/10">
+        <div className="text-center mb-12 animate-reveal">
+          <h2 className="text-3xl font-bold text-white mb-4 flex items-center justify-center gap-3">
+            <TrendingUp className="h-8 w-8 text-green-400" />
+            Why Choose GenScript?
+            <Trophy className="h-8 w-8 text-yellow-400" />
+          </h2>
+          <p className="text-gray-300">
+            We offer 2.5x more value than our competitors
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {/* Our Value */}
+          <div className="glass-card p-8 animate-reveal border-2 border-green-500/30">
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-green-300 mb-2 flex items-center justify-center gap-2">
+                <Star className="h-6 w-6" />
+                GenScript Value
+              </h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="glass p-4 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-white font-medium">POPULAR Pack</span>
+                  <Badge className="glass bg-green-500/20 text-green-300">
+                    Best Value
+                  </Badge>
+                </div>
+                <div className="mt-2">
+                  <p className="text-2xl font-bold text-green-300">
+                    {formatPrice(49)}
+                  </p>
+                  <p className="text-gray-300">300 credits = 30-100 scripts</p>
+                  <p className="text-sm text-gray-400">
+                    ~$0.49-1.63 per script
+                  </p>
+                </div>
+              </div>
+
+              <div className="glass p-4 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-white font-medium">CREATOR Plan</span>
+                  <Badge className="glass bg-purple-500/20 text-purple-300">
+                    Most Popular
+                  </Badge>
+                </div>
+                <div className="mt-2">
+                  <p className="text-2xl font-bold text-green-300">
+                    {formatPrice(39)}/month
+                  </p>
+                  <p className="text-gray-300">300 credits = 30-100 scripts</p>
+                  <p className="text-sm text-gray-400">
+                    ~$0.39-1.30 per script
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Competitors */}
+          <div className="glass-card p-8 animate-reveal border border-red-500/30">
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-red-300 mb-2 flex items-center justify-center gap-2">
+                <X className="h-6 w-6" />
+                Typical Competitors
+              </h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="glass p-4 rounded-lg border border-red-500/20">
+                <div className="flex justify-between items-center">
+                  <span className="text-white font-medium">Competitor A</span>
+                  <Badge className="glass bg-red-500/20 text-red-300">
+                    Expensive
+                  </Badge>
+                </div>
+                <div className="mt-2">
+                  <p className="text-2xl font-bold text-red-300">
+                    {formatPrice(49)}
+                  </p>
+                  <p className="text-gray-300">60 credits = 6-20 scripts</p>
+                  <p className="text-sm text-gray-400">
+                    ~$2.45-8.17 per script
+                  </p>
+                </div>
+              </div>
+
+              <div className="glass p-4 rounded-lg border border-red-500/20">
+                <div className="flex justify-between items-center">
+                  <span className="text-white font-medium">Competitor B</span>
+                  <Badge className="glass bg-red-500/20 text-red-300">
+                    Limited
+                  </Badge>
+                </div>
+                <div className="mt-2">
+                  <p className="text-2xl font-bold text-red-300">
+                    {formatPrice(99)}
+                  </p>
+                  <p className="text-gray-300">125 credits = 12-42 scripts</p>
+                  <p className="text-sm text-gray-400">
+                    ~$2.36-8.25 per script
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center mt-8">
+          <div className="glass-card p-6 max-w-2xl mx-auto">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Calculator className="h-8 w-8 text-yellow-400" />
+              <h3 className="text-2xl font-bold text-yellow-300">
+                2.5x Better Value
+              </h3>
+            </div>
+            <p className="text-gray-300 mb-4">
+              Get more scripts for your money with our efficient AI models and
+              competitive pricing
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-green-300">300</p>
+                <p className="text-sm text-gray-400">credits for $49</p>
+              </div>
+              <div className="text-purple-400">vs</div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-red-300">60</p>
+                <p className="text-sm text-gray-400">credits for $49</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Credit Usage Guide */}
-      <div className="max-w-7xl mx-auto px-4 py-20 border-t border-white/10">
+      {/* <div className="max-w-7xl mx-auto px-4 py-20 border-t border-white/10">
         <div className="text-center mb-12 animate-reveal">
           <h2 className="text-3xl font-bold text-white mb-4 flex items-center justify-center gap-3">
             <Star className="h-8 w-8 text-yellow-400" />
@@ -522,35 +760,39 @@ export default function PricingPage() {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* FAQ Section */}
       <div className="max-w-4xl mx-auto px-4 py-20 border-t border-white/10">
         <h2 className="text-3xl font-bold text-white text-center mb-12 animate-reveal">
           Frequently Asked Questions
         </h2>
-        
+
         <div className="space-y-6">
           {[
             {
               question: "Can I change my plan anytime?",
-              answer: "Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately and we'll prorate your billing."
+              answer:
+                "Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately and we'll prorate your billing.",
             },
             {
               question: "Do credits expire?",
-              answer: "Subscription credits reset monthly and don't roll over. Purchased credits expire 12 months after purchase."
+              answer:
+                "Subscription credits reset monthly and don't roll over. Purchased credits expire 12 months after purchase.",
             },
             {
               question: "What payment methods do you accept?",
-              answer: "We accept all major credit cards, debit cards, and digital wallets through our secure payment processor, Stripe."
+              answer:
+                "We accept all major credit cards, debit cards, and digital wallets through our secure payment processor, Stripe.",
             },
             {
               question: "Is there a free trial?",
-              answer: "We offer a free tier with 15 credits to get started. No credit card required."
-            }
+              answer:
+                "We offer a free tier with 15 credits to get started. No credit card required.",
+            },
           ].map((faq, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="glass-card glass-hover p-6 animate-reveal"
               style={{ animationDelay: `${1.2 + index * 0.1}s` }}
             >
@@ -558,9 +800,7 @@ export default function PricingPage() {
                 <Gift className="h-5 w-5 text-purple-400" />
                 {faq.question}
               </h3>
-              <p className="text-gray-300 ml-7">
-                {faq.answer}
-              </p>
+              <p className="text-gray-300 ml-7">{faq.answer}</p>
             </div>
           ))}
         </div>
@@ -568,25 +808,30 @@ export default function PricingPage() {
         <Alert className="mt-8 glass-card border-gray-700 bg-gray-900/50">
           <Clock className="h-4 w-4 text-gray-400" />
           <AlertDescription className="text-gray-300">
-            Credits expire 12 months after purchase. Subscription credits reset monthly.
+            Credits expire 12 months after purchase. Subscription credits reset
+            monthly.
           </AlertDescription>
         </Alert>
       </div>
 
       {/* CTA Section */}
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center animate-reveal" style={{ animationDelay: "1.6s" }}>
+      <div
+        className="max-w-4xl mx-auto px-4 py-20 text-center animate-reveal"
+        style={{ animationDelay: "1.6s" }}
+      >
         <div className="glass-card p-12">
           <h2 className="text-3xl font-bold gradient-text mb-4">
-            Ready to Create Amazing Content?
+            Ready to Create Viral Scripts?
           </h2>
           <p className="text-gray-300 mb-8">
-            Join thousands of creators using GenScript to grow their YouTube channels
+            Join thousands of creators using GenScript to generate engaging
+            YouTube scripts in minutes
           </p>
           <div className="flex gap-4 justify-center">
             <Link href="/auth/signup">
               <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white px-8 py-3">
                 <Rocket className="h-5 w-5 mr-2" />
-                Start Free Trial
+                Create Your First Script
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
             </Link>

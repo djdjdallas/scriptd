@@ -1,23 +1,25 @@
-'use client';
+"use client";
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast';
-import { 
-  ChevronLeft, 
-  Loader2, 
-  Clock, 
-  Calendar, 
-  Copy, 
+import { useState, useEffect, use } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  ChevronLeft,
+  Loader2,
+  Clock,
+  Calendar,
+  Copy,
   Download,
   Trash2,
   Sparkles,
-  FileText
-} from 'lucide-react';
-import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
+  FileText,
+  Edit,
+  History,
+} from "lucide-react";
+import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
 
 export default function ScriptPage({ params }) {
   const router = useRouter();
@@ -25,7 +27,7 @@ export default function ScriptPage({ params }) {
   const [script, setScript] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copying, setCopying] = useState(false);
-  
+
   // Unwrap params Promise
   const resolvedParams = use(params);
   const scriptId = resolvedParams.id;
@@ -38,18 +40,18 @@ export default function ScriptPage({ params }) {
     try {
       const response = await fetch(`/api/scripts/${scriptId}`);
       if (!response.ok) {
-        throw new Error('Script not found');
+        throw new Error("Script not found");
       }
       const data = await response.json();
       setScript(data);
     } catch (error) {
-      console.error('Error fetching script:', error);
+      console.error("Error fetching script:", error);
       toast({
         title: "Error",
         description: "Failed to load script",
-        variant: "destructive"
+        variant: "destructive",
       });
-      router.push('/scripts');
+      router.push("/scripts");
     } finally {
       setLoading(false);
     }
@@ -61,13 +63,13 @@ export default function ScriptPage({ params }) {
       await navigator.clipboard.writeText(script.content);
       toast({
         title: "Copied!",
-        description: "Script copied to clipboard"
+        description: "Script copied to clipboard",
       });
     } catch (error) {
       toast({
         title: "Failed to copy",
         description: "Please try again",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setCopying(false);
@@ -77,65 +79,69 @@ export default function ScriptPage({ params }) {
   const handleDownload = async () => {
     try {
       // Dynamically import jsPDF to avoid SSR issues
-      const { default: jsPDF } = await import('jspdf');
-      
+      const { default: jsPDF } = await import("jspdf");
+
       // Create new PDF document
       const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
       });
-      
+
       // Set document properties
       doc.setProperties({
         title: script.title,
-        author: 'GenScript AI',
-        subject: 'YouTube Script',
-        keywords: script.tags?.join(', ') || 'youtube, script',
-        creator: 'GenScript AI'
+        author: "GenScript AI",
+        subject: "YouTube Script",
+        keywords: script.tags?.join(", ") || "youtube, script",
+        creator: "GenScript AI",
       });
-      
+
       // Add header with gradient effect (simulated with rectangles)
       doc.setFillColor(147, 51, 234); // Purple
-      doc.rect(0, 0, 210, 40, 'F');
-      
+      doc.rect(0, 0, 210, 40, "F");
+
       // Add title
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(22);
-      doc.setFont('helvetica', 'bold');
+      doc.setFont("helvetica", "bold");
       const titleLines = doc.splitTextToSize(script.title, 170);
       doc.text(titleLines, 20, 20);
-      
+
       // Add metadata
       doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Created: ${new Date(script.created_at).toLocaleDateString()}`, 20, 32);
+      doc.setFont("helvetica", "normal");
+      doc.text(
+        `Created: ${new Date(script.created_at).toLocaleDateString()}`,
+        20,
+        32
+      );
       if (script.channel?.name) {
         doc.text(`Channel: ${script.channel.name}`, 120, 32);
       }
-      
+
       // Reset text color for content
       doc.setTextColor(0, 0, 0);
-      
+
       // Add content with proper formatting
       doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-      
+      doc.setFont("helvetica", "normal");
+
       // Split content into lines and handle page breaks
       const lines = doc.splitTextToSize(script.content, 170);
       let y = 55;
       const pageHeight = doc.internal.pageSize.height;
       const lineHeight = 6;
-      
+
       lines.forEach((line) => {
         if (y + lineHeight > pageHeight - 20) {
           // Add new page if needed
           doc.addPage();
           y = 20;
-          
+
           // Add page header
           doc.setFillColor(147, 51, 234, 0.1);
-          doc.rect(0, 0, 210, 10, 'F');
+          doc.rect(0, 0, 210, 10, "F");
           doc.setTextColor(147, 51, 234);
           doc.setFontSize(9);
           doc.text(script.title, 20, 7);
@@ -143,71 +149,73 @@ export default function ScriptPage({ params }) {
           doc.setFontSize(11);
           y = 20;
         }
-        
+
         // Check for section headers and format them
-        if (line.startsWith('[') && line.includes(']')) {
-          doc.setFont('helvetica', 'bold');
+        if (line.startsWith("[") && line.includes("]")) {
+          doc.setFont("helvetica", "bold");
           doc.setTextColor(147, 51, 234);
           doc.text(line, 20, y);
-          doc.setFont('helvetica', 'normal');
+          doc.setFont("helvetica", "normal");
           doc.setTextColor(0, 0, 0);
         } else {
           doc.text(line, 20, y);
         }
-        
+
         y += lineHeight;
       });
-      
+
       // Add footer on last page
       const totalPages = doc.internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
         doc.setTextColor(128, 128, 128);
         doc.setFontSize(9);
-        doc.text(`Page ${i} of ${totalPages}`, 105, pageHeight - 10, { align: 'center' });
-        doc.text('Generated by GenScript AI', 20, pageHeight - 10);
+        doc.text(`Page ${i} of ${totalPages}`, 105, pageHeight - 10, {
+          align: "center",
+        });
+        doc.text("Generated by GenScript AI", 20, pageHeight - 10);
       }
-      
+
       // Save the PDF
-      doc.save(`${script.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
-      
+      doc.save(`${script.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.pdf`);
+
       toast({
         title: "Downloaded!",
-        description: "Script saved as PDF to your downloads"
+        description: "Script saved as PDF to your downloads",
       });
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error("Error generating PDF:", error);
       toast({
         title: "Download failed",
         description: "Could not generate PDF. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this script?')) return;
-    
+    if (!confirm("Are you sure you want to delete this script?")) return;
+
     try {
       const response = await fetch(`/api/scripts/${scriptId}`, {
-        method: 'DELETE'
+        method: "DELETE",
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to delete script');
+        throw new Error("Failed to delete script");
       }
-      
+
       toast({
         title: "Script Deleted",
-        description: "The script has been deleted successfully"
+        description: "The script has been deleted successfully",
       });
-      
-      router.push('/scripts');
+
+      router.push("/scripts");
     } catch (error) {
       toast({
         title: "Delete Failed",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -228,8 +236,12 @@ export default function ScriptPage({ params }) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="glass-card p-8 text-center">
           <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-white mb-2">Script Not Found</h2>
-          <p className="text-gray-400 mb-4">This script doesn't exist or you don't have access to it.</p>
+          <h2 className="text-xl font-semibold text-white mb-2">
+            Script Not Found
+          </h2>
+          <p className="text-gray-400 mb-4">
+            This script doesn't exist or you don't have access to it.
+          </p>
           <Link href="/scripts">
             <Button className="glass-button">
               <ChevronLeft className="h-4 w-4 mr-2" />
@@ -258,9 +270,21 @@ export default function ScriptPage({ params }) {
               Back to Scripts
             </Button>
           </Link>
-          
+
           <div className="flex items-center gap-2">
-            <Button 
+            <Link href={`/scripts/${scriptId}/edit`}>
+              <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Script
+              </Button>
+            </Link>
+            <Link href={`/scripts/${scriptId}/history`}>
+              <Button className="glass-button">
+                <History className="h-4 w-4 mr-2" />
+                View History
+              </Button>
+            </Link>
+            <Button
               onClick={handleCopy}
               className="glass-button"
               disabled={copying}
@@ -272,14 +296,11 @@ export default function ScriptPage({ params }) {
               )}
               Copy
             </Button>
-            <Button 
-              onClick={handleDownload}
-              className="glass-button"
-            >
+            <Button onClick={handleDownload} className="glass-button">
               <Download className="h-4 w-4 mr-2" />
-              Download PDF
+              Download
             </Button>
-            <Button 
+            <Button
               onClick={handleDelete}
               className="glass-button hover:bg-red-500/20"
             >
@@ -299,7 +320,7 @@ export default function ScriptPage({ params }) {
               </h1>
               <div className="flex items-center gap-4 mt-3 text-sm text-gray-400">
                 <Badge className="glass border-purple-400/50 text-purple-300">
-                  {script.metadata?.type || 'Script'}
+                  {script.metadata?.type || "Script"}
                 </Badge>
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
@@ -307,7 +328,9 @@ export default function ScriptPage({ params }) {
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  {formatDistanceToNow(new Date(script.created_at), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(script.created_at), {
+                    addSuffix: true,
+                  })}
                 </span>
               </div>
             </div>
@@ -317,7 +340,10 @@ export default function ScriptPage({ params }) {
           {script.tags && script.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {script.tags.map((tag, index) => (
-                <Badge key={index} className="glass border-blue-400/50 text-blue-300">
+                <Badge
+                  key={index}
+                  className="glass border-blue-400/50 text-blue-300"
+                >
                   #{tag}
                 </Badge>
               ))}
@@ -335,7 +361,9 @@ export default function ScriptPage({ params }) {
           {/* Description */}
           {script.description && (
             <div className="mb-4">
-              <p className="text-sm font-semibold text-gray-400 mb-1">Description</p>
+              <p className="text-sm font-semibold text-gray-400 mb-1">
+                Description
+              </p>
               <p className="text-gray-300">{script.description}</p>
             </div>
           )}
@@ -357,30 +385,24 @@ export default function ScriptPage({ params }) {
         {/* Metadata */}
         {script.metadata && (
           <div className="glass-card p-6">
-            <h3 className="text-lg font-semibold text-white mb-3">Generation Details</h3>
+            <h3 className="text-lg font-semibold text-white mb-3">
+              Generation Details
+            </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               {script.metadata.tone && (
                 <div>
                   <p className="text-gray-400">Tone</p>
-                  <p className="text-white capitalize">{script.metadata.tone}</p>
+                  <p className="text-white capitalize">
+                    {script.metadata.tone}
+                  </p>
                 </div>
               )}
               {script.metadata.targetAudience && (
                 <div>
                   <p className="text-gray-400">Target Audience</p>
-                  <p className="text-white capitalize">{script.metadata.targetAudience}</p>
-                </div>
-              )}
-              {script.metadata.model && (
-                <div>
-                  <p className="text-gray-400">AI Model</p>
-                  <p className="text-white">{script.metadata.model}</p>
-                </div>
-              )}
-              {script.metadata.tokenUsage && (
-                <div>
-                  <p className="text-gray-400">Tokens Used</p>
-                  <p className="text-white">{script.metadata.tokenUsage.totalTokens || 'N/A'}</p>
+                  <p className="text-white capitalize">
+                    {script.metadata.targetAudience}
+                  </p>
                 </div>
               )}
             </div>

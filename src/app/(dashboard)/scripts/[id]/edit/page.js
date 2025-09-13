@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import ScriptEditor from '@/components/scripts/script-editor';
+import FourCardScriptEditor from '@/components/scripts/four-card-script-editor';
 import EditHistory from '@/components/scripts/edit-history';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -29,6 +30,7 @@ export default function ScriptEditPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('editor');
+  const [editorMode, setEditorMode] = useState('fourCard'); // 'fourCard' or 'classic'
   const [permissions, setPermissions] = useState({
     canEdit: false,
     canDelete: false,
@@ -360,13 +362,47 @@ export default function ScriptEditPage({ params }) {
             <div className="relative">
               <TabsContent value="editor" className="p-6 pt-4 mt-0 focus:outline-none">
                 <div className="animate-reveal">
-                  <ScriptEditor
-                    script={script}
-                    onSave={handleSave}
-                    onVersionSave={handleVersionSave}
-                    onRevert={handleRevert}
-                    canEdit={permissions.canEdit}
-                  />
+                  {/* Editor Mode Toggle */}
+                  <div className="mb-4 flex items-center justify-end gap-2">
+                    <span className="text-sm text-gray-400">Editor Mode:</span>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={editorMode === 'fourCard' ? 'default' : 'outline'}
+                        onClick={() => setEditorMode('fourCard')}
+                        className="glass-button"
+                      >
+                        4-Card System
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={editorMode === 'classic' ? 'default' : 'outline'}
+                        onClick={() => setEditorMode('classic')}
+                        className="glass-button"
+                      >
+                        Classic Editor
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Render appropriate editor based on mode */}
+                  {editorMode === 'fourCard' ? (
+                    <FourCardScriptEditor
+                      script={script}
+                      onSave={handleSave}
+                      onVersionSave={handleVersionSave}
+                      onRevert={handleRevert}
+                      canEdit={permissions.canEdit}
+                    />
+                  ) : (
+                    <ScriptEditor
+                      script={script}
+                      onSave={handleSave}
+                      onVersionSave={handleVersionSave}
+                      onRevert={handleRevert}
+                      canEdit={permissions.canEdit}
+                    />
+                  )}
                 </div>
               </TabsContent>
               

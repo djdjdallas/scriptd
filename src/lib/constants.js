@@ -11,50 +11,71 @@ export const AI_PROVIDERS = {
   GROQ: 'groq'
 };
 
-export const AI_MODELS = {
-  GPT5: 'gpt-5',
-  GPT41: 'gpt-4.1',
-  GPT4_TURBO: 'gpt-4-turbo',
-  GPT4: 'gpt-4',
-  CLAUDE_4_OPUS: 'claude-4-opus-20250522',
-  CLAUDE_4_OPUS_41: 'claude-opus-4-1-20250805',
-  CLAUDE_37_SONNET: 'claude-3.7-sonnet-20250224',
-  CLAUDE_3_HAIKU: 'claude-3-haiku-20240307',
-  MIXTRAL_LARGE: 'mistral-large-2',
-  MIXTRAL: 'mixtral-8x7b-32768'
+// Quality Tiers - Simplified 3-tier system
+export const MODEL_TIERS = {
+  FAST: {
+    id: 'fast',
+    name: 'Fast Generation',
+    description: 'Quick drafts and ideation',
+    baseCredits: 3,
+    actualModel: 'claude-3-5-haiku-20241022', // Hidden from user
+    features: ['60 second generation', 'Good for outlines', 'Testing ideas'],
+    icon: '⚡'
+  },
+  BALANCED: {
+    id: 'balanced',
+    name: 'Professional Quality',
+    description: 'High-quality scripts for publishing',
+    baseCredits: 8,
+    actualModel: 'claude-3-5-sonnet-20241022', // Hidden from user - fixed model name
+    features: ['2-3 minute generation', 'Optimized for YouTube', 'Best value'],
+    icon: '⭐',
+    recommended: true
+  },
+  PREMIUM: {
+    id: 'premium',
+    name: 'Viral-Ready',
+    description: 'Maximum quality with advanced optimization',
+    baseCredits: 15,
+    actualModel: 'claude-opus-4-1-20250805', // Hidden from user
+    features: ['5 minute generation', 'Advanced reasoning', 'Complex topics'],
+    icon: '💎'
+  }
 };
 
-// Premium AI Models (require paid subscription)
-export const PREMIUM_AI_MODELS = [
-  AI_MODELS.GPT5,
-  AI_MODELS.CLAUDE_4_OPUS,
-  AI_MODELS.CLAUDE_4_OPUS_41
-];
+// Length Multipliers for detailed pricing (granular as requested)
+export const LENGTH_MULTIPLIERS = {
+  '1': 1.0,   // 1 min
+  '3': 1.0,   // 3 min
+  '5': 1.2,   // 5 min
+  '7': 1.5,   // 7 min
+  '10': 1.5,  // 10 min
+  '12': 1.8,  // 12 min
+  '15': 1.8,  // 15 min
+  '20': 2.0,  // 20 min
+  '25': 2.3,  // 25 min
+  '30': 2.5,  // 30 min
+  '40': 2.8,  // 40 min
+  '50': 3.2,  // 50 min
+  '60': 3.5   // 60 min
+};
 
-// Models available for each subscription tier
-export const MODEL_ACCESS_BY_TIER = {
-  free: [
-    AI_MODELS.MIXTRAL,
-    AI_MODELS.CLAUDE_3_HAIKU
-  ],
-  starter: [
-    AI_MODELS.MIXTRAL,
-    AI_MODELS.CLAUDE_3_HAIKU,
-    AI_MODELS.GPT4_TURBO,
-    AI_MODELS.CLAUDE_37_SONNET,
-    AI_MODELS.MIXTRAL_LARGE
-  ],
-  professional: [
-    AI_MODELS.MIXTRAL,
-    AI_MODELS.CLAUDE_3_HAIKU,
-    AI_MODELS.GPT4_TURBO,
-    AI_MODELS.GPT4,
-    AI_MODELS.GPT41,
-    AI_MODELS.CLAUDE_37_SONNET,
-    AI_MODELS.MIXTRAL_LARGE
-  ],
-  business: Object.values(AI_MODELS), // All models
-  enterprise: Object.values(AI_MODELS) // All models
+// Tier access by subscription level
+export const TIER_ACCESS_BY_SUBSCRIPTION = {
+  free: ['FAST'],
+  creator: ['FAST', 'BALANCED'],
+  professional: ['FAST', 'BALANCED', 'PREMIUM'],
+  agency: ['FAST', 'BALANCED', 'PREMIUM']
+};
+
+// Legacy AI Models (kept for backward compatibility but hidden from UI)
+// Only Claude models are supported
+export const AI_MODELS = {
+  CLAUDE_4_OPUS_41: 'claude-opus-4-1-20250805',
+  CLAUDE_37_SONNET: 'claude-3-5-sonnet-20241022',
+  CLAUDE_3_HAIKU: 'claude-3-5-haiku-20241022',
+  // Deprecated - will be removed
+  CLAUDE_4_OPUS: 'claude-4-opus-20250522'
 };
 
 // Script Types
@@ -152,19 +173,20 @@ export const SCRIPT_LENGTHS = {
   }
 };
 
-// Credit Costs
+// Credit Costs - Simplified tier-based system
 export const CREDIT_COSTS = {
+  // Tier-based costs (base cost × length multiplier)
+  SCRIPT_GENERATION_BY_TIER: {
+    FAST: 3,
+    BALANCED: 8,
+    PREMIUM: 15
+  },
+  // Legacy model costs (for backward compatibility)
   SCRIPT_GENERATION: {
-    [AI_MODELS.GPT5]: 25,
-    [AI_MODELS.GPT41]: 18,
-    [AI_MODELS.GPT4_TURBO]: 10,
-    [AI_MODELS.GPT4]: 15,
-    [AI_MODELS.CLAUDE_4_OPUS_41]: 30,
+    [AI_MODELS.CLAUDE_4_OPUS_41]: 15, // Maps to PREMIUM tier
     [AI_MODELS.CLAUDE_4_OPUS]: 25,
-    [AI_MODELS.CLAUDE_37_SONNET]: 12,
-    [AI_MODELS.CLAUDE_3_HAIKU]: 5,
-    [AI_MODELS.MIXTRAL_LARGE]: 8,
-    [AI_MODELS.MIXTRAL]: 2
+    [AI_MODELS.CLAUDE_37_SONNET]: 8, // Maps to BALANCED tier
+    [AI_MODELS.CLAUDE_3_HAIKU]: 3, // Maps to FAST tier
   },
   RESEARCH_CHAT: 1, // per message
   CHANNEL_ANALYSIS: 5,
@@ -174,91 +196,93 @@ export const CREDIT_COSTS = {
   EXPORT_DOCX: 0  // File exports are now free
 };
 
-// Subscription Plans
+// Subscription Plans - Doubled credits, new pricing
 export const PLANS = {
   FREE: {
     id: 'free',
-    name: 'Free',
-    credits: 15,
+    name: 'Free Trial',
+    price: 0,
+    credits: 50, // Doubled from 25
+    tiers: ['FAST'],
     features: [
-      '15 free credits',
-      'Basic script generation',
-      'Access to 3 tools',
-      'Community support'
+      '50 free credits',
+      'Fast generation only',
+      '5-16 short scripts',
+      'Basic export formats'
     ]
   },
-  STARTER: {
-    id: 'starter',
-    name: 'Starter',
-    price: 29,
-    priceAnnual: 290,
-    credits: 100,
-    stripeProductId: process.env.STRIPE_PRODUCT_STARTER,
-    stripePriceMonthly: process.env.STRIPE_PRICE_STARTER_MONTHLY,
-    stripePriceAnnual: process.env.STRIPE_PRICE_STARTER_ANNUAL,
+  CREATOR: {
+    id: 'creator',
+    name: 'Creator',
+    price: 39,
+    priceAnnual: 374.40, // 20% off annual discount
+    credits: 300, // Doubled from 150
+    tiers: ['FAST', 'BALANCED'],
+    stripeProductId: 'prod_T2icTPaTwIJuIn',
+    stripePriceIdMonthly: 'price_1S6dBbPpO7oOioNRFsGAgIDg',
+    stripePriceIdAnnual: 'price_1S6dBiPpO7oOioNR1S7NcBGn',
     features: [
-      '100 credits per month',
-      'All AI models',
-      'YouTube integration',
-      'SEO optimization tools',
-      'Export to all formats',
-      'Community support'
-    ]
+      '300 credits/month',
+      'Fast & Professional quality',
+      '30-100 scripts/month',
+      '3 channels',
+      'Voice profiles',
+      'All export formats',
+      'Priority email support'
+    ],
+    popular: true,
+    scriptsEstimate: '30-100 scripts/month'
   },
   PROFESSIONAL: {
     id: 'professional',
     name: 'Professional',
-    price: 69,
-    priceAnnual: 690,
-    credits: 300,
-    stripeProductId: process.env.STRIPE_PRODUCT_PROFESSIONAL,
-    stripePriceMonthly: process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY,
-    stripePriceAnnual: process.env.STRIPE_PRICE_PROFESSIONAL_ANNUAL,
+    price: 79,
+    priceAnnual: 758.40, // 20% off annual discount
+    credits: 800, // Doubled from 400
+    tiers: ['FAST', 'BALANCED', 'PREMIUM'],
+    stripeProductId: 'prod_T2idSEslTnNrb0',
+    stripePriceIdMonthly: 'price_1S6dBxPpO7oOioNRFs6EsczT',
+    stripePriceIdAnnual: 'price_1S6dC3PpO7oOioNRPSgxAyXB',
     features: [
-      '300 credits per month',
-      'Everything in Starter',
-      'Voice cloning technology',
-      'Multi-channel management',
+      '800 credits/month',
+      'All quality tiers',
+      '80-260 scripts/month',
+      '10 channels',
+      'Team seats (3)',
       'Priority support',
       'Advanced analytics'
-    ]
+    ],
+    scriptsEstimate: '80-260 scripts/month'
   },
-  BUSINESS: {
-    id: 'business',
-    name: 'Business',
-    price: 99,
-    priceAnnual: 990,
-    credits: 1000,
-    stripeProductId: process.env.STRIPE_PRODUCT_BUSINESS,
-    stripePriceMonthly: process.env.STRIPE_PRICE_BUSINESS_MONTHLY,
-    stripePriceAnnual: process.env.STRIPE_PRICE_BUSINESS_ANNUAL,
-    features: [
-      '1,000 credits per month',
-      'Everything in Professional',
-      'Team collaboration',
-      'API access',
-      'Custom integrations',
-      'Dedicated account manager'
-    ]
-  },
-  ENTERPRISE: {
-    id: 'enterprise',
-    name: 'Enterprise',
+  AGENCY: {
+    id: 'agency',
+    name: 'Agency',
     price: 199,
-    priceAnnual: 1990,
-    credits: null, // Unlimited
-    stripeProductId: process.env.STRIPE_PRODUCT_ENTERPRISE,
-    stripePriceMonthly: process.env.STRIPE_PRICE_ENTERPRISE_MONTHLY,
-    stripePriceAnnual: process.env.STRIPE_PRICE_ENTERPRISE_ANNUAL,
+    priceAnnual: 1910.40, // 20% off annual discount
+    credits: 2000, // Doubled from 1000
+    tiers: ['FAST', 'BALANCED', 'PREMIUM'],
+    stripeProductId: 'prod_T2idmdBYHDJxBV',
+    stripePriceIdMonthly: 'price_1S6dCNPpO7oOioNRqeUV4xcf',
+    stripePriceIdAnnual: 'price_1S6dCTPpO7oOioNRReJ8peZ2',
     features: [
-      'Unlimited credits',
-      'Everything in Business',
-      'White-label options',
-      'Custom AI models',
-      'SLA guarantee',
-      'Dedicated support team'
-    ]
+      '2000 credits/month',
+      'All quality tiers',
+      '200-600+ scripts/month',
+      'Unlimited channels',
+      'Team seats (10)',
+      'White label option',
+      'Dedicated support',
+      'Custom integrations'
+    ],
+    scriptsEstimate: '200-600+ scripts/month'
   }
+};
+
+// Legacy plan mapping for backward compatibility
+export const LEGACY_PLAN_MAPPING = {
+  'starter': 'creator',
+  'business': 'professional',
+  'enterprise': 'agency'
 };
 
 // YouTube API
@@ -371,43 +395,50 @@ export const TEAM_ROLES = {
   }
 };
 
-// Credit Packages (imported from stripe config)
-// Credit Packages with updated pricing
+// Credit Packages - One-time purchases (doubled credits)
 export const CREDIT_PACKAGES = {
-  pack_50: {
-    id: 'pack_50',
+  STARTER: {
+    id: 'starter',
     name: 'Starter Pack',
-    description: 'Perfect for trying out',
-    credits: 50,
-    price: 15,
-    perCredit: '0.30',
-    badge: null,
-    stripeProductId: 'prod_T1ICocdNCYayyY',
-    stripePriceId: process.env.STRIPE_PRICE_CREDITS_50
+    credits: 100, // Doubled from 50
+    price: 19,
+    stripeProductId: 'prod_T2iddrAOXO01Xs',
+    stripePriceId: 'price_1S6dCoPpO7oOioNRWCV3u8Dj',
+    savings: '24% off',
+    scripts: '10-33 scripts',
+    bestFor: 'Trying premium features'
   },
-  pack_100: {
-    id: 'pack_100',
+  POPULAR: {
+    id: 'popular',
     name: 'Popular Pack',
-    description: 'Most popular choice',
-    credits: 100,
-    price: 25,
-    perCredit: '0.25',
+    credits: 300, // Doubled from 150
+    price: 49,
+    stripeProductId: 'prod_T2ieJr8IY7tHqm',
+    stripePriceId: 'price_1S6dCzPpO7oOioNRDEeNjEwe',
+    savings: '31% off',
     badge: 'Most Popular',
-    stripeProductId: 'prod_T1ICAOiPIcPLeh',
-    stripePriceId: process.env.STRIPE_PRICE_CREDITS_100
+    scripts: '30-100 scripts',
+    bestFor: 'Regular creators'
   },
-  pack_500: {
-    id: 'pack_500',
-    name: 'Pro Pack',
-    description: 'Best value for professionals',
-    credits: 500,
+  BULK: {
+    id: 'bulk',
+    name: 'Bulk Pack',
+    credits: 800, // Doubled from 400
     price: 99,
-    perCredit: '0.198',
-    badge: 'Best Value',
-    stripeProductId: 'prod_T1ICGMiLqVLkeB',
-    stripePriceId: process.env.STRIPE_PRICE_CREDITS_500
+    stripeProductId: 'prod_T2ieo3rnpZEBsF',
+    stripePriceId: 'price_1S6dDDPpO7oOioNRr2K4dbOs',
+    savings: '38% off',
+    scripts: '80-260 scripts',
+    bestFor: 'Teams and agencies'
   }
 };
+
+// Helper function to calculate script cost
+export function calculateScriptCost(tier, lengthMinutes) {
+  const baseCredits = CREDIT_COSTS.SCRIPT_GENERATION_BY_TIER[tier] || MODEL_TIERS[tier]?.baseCredits || 8;
+  const multiplier = LENGTH_MULTIPLIERS[lengthMinutes.toString()] || 1.0;
+  return Math.ceil(baseCredits * multiplier);
+}
 
 // Error Codes
 export const ERROR_CODES = {

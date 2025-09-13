@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { calculateChannelMetrics } from '@/lib/utils/channel-metrics';
+import { ChannelAnalyzer } from '@/components/channel/channel-analyzer';
 
 export default function ChannelDetailPage({ params }) {
   const router = useRouter();
@@ -150,12 +151,6 @@ export default function ChannelDetailPage({ params }) {
                 <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-              <Link href={`/channels/${channelId}/analyze`}>
-                <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white">
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  Analyze
-                </Button>
-              </Link>
               <Button
                 variant="destructive"
                 size="sm"
@@ -206,56 +201,13 @@ export default function ChannelDetailPage({ params }) {
           </Card>
         </div>
 
-        {/* Recent Analysis Card */}
-        <Card className="mb-6 bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-white">Recent Analysis</CardTitle>
-            <CardDescription className="text-white/60">
-              Last analyzed: {new Date(channel.last_analyzed_at || channel.updated_at || Date.now()).toLocaleDateString()}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-white/80">Performance Score</span>
-                <span className="text-sm font-bold text-white">{metrics.performanceScore}/100</span>
-              </div>
-              <div className="w-full bg-white/20 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-purple-400 to-purple-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${metrics.performanceScore}%` }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-white/80">Growth Potential</span>
-                <span className="text-sm font-bold text-white">{metrics.growthPotential}/100</span>
-              </div>
-              <div className="w-full bg-white/20 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-purple-400 to-purple-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${metrics.growthPotential}%` }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-white/80">Audience Quality</span>
-                <span className="text-sm font-bold text-white">{metrics.audienceQuality}/100</span>
-              </div>
-              <div className="w-full bg-white/20 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-purple-400 to-purple-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${metrics.audienceQuality}%` }}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Channel Analysis Component - Now integrated directly */}
+        <div className="mt-8">
+          <ChannelAnalyzer channelId={channelId} />
+        </div>
 
         {/* Channel Information Card */}
-        <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+        <Card className="mt-8 bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
           <CardHeader>
             <CardTitle className="text-white">Channel Information</CardTitle>
           </CardHeader>

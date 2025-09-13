@@ -2,41 +2,42 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast as toastSonner } from 'sonner';
+import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  Loader2,
-  Sparkles,
-  ChevronRight,
-  ChevronLeft,
-  Check,
-  FileText,
-  Brain,
-  Wand2,
-  Target,
-  Hash,
+import { 
+  FileText, 
+  Target, 
+  Hash, 
+  Brain, 
+  CheckCircle2,
   Plus,
   X,
-  Zap,
-  AlertCircle,
-  CheckCircle2,
-  Lightbulb,
+  Loader2,
+  Sparkles,
+  ArrowLeft,
+  ArrowRight,
   Lock,
-  Users,
-  Crown,
-  Shield,
-  ShieldCheck,
-  Search
+  Check,
+  ChevronLeft,
+  AlertCircle,
+  Users
 } from 'lucide-react';
-import { SCRIPT_TYPES, SCRIPT_LENGTHS, AI_MODELS, CREDIT_COSTS } from '@/lib/constants';
-import { getKeyPointRecommendations, filterNewRecommendations } from '@/lib/key-points-recommendations';
-import { hasAccessToModel, isPremiumModel, getMinimumTierForModel, getTierDisplayName } from '@/lib/subscription-helpers';
+import { 
+  MODEL_TIERS,
+  TIER_ACCESS_BY_SUBSCRIPTION,
+  calculateScriptCost,
+  SCRIPT_TYPES, 
+  SCRIPT_LENGTHS 
+} from '@/lib/constants';
+
+const TONE_OPTIONS = ['professional', 'casual', 'educational', 'entertaining', 'inspirational', 'conversational'];
 
 const STEPS = [
   { 
@@ -62,8 +63,8 @@ const STEPS = [
   },
   { 
     id: 'settings', 
-    title: 'AI Settings', 
-    description: 'Model and voice options',
+    title: 'Quality Settings', 
+    description: 'Quality tier and voice options',
     icon: Brain,
     color: 'from-green-500/20'
   },
@@ -79,78 +80,92 @@ const STEPS = [
 export default function NewScriptPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
-  const [enableFactChecking, setEnableFactChecking] = useState(true);
-  const [factCheckResults, setFactCheckResults] = useState(null);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [voiceProfiles, setVoiceProfiles] = useState([]);
+  const [channels, setChannels] = useState([]);
   const [userData, setUserData] = useState({
     credits: 0,
-    channels: [],
-    voiceProfiles: [],
     subscriptionTier: 'free'
   });
+
+  // Helper function to check if user has access to a tier
+  const hasAccessToTier = (tier, userTier = 'free') => {
+    const allowedTiers = TIER_ACCESS_BY_SUBSCRIPTION[userTier] || [];
+    return allowedTiers.includes(tier);
+  };
+
+  // Helper function to calculate scripts remaining for a tier
+  const calculateScriptsRemaining = (tier, credits, length) => {
+    const cost = calculateScriptCost(tier, length);
+    return Math.floor(credits / cost);
+  };
   
   const [formData, setFormData] = useState({
     title: '',
     type: '',
-    length: 'MEDIUM',
+    length: 10, // Default to 10 minutes
     tone: 'professional',
     targetAudience: 'general',
     keyPoints: [''],
-    model: AI_MODELS.GPT4_TURBO,
+    qualityTier: 'BALANCED', // Default to BALANCED tier as recommended
     channelId: '',
-    voiceProfileId: ''
+    voiceId: null,
+    additionalInstructions: ''
   });
 
   useEffect(() => {
     fetchUserData();
+    fetchVoiceProfiles();
+    fetchChannels();
   }, []);
 
-  const fetchUserData = async () => {
+  useEffect(() => {
+    // Auto-select channel if there's only one
+    if (channels.length === 1 && !formData.channelId) {
+      const firstChannel = channels[0];
+      setFormData(prev => ({
+        ...prev,
+        channelId: firstChannel.id,
+        targetAudience: firstChannel.audience_description || prev.targetAudience
+      }));
+    }
+  }, [channels]);
+
+  const fetchChannels = async () => {
     try {
-      const [userResponse, channelsResponse, voiceResponse] = await Promise.all([
-        fetch('/api/user'),
-        fetch('/api/channels'),
-        fetch('/api/voice')
-      ]);
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      const userData = await userResponse.json();
-      const channelsData = await channelsResponse.json();
-      const voiceData = await voiceResponse.json();
+      const { data, error } = await supabase
+        .from('channels')
+        .select('*')
+        .eq('user_id', user.id);
 
-      setUserData({
-        credits: userData.data?.credits || 0,
-        channels: channelsData.data || [],
-        voiceProfiles: voiceData.data || [],
-        subscriptionTier: userData.data?.subscription_tier || 'free'
-      });
-      
-      // Auto-select first channel if available and set audience
-      if (channelsData.data && channelsData.data.length > 0) {
-        const firstChannel = channelsData.data[0];
-        setFormData(prev => ({
-          ...prev,
-          channelId: firstChannel.id,
-          targetAudience: firstChannel.audience_description || prev.targetAudience
-        }));
+      if (!error && data) {
+        setChannels(data);
+        // Auto-fill audience from first channel if available
+        if (data.length > 0 && data[0].audience_description) {
+          const firstChannel = data[0];
+          setFormData(prev => ({
+            ...prev,
+            channelId: firstChannel.id,
+            targetAudience: firstChannel.audience_description || prev.targetAudience
+          }));
+        }
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error fetching channels:', error);
     }
   };
 
-  const updateFormData = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // If channel is changed, update audience description
-    if (field === 'channelId' && value) {
-      const selectedChannel = userData.channels.find(ch => ch.id === value);
+  const fillAudienceFromChannel = () => {
+    if (formData.channelId) {
+      const selectedChannel = channels.find(c => c.id === formData.channelId);
       if (selectedChannel && selectedChannel.audience_description) {
         setFormData(prev => ({
           ...prev,
@@ -159,10 +174,11 @@ export default function NewScriptPage() {
       }
     }
   };
-  
-  const autoFillAudience = () => {
+
+  // Auto-fill audience when channel changes
+  useEffect(() => {
     if (formData.channelId) {
-      const selectedChannel = userData.channels.find(ch => ch.id === formData.channelId);
+      const selectedChannel = channels.find(c => c.id === formData.channelId);
       if (selectedChannel && selectedChannel.audience_description) {
         setFormData(prev => ({
           ...prev,
@@ -170,16 +186,118 @@ export default function NewScriptPage() {
         }));
         toast({
           title: "Audience Auto-filled",
-          description: "Target audience has been populated from your channel analysis"
-        });
-      } else {
-        toast({
-          title: "No Audience Data",
-          description: "Please analyze your channel first to generate audience insights",
-          variant: "warning"
+          description: "Target audience has been filled from your channel analysis.",
         });
       }
     }
+  }, [formData.channelId, channels]);
+
+  const fetchUserData = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('credits, subscription_tier')
+        .eq('id', user.id)
+        .single();
+
+      if (!error && data) {
+        setUserData({
+          credits: data.credits || 0,
+          subscriptionTier: data.subscription_tier || 'free'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  const generateRecommendations = async () => {
+    console.log('Generating recommendations with:', { title: formData.title, type: formData.type });
+    setLoadingSuggestions(true);
+    try {
+      const response = await fetch('/api/scripts/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          type: formData.type,
+          targetAudience: formData.targetAudience,
+          tone: formData.tone,
+          length: formData.length,
+          existingPoints: formData.keyPoints.filter(p => p.trim())
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Recommendations received:', data);
+      
+      if (data.recommendations && data.recommendations.length > 0) {
+        setRecommendations(data.recommendations);
+        setShowRecommendations(true);
+        toast({
+          title: "Success",
+          description: `Generated ${data.recommendations.length} suggestions`,
+        });
+      } else {
+        toast({
+          title: "No suggestions",
+          description: "Could not generate suggestions for this topic",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error generating recommendations:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate recommendations",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const addRecommendation = (rec) => {
+    const emptyIndex = formData.keyPoints.findIndex(p => !p.trim());
+    if (emptyIndex !== -1) {
+      updateKeyPoint(emptyIndex, rec);
+    } else {
+      addKeyPoint();
+      updateKeyPoint(formData.keyPoints.length, rec);
+    }
+  };
+
+  const fetchVoiceProfiles = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('voice_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+
+      if (!error && data) {
+        setVoiceProfiles(data);
+      }
+    } catch (error) {
+      console.error('Error fetching voice profiles:', error);
+    }
+  };
+
+  const updateFormData = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const addKeyPoint = () => {
@@ -190,9 +308,10 @@ export default function NewScriptPage() {
   };
 
   const updateKeyPoint = (index, value) => {
-    const newKeyPoints = [...formData.keyPoints];
-    newKeyPoints[index] = value;
-    setFormData(prev => ({ ...prev, keyPoints: newKeyPoints }));
+    setFormData(prev => ({
+      ...prev,
+      keyPoints: prev.keyPoints.map((point, i) => i === index ? value : point)
+    }));
   };
 
   const removeKeyPoint = (index) => {
@@ -202,101 +321,27 @@ export default function NewScriptPage() {
     }));
   };
 
-  const generateRecommendations = async () => {
-    setLoadingSuggestions(true);
-    
-    try {
-      // Use AI-powered suggestions API
-      const response = await fetch('/api/scripts/suggestions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: formData.title,
-          type: formData.type,
-          targetAudience: formData.targetAudience,
-          existingPoints: formData.keyPoints.filter(p => p.trim())
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const suggestions = data.suggestions.map(s => s.text || s);
-        setRecommendations(suggestions);
-        setShowRecommendations(true);
-        
-        toast({
-          title: "AI Suggestions Generated!",
-          description: `Generated ${suggestions.length} smart suggestions based on your title`,
-        });
-      } else {
-        // Fallback to local recommendations
-        const recs = getKeyPointRecommendations(formData);
-        const filtered = filterNewRecommendations(recs, formData.keyPoints);
-        setRecommendations(filtered);
-        setShowRecommendations(true);
-      }
-    } catch (error) {
-      console.error('Failed to get AI suggestions:', error);
-      // Fallback to local recommendations
-      const recs = getKeyPointRecommendations(formData);
-      const filtered = filterNewRecommendations(recs, formData.keyPoints);
-      setRecommendations(filtered);
-      setShowRecommendations(true);
-    } finally {
-      setLoadingSuggestions(false);
+  const handleNext = () => {
+    if (currentStep < STEPS.length - 1) {
+      setCurrentStep(prev => prev + 1);
     }
   };
 
-  const addRecommendation = (recommendation) => {
-    // Find the first empty key point or add a new one
-    const emptyIndex = formData.keyPoints.findIndex(point => !point.trim());
-    
-    if (emptyIndex !== -1) {
-      // Replace empty key point
-      const newKeyPoints = [...formData.keyPoints];
-      newKeyPoints[emptyIndex] = recommendation;
-      setFormData(prev => ({ ...prev, keyPoints: newKeyPoints }));
-    } else {
-      // Add as new key point
-      setFormData(prev => ({
-        ...prev,
-        keyPoints: [...prev.keyPoints, recommendation]
-      }));
-    }
-    
-    // Remove this recommendation from the list
-    setRecommendations(prev => prev.filter(r => r !== recommendation));
-    
-    // Hide recommendations if none left
-    if (recommendations.length <= 1) {
-      setShowRecommendations(false);
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
     }
   };
 
-  // Calculate credit cost based on model and length multiplier
-  const baseModelCost = CREDIT_COSTS.SCRIPT_GENERATION[formData.model] || 10;
-  const lengthMultiplier = getLengthMultiplier(formData.length);
-  const creditCost = Math.ceil(baseModelCost * lengthMultiplier);
-  const canGenerate = userData.credits >= creditCost;
-  
-  // Helper function to calculate length multiplier
-  function getLengthMultiplier(length) {
-    const minutes = SCRIPT_LENGTHS[length]?.minutes || 10;
-    if (minutes <= 5) return 1.0;
-    if (minutes <= 10) return 1.2;
-    if (minutes <= 15) return 1.5;
-    if (minutes <= 20) return 1.8;
-    if (minutes <= 30) return 2.2;
-    if (minutes <= 40) return 2.8;
-    if (minutes <= 50) return 3.5;
-    return 4.0; // 60 minutes
-  }
+  // Calculate credit cost using new tier-based system
+  const creditCost = calculateScriptCost(formData.qualityTier, formData.length);
 
   const handleGenerate = async () => {
-    if (!canGenerate) {
+    // Check credit balance
+    if (userData.credits < creditCost) {
       toast({
         title: "Insufficient Credits",
-        description: `You need ${creditCost} credits to generate a script. You have ${userData.credits}.`,
+        description: `You need ${creditCost} credits to generate this script. You have ${userData.credits} credits.`,
         variant: "destructive"
       });
       return;
@@ -305,58 +350,27 @@ export default function NewScriptPage() {
     setIsGenerating(true);
     
     try {
-      // Get the length in minutes
-      const lengthMinutes = SCRIPT_LENGTHS[formData.length]?.minutes || 10;
-      
-      const requestBody = {
+      // Send the request with qualityTier (API handles the model mapping internally)
+      const requestData = {
         ...formData,
-        length: lengthMinutes, // Send as number
-        keyPoints: formData.keyPoints.filter(p => p.trim()),
-        enableFactChecking: enableFactChecking,
-        topic: formData.topic // Include topic for better context
+        // qualityTier is already included in formData
+        // Backend will map this to the appropriate model
       };
-      
-      console.log('Sending script generation request:', requestBody);
       
       const response = await fetch('/api/scripts/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestData)
       });
-
-      if (!response.ok) {
-        let errorMessage = 'Failed to generate script';
-        try {
-          const error = await response.json();
-          console.error('Script generation failed:', error);
-          errorMessage = error.error || error.message || errorMessage;
-        } catch (e) {
-          console.error('Failed to parse error response:', e);
-          errorMessage = `Server error (${response.status})`;
-        }
-        throw new Error(errorMessage);
-      }
 
       const data = await response.json();
-      
-      // Store fact-check results if available
-      if (data.factCheck && data.factCheck.enabled) {
-        setFactCheckResults(data.factCheck);
+
+      if (response.ok) {
+        toastSonner.success('Script generated successfully!');
+        router.push(`/scripts/${data.scriptId || data.script?.id}`);
+      } else {
+        throw new Error(data.error || 'Failed to generate script');
       }
-
-      // Show fact-check status in toast
-      const factCheckStatus = data.factCheck?.enabled ? 
-        (data.factCheck.validation?.status === 'EXCELLENT' ? '✅ Fact-checked' : 
-         data.factCheck.validation?.status === 'GOOD' ? '✓ Fact-checked with warnings' : 
-         '⚠️ Fact-check passed with issues') : 
-        '⚠️ Fact-checking disabled';
-
-      toast({
-        title: "Script Generated!",
-        description: `Your script has been created successfully. ${factCheckStatus}`
-      });
-
-      router.push(`/scripts/${data.scriptId}`);
     } catch (error) {
       console.error('Generation error:', error);
       toast({
@@ -369,18 +383,6 @@ export default function NewScriptPage() {
     }
   };
 
-  const nextStep = () => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
   const isStepValid = () => {
     switch (currentStep) {
       case 0:
@@ -390,112 +392,86 @@ export default function NewScriptPage() {
       case 2:
         return formData.keyPoints.some(p => p.trim());
       case 3:
-        return formData.model;
-      default:
+        return formData.qualityTier;
+      case 4:
         return true;
+      default:
+        return false;
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 animate-pulse-slow">
-          <Wand2 className="h-12 w-12 text-purple-400 mx-auto animate-spin" />
-          <p className="mt-4 text-gray-300">Loading wizard...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Background Effects */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-40 left-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-40 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
-      </div>
-
+    <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="animate-reveal">
-        <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-          <Wand2 className="h-10 w-10 text-purple-400 neon-glow" />
-          Create New Script
-          <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
-        </h1>
-        <p className="text-gray-400 mt-2">
-          Generate AI-powered scripts in your unique voice
-        </p>
-      </div>
-
-      {/* Credit Balance */}
-      <div className="glass-card p-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Zap className="h-5 w-5 text-yellow-400" />
-            <span className="text-gray-300">Credit Balance:</span>
-            <span className="text-xl font-bold gradient-text">{userData.credits}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">Cost:</span>
-            <Badge className="glass border-purple-400/50 text-purple-300">
-              {creditCost} credits
-            </Badge>
-          </div>
-        </div>
-      </div>
-
-      {/* Progress Steps */}
-      <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.2s' }}>
-        <div className="flex items-center justify-between mb-6">
-          {STEPS.map((step, index) => {
-            const Icon = step.icon;
-            const isActive = index === currentStep;
-            const isCompleted = index < currentStep;
-            
-            return (
-              <div key={step.id} className="flex items-center">
-                <div className={`flex flex-col items-center ${
-                  index < STEPS.length - 1 ? 'flex-1' : ''
-                }`}>
-                  <div className={`w-12 h-12 glass rounded-xl flex items-center justify-center mb-2 transition-all ${
-                    isActive ? 'scale-110 bg-gradient-to-br ' + step.color + ' to-transparent' : ''
-                  } ${isCompleted ? 'bg-green-500/20' : ''}`}>
-                    {isCompleted ? (
-                      <Check className="h-6 w-6 text-green-400" />
-                    ) : (
-                      <Icon className={`h-6 w-6 ${
-                        isActive ? 'text-white' : 'text-gray-400'
-                      }`} />
-                    )}
-                  </div>
-                  <p className={`text-xs ${
-                    isActive ? 'text-white font-medium' : 'text-gray-400'
-                  }`}>{step.title}</p>
-                </div>
-                {index < STEPS.length - 1 && (
-                  <div className={`flex-1 h-0.5 mx-4 mb-8 ${
-                    isCompleted ? 'bg-green-400/50' : 'bg-gray-600'
-                  }`} />
-                )}
-              </div>
-            );
-          })}
-        </div>
+      <div className="mb-8">
+        <Button
+          onClick={() => router.back()}
+          variant="ghost"
+          className="mb-4 text-gray-400 hover:text-white"
+        >
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
         
-        <Progress value={(currentStep + 1) / STEPS.length * 100} className="h-2" />
+        <h1 className="text-4xl font-bold text-white mb-2">Create New Script</h1>
+        <p className="text-gray-400">Follow the steps to generate your perfect YouTube script</p>
       </div>
 
-      {/* Step Content */}
-      <div>
-        <div className="glass-card p-8 animate-reveal" style={{ animationDelay: '0.3s' }}>
-          <h2 className="text-2xl font-semibold text-white mb-2">{STEPS[currentStep].title}</h2>
-          <p className="text-gray-400 mb-6">{STEPS[currentStep].description}</p>
+      {/* Progress */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          {STEPS.map((step, index) => (
+            <div
+              key={step.id}
+              className={`flex items-center ${index < STEPS.length - 1 ? 'flex-1' : ''}`}
+            >
+              <div className={`flex flex-col items-center ${
+                index <= currentStep ? 'text-white' : 'text-gray-500'
+              }`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-all ${
+                  index < currentStep 
+                    ? 'bg-purple-500' 
+                    : index === currentStep 
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 ring-4 ring-purple-500/30' 
+                    : 'bg-gray-700'
+                }`}>
+                  {index < currentStep ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <step.icon className="h-5 w-5" />
+                  )}
+                </div>
+                <span className="text-xs font-medium hidden md:block">{step.title}</span>
+              </div>
+              {index < STEPS.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-2 transition-all ${
+                  index < currentStep ? 'bg-purple-500' : 'bg-gray-700'
+                }`} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="glass-card p-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+            {(() => {
+              const Icon = STEPS[currentStep].icon;
+              return <Icon className="h-6 w-6 text-purple-400" />;
+            })()}
+            {STEPS[currentStep].title}
+          </h2>
+          <p className="text-gray-400">{STEPS[currentStep].description}</p>
+        </div>
+
+        <div className="min-h-[400px]">
           {/* Step 1: Basic Information */}
           {currentStep === 0 && (
             <div className="space-y-6">
               <div>
-                <Label htmlFor="title" className="text-gray-300">Script Title</Label>
+                <Label htmlFor="title" className="text-gray-300">Video Title</Label>
                 <Input
                   id="title"
                   value={formData.title}
@@ -503,19 +479,6 @@ export default function NewScriptPage() {
                   placeholder="Enter your video title..."
                   className="glass-input text-white mt-2"
                 />
-              </div>
-
-              <div>
-                <Label htmlFor="topic" className="text-gray-300">Video Topic</Label>
-                <textarea
-                  id="topic"
-                  value={formData.topic}
-                  onChange={(e) => updateFormData('topic', e.target.value)}
-                  placeholder="Describe what your video is about, main themes, and any specific angles you want to explore..."
-                  className="glass-input text-white mt-2 min-h-[100px] resize-none"
-                  rows={4}
-                />
-                <p className="text-xs text-gray-400 mt-1">Provide context to help the AI generate a more relevant script</p>
               </div>
 
               <div>
@@ -539,18 +502,19 @@ export default function NewScriptPage() {
             </div>
           )}
 
-          {/* Step 2: Video Length */}
+          {/* Step 2: Video Details - Length, Tone, and Audience */}
           {currentStep === 1 && (
-            <div className="space-y-6">
+            <div className="space-y-6 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+              {/* Video Length */}
               <div>
                 <Label className="text-gray-300 mb-4 block">Select Video Duration</Label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {Object.entries(SCRIPT_LENGTHS).map(([key, value]) => (
                     <button
                       key={key}
-                      onClick={() => updateFormData('length', key)}
+                      onClick={() => updateFormData('length', value.minutes)}
                       className={`glass-button p-4 text-left transition-all relative ${
-                        formData.length === key
+                        formData.length === value.minutes
                           ? 'bg-purple-500/20 ring-2 ring-purple-400'
                           : 'hover:bg-white/10'
                       }`}
@@ -558,7 +522,7 @@ export default function NewScriptPage() {
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center justify-between">
                           <span className="text-white font-semibold text-lg">{value.minutes} min</span>
-                          {formData.length === key && (
+                          {formData.length === value.minutes && (
                             <Check className="h-5 w-5 text-purple-400" />
                           )}
                         </div>
@@ -568,15 +532,31 @@ export default function NewScriptPage() {
                   ))}
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Step 3: Target Audience */}
-          {currentStep === 2 && (
-            <div className="space-y-6">
+              
+              {/* Tone & Style */}
+              <div>
+                <Label className="text-gray-300 mb-4 block">Select Tone & Style</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {TONE_OPTIONS.map((tone) => (
+                    <button
+                      key={tone}
+                      onClick={() => updateFormData('tone', tone)}
+                      className={`glass-button py-3 px-4 text-sm capitalize transition-all ${
+                        formData.tone === tone
+                          ? 'bg-purple-500/20 text-white ring-2 ring-purple-400'
+                          : 'text-gray-300 hover:text-white'
+                      }`}
+                    >
+                      {tone}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Target Audience */}
               <div className="glass-card p-6">
                 <div className="flex items-start gap-3 mb-4">
-                  <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <div className="mt-1">
                     <Users className="h-5 w-5 text-blue-400" />
                   </div>
                   <div className="flex-1">
@@ -598,12 +578,13 @@ export default function NewScriptPage() {
                   </p>
                   {formData.channelId && (
                     <Button
+                      onClick={fillAudienceFromChannel}
                       size="sm"
-                      variant="ghost"
-                      className="text-xs text-blue-400 hover:text-blue-300"
-                      onClick={autoFillAudience}
+                      variant="outline"
+                      className="glass-button text-xs"
                     >
-                      Auto-fill from channel
+                      <Users className="h-3 w-3 mr-1" />
+                      Auto-fill from Channel
                     </Button>
                   )}
                 </div>
@@ -611,32 +592,8 @@ export default function NewScriptPage() {
             </div>
           )}
 
-          {/* Step 4: Tone & Style */}
-          {currentStep === 3 && (
-            <div className="space-y-6">
-              <div>
-                <Label className="text-gray-300">Tone & Style</Label>
-                <div className="grid grid-cols-2 gap-3 mt-2">
-                  {['professional', 'casual', 'educational', 'entertaining', 'inspirational', 'conversational'].map((tone) => (
-                    <button
-                      key={tone}
-                      onClick={() => updateFormData('tone', tone)}
-                      className={`glass-button py-3 px-4 text-sm capitalize transition-all ${
-                        formData.tone === tone
-                          ? 'bg-purple-500/20 text-white ring-2 ring-purple-400'
-                          : 'text-gray-300 hover:text-white'
-                      }`}
-                    >
-                      {tone}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 5: Content Points */}
-          {currentStep === 4 && (
+          {/* Step 3: Content Points */}
+          {currentStep === 2 && (
             <div className="space-y-6 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -733,18 +690,18 @@ export default function NewScriptPage() {
                       ))}
                     </div>
                     <p className="text-xs text-gray-400 mt-3">
-                      Click any suggestion to add it to your key points
+                      Click to add suggestions to your key points
                     </p>
                   </div>
                 )}
 
                 {/* Info message when no details provided */}
-                {(!formData.title || !formData.type) && currentStep === 4 && (
+                {(!formData.title || !formData.type) && currentStep === 2 && (
                   <div className="mt-4 p-3 glass-card border border-blue-400/30">
                     <div className="flex gap-2">
                       <AlertCircle className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
                       <p className="text-sm text-gray-300">
-                        Complete the <span className="text-white font-medium">Basic Information</span> and <span className="text-white font-medium">Video Details</span> steps to get AI-powered key point suggestions.
+                        Complete the <span className="text-white font-medium">Basic Information</span> step to get AI-powered key point suggestions.
                       </p>
                     </div>
                   </div>
@@ -753,141 +710,182 @@ export default function NewScriptPage() {
             </div>
           )}
 
-          {/* Step 6: AI Settings */}
-          {currentStep === 5 && (
-            <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {/* Credit Cost Info Box */}
-              <div className="glass-card p-4 border border-purple-400/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-purple-400" />
-                    <span className="text-white font-medium">Credit Cost Calculator</span>
+          {/* Step 4: Quality Settings */}
+          {currentStep === 3 && (
+            <div className="space-y-6">
+              {/* Credit Cost Calculator */}
+              <div className="glass-card p-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-white font-semibold">Current Cost</h4>
+                    <p className="text-sm text-gray-400 mt-1">Based on selected quality and length</p>
                   </div>
-                  <Badge className="bg-purple-500/20 border-purple-400 text-purple-300">
-                    Total: {creditCost} credits
-                  </Badge>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between text-gray-300">
-                    <span>Base Model Cost:</span>
-                    <span className="text-white">{CREDIT_COSTS.SCRIPT_GENERATION[formData.model]} credits</span>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-purple-400">{creditCost}</p>
+                    <p className="text-sm text-gray-400">credits</p>
                   </div>
-                  <div className="flex justify-between text-gray-300">
-                    <span>Length Multiplier ({SCRIPT_LENGTHS[formData.length]?.minutes}min):</span>
-                    <span className="text-white">×{lengthMultiplier.toFixed(1)}</span>
-                  </div>
-                  <div className="pt-2 border-t border-purple-400/20 flex justify-between text-white font-medium">
-                    <span>Final Cost:</span>
-                    <span className="text-purple-300">{creditCost} credits</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <Label className="text-gray-300">Select AI Model</Label>
-                <div className="grid gap-3 mt-2">
-                  {Object.entries(AI_MODELS).map(([key, value]) => {
-                    const baseModelCost = CREDIT_COSTS.SCRIPT_GENERATION[value];
-                    const totalCostForModel = Math.ceil(baseModelCost * lengthMultiplier);
-                    const hasAccess = hasAccessToModel(value, userData.subscriptionTier);
-                    const isPremium = isPremiumModel(value);
-                    const minimumTier = getMinimumTierForModel(value);
-                    
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => hasAccess && updateFormData('model', value)}
-                        disabled={!hasAccess}
-                        className={`glass-button p-4 text-left transition-all relative ${
-                          formData.model === value
-                            ? 'bg-purple-500/20 ring-2 ring-purple-400'
-                            : hasAccess ? 'hover:bg-white/10' : 'opacity-50 cursor-not-allowed'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="text-white font-medium">{value}</p>
-                              {isPremium && (
-                                <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-400/50 text-yellow-300">
-                                  <Crown className="h-3 w-3 mr-1" />
-                                  Premium
-                                </Badge>
-                              )}
-                              {!hasAccess && (
-                                <Badge variant="outline" className="border-red-400/50 text-red-300">
-                                  <Lock className="h-3 w-3 mr-1" />
-                                  {getTierDisplayName(minimumTier)}+
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-400 mt-1">
-                              {key.includes('GPT5') ? 'Most advanced GPT model' :
-                               key.includes('CLAUDE_4_OPUS') ? 'Most capable Claude model' :
-                               key.includes('GPT4') && !key.includes('TURBO') ? 'Powerful reasoning' :
-                               key.includes('TURBO') ? 'Fast & efficient' :
-                               key.includes('SONNET') ? 'Balanced performance' :
-                               key.includes('HAIKU') ? 'Quick & affordable' :
-                               key.includes('MIXTRAL') ? 'Open-source alternative' :
-                               'Advanced capabilities'}
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <div className="text-right">
-                              <p className="text-xs text-gray-400">Total cost:</p>
-                              <Badge className="glass border-purple-400/50 text-purple-300">
-                                {totalCostForModel} credits
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
                 </div>
               </div>
 
-              {userData.voiceProfiles.length > 0 && (
+              {/* Quality Tier Selection */}
+              <div>
+                <Label className="text-gray-300 text-lg font-semibold mb-4 block">Choose Quality Tier</Label>
+                <p className="text-gray-400 text-sm mb-6">Select the quality level that best fits your content needs and budget.</p>
+                
+                <div className="grid gap-4">
+                  {Object.entries(MODEL_TIERS).map(([key, tier]) => {
+                    const userTier = userData.subscriptionTier || 'free';
+                    const hasAccess = hasAccessToTier(key, userTier);
+                    const cost = calculateScriptCost(key, formData.length);
+                    const scriptsRemaining = calculateScriptsRemaining(key, userData.credits, formData.length);
+                    
+                    return (
+                      <div
+                        key={key}
+                        onClick={() => {
+                          if (!hasAccess) {
+                            toast({
+                              title: "Upgrade Required",
+                              description: `${tier.name} requires a higher subscription tier. Please upgrade your plan to access this quality level.`,
+                              variant: "destructive"
+                            });
+                            return;
+                          }
+                          updateFormData('qualityTier', key);
+                        }}
+                        className={`glass-card p-6 cursor-pointer transition-all border ${
+                          formData.qualityTier === key
+                            ? 'border-purple-400 bg-purple-500/10 ring-2 ring-purple-400/30'
+                            : hasAccess
+                            ? 'border-gray-700 hover:border-gray-600 hover:bg-white/5'
+                            : 'border-gray-800 opacity-60 cursor-not-allowed'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl">{tier.icon}</div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className={`font-semibold text-lg ${hasAccess ? 'text-white' : 'text-gray-500'}`}>
+                                  {tier.name}
+                                </h3>
+                                {tier.recommended && hasAccess && (
+                                  <Badge variant="secondary" className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-300 border-yellow-400/30">
+                                    Recommended
+                                  </Badge>
+                                )}
+                                {!hasAccess && (
+                                  <Lock className="h-4 w-4 text-gray-500" />
+                                )}
+                              </div>
+                              <p className={`text-sm ${hasAccess ? 'text-gray-400' : 'text-gray-600'}`}>
+                                {tier.description}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`text-xl font-bold ${hasAccess ? 'text-white' : 'text-gray-500'}`}>
+                              {cost} credits
+                            </div>
+                            {hasAccess && (
+                              <p className="text-xs text-gray-400">
+                                {scriptsRemaining} scripts remaining
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className={hasAccess ? 'text-gray-400' : 'text-gray-600'}>Features:</span>
+                          </div>
+                          <ul className="space-y-1">
+                            {tier.features.map((feature, index) => (
+                              <li key={index} className={`flex items-center gap-2 text-sm ${hasAccess ? 'text-gray-300' : 'text-gray-600'}`}>
+                                <Check className="h-3 w-3 text-green-400 flex-shrink-0" />
+                                {feature}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        
+                        {formData.qualityTier === key && (
+                          <div className="mt-4 pt-4 border-t border-purple-400/30">
+                            <div className="flex items-center gap-2 text-sm text-purple-300">
+                              <CheckCircle2 className="h-4 w-4" />
+                              Selected
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Pro Tip */}
+                <div className="mt-6 p-4 glass-card border border-blue-400/30 bg-blue-500/5">
+                  <div className="flex gap-3">
+                    <Sparkles className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-blue-300 font-medium mb-1">Pro Tip</p>
+                      <p className="text-sm text-gray-300">
+                        Professional Quality offers the best balance of speed, cost, and output quality for most YouTube content creators.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {voiceProfiles && voiceProfiles.length > 0 && (
                 <div>
                   <Label className="text-gray-300">Voice Profile (Optional)</Label>
-                  <Select value={formData.voiceProfileId} onValueChange={(value) => updateFormData('voiceProfileId', value)}>
-                    <SelectTrigger className="glass-input text-white mt-2">
-                      <SelectValue placeholder="Select a voice profile..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border border-white/20 text-white">
-                      <SelectItem value="" className="text-gray-300 hover:text-white hover:bg-white/10 cursor-pointer">
-                        No voice profile
-                      </SelectItem>
-                      {userData.voiceProfiles.map((profile) => (
-                        <SelectItem key={profile.id} value={profile.id} className="text-gray-300 hover:text-white hover:bg-white/10 cursor-pointer">
-                          {profile.profile_name || profile.name}
-                        </SelectItem>
+                  <RadioGroup value={formData.voiceId || ''} onValueChange={(value) => updateFormData('voiceId', value)}>
+                    <div className="grid gap-3 mt-3">
+                      <div className="flex items-center space-x-3 glass p-4 rounded-lg hover:bg-white/5 cursor-pointer">
+                        <RadioGroupItem value="" id="no-voice" className="text-purple-400" />
+                        <Label htmlFor="no-voice" className="flex-1 cursor-pointer">
+                          <span className="text-white">No Voice Profile</span>
+                          <p className="text-xs text-gray-400 mt-1">Generate script without voice adaptation</p>
+                        </Label>
+                      </div>
+                      {voiceProfiles.map((profile) => (
+                        <div key={profile.id} className="flex items-center space-x-3 glass p-4 rounded-lg hover:bg-white/5 cursor-pointer">
+                          <RadioGroupItem value={profile.id} id={profile.id} className="text-purple-400" />
+                          <Label htmlFor={profile.id} className="flex-1 cursor-pointer">
+                            <div className="flex items-center justify-between">
+                              <span className="text-white font-medium">{profile.name}</span>
+                              {profile.is_trained && (
+                                <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full">Trained</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1">{profile.description}</p>
+                          </Label>
+                        </div>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  </RadioGroup>
                 </div>
               )}
             </div>
           )}
 
-          {/* Step 7: Review & Generate */}
-          {currentStep === 6 && (
-            <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              <div className="glass p-6 rounded-xl space-y-4">
-                <h3 className="text-lg font-semibold text-white mb-4">Script Summary</h3>
-                
-                <div className="grid gap-3">
+          {/* Step 5: Review & Generate */}
+          {currentStep === 4 && (
+            <div className="space-y-6">
+              <div className="glass-card p-6">
+                <h3 className="text-lg font-bold text-white mb-4">Review Your Script Details</h3>
+                <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Title:</span>
-                    <span className="text-white font-medium">{formData.title}</span>
+                    <span className="text-white">{formData.title}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Type:</span>
-                    <span className="text-white">{formData.type}</span>
+                    <span className="text-white capitalize">{formData.type}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Length:</span>
-                    <span className="text-white">{SCRIPT_LENGTHS[formData.length]?.label || formData.length}</span>
+                    <span className="text-gray-400">Duration:</span>
+                    <span className="text-white">{formData.length} minutes</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Tone:</span>
@@ -898,111 +896,72 @@ export default function NewScriptPage() {
                     <span className="text-white">{formData.targetAudience ? 'Defined' : 'Not set'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">AI Model:</span>
-                    <span className="text-white">{formData.model}</span>
+                    <span className="text-gray-400">Quality Tier:</span>
+                    <span className="text-white">{MODEL_TIERS[formData.qualityTier]?.name || formData.qualityTier}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Key Points:</span>
-                    <span className="text-white">{formData.keyPoints.filter(p => p.trim()).length}</span>
+                    <span className="text-white">{formData.keyPoints.filter(p => p.trim()).length} points</span>
                   </div>
                 </div>
               </div>
 
-              <div className="glass p-4 rounded-xl border border-yellow-500/20">
-                <div className="flex items-center gap-2 text-yellow-400 mb-3">
-                  <AlertCircle className="h-5 w-5" />
-                  <span className="font-medium">Final Credit Usage</span>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Model ({formData.model}):</span>
-                    <span className="text-gray-300">{CREDIT_COSTS.SCRIPT_GENERATION[formData.model]} base credits</span>
+              <div className="glass-card p-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-white font-semibold">Credit Cost</h4>
+                    <p className="text-sm text-gray-400 mt-1">You have {userData.credits} credits available</p>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Length ({SCRIPT_LENGTHS[formData.length]?.minutes}min):</span>
-                    <span className="text-gray-300">×{lengthMultiplier.toFixed(1)} multiplier</span>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-purple-400">{creditCost}</p>
+                    <p className="text-sm text-gray-400">credits</p>
                   </div>
-                  <div className="pt-2 mt-2 border-t border-yellow-500/20 flex justify-between">
-                    <span className="text-white font-medium">Total Cost:</span>
-                    <span className="text-yellow-300 font-bold">{creditCost} credits</span>
-                  </div>
-                  <p className="text-sm text-gray-300 mt-2">
-                    You'll have <span className="font-bold text-white">{userData.credits - creditCost} credits</span> remaining after generation.
-                  </p>
                 </div>
               </div>
             </div>
           )}
-
-          {/* Navigation */}
-          <div className="flex justify-between mt-8">
-            <Button
-              onClick={prevStep}
-              disabled={currentStep === 0}
-              className="glass-button text-white"
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Previous
-            </Button>
-
-            {currentStep < STEPS.length - 1 ? (
-              <Button
-                onClick={nextStep}
-                disabled={!isStepValid()}
-                className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
-              >
-                Next
-                <ChevronRight className="h-4 w-4 ml-2" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleGenerate}
-                disabled={!canGenerate || isGenerating}
-                className="glass-button bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  enableFactChecking ? (
-                    <>
-                      <ShieldCheck className="h-4 w-4 mr-2" />
-                      Generate Fact-Checked Script
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Generate Script
-                    </>
-                  )
-                )}
-              </Button>
-            )}
-          </div>
         </div>
-      </div>
 
-      {/* Tips */}
-      <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.4s' }}>
-        <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-yellow-400" />
-          Pro Tips
-        </h3>
-        <div className="grid md:grid-cols-2 gap-4 text-sm">
-          <div className="flex gap-3">
-            <CheckCircle2 className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <p className="text-gray-300">
-              <span className="text-white font-medium">Be specific:</span> The more detailed your key points, the better the script
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <CheckCircle2 className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <p className="text-gray-300">
-              <span className="text-white font-medium">Use voice profiles:</span> Train AI on your style for authentic scripts
-            </p>
-          </div>
+        {/* Navigation */}
+        <div className="flex justify-between mt-8">
+          <Button
+            onClick={handleBack}
+            variant="outline"
+            className="glass-button"
+            disabled={currentStep === 0}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          
+          {currentStep < STEPS.length - 1 ? (
+            <Button
+              onClick={handleNext}
+              disabled={!isStepValid()}
+              className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+            >
+              Next
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleGenerate}
+              disabled={isGenerating || userData.credits < creditCost}
+              className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Script
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </div>
     </div>
