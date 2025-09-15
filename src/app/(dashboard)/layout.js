@@ -385,24 +385,26 @@ export default function DashboardLayout({ children }) {
         "transition-all duration-300",
         sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"
       )}>
-        {/* Top Bar */}
-        <header className="glass border-b border-white/10 px-6 py-4 sticky top-0 z-30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h2 className="text-xl font-semibold text-white">
-                {sidebarItems.find(item => item.href === pathname)?.label || 'Dashboard'}
-              </h2>
-              <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+        {/* Top Bar - Hide for script creation workflow */}
+        {!pathname.includes('/scripts/create') && (
+          <header className="glass border-b border-white/10 px-6 py-4 sticky top-0 z-30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <h2 className="text-xl font-semibold text-white">
+                  {sidebarItems.find(item => item.href === pathname)?.label || 'Dashboard'}
+                </h2>
+                <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <Button className="glass-button text-white">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Quick Actions
+                </Button>
+              </div>
             </div>
-            
-            <div className="flex items-center gap-4">
-              <Button className="glass-button text-white">
-                <Zap className="h-4 w-4 mr-2" />
-                Quick Actions
-              </Button>
-            </div>
-          </div>
-        </header>
+          </header>
+        )}
 
         {/* Page Content */}
         <div className="p-6">

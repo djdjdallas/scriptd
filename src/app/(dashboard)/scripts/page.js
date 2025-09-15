@@ -292,7 +292,7 @@ export default function ScriptsPage() {
             </p>
           </div>
 
-          <Link href="/scripts/new">
+          <Link href="/scripts/create">
             <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white group">
               <Plus className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform" />
               New Script
@@ -442,7 +442,7 @@ export default function ScriptsPage() {
                 : "Start creating viral content with AI-powered script generation"}
             </p>
             {!(search || typeFilter !== "all") && (
-              <Link href="/scripts/new">
+              <Link href="/scripts/create">
                 <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Script
