@@ -15,7 +15,7 @@ import {
   Loader2,
   AlertCircle,
 } from 'lucide-react';
-import { getUserTeams } from '@/lib/teams/team-service';
+import { getUserTeams } from '@/lib/teams/team-service-client';
 import { getRoleBadgeColor, getRoleIcon, ROLE_NAMES } from '@/lib/teams/permissions';
 import { createClient } from '@/lib/supabase/client';
 
@@ -52,7 +52,7 @@ export default function TeamsPage() {
       setIsLoading(true);
       setError('');
 
-      const { data, error: teamsError } = await getUserTeams(userId, false);
+      const { data, error: teamsError } = await getUserTeams(userId);
       
       if (teamsError) {
         throw new Error(teamsError);

@@ -46,7 +46,7 @@ import {
   canManageUser,
   validateRoleAssignment,
 } from '@/lib/teams/permissions';
-import { updateMemberRole, removeMember } from '@/lib/teams/team-service';
+import { updateMemberRole, removeMember } from '@/lib/teams/team-service-client';
 
 export default function TeamMemberList({ 
   members = [], 

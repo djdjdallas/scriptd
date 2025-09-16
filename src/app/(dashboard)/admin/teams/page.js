@@ -8,7 +8,7 @@ import TeamManagement from '@/components/admin/team-management';
 import AdminNav from '@/components/admin/admin-nav';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TeamIcon, Shield, AlertTriangle } from 'lucide-react';
+import { Users, Shield, AlertTriangle } from 'lucide-react';
 
 export default function AdminTeamsPage() {
   const [user, setUser] = useState(null);
@@ -89,7 +89,7 @@ export default function AdminTeamsPage() {
         <header className="bg-slate-900/95 backdrop-blur border-b border-slate-800 px-6 py-4 sticky top-0 z-40">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <TeamIcon className="h-6 w-6 text-green-500" />
+              <Users className="h-6 w-6 text-green-500" />
               <div>
                 <h1 className="text-xl font-semibold text-white">Team Management</h1>
                 <p className="text-sm text-slate-400">Manage teams and their members</p>

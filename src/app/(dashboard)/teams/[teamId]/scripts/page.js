@@ -23,7 +23,7 @@ import {
   Eye,
   Edit,
 } from 'lucide-react';
-import { getTeamById } from '@/lib/teams/team-service';
+import { getTeamById } from '@/lib/teams/team-service-client';
 import { getUserPermissions, ROLE_NAMES, getRoleBadgeColor, getRoleIcon } from '@/lib/teams/permissions';
 import { createClient } from '@/lib/supabase/client';
 

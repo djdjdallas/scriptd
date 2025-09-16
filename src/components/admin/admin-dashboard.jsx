@@ -10,7 +10,6 @@ import { AnalyticsCalculator } from '@/lib/admin/analytics';
 import {
   Users,
   FileText,
-  TeamIcon,
   DollarSign,
   TrendingUp,
   TrendingDown,
@@ -184,7 +183,7 @@ export default function AdminDashboard() {
               <StatItem
                 label="Active Teams"
                 value={teams?.active || 0}
-                icon={TeamIcon}
+                icon={Users}
                 description={`of ${teams?.total || 0} total teams`}
               />
               <StatItem
@@ -339,7 +338,7 @@ function ActivityItem({ activity }) {
       case 'script_created':
         return FileText;
       case 'team_created':
-        return TeamIcon;
+        return Users;
       default:
         return Activity;
     }

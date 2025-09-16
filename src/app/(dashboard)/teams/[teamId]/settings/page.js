@@ -27,7 +27,7 @@ import {
   AlertCircle,
   CheckCircle,
 } from 'lucide-react';
-import { getTeamById, updateTeam, deleteTeam } from '@/lib/teams/team-service';
+import { getTeamById, updateTeam, deleteTeam } from '@/lib/teams/team-service-client';
 import { getUserPermissions } from '@/lib/teams/permissions';
 import { createClient } from '@/lib/supabase/client';
 

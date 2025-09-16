@@ -14,7 +14,7 @@ import {
   Loader2,
   AlertCircle,
 } from 'lucide-react';
-import { getTeamById, getTeamMembers } from '@/lib/teams/team-service';
+import { getTeamById, getTeamMembers } from '@/lib/teams/team-service-client';
 import { getUserPermissions, ROLE_NAMES, getRoleBadgeColor, getRoleIcon } from '@/lib/teams/permissions';
 import TeamMemberList from '@/components/teams/team-member-list';
 import TeamInvitationForm from '@/components/teams/team-invitation-form';

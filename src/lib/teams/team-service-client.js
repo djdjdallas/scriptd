@@ -1,14 +1,8 @@
 import { createBrowserClient } from '@supabase/ssr';
 
 /**
- * Team Service - Handles all team-related operations
+ * Team Service Client - Client-side team operations
  */
-
-// Get Supabase client (server-side)
-async function getServerClient() {
-  const { createClient } = await import('../supabase/server');
-  return await createClient();
-}
 
 // Get Supabase client (client-side)
 function getBrowserClient() {
@@ -19,70 +13,11 @@ function getBrowserClient() {
 }
 
 /**
- * Create a new team
+ * Get user's teams (client-side only)
  */
-export async function createTeam({ name, description, ownerId, isServerSide = false }) {
+export async function getUserTeams(userId) {
   try {
-    const supabase = isServerSide ? await getServerClient() : getBrowserClient();
-    
-    // Create team
-    const { data: team, error: teamError } = await supabase
-      .from('teams')
-      .insert([
-        {
-          name,
-          description,
-          owner_id: ownerId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      ])
-      .select()
-      .single();
-
-    if (teamError) {
-      throw new Error(`Failed to create team: ${teamError.message}`);
-    }
-
-    // Add owner as team member
-    const { error: memberError } = await supabase
-      .from('team_members')
-      .insert([
-        {
-          team_id: team.id,
-          user_id: ownerId,
-          role: 'owner',
-          joined_at: new Date().toISOString(),
-        },
-      ]);
-
-    if (memberError) {
-      // If adding member fails, delete the team to maintain consistency
-      await supabase.from('teams').delete().eq('id', team.id);
-      throw new Error(`Failed to add owner to team: ${memberError.message}`);
-    }
-
-    // Log activity
-    await logTeamActivity({
-      teamId: team.id,
-      userId: ownerId,
-      action: 'team_created',
-      details: { team_name: name },
-      isServerSide,
-    });
-
-    return { data: team, error: null };
-  } catch (error) {
-    return { data: null, error: error.message };
-  }
-}
-
-/**
- * Get user's teams
- */
-export async function getUserTeams(userId, isServerSide = false) {
-  try {
-    const supabase = isServerSide ? await getServerClient() : getBrowserClient();
+    const supabase = getBrowserClient();
     
     const { data, error } = await supabase
       .from('team_members')
@@ -128,11 +63,69 @@ export async function getUserTeams(userId, isServerSide = false) {
 }
 
 /**
- * Get team details by ID
+ * Create a new team (client-side only)
  */
-export async function getTeamById(teamId, userId, isServerSide = false) {
+export async function createTeam({ name, description, ownerId }) {
   try {
-    const supabase = isServerSide ? await getServerClient() : getBrowserClient();
+    const supabase = getBrowserClient();
+    
+    // Create team
+    const { data: team, error: teamError } = await supabase
+      .from('teams')
+      .insert([
+        {
+          name,
+          description,
+          owner_id: ownerId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single();
+
+    if (teamError) {
+      throw new Error(`Failed to create team: ${teamError.message}`);
+    }
+
+    // Add owner as team member
+    const { error: memberError } = await supabase
+      .from('team_members')
+      .insert([
+        {
+          team_id: team.id,
+          user_id: ownerId,
+          role: 'owner',
+          joined_at: new Date().toISOString(),
+        },
+      ]);
+
+    if (memberError) {
+      // If adding member fails, delete the team to maintain consistency
+      await supabase.from('teams').delete().eq('id', team.id);
+      throw new Error(`Failed to add owner to team: ${memberError.message}`);
+    }
+
+    // Log activity
+    await logTeamActivity({
+      teamId: team.id,
+      userId: ownerId,
+      action: 'team_created',
+      details: { team_name: name },
+    });
+
+    return { data: team, error: null };
+  } catch (error) {
+    return { data: null, error: error.message };
+  }
+}
+
+/**
+ * Get team details by ID (client-side only)
+ */
+export async function getTeamById(teamId, userId) {
+  try {
+    const supabase = getBrowserClient();
     
     // Check if user is a member of the team
     const { data: membership, error: membershipError } = await supabase
@@ -164,11 +157,11 @@ export async function getTeamById(teamId, userId, isServerSide = false) {
 }
 
 /**
- * Get team members
+ * Get team members (client-side only)
  */
-export async function getTeamMembers(teamId, userId, isServerSide = false) {
+export async function getTeamMembers(teamId, userId) {
   try {
-    const supabase = isServerSide ? await getServerClient() : getBrowserClient();
+    const supabase = getBrowserClient();
     
     // Check if user has access to view members
     const { data: membership, error: membershipError } = await supabase
@@ -210,11 +203,94 @@ export async function getTeamMembers(teamId, userId, isServerSide = false) {
 }
 
 /**
- * Invite user to team
+ * Update team settings (client-side only)
  */
-export async function inviteUserToTeam({ teamId, email, role, invitedBy, isServerSide = false }) {
+export async function updateTeam({ teamId, updates, updatedBy }) {
   try {
-    const supabase = isServerSide ? await getServerClient() : getBrowserClient();
+    const supabase = getBrowserClient();
+    
+    // Check if user has permission to update team
+    const { data: membership, error: membershipError } = await supabase
+      .from('team_members')
+      .select('role')
+      .eq('team_id', teamId)
+      .eq('user_id', updatedBy)
+      .single();
+
+    if (membershipError || !['owner', 'admin'].includes(membership.role)) {
+      throw new Error('You do not have permission to update team settings');
+    }
+
+    // Update team
+    const { data: team, error: updateError } = await supabase
+      .from('teams')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', teamId)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw new Error(`Failed to update team: ${updateError.message}`);
+    }
+
+    // Log activity
+    await logTeamActivity({
+      teamId,
+      userId: updatedBy,
+      action: 'team_updated',
+      details: updates,
+    });
+
+    return { data: team, error: null };
+  } catch (error) {
+    return { data: null, error: error.message };
+  }
+}
+
+/**
+ * Delete team (client-side only)
+ */
+export async function deleteTeam({ teamId, deletedBy }) {
+  try {
+    const supabase = getBrowserClient();
+    
+    // Check if user is the owner
+    const { data: membership, error: membershipError } = await supabase
+      .from('team_members')
+      .select('role')
+      .eq('team_id', teamId)
+      .eq('user_id', deletedBy)
+      .single();
+
+    if (membershipError || membership.role !== 'owner') {
+      throw new Error('Only team owners can delete teams');
+    }
+
+    // Delete team (cascade will handle related records)
+    const { error: deleteError } = await supabase
+      .from('teams')
+      .delete()
+      .eq('id', teamId);
+
+    if (deleteError) {
+      throw new Error(`Failed to delete team: ${deleteError.message}`);
+    }
+
+    return { data: { success: true }, error: null };
+  } catch (error) {
+    return { data: null, error: error.message };
+  }
+}
+
+/**
+ * Invite user to team (client-side only)
+ */
+export async function inviteUserToTeam({ teamId, email, role, invitedBy }) {
+  try {
+    const supabase = getBrowserClient();
     
     // Check if inviter has permission to invite
     const { data: inviterMembership, error: inviterError } = await supabase
@@ -270,7 +346,6 @@ export async function inviteUserToTeam({ teamId, email, role, invitedBy, isServe
       userId: invitedBy,
       action: 'member_invited',
       details: { email, role },
-      isServerSide,
     });
 
     return { data: invitation, error: null };
@@ -280,11 +355,147 @@ export async function inviteUserToTeam({ teamId, email, role, invitedBy, isServe
 }
 
 /**
- * Accept team invitation
+ * Update team member role (client-side only)
  */
-export async function acceptInvitation({ token, userId, isServerSide = false }) {
+export async function updateMemberRole({ teamId, memberId, newRole, updatedBy }) {
   try {
-    const supabase = isServerSide ? await getServerClient() : getBrowserClient();
+    const supabase = getBrowserClient();
+    
+    // Check if updater has permission
+    const { data: updaterMembership, error: updaterError } = await supabase
+      .from('team_members')
+      .select('role')
+      .eq('team_id', teamId)
+      .eq('user_id', updatedBy)
+      .single();
+
+    if (updaterError || !['owner', 'admin'].includes(updaterMembership.role)) {
+      throw new Error('You do not have permission to update member roles');
+    }
+
+    // Get member details
+    const { data: member, error: memberError } = await supabase
+      .from('team_members')
+      .select(`
+        *,
+        profiles:user_id (email)
+      `)
+      .eq('id', memberId)
+      .eq('team_id', teamId)
+      .single();
+
+    if (memberError) {
+      throw new Error('Member not found');
+    }
+
+    // Prevent changing owner role (only owner can transfer ownership)
+    if (member.role === 'owner' && updaterMembership.role !== 'owner') {
+      throw new Error('Only the owner can transfer ownership');
+    }
+
+    // Update member role
+    const { error: updateError } = await supabase
+      .from('team_members')
+      .update({ 
+        role: newRole,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', memberId);
+
+    if (updateError) {
+      throw new Error(`Failed to update member role: ${updateError.message}`);
+    }
+
+    // Log activity
+    await logTeamActivity({
+      teamId,
+      userId: updatedBy,
+      action: 'member_role_updated',
+      details: { 
+        email: member.profiles.email,
+        old_role: member.role,
+        new_role: newRole,
+      },
+    });
+
+    return { data: { success: true }, error: null };
+  } catch (error) {
+    return { data: null, error: error.message };
+  }
+}
+
+/**
+ * Remove team member (client-side only)
+ */
+export async function removeMember({ teamId, memberId, removedBy }) {
+  try {
+    const supabase = getBrowserClient();
+    
+    // Check if remover has permission
+    const { data: removerMembership, error: removerError } = await supabase
+      .from('team_members')
+      .select('role')
+      .eq('team_id', teamId)
+      .eq('user_id', removedBy)
+      .single();
+
+    if (removerError || !['owner', 'admin'].includes(removerMembership.role)) {
+      throw new Error('You do not have permission to remove members');
+    }
+
+    // Get member details
+    const { data: member, error: memberError } = await supabase
+      .from('team_members')
+      .select(`
+        *,
+        profiles:user_id (email)
+      `)
+      .eq('id', memberId)
+      .eq('team_id', teamId)
+      .single();
+
+    if (memberError) {
+      throw new Error('Member not found');
+    }
+
+    // Prevent removing owner (must transfer ownership first)
+    if (member.role === 'owner') {
+      throw new Error('Cannot remove team owner. Transfer ownership first.');
+    }
+
+    // Remove member
+    const { error: removeError } = await supabase
+      .from('team_members')
+      .delete()
+      .eq('id', memberId);
+
+    if (removeError) {
+      throw new Error(`Failed to remove member: ${removeError.message}`);
+    }
+
+    // Log activity
+    await logTeamActivity({
+      teamId,
+      userId: removedBy,
+      action: 'member_removed',
+      details: { 
+        email: member.profiles.email,
+        role: member.role,
+      },
+    });
+
+    return { data: { success: true }, error: null };
+  } catch (error) {
+    return { data: null, error: error.message };
+  }
+}
+
+/**
+ * Accept team invitation (client-side only)
+ */
+export async function acceptInvitation({ token, userId }) {
+  try {
+    const supabase = getBrowserClient();
     
     // Get invitation details
     const { data: invitation, error: invitationError } = await supabase
@@ -365,7 +576,6 @@ export async function acceptInvitation({ token, userId, isServerSide = false }) 
       userId,
       action: 'member_joined',
       details: { email: invitation.email, role: invitation.role },
-      isServerSide,
     });
 
     return { data: invitation.teams, error: null };
@@ -375,233 +585,11 @@ export async function acceptInvitation({ token, userId, isServerSide = false }) 
 }
 
 /**
- * Update team member role
+ * Log team activity (helper function - client-side only)
  */
-export async function updateMemberRole({ teamId, memberId, newRole, updatedBy, isServerSide = false }) {
+async function logTeamActivity({ teamId, userId, action, details }) {
   try {
-    const supabase = isServerSide ? await getServerClient() : getBrowserClient();
-    
-    // Check if updater has permission
-    const { data: updaterMembership, error: updaterError } = await supabase
-      .from('team_members')
-      .select('role')
-      .eq('team_id', teamId)
-      .eq('user_id', updatedBy)
-      .single();
-
-    if (updaterError || !['owner', 'admin'].includes(updaterMembership.role)) {
-      throw new Error('You do not have permission to update member roles');
-    }
-
-    // Get member details
-    const { data: member, error: memberError } = await supabase
-      .from('team_members')
-      .select(`
-        *,
-        profiles:user_id (email)
-      `)
-      .eq('id', memberId)
-      .eq('team_id', teamId)
-      .single();
-
-    if (memberError) {
-      throw new Error('Member not found');
-    }
-
-    // Prevent changing owner role (only owner can transfer ownership)
-    if (member.role === 'owner' && updaterMembership.role !== 'owner') {
-      throw new Error('Only the owner can transfer ownership');
-    }
-
-    // Update member role
-    const { error: updateError } = await supabase
-      .from('team_members')
-      .update({ 
-        role: newRole,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', memberId);
-
-    if (updateError) {
-      throw new Error(`Failed to update member role: ${updateError.message}`);
-    }
-
-    // Log activity
-    await logTeamActivity({
-      teamId,
-      userId: updatedBy,
-      action: 'member_role_updated',
-      details: { 
-        email: member.profiles.email,
-        old_role: member.role,
-        new_role: newRole,
-      },
-      isServerSide,
-    });
-
-    return { data: { success: true }, error: null };
-  } catch (error) {
-    return { data: null, error: error.message };
-  }
-}
-
-/**
- * Remove team member
- */
-export async function removeMember({ teamId, memberId, removedBy, isServerSide = false }) {
-  try {
-    const supabase = isServerSide ? await getServerClient() : getBrowserClient();
-    
-    // Check if remover has permission
-    const { data: removerMembership, error: removerError } = await supabase
-      .from('team_members')
-      .select('role')
-      .eq('team_id', teamId)
-      .eq('user_id', removedBy)
-      .single();
-
-    if (removerError || !['owner', 'admin'].includes(removerMembership.role)) {
-      throw new Error('You do not have permission to remove members');
-    }
-
-    // Get member details
-    const { data: member, error: memberError } = await supabase
-      .from('team_members')
-      .select(`
-        *,
-        profiles:user_id (email)
-      `)
-      .eq('id', memberId)
-      .eq('team_id', teamId)
-      .single();
-
-    if (memberError) {
-      throw new Error('Member not found');
-    }
-
-    // Prevent removing owner (must transfer ownership first)
-    if (member.role === 'owner') {
-      throw new Error('Cannot remove team owner. Transfer ownership first.');
-    }
-
-    // Remove member
-    const { error: removeError } = await supabase
-      .from('team_members')
-      .delete()
-      .eq('id', memberId);
-
-    if (removeError) {
-      throw new Error(`Failed to remove member: ${removeError.message}`);
-    }
-
-    // Log activity
-    await logTeamActivity({
-      teamId,
-      userId: removedBy,
-      action: 'member_removed',
-      details: { 
-        email: member.profiles.email,
-        role: member.role,
-      },
-      isServerSide,
-    });
-
-    return { data: { success: true }, error: null };
-  } catch (error) {
-    return { data: null, error: error.message };
-  }
-}
-
-/**
- * Update team settings
- */
-export async function updateTeam({ teamId, updates, updatedBy, isServerSide = false }) {
-  try {
-    const supabase = isServerSide ? await getServerClient() : getBrowserClient();
-    
-    // Check if user has permission to update team
-    const { data: membership, error: membershipError } = await supabase
-      .from('team_members')
-      .select('role')
-      .eq('team_id', teamId)
-      .eq('user_id', updatedBy)
-      .single();
-
-    if (membershipError || !['owner', 'admin'].includes(membership.role)) {
-      throw new Error('You do not have permission to update team settings');
-    }
-
-    // Update team
-    const { data: team, error: updateError } = await supabase
-      .from('teams')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', teamId)
-      .select()
-      .single();
-
-    if (updateError) {
-      throw new Error(`Failed to update team: ${updateError.message}`);
-    }
-
-    // Log activity
-    await logTeamActivity({
-      teamId,
-      userId: updatedBy,
-      action: 'team_updated',
-      details: updates,
-      isServerSide,
-    });
-
-    return { data: team, error: null };
-  } catch (error) {
-    return { data: null, error: error.message };
-  }
-}
-
-/**
- * Delete team
- */
-export async function deleteTeam({ teamId, deletedBy, isServerSide = false }) {
-  try {
-    const supabase = isServerSide ? await getServerClient() : getBrowserClient();
-    
-    // Check if user is the owner
-    const { data: membership, error: membershipError } = await supabase
-      .from('team_members')
-      .select('role')
-      .eq('team_id', teamId)
-      .eq('user_id', deletedBy)
-      .single();
-
-    if (membershipError || membership.role !== 'owner') {
-      throw new Error('Only team owners can delete teams');
-    }
-
-    // Delete team (cascade will handle related records)
-    const { error: deleteError } = await supabase
-      .from('teams')
-      .delete()
-      .eq('id', teamId);
-
-    if (deleteError) {
-      throw new Error(`Failed to delete team: ${deleteError.message}`);
-    }
-
-    return { data: { success: true }, error: null };
-  } catch (error) {
-    return { data: null, error: error.message };
-  }
-}
-
-/**
- * Log team activity (helper function)
- */
-async function logTeamActivity({ teamId, userId, action, details, isServerSide = false }) {
-  try {
-    const supabase = isServerSide ? await getServerClient() : getBrowserClient();
+    const supabase = getBrowserClient();
     
     await supabase
       .from('team_activity')

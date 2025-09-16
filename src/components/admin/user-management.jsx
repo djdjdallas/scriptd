@@ -21,7 +21,7 @@ import {
   Calendar,
   Mail,
   CreditCard,
-  TeamIcon,
+  Users,
   FileText,
   Settings,
   CheckCircle,
@@ -481,7 +481,7 @@ function UserDetailsContent({ user, onUpdateRole, onSuspend }) {
               <div className="text-sm text-slate-400">Scripts Created</div>
             </div>
             <div className="p-4 bg-slate-900/50 rounded-lg">
-              <TeamIcon className="h-8 w-8 text-green-400 mx-auto mb-2" />
+              <Users className="h-8 w-8 text-green-400 mx-auto mb-2" />
               <div className="text-2xl font-bold text-white">{teamCount}</div>
               <div className="text-sm text-slate-400">Teams Joined</div>
             </div>
@@ -508,7 +508,7 @@ function UserDetailsContent({ user, onUpdateRole, onSuspend }) {
                   className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <TeamIcon className="h-5 w-5 text-green-400" />
+                    <Users className="h-5 w-5 text-green-400" />
                     <div>
                       <p className="text-white font-medium">{membership.teams?.name}</p>
                       <p className="text-sm text-slate-400">

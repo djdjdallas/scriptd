@@ -29,7 +29,6 @@ import {
   TrendingUp,
   Users,
   FileText,
-  TeamIcon,
   Calendar,
   Download,
   RefreshCw,
@@ -195,7 +194,7 @@ export default function AnalyticsDashboard() {
         <GrowthCard
           title="Team Growth"
           value={teamGrowthRate}
-          icon={TeamIcon}
+          icon={Users}
           color="green"
         />
       </div>
@@ -326,7 +325,7 @@ export default function AnalyticsDashboard() {
         <Card className="bg-slate-900/50 border-slate-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <TeamIcon className="h-5 w-5" />
+              <Users className="h-5 w-5" />
               Team Activity Trend
             </CardTitle>
             <CardDescription>Team creation and collaboration trends</CardDescription>

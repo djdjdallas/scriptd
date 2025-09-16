@@ -12,7 +12,7 @@ import {
   Clock,
   AlertCircle,
 } from 'lucide-react';
-import { getTeamActivity } from '@/lib/teams/activity-logger';
+import { getTeamActivities } from '@/lib/teams/activity-logger-client';
 
 export default function ActivityFeed({ teamId, currentUser, className = "" }) {
   const [activities, setActivities] = useState([]);
@@ -28,13 +28,10 @@ export default function ActivityFeed({ teamId, currentUser, className = "" }) {
       if (!append) setIsLoading(true);
       setError('');
 
-      const { data, error: fetchError } = await getTeamActivity({
+      const { data, error: fetchError } = await getTeamActivities(
         teamId,
-        userId: currentUser.id,
-        limit: ITEMS_PER_PAGE,
-        offset: pageNumber * ITEMS_PER_PAGE,
-        isServerSide: false,
-      });
+        ITEMS_PER_PAGE
+      );
 
       if (fetchError) {
         throw new Error(fetchError);

@@ -14,7 +14,7 @@ import {
   Loader2,
   ArrowRight,
 } from 'lucide-react';
-import { acceptInvitation } from '@/lib/teams/team-service';
+import { acceptInvitation } from '@/lib/teams/team-service-client';
 import { getRoleBadgeColor, getRoleIcon, ROLE_NAMES, ROLE_DESCRIPTIONS } from '@/lib/teams/permissions';
 import { createClient } from '@/lib/supabase/client';
 

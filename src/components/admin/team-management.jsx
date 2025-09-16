@@ -10,9 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { adminService } from '@/lib/admin/admin-service';
 import {
-  TeamIcon,
-  Search,
   Users,
+  Search,
   FileText,
   Calendar,
   Trash2,
@@ -206,7 +205,7 @@ export default function TeamManagement() {
         ) : (
           <Card className="bg-slate-900/50 border-slate-800">
             <CardContent className="p-12 text-center">
-              <TeamIcon className="h-16 w-16 text-slate-600 mx-auto mb-4" />
+              <Users className="h-16 w-16 text-slate-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-white mb-2">No teams found</h3>
               <p className="text-slate-400">
                 {searchTerm ? 'No teams match your search criteria.' : 'No teams have been created yet.'}
@@ -272,7 +271,7 @@ function TeamCard({ team, onViewDetails, onDelete, expanded, onToggleExpansion }
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
-              <TeamIcon className="h-6 w-6 text-blue-400" />
+              <Users className="h-6 w-6 text-blue-400" />
               <h3 className="text-lg font-semibold text-white">{team.name}</h3>
               {team.description && (
                 <Badge variant="outline" className="text-xs">

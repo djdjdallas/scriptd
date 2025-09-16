@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Users, ArrowLeft } from 'lucide-react';
-import { createTeam } from '@/lib/teams/team-service';
+import { createTeam } from '@/lib/teams/team-service-client';
 
 export default function TeamCreationForm({ userId, onCancel }) {
   const router = useRouter();

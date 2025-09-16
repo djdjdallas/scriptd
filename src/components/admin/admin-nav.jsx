@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   BarChart3,
   Users,
-  TeamIcon,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -42,7 +41,7 @@ const adminNavItems = [
   {
     href: '/admin/teams',
     label: 'Teams',
-    icon: TeamIcon,
+    icon: Users,
     description: 'Team management'
   }
 ];

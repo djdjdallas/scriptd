@@ -34,7 +34,7 @@ import {
   getRoleIcon,
   getAssignableRoles,
 } from '@/lib/teams/permissions';
-import { inviteUserToTeam } from '@/lib/teams/team-service';
+import { inviteUserToTeam } from '@/lib/teams/team-service-client';
 
 export default function TeamInvitationForm({ 
   teamId, 
