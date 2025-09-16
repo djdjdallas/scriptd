@@ -1,83 +1,151 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
 import { 
-  ArrowRight, Star, Zap, TrendingUp, Brain, Target, 
-  Youtube, MessageSquare, Sparkles, BarChart3, Timer,
-  CheckCircle2, XCircle, AlertCircle, Cpu, PlayCircle
+  Check, X, ArrowRight, Star, TrendingUp, Clock, Users, 
+  Shield, Zap, ChevronRight, Brain, Timer, MessageSquare
 } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import ComparisonTable from '@/components/comparison/ComparisonTable';
-import MigrationOffer from '@/components/comparison/MigrationOffer';
-import TestimonialCarousel from '@/components/comparison/TestimonialCarousel';
-import RetentionChart from '@/components/comparison/RetentionChart';
+import {
+  MarketingHero,
+  MarketingSection,
+  MarketingCard,
+  FeatureGrid,
+  ComparisonSection,
+  TestimonialSection,
+  CTASection,
+  FAQSection,
+  StatsBar
+} from '@/components/marketing/MarketingLayout';
+import { MarketingButton } from '@/components/marketing/MarketingButton';
 import { competitorData, socialProofData, migrationOffers } from '@/lib/comparison-data';
 
 export default function ChatGPTAlternativePage() {
-  const [openFAQ, setOpenFAQ] = useState(null);
-  const [showComparison, setShowComparison] = useState(false);
+  const [showMigrationWizard, setShowMigrationWizard] = useState(false);
+  const [showPromptComparison, setShowPromptComparison] = useState(false);
 
-  useEffect(() => {
-    fetch('/api/analytics/page-view', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        page: 'chatgpt-alternative',
-        referrer: document.referrer 
-      })
-    });
-  }, []);
-
-  const chatgpt = competitorData.chatgpt;
-  const subscribr = competitorData.ourPlatform;
+  const competitor = competitorData.chatgpt;
+  const ourPlatform = competitorData.ourPlatform;
   const migration = migrationOffers.chatgpt;
 
   const comparisonFeatures = [
-    { label: 'YouTube Specialization', competitorValue: false, ourValue: 'Purpose-Built' },
-    { label: 'Retention Optimization', competitorValue: false, ourValue: '68%+ AVD' },
-    { label: 'Script Structure', competitorValue: 'Manual prompting', ourValue: 'Auto-Structured' },
-    { label: 'Consistency', competitorValue: 'Variable output', ourValue: 'Consistent Quality' },
-    { label: 'Voice Matching', competitorValue: false, ourValue: 'Personal AI Voice' },
-    { label: 'Fact Checking', competitorValue: 'Limited', ourValue: 'Full Verification' },
-    { label: 'Hook Library', competitorValue: 0, ourValue: '1000+ Hooks' },
-    { label: 'PVSS Framework', competitorValue: false, ourValue: 'Built-in' },
-    { label: 'Output Format', competitorValue: 'Generic text', ourValue: 'Video-Ready Scripts' },
-    { label: 'Analytics', competitorValue: false, ourValue: 'Performance Tracking' },
-    { label: 'Pricing', competitorValue: '$0-$30/mo', ourValue: '$19-$79/mo' },
-    { label: 'Support', competitorValue: 'Community only', ourValue: '24/7 Expert Support' }
+    { 
+      feature: 'YouTube Specialization', 
+      competitor: '✗ General purpose AI', 
+      subscribr: 'Built exclusively for YouTube'
+    },
+    { 
+      feature: 'Retention Optimization', 
+      competitor: '✗ No retention focus', 
+      subscribr: '68%+ AVD targeting'
+    },
+    { 
+      feature: 'Script Structure', 
+      competitor: 'Requires manual prompting', 
+      subscribr: 'Auto-structured for video'
+    },
+    { 
+      feature: 'Consistency', 
+      competitor: 'Variable output quality', 
+      subscribr: 'Consistent high quality'
+    },
+    { 
+      feature: 'Voice Matching', 
+      competitor: '✗ Generic responses', 
+      subscribr: 'Personal AI voice cloning'
+    },
+    { 
+      feature: 'Fact Checking', 
+      competitor: 'Limited verification', 
+      subscribr: 'Full automated verification'
+    },
+    { 
+      feature: 'Hook Library', 
+      competitor: '✗ No hook system', 
+      subscribr: '1000+ viral hooks'
+    },
+    { 
+      feature: 'PVSS Framework', 
+      competitor: '✗ Not available', 
+      subscribr: 'Built-in viral structure'
+    },
+    { 
+      feature: 'Time to Results', 
+      competitor: '30+ minutes of prompting', 
+      subscribr: '30 seconds to perfect script'
+    },
+    { 
+      feature: 'Support', 
+      competitor: 'Community forums only', 
+      subscribr: '24/7 expert support'
+    }
+  ];
+
+  const keyDifferentiators = [
+    {
+      icon: Timer,
+      title: '30 Seconds vs 30 Minutes',
+      description: 'Stop spending hours prompting ChatGPT. Get perfect YouTube scripts optimized for retention in under a minute.',
+      gradient: 'from-green-500/20 to-emerald-500/20'
+    },
+    {
+      icon: Brain,
+      title: 'YouTube-Trained AI',
+      description: 'ChatGPT is trained on the web. We\'re trained exclusively on viral YouTube videos for maximum engagement.',
+      gradient: 'from-blue-500/20 to-cyan-500/20'
+    },
+    {
+      icon: Shield,
+      title: 'Consistent Quality',
+      description: 'No more hit-or-miss results. Every script follows proven retention patterns that keep viewers watching.',
+      gradient: 'from-purple-500/20 to-pink-500/20'
+    }
   ];
 
   const testimonials = [
     {
       name: 'Lisa Martinez',
       channel: '@FitnessFirst',
-      subscribers: '18K',
-      quote: 'ChatGPT required too much prompting and the output was inconsistent. Subscribr just gets it right every time - perfect YouTube scripts in one click.',
-      rating: 5,
-      verified: true,
-      metrics: { retention: 70, growth: 3.2, timeframe: '5 weeks' }
+      subscribers: '180K',
+      quote: 'ChatGPT required hours of prompting. Now I get perfect YouTube scripts in one click that keep viewers watching.',
+      beforeAfter: {
+        before: '30% retention',
+        after: '70% retention'
+      }
     },
     {
       name: 'Tom Wilson',
       channel: '@CodingTutorials',
-      subscribers: '7K',
-      quote: 'I spent hours crafting ChatGPT prompts. Now I just tell Subscribr my topic and get a retention-optimized script instantly.',
-      rating: 5,
-      verified: true
+      subscribers: '75K',
+      quote: 'I spent 2-3 hours per script with ChatGPT. Now it takes 30 seconds and the retention is incredible.',
+      beforeAfter: {
+        before: '35% retention',
+        after: '68% retention'
+      }
     },
     {
       name: 'Rachel Green',
       channel: '@DIYCrafts',
-      subscribers: '22K',
-      quote: 'ChatGPT is great for many things, but for YouTube scripts? Subscribr is in a different league. My retention went from 30% to 65%!',
-      rating: 5,
-      verified: true,
-      metrics: { retention: 65, growth: 2.8, timeframe: '1 month' }
+      subscribers: '220K',
+      quote: 'ChatGPT is great for many things, but for YouTube? This is in a completely different league.',
+      beforeAfter: {
+        before: '42% retention',
+        after: '74% retention'
+      }
     }
+  ];
+
+  const migrationSteps = [
+    'Stop wasting time on complex ChatGPT prompts',
+    'Sign up with code NOPROMPTS for instant access',
+    'Upload a sample of your content for voice matching',
+    'Generate perfect scripts in 30 seconds instead of 30 minutes'
+  ];
+
+  const stats = [
+    { value: '60x', label: 'Faster Results' },
+    { value: '68%+', label: 'Avg. Retention' },
+    { value: '30 sec', label: 'Script Generation' },
+    { value: '100%', label: 'Consistent Quality' }
   ];
 
   const promptComparison = {
@@ -105,350 +173,223 @@ Subscribr: ✓ Analyzed 10,000+ productivity videos
 
   const faqs = [
     {
-      question: 'Why use Subscribr instead of ChatGPT for YouTube scripts?',
-      answer: 'ChatGPT is a general-purpose AI that requires extensive prompting to create YouTube content. Subscribr is specifically trained on viral YouTube videos and automatically structures scripts for maximum retention without needing complex prompts.'
+      question: 'How easy is it to switch from ChatGPT?',
+      answer: 'Extremely easy. No complex prompts needed - just tell us your topic and get a perfect script in 30 seconds. Our migration assistant helps you set up voice matching based on your existing content.'
     },
     {
-      question: 'Can\'t I just give ChatGPT better prompts?',
-      answer: 'Even with perfect prompts, ChatGPT lacks YouTube-specific training data and retention optimization algorithms. Subscribr analyzes millions of successful videos to understand what keeps viewers watching, something generic AI can\'t replicate.'
+      question: 'Why can\'t I just use better prompts with ChatGPT?',
+      answer: 'Even with perfect prompts, ChatGPT lacks YouTube-specific training data and retention optimization. We analyze millions of viral videos to understand what keeps viewers watching - something generic AI can\'t replicate.'
     },
     {
-      question: 'Is Subscribr based on ChatGPT technology?',
-      answer: 'We use advanced AI models including GPT-4 and Claude, but we\'ve fine-tuned them specifically for YouTube content creation. Our proprietary retention optimization layer ensures every script maximizes watch time.'
+      question: 'Do you use ChatGPT technology?',
+      answer: 'We use advanced AI models including GPT-4 and Claude, but fine-tuned specifically for YouTube. Our proprietary PVSS framework and retention optimization layer ensures every script maximizes watch time.'
     },
     {
       question: 'What about ChatGPT\'s free tier?',
-      answer: 'While ChatGPT offers a free tier, the time spent prompting, refining, and structuring scripts often costs more in lost productivity than our subscription. Plus, free ChatGPT has limited availability and no YouTube optimization.'
+      answer: 'Time spent prompting and refining ChatGPT scripts often costs more in lost productivity than our subscription. Plus, you get consistent quality and YouTube optimization that free ChatGPT can\'t provide.'
     },
     {
-      question: 'Can I use both ChatGPT and Subscribr?',
-      answer: 'Many creators use ChatGPT for general tasks and Subscribr specifically for YouTube scripts. However, most find that Subscribr handles all their YouTube content needs more efficiently.'
+      question: 'Can I use both tools together?',
+      answer: 'Many creators use ChatGPT for general tasks and Subscribr specifically for YouTube scripts. However, most find our platform handles all their YouTube content needs more efficiently.'
     },
     {
-      question: 'How much time will I save vs ChatGPT?',
-      answer: 'Users report saving 2-3 hours per script compared to ChatGPT. Instead of 30+ minutes of prompting and refining, you get a perfect script in under a minute.'
+      question: 'How much time will I actually save?',
+      answer: 'Users report saving 2-3 hours per script. Instead of 30+ minutes of prompting and refining with ChatGPT, you get a retention-optimized script in under 30 seconds.'
     }
   ];
 
   return (
     <>
-      <head>
-        <title>ChatGPT Alternative for YouTube Scripts - One-Click Scripts | Subscribr</title>
-        <meta name="description" content="Stop prompting ChatGPT for hours. Get YouTube-optimized scripts with 68%+ retention in one click. Purpose-built for creators. Try free." />
-        <meta name="keywords" content="chatgpt alternative, chatgpt for youtube, ai youtube scripts, script generator, content creation ai" />
-      </head>
-
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-green-50 to-white dark:from-green-950/20 dark:to-background py-20">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center">
-            <Badge className="mb-4" variant="secondary">
-              <Timer className="w-4 h-4 mr-1" />
-              30 Seconds vs 30 Minutes
-            </Badge>
-            
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-              The ChatGPT Alternative That Actually Understands YouTube
-            </h1>
-            
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Stop spending hours prompting ChatGPT. Get <span className="font-semibold text-foreground">perfect YouTube scripts</span> with 
-              <span className="font-semibold text-foreground"> {socialProofData.metrics.averageRetention}%+ retention</span> in one click.
-            </p>
-
-            <div className="flex gap-4 justify-center mb-8">
-              <Button size="lg" className="bg-gradient-to-r from-green-600 to-emerald-600">
-                Create Your First Script Free
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => setShowComparison(!showComparison)}>
-                See The Difference
-                <MessageSquare className="ml-2 w-5 h-5" />
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Youtube className="w-4 h-4" />
-                <span>YouTube-Specific AI</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Zap className="w-4 h-4" />
-                <span>One-Click Scripts</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Brain className="w-4 h-4" />
-                <span>No Prompting Required</span>
-              </div>
-            </div>
-          </div>
+      <MarketingHero
+        badge={
+          <>
+            <Timer className="w-4 h-4 text-purple-400" />
+            <span className="text-sm text-purple-400">30 Seconds vs 30 Minutes</span>
+          </>
+        }
+        title="The ChatGPT Alternative That Actually Understands YouTube"
+        subtitle={`Stop spending hours prompting ChatGPT. Get perfect YouTube scripts with ${socialProofData.metrics.averageRetention}% retention in one click. See why ${socialProofData.metrics.totalUsers}+ creators made the switch.`}
+        primaryCTA={
+          <MarketingButton href="/signup?source=chatgpt&offer=noprompts" size="large" icon={ArrowRight} iconRight>
+            Create Scripts in 30 Seconds
+          </MarketingButton>
+        }
+        secondaryCTA={
+          <MarketingButton variant="secondary" size="large" onClick={() => setShowPromptComparison(true)}>
+            See The Difference →
+          </MarketingButton>
+        }
+      >
+        <div className="mt-12">
+          <StatsBar stats={stats} />
         </div>
-      </section>
+      </MarketingHero>
 
-      {/* Prompt Comparison */}
-      {showComparison && (
-        <section className="py-16 bg-white dark:bg-background border-y">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <h2 className="text-2xl font-bold text-center mb-8">
-              The Prompting Problem: 30 Minutes vs 30 Seconds
+      {/* Prompt Comparison Modal */}
+      {showPromptComparison && (
+        <MarketingSection className="bg-gradient-to-b from-purple-900/20 to-transparent">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              The Prompting Problem vs One-Click Solution
             </h2>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card className="border-red-200 dark:border-red-900">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <XCircle className="w-5 h-5 text-red-500" />
-                    ChatGPT Process
-                  </CardTitle>
-                  <CardDescription>Multiple prompts, constant refinement</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <pre className="text-xs bg-muted p-4 rounded-lg overflow-x-auto whitespace-pre-wrap">
-                    {promptComparison.chatgpt}
-                  </pre>
-                  <div className="mt-4 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
-                    <p className="text-sm text-red-600 dark:text-red-400">
-                      ⏱️ Average time: 30-45 minutes
-                    </p>
-                    <p className="text-xs mt-1">Still no retention optimization</p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-green-200 dark:border-green-900">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                    Subscribr Process
-                  </CardTitle>
-                  <CardDescription>One input, perfect output</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <pre className="text-xs bg-muted p-4 rounded-lg overflow-x-auto whitespace-pre-wrap">
-                    {promptComparison.subscribr}
-                  </pre>
-                  <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                    <p className="text-sm text-green-600 dark:text-green-400">
-                      ⏱️ Average time: 30 seconds
-                    </p>
-                    <p className="text-xs mt-1">Optimized for 68%+ retention</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <p className="text-xl text-gray-400">See the difference between ChatGPT and purpose-built YouTube AI</p>
           </div>
-        </section>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            <MarketingCard className="border-red-500/20">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <X className="w-6 h-6 text-red-400" />
+                  <h3 className="text-xl font-bold text-white">ChatGPT Process</h3>
+                </div>
+                <pre className="text-xs text-gray-300 bg-gray-800/50 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap">
+                  {promptComparison.chatgpt}
+                </pre>
+                <div className="p-3 bg-red-500/10 rounded-lg">
+                  <p className="text-sm text-red-400">⏱️ Average time: 30-45 minutes</p>
+                  <p className="text-xs text-gray-400 mt-1">Still no retention optimization</p>
+                </div>
+              </div>
+            </MarketingCard>
+
+            <MarketingCard className="border-green-500/20">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Check className="w-6 h-6 text-green-400" />
+                  <h3 className="text-xl font-bold text-white">Subscribr Process</h3>
+                </div>
+                <pre className="text-xs text-gray-300 bg-gray-800/50 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap">
+                  {promptComparison.subscribr}
+                </pre>
+                <div className="p-3 bg-green-500/10 rounded-lg">
+                  <p className="text-sm text-green-400">⏱️ Average time: 30 seconds</p>
+                  <p className="text-xs text-gray-400 mt-1">Optimized for 68%+ retention</p>
+                </div>
+              </div>
+            </MarketingCard>
+          </div>
+
+          <div className="text-center mt-8">
+            <MarketingButton onClick={() => setShowPromptComparison(false)} variant="secondary">
+              Close Comparison
+            </MarketingButton>
+          </div>
+        </MarketingSection>
       )}
 
+      {/* Comparison Section */}
+      <ComparisonSection
+        title="Side-by-Side Comparison"
+        subtitle="See exactly why creators choose us over ChatGPT"
+        competitor="ChatGPT"
+        features={comparisonFeatures}
+      />
+
       {/* Key Differentiators */}
-      <section className="py-20 bg-gradient-to-b from-white to-green-50 dark:from-background dark:to-green-950/20">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
-            Why YouTube Creators Choose Subscribr Over ChatGPT
+      <MarketingSection>
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-white mb-4">
+            Why Creators Choose Us Over ChatGPT
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Purpose-built features that generic AI can't match
-          </p>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="border-green-200 dark:border-green-800">
-              <CardHeader>
-                <PlayCircle className="w-10 h-10 text-green-600 mb-2" />
-                <CardTitle className="text-lg">Zero Prompting</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Just enter your topic. No complex prompts, no refinement needed.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-green-200 dark:border-green-800">
-              <CardHeader>
-                <BarChart3 className="w-10 h-10 text-green-600 mb-2" />
-                <CardTitle className="text-lg">Consistent Quality</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Every script follows proven retention patterns, not random generation.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-green-200 dark:border-green-800">
-              <CardHeader>
-                <Cpu className="w-10 h-10 text-green-600 mb-2" />
-                <CardTitle className="text-lg">YouTube Training</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  AI trained on viral videos, not Wikipedia and blog posts.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-green-200 dark:border-green-800">
-              <CardHeader>
-                <Target className="w-10 h-10 text-green-600 mb-2" />
-                <CardTitle className="text-lg">Format Ready</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Scripts formatted for teleprompters and video production.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
         </div>
-      </section>
+        <FeatureGrid features={keyDifferentiators} columns={3} />
+      </MarketingSection>
 
-      {/* Comparison Table */}
-      <section className="py-20 bg-white dark:bg-background">
-        <div className="container mx-auto px-4 max-w-5xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            ChatGPT vs Subscribr: Full Comparison
+      {/* Testimonials */}
+      <TestimonialSection
+        title="Creators Who Switched From ChatGPT"
+        subtitle="Real results from real creators who stopped prompting and started creating"
+        testimonials={testimonials}
+      />
+
+      {/* Migration Process */}
+      <MarketingSection className="bg-gradient-to-b from-purple-900/20 to-transparent">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-white mb-4">
+            Switch in Under 2 Minutes
           </h2>
-          
-          <ComparisonTable 
-            competitor={chatgpt}
-            ourPlatform={subscribr}
-            features={comparisonFeatures}
-          />
-          
-          <div className="text-center mt-8">
-            <Button size="lg" className="bg-gradient-to-r from-green-600 to-emerald-600">
-              Stop Prompting, Start Creating
-              <Sparkles className="ml-2 w-5 h-5" />
-            </Button>
-          </div>
+          <p className="text-xl text-gray-400">No more complex prompts, just perfect scripts</p>
         </div>
-      </section>
 
-      {/* Results Section */}
-      <section className="py-20 bg-gradient-to-b from-white to-green-50 dark:from-background dark:to-green-950/20">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Real Results from ChatGPT Switchers
-          </h2>
-          
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
-            <RetentionChart 
-              competitorName="ChatGPT Users"
-              competitorRetention={30}
-              ourRetention={68}
-            />
-            
-            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
-              <CardHeader>
-                <CardTitle>Time Saved Per Script</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm">ChatGPT Process</span>
-                      <span className="text-sm text-muted-foreground">30-45 min</span>
-                    </div>
-                    <div className="h-3 bg-red-200 dark:bg-red-900/30 rounded-full" />
+        <div className="max-w-3xl mx-auto">
+          <MarketingCard>
+            <div className="space-y-6">
+              {migrationSteps.map((step, idx) => (
+                <div key={idx} className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold">{idx + 1}</span>
                   </div>
                   <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm">Subscribr Process</span>
-                      <span className="text-sm font-bold text-green-600">30 sec</span>
-                    </div>
-                    <div className="h-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full w-1/12" />
-                  </div>
-                  <div className="pt-4 border-t">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-green-600">60x Faster</div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Plus better retention results
-                      </p>
-                    </div>
+                    <h4 className="font-semibold text-white mb-1">Step {idx + 1}</h4>
+                    <p className="text-gray-400">{step}</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="max-w-4xl mx-auto">
-            <TestimonialCarousel testimonials={testimonials} />
-          </div>
-        </div>
-      </section>
+              ))}
+            </div>
 
-      {/* Migration Offer */}
-      <section className="py-20 bg-white dark:bg-background">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <MigrationOffer
-            competitor="ChatGPT"
-            discount={migration.discount}
-            duration={migration.duration}
-            features={migration.features}
-            onClaim={() => window.location.href = '/signup?ref=chatgpt-migration'}
-          />
+            <div className="mt-8 text-center">
+              <MarketingButton href="/signup?source=chatgpt&offer=noprompts" icon={ArrowRight} iconRight>
+                Stop Prompting, Start Creating
+              </MarketingButton>
+            </div>
+          </MarketingCard>
         </div>
-      </section>
+      </MarketingSection>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-gradient-to-b from-white to-green-50 dark:from-background dark:to-green-950/20">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Common Questions from ChatGPT Users
-          </h2>
-
-          <div className="space-y-4">
-            {faqs.map((faq, idx) => (
-              <Card key={idx}>
-                <Collapsible open={openFAQ === idx} onOpenChange={() => setOpenFAQ(openFAQ === idx ? null : idx)}>
-                  <CollapsibleTrigger className="w-full">
-                    <CardHeader className="text-left hover:bg-muted/50 transition-colors cursor-pointer">
-                      <CardTitle className="text-lg flex justify-between items-center">
-                        {faq.question}
-                        <span className="text-muted-foreground">
-                          {openFAQ === idx ? '−' : '+'}
-                        </span>
-                      </CardTitle>
-                    </CardHeader>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <CardContent>
-                      <p className="text-muted-foreground">{faq.answer}</p>
-                    </CardContent>
-                  </CollapsibleContent>
-                </Collapsible>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      <FAQSection 
+        title="Common Questions From ChatGPT Users"
+        faqs={faqs}
+      />
 
       {/* Final CTA */}
-      <section className="py-20 bg-gradient-to-r from-green-600 to-emerald-600 text-white">
-        <div className="container mx-auto px-4 max-w-4xl text-center">
-          <h2 className="text-4xl font-bold mb-6">
-            Stop Prompting. Start Publishing.
-          </h2>
-          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Get YouTube-optimized scripts in 30 seconds, not 30 minutes. 
-            Join {socialProofData.metrics.totalUsers}+ creators getting {socialProofData.metrics.averageRetention}%+ retention.
-          </p>
-          
-          <div className="flex gap-4 justify-center">
-            <Button size="lg" variant="secondary">
-              Create Your First Script Free
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-            <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
-              Watch Demo
-            </Button>
-          </div>
-          
-          <p className="text-sm mt-6 opacity-75">
-            No credit card • 14-day free trial • Cancel anytime
-          </p>
+      <CTASection
+        title="Ready to Stop Prompting and Start Creating?"
+        subtitle={`Join ${socialProofData.metrics.totalUsers}+ creators who switched to 30-second scripts that actually work.`}
+        primaryButton={
+          <MarketingButton href="/signup?source=chatgpt&offer=noprompts" size="large" icon={ArrowRight} iconRight>
+            Create Your First Script Now
+          </MarketingButton>
+        }
+        badge={
+          <>
+            <span className="text-sm text-gray-400">No credit card required • 14-day free trial • Cancel anytime</span>
+          </>
+        }
+      />
+
+      {/* Migration Wizard Modal */}
+      {showMigrationWizard && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <MarketingCard className="max-w-2xl w-full">
+            <h3 className="text-2xl font-bold text-white mb-6">Migration Wizard</h3>
+            
+            <div className="space-y-4">
+              {migrationSteps.map((step, idx) => (
+                <div key={idx} className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Check className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-white">Step {idx + 1}</h4>
+                    <p className="text-gray-400 text-sm">{step}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-4 mt-8">
+              <MarketingButton href="/signup?source=chatgpt&offer=noprompts" className="flex-1">
+                Start Now
+              </MarketingButton>
+              <MarketingButton variant="secondary" onClick={() => setShowMigrationWizard(false)}>
+                Close
+              </MarketingButton>
+            </div>
+          </MarketingCard>
         </div>
-      </section>
+      )}
     </>
   );
 }

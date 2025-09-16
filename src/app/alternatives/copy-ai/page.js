@@ -32,7 +32,7 @@ export default function CopyAIAlternativePage() {
   }, []);
 
   const copyai = competitorData.copyai;
-  const subscribr = competitorData.ourPlatform;
+  const genscript = competitorData.ourPlatform;
   const migration = migrationOffers.copyai;
 
   const comparisonFeatures = [
@@ -55,7 +55,7 @@ export default function CopyAIAlternativePage() {
       name: 'James Wilson',
       channel: '@TechReviews',
       subscribers: '9K',
-      quote: 'Copy.ai was good for ad copy, but terrible for YouTube. Subscribr is built for creators - the difference in my retention rates is incredible.',
+      quote: 'Copy.ai was good for ad copy, but terrible for YouTube. Genscript is built for creators - the difference in my retention rates is incredible.',
       rating: 5,
       verified: true,
       metrics: { retention: 66, growth: 3.5, timeframe: '4 weeks' }
@@ -64,7 +64,7 @@ export default function CopyAIAlternativePage() {
       name: 'Amanda Foster',
       channel: '@HomeDecor',
       subscribers: '14K',
-      quote: 'I was using Copy.ai templates and getting 20% retention. Subscribr scripts keep viewers watching till the end!',
+      quote: 'I was using Copy.ai templates and getting 20% retention. Genscript scripts keep viewers watching till the end!',
       rating: 5,
       verified: true
     },
@@ -72,7 +72,7 @@ export default function CopyAIAlternativePage() {
       name: 'Kevin Park',
       channel: '@FinanceExplained',
       subscribers: '6K',
-      quote: 'Copy.ai word limits were killing me. With Subscribr, I create unlimited scripts and my channel grew 300% in 2 months.',
+      quote: 'Copy.ai word limits were killing me. With Genscript, I create unlimited scripts and my channel grew 300% in 2 months.',
       rating: 5,
       verified: true,
       metrics: { retention: 72, growth: 3, timeframe: '2 months' }
@@ -88,7 +88,7 @@ export default function CopyAIAlternativePage() {
       { type: 'Blog posts', suitable: false },
       { type: 'YouTube scripts', suitable: 'partial' }
     ],
-    subscribr: [
+    genscript: [
       { type: 'YouTube intros', suitable: true },
       { type: 'Educational scripts', suitable: true },
       { type: 'Entertainment videos', suitable: true },
@@ -100,20 +100,20 @@ export default function CopyAIAlternativePage() {
 
   const faqs = [
     {
-      question: 'How is Subscribr different from Copy.ai?',
-      answer: 'Copy.ai is a marketing copy tool that happens to have YouTube templates. Subscribr is exclusively built for YouTube creators with retention optimization, viral frameworks, and unlimited script generation specifically for video content.'
+      question: 'How is Genscript different from Copy.ai?',
+      answer: 'Copy.ai is a marketing copy tool that happens to have YouTube templates. Genscript is exclusively built for YouTube creators with retention optimization, viral frameworks, and unlimited script generation specifically for video content.'
     },
     {
       question: 'What about Copy.ai\'s free plan?',
-      answer: 'Copy.ai\'s free plan gives you 2,000 words per month - that\'s barely one YouTube script. Subscribr\'s trial gives you unlimited scripts for 14 days, and our paid plans have no word limits at all.'
+      answer: 'Copy.ai\'s free plan gives you 2,000 words per month - that\'s barely one YouTube script. Genscript\'s trial gives you unlimited scripts for 14 days, and our paid plans have no word limits at all.'
     },
     {
-      question: 'Can Subscribr write marketing copy like Copy.ai?',
+      question: 'Can Genscript write marketing copy like Copy.ai?',
       answer: 'No, and that\'s intentional. We focus exclusively on YouTube scripts to deliver the best possible results. For YouTube content, we outperform any general-purpose tool.'
     },
     {
       question: 'Is the price difference worth it?',
-      answer: 'Subscribr starts at $19/mo with unlimited scripts. Copy.ai charges $49/mo for 40K words. You get more content, better features, and YouTube-specific optimization for less than half the price.'
+      answer: 'Genscript starts at $19/mo with unlimited scripts. Copy.ai charges $49/mo for 40K words. You get more content, better features, and YouTube-specific optimization for less than half the price.'
     },
     {
       question: 'Can I migrate my Copy.ai templates?',
@@ -124,8 +124,8 @@ export default function CopyAIAlternativePage() {
   return (
     <>
       <head>
-        <title>Copy.ai Alternative for YouTube - Unlimited Scripts, Better Results | Subscribr</title>
-        <meta name="description" content="Copy.ai writes marketing copy. Subscribr writes YouTube scripts with 68%+ retention. Unlimited content for less. Try free for 14 days." />
+        <title>Copy.ai Alternative for YouTube - Unlimited Scripts, Better Results | Genscript</title>
+        <meta name="description" content="Copy.ai writes marketing copy. Genscript writes YouTube scripts with 68%+ retention. Unlimited content for less. Try free for 14 days." />
         <meta name="keywords" content="copy.ai alternative, copy ai competitor, youtube script generator, unlimited scripts, video content ai" />
       </head>
 
@@ -215,12 +215,12 @@ export default function CopyAIAlternativePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Youtube className="w-5 h-5 text-orange-600" />
-                  Subscribr Creates
+                  Genscript Creates
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
-                  {contentTypes.subscribr.map((item, idx) => (
+                  {contentTypes.genscript.map((item, idx) => (
                     <li key={idx} className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-500" />
                       <span className="font-medium">{item.type}</span>
@@ -272,7 +272,7 @@ export default function CopyAIAlternativePage() {
                 <Badge className="bg-orange-600 text-white">BEST VALUE</Badge>
               </div>
               <CardHeader>
-                <CardDescription>Subscribr Pro</CardDescription>
+                <CardDescription>Genscript Pro</CardDescription>
                 <CardTitle className="text-3xl">$19/mo</CardTitle>
               </CardHeader>
               <CardContent>
@@ -335,7 +335,7 @@ export default function CopyAIAlternativePage() {
           
           <ComparisonTable 
             competitor={copyai}
-            ourPlatform={subscribr}
+            ourPlatform={genscript}
             features={comparisonFeatures}
           />
         </div>
@@ -372,7 +372,7 @@ export default function CopyAIAlternativePage() {
                   
                   <div className="p-4 bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">Subscribr</span>
+                      <span className="font-medium">Genscript</span>
                       <span className="text-2xl font-bold text-green-600">$0.63</span>
                     </div>
                     <p className="text-xs text-muted-foreground">

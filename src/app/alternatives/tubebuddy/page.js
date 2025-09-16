@@ -1,57 +1,81 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
 import { 
-  ArrowRight, Star, Zap, TrendingUp, Brain, Target, 
-  BarChart3, Users, Shield, Clock, Gift, CheckCircle2,
-  Youtube, Sparkles, Award
+  Check, X, ArrowRight, Star, TrendingUp, Shield, Zap, 
+  Brain, Target, BarChart3, Users, Youtube, Sparkles 
 } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import Link from 'next/link';
-import ComparisonTable from '@/components/comparison/ComparisonTable';
-import MigrationOffer from '@/components/comparison/MigrationOffer';
-import TestimonialCarousel from '@/components/comparison/TestimonialCarousel';
-import RetentionChart from '@/components/comparison/RetentionChart';
-import ROICalculator from '@/components/comparison/ROICalculator';
+import {
+  MarketingHero,
+  MarketingSection,
+  MarketingCard,
+  FeatureGrid,
+  ComparisonSection,
+  TestimonialSection,
+  CTASection,
+  FAQSection,
+  StatsBar
+} from '@/components/marketing/MarketingLayout';
+import { MarketingButton } from '@/components/marketing/MarketingButton';
 import { competitorData, socialProofData, migrationOffers } from '@/lib/comparison-data';
 
 export default function TubeBuddyAlternativePage() {
-  const [openFAQ, setOpenFAQ] = useState(null);
-  const [activeTab, setActiveTab] = useState('comparison');
-
-  useEffect(() => {
-    // Track page view
-    fetch('/api/analytics/page-view', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        page: 'tubebuddy-alternative',
-        referrer: document.referrer 
-      })
-    });
-  }, []);
 
   const tubebuddy = competitorData.tubebuddy;
-  const subscribr = competitorData.ourPlatform;
+  const genscript = competitorData.ourPlatform;
   const migration = migrationOffers.tubebuddy;
 
   const comparisonFeatures = [
-    { label: 'Script Generation', competitorValue: false, ourValue: 'Full AI Generation' },
-    { label: 'Retention Optimization', competitorValue: false, ourValue: '68%+ AVD Targeting' },
-    { label: 'Voice Matching', competitorValue: false, ourValue: 'Authentic Creator Voice' },
-    { label: 'Fact Checking', competitorValue: false, ourValue: 'Built-in Verification' },
-    { label: 'PVSS Framework', competitorValue: false, ourValue: 'Viral Structure' },
-    { label: 'Keyword Research', competitorValue: true, ourValue: true },
-    { label: 'SEO Optimization', competitorValue: true, ourValue: true },
-    { label: 'Thumbnail Testing', competitorValue: 'A/B Testing', ourValue: 'AI-Powered Creation' },
-    { label: 'Hook Library', competitorValue: 0, ourValue: '1000+ Tested Hooks' },
-    { label: 'Pricing', competitorValue: '$4.50-$29/mo', ourValue: '$19-$79/mo' },
-    { label: 'Support', competitorValue: 'Email only', ourValue: '24/7 Live Chat' },
-    { label: 'API Access', competitorValue: false, ourValue: 'All Paid Plans' }
+    { 
+      feature: 'Script Generation', 
+      competitor: '✗ No script tools', 
+      genscript: 'Full AI generation'
+    },
+    { 
+      feature: 'Retention Optimization', 
+      competitor: '✗ SEO focus only', 
+      genscript: '68%+ AVD targeting'
+    },
+    { 
+      feature: 'Voice Matching', 
+      competitor: '✗ Not available', 
+      genscript: 'Authentic creator voice'
+    },
+    { 
+      feature: 'Fact Checking', 
+      competitor: '✗ Not available', 
+      genscript: 'Built-in verification'
+    },
+    { 
+      feature: 'PVSS Framework', 
+      competitor: '✗ Not available', 
+      genscript: 'Proven viral structure'
+    },
+    { 
+      feature: 'Keyword Research', 
+      competitor: 'Core feature', 
+      genscript: 'Included + retention focus'
+    },
+    { 
+      feature: 'SEO Optimization', 
+      competitor: 'Advanced tools', 
+      genscript: 'YouTube algorithm focus'
+    },
+    { 
+      feature: 'Thumbnail Testing', 
+      competitor: 'A/B testing', 
+      genscript: 'AI-powered creation'
+    },
+    { 
+      feature: 'Hook Library', 
+      competitor: '✗ No content library', 
+      genscript: '1000+ tested hooks'
+    },
+    { 
+      feature: 'Support', 
+      competitor: 'Email only', 
+      genscript: '24/7 live chat'
+    }
   ];
 
   const testimonials = [
@@ -59,7 +83,7 @@ export default function TubeBuddyAlternativePage() {
       name: 'Mike Johnson',
       channel: '@GamingHub',
       subscribers: '25K',
-      quote: 'TubeBuddy was great for keywords, but I needed actual scripts. Subscribr delivers exactly what I need - engaging content that keeps viewers watching.',
+      quote: 'TubeBuddy was great for keywords, but I needed actual scripts. Genscript delivers exactly what I need - engaging content that keeps viewers watching.',
       rating: 5,
       verified: true,
       metrics: { retention: 72, growth: 3.5, timeframe: '2 months' }
@@ -77,7 +101,7 @@ export default function TubeBuddyAlternativePage() {
       name: 'Ryan Chen',
       channel: '@TechTutorials',
       subscribers: '8K',
-      quote: 'I was spending hours writing scripts after doing keyword research in TubeBuddy. Now Subscribr does both - but better!',
+      quote: 'I was spending hours writing scripts after doing keyword research in TubeBuddy. Now Genscript does both - but better!',
       rating: 5,
       verified: true
     }
@@ -85,12 +109,12 @@ export default function TubeBuddyAlternativePage() {
 
   const faqs = [
     {
-      question: 'How is Subscribr different from TubeBuddy?',
-      answer: 'While TubeBuddy focuses on keyword research and SEO optimization, Subscribr specializes in creating high-retention scripts using AI. We help you create content that not only gets discovered but keeps viewers watching until the end.'
+      question: 'How is Genscript different from TubeBuddy?',
+      answer: 'While TubeBuddy focuses on keyword research and SEO optimization, Genscript specializes in creating high-retention scripts using AI. We help you create content that not only gets discovered but keeps viewers watching until the end.'
     },
     {
-      question: 'Can I use both TubeBuddy and Subscribr together?',
-      answer: 'Absolutely! Many creators use TubeBuddy for keyword research and Subscribr for script generation. They complement each other perfectly. However, Subscribr also includes essential SEO features, so you might find you don\'t need both.'
+      question: 'Can I use both TubeBuddy and Genscript together?',
+      answer: 'Absolutely! Many creators use TubeBuddy for keyword research and Genscript for script generation. They complement each other perfectly. However, Genscript also includes essential SEO features, so you might find you don\'t need both.'
     },
     {
       question: 'Do you have keyword research like TubeBuddy?',
@@ -114,8 +138,8 @@ export default function TubeBuddyAlternativePage() {
     <>
       {/* SEO Meta Tags */}
       <head>
-        <title>TubeBuddy Alternative - AI Script Generation with 68%+ Retention | Subscribr</title>
-        <meta name="description" content="Looking for a TubeBuddy alternative that does more than keywords? Subscribr creates AI-powered scripts with 68%+ viewer retention. Try free for 14 days." />
+        <title>TubeBuddy Alternative - AI Script Generation with 68%+ Retention | Genscript</title>
+        <meta name="description" content="Looking for a TubeBuddy alternative that does more than keywords? Genscript creates AI-powered scripts with 68%+ viewer retention. Try free for 14 days." />
         <meta name="keywords" content="tubebuddy alternative, tubebuddy competitor, youtube script generator, ai script writing, youtube retention" />
       </head>
 
@@ -223,7 +247,7 @@ export default function TubeBuddyAlternativePage() {
             <TabsContent value="comparison" className="space-y-8">
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold mb-4">
-                  TubeBuddy vs Subscribr: Complete Comparison
+                  TubeBuddy vs Genscript: Complete Comparison
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
                   See why creators are switching from keyword research to AI-powered script generation
@@ -232,7 +256,7 @@ export default function TubeBuddyAlternativePage() {
               
               <ComparisonTable 
                 competitor={tubebuddy}
-                ourPlatform={subscribr}
+                ourPlatform={genscript}
                 features={comparisonFeatures}
               />
               
@@ -373,7 +397,7 @@ export default function TubeBuddyAlternativePage() {
                   Calculate Your Potential Return
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                  See how much you could gain by switching from TubeBuddy to Subscribr
+                  See how much you could gain by switching from TubeBuddy to Genscript
                 </p>
               </div>
               
@@ -443,7 +467,7 @@ export default function TubeBuddyAlternativePage() {
             Stop Researching. Start Creating.
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            TubeBuddy shows you what to create. Subscribr actually creates it for you - 
+            TubeBuddy shows you what to create. Genscript actually creates it for you - 
             with {socialProofData.metrics.averageRetention}%+ retention guaranteed.
           </p>
           

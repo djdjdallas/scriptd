@@ -25,16 +25,16 @@ export default function VidIQAlternativePage() {
   }, []);
 
   const comparisonData = [
-    { feature: 'Retention Optimization', vidiq: false, subscribr: '70%+ AVD targeting' },
-    { feature: 'Voice Matching', vidiq: false, subscribr: 'Authentic creator voice' },
-    { feature: 'Fact Checking', vidiq: false, subscribr: 'Built-in verification' },
-    { feature: 'PVSS Structure', vidiq: false, subscribr: 'Proven viral framework' },
-    { feature: 'Psychographic Targeting', vidiq: 'Basic', subscribr: 'Advanced AI analysis' },
-    { feature: 'Script Generation', vidiq: 'Templates only', subscribr: 'Full AI generation' },
-    { feature: 'Quality Tiers', vidiq: false, subscribr: 'Fast/Balanced/Premium' },
-    { feature: 'SEO Optimization', vidiq: true, subscribr: true },
-    { feature: 'Thumbnail Analysis', vidiq: true, subscribr: 'AI-powered creation' },
-    { feature: 'Pricing', vidiq: '$7.50-$39/mo', subscribr: '$19-$79/mo' },
+    { feature: 'Retention Optimization', vidiq: false, genscript: '70%+ AVD targeting' },
+    { feature: 'Voice Matching', vidiq: false, genscript: 'Authentic creator voice' },
+    { feature: 'Fact Checking', vidiq: false, genscript: 'Built-in verification' },
+    { feature: 'PVSS Structure', vidiq: false, genscript: 'Proven viral framework' },
+    { feature: 'Psychographic Targeting', vidiq: 'Basic', genscript: 'Advanced AI analysis' },
+    { feature: 'Script Generation', vidiq: 'Templates only', genscript: 'Full AI generation' },
+    { feature: 'Quality Tiers', vidiq: false, genscript: 'Fast/Balanced/Premium' },
+    { feature: 'SEO Optimization', vidiq: true, genscript: true },
+    { feature: 'Thumbnail Analysis', vidiq: true, genscript: 'AI-powered creation' },
+    { feature: 'Pricing', vidiq: '$7.50-$39/mo', genscript: '$19-$79/mo' },
   ];
 
   const testimonials = [
@@ -49,7 +49,7 @@ export default function VidIQAlternativePage() {
       name: 'Sarah Williams',
       channel: '@LifestyleDaily',
       subscribers: '1.2M',
-      quote: 'VidIQ helped with SEO, but Subscribr actually helps me keep viewers watching. My RPM increased by 40% since switching.',
+      quote: 'VidIQ helped with SEO, but Genscript actually helps me keep viewers watching. My RPM increased by 40% since switching.',
       rating: 5
     },
     {
@@ -64,14 +64,14 @@ export default function VidIQAlternativePage() {
   const faqs = [
     {
       question: 'How easy is it to switch from VidIQ?',
-      answer: 'Extremely easy! You can start using Subscribr immediately - no data migration needed. Our onboarding team provides free setup assistance for all new users switching from VidIQ.'
+      answer: 'Extremely easy! You can start using Genscript immediately - no data migration needed. Our onboarding team provides free setup assistance for all new users switching from VidIQ.'
     },
     {
-      question: 'Can I use both VidIQ and Subscribr together?',
-      answer: 'Absolutely! Many creators use VidIQ for keyword research and Subscribr for script generation and retention optimization. They complement each other perfectly.'
+      question: 'Can I use both VidIQ and Genscript together?',
+      answer: 'Absolutely! Many creators use VidIQ for keyword research and Genscript for script generation and retention optimization. They complement each other perfectly.'
     },
     {
-      question: 'What makes Subscribr better for retention?',
+      question: 'What makes Genscript better for retention?',
       answer: 'We analyze millions of high-retention videos to understand psychological hooks, pacing, and structure. Our AI optimizes every sentence for maximum engagement, not just SEO.'
     },
     {
@@ -88,8 +88,8 @@ export default function VidIQAlternativePage() {
     <>
       {/* SEO Meta Tags */}
       <head>
-        <title>VidIQ Alternative - Better YouTube Scripts with 70%+ Retention | Subscribr</title>
-        <meta name="description" content="Looking for a VidIQ alternative? Subscribr optimizes scripts for 70%+ viewer retention, not just SEO. See why 15,000+ creators switched. Try free for 14 days." />
+        <title>VidIQ Alternative - Better YouTube Scripts with 70%+ Retention | Genscript</title>
+        <meta name="description" content="Looking for a VidIQ alternative? Genscript optimizes scripts for 70%+ viewer retention, not just SEO. See why 15,000+ creators switched. Try free for 14 days." />
         <meta name="keywords" content="vidiq alternative, vidiq competitor, youtube script generator, retention optimization, youtube tools" />
       </head>
 
@@ -108,7 +108,7 @@ export default function VidIQAlternativePage() {
             
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
               While VidIQ focuses on SEO, we optimize your scripts for <span className="font-semibold text-foreground">70%+ viewer retention</span>. 
-              See why thousands of creators switched to Subscribr for viral-ready content.
+              See why thousands of creators switched to Genscript for viral-ready content.
             </p>
 
             <div className="flex gap-4 justify-center mb-8">
@@ -137,7 +137,7 @@ export default function VidIQAlternativePage() {
       <section className="py-20 bg-white dark:bg-background">
         <div className="container mx-auto px-4 max-w-4xl">
           <h2 className="text-3xl font-bold text-center mb-12">
-            VidIQ vs Subscribr: Feature Comparison
+            VidIQ vs Genscript: Feature Comparison
           </h2>
           
           <Card>
@@ -147,7 +147,7 @@ export default function VidIQAlternativePage() {
                   <tr>
                     <th className="text-left p-4">Feature</th>
                     <th className="text-center p-4">VidIQ</th>
-                    <th className="text-center p-4 bg-purple-50 dark:bg-purple-950/20">Subscribr</th>
+                    <th className="text-center p-4 bg-purple-50 dark:bg-purple-950/20">Genscript</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -162,10 +162,10 @@ export default function VidIQAlternativePage() {
                         )}
                       </td>
                       <td className="p-4 text-center bg-purple-50 dark:bg-purple-950/20">
-                        {typeof row.subscribr === 'boolean' ? (
+                        {typeof row.genscript === 'boolean' ? (
                           <Check className="w-5 h-5 text-green-500 mx-auto" />
                         ) : (
-                          <span className="text-sm font-medium">{row.subscribr}</span>
+                          <span className="text-sm font-medium">{row.genscript}</span>
                         )}
                       </td>
                     </tr>
@@ -177,7 +177,7 @@ export default function VidIQAlternativePage() {
 
           <div className="text-center mt-8">
             <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600">
-              Get Subscribr Free for 14 Days
+              Get Genscript Free for 14 Days
               <Zap className="ml-2 w-5 h-5" />
             </Button>
           </div>
@@ -188,7 +188,7 @@ export default function VidIQAlternativePage() {
       <section className="py-20 bg-gradient-to-b from-white to-purple-50 dark:from-background dark:to-purple-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
           <h2 className="text-3xl font-bold text-center mb-4">
-            Why Creators Switch from VidIQ to Subscribr
+            Why Creators Switch from VidIQ to Genscript
           </h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
             VidIQ helps you get discovered. We help you keep viewers watching.
