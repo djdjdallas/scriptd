@@ -80,7 +80,7 @@ export default function TitleStep() {
             Ready to Generate Titles?
           </h3>
           <p className="text-gray-400 mb-6">
-            We'll create 10 optimized variations using AI
+            We'll create 10 optimized variations using AI (1 credit)
           </p>
           <button
             onClick={generateTitles}
@@ -95,7 +95,7 @@ export default function TitleStep() {
             ) : (
               <>
                 <Sparkles className="h-4 w-4 mr-2" />
-                Generate Title Variations
+                Generate Title Variations (1 credit)
               </>
             )}
           </button>
@@ -112,7 +112,7 @@ export default function TitleStep() {
               className="glass-button text-sm"
             >
               <RefreshCw className="h-3 w-3 mr-1" />
-              Regenerate
+              Regenerate (1 credit)
             </button>
           </div>
 

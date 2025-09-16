@@ -95,9 +95,9 @@ Return a JSON array of exactly 8 hook objects.`;
       hooks = await generateHooksFallback(prompt);
     }
 
-    const creditsUsed = 3;
+    const creditsUsed = 1;
     
-    // Get current credits
+    // Update user credits
     const { data: currentCredits } = await supabase
       .from('user_credits')
       .select('credits_used')

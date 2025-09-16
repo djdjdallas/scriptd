@@ -34,10 +34,8 @@ export async function POST(request) {
     }
 
     let improvedScript = script;
-    // Apply script length multiplier to base credits
-    const baseCredits = 5;
-    const scriptMultiplier = getScriptLengthMultiplier(script);
-    let creditsUsed = Math.ceil(baseCredits * scriptMultiplier);
+    // Credit charging removed for script improvement
+    let creditsUsed = 0;
 
     const improvementPrompts = {
       clarity: 'Improve the clarity of this script by simplifying complex sentences, defining technical terms, and ensuring logical flow between ideas.',
@@ -93,19 +91,7 @@ Please provide the improved version of the entire script. Maintain the original 
       creditsUsed = 0;
     }
 
-    // Update credits
-    const { data: currentCredits } = await supabase
-      .from('user_credits')
-      .select('credits_used')
-      .eq('user_id', user.id)
-      .single();
-
-    await supabase
-      .from('user_credits')
-      .update({ 
-        credits_used: (currentCredits?.credits_used || 0) + creditsUsed
-      })
-      .eq('user_id', user.id);
+    // Credit charging removed for script improvement
 
     return NextResponse.json({ 
       improvedScript,

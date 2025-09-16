@@ -35,7 +35,8 @@ export async function POST(request) {
     const { topic, keywords, audience, tone, voiceProfile } = await request.json();
 
     let titles = [];
-    let creditsUsed = 5;
+    // Charge 1 credit for title generation
+    let creditsUsed = 1;
 
     // Use Claude API to generate titles
     if (process.env.ANTHROPIC_API_KEY) {
@@ -108,16 +109,14 @@ Return ONLY a JSON array of exactly 10 title objects with this structure:
     } else {
       // No Claude API key, use fallback
       titles = generateFallbackTitles(topic, keywords);
-      creditsUsed = 0; // No credits for fallback
     }
-    
-    // Get current credits
+    // Update user credits
     const { data: currentCredits } = await supabase
       .from('user_credits')
       .select('credits_used')
       .eq('user_id', user.id)
       .single();
-    
+
     // Update with incremented value
     await supabase
       .from('user_credits')

@@ -17,7 +17,8 @@ import {
   BarChart3,
   CheckCircle,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Crown
 } from 'lucide-react';
 
 export default function ChannelsPage() {
@@ -26,6 +27,7 @@ export default function ChannelsPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [hoveredChannel, setHoveredChannel] = useState(null);
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     fetchChannels();
@@ -38,6 +40,15 @@ export default function ChannelsPage() {
       setUser(user);
 
       if (user) {
+        // Check premium status
+        const { data: subscription } = await supabase
+          .from('user_subscriptions')
+          .select('status')
+          .eq('user_id', user.id)
+          .single();
+        
+        setIsPremium(subscription?.status === 'active');
+        
         const { data: channels, error } = await supabase
           .from('channels')
           .select('*')
@@ -135,12 +146,20 @@ export default function ChannelsPage() {
           </h1>
           <p className="text-gray-400 mt-2">
             Connect and manage your YouTube channels
+            {!isPremium && (
+              <span className="ml-2 text-sm">
+                ({channels.length}/1 channel used)
+              </span>
+            )}
           </p>
         </div>
         <Link href="/channels/add">
-          <Button className="glass-button bg-gradient-to-r from-red-500/50 to-pink-500/50 text-white group">
+          <Button 
+            className="glass-button bg-gradient-to-r from-red-500/50 to-pink-500/50 text-white group"
+            disabled={!isPremium && channels.length >= 1}
+          >
             <Plus className="mr-2 h-4 w-4 group-hover:rotate-90 transition-transform" />
-            Add Channel
+            {!isPremium && channels.length >= 1 ? 'Upgrade to Add More' : 'Add Channel'}
           </Button>
         </Link>
       </div>
@@ -298,20 +317,47 @@ export default function ChannelsPage() {
             </TiltCard>
           ))}
 
-          {/* Add New Channel Card */}
-          <TiltCard>
-            <Link href="/channels/add">
-              <div className="glass-card glass-hover h-full flex flex-col items-center justify-center p-8 group cursor-pointer">
-                <div className="glass w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Plus className="h-8 w-8 text-purple-400" />
+          {/* Add New Channel Card - Only show for premium or if under limit */}
+          {(isPremium || channels.length < 1) && (
+            <TiltCard>
+              <Link href="/channels/add">
+                <div className="glass-card glass-hover h-full flex flex-col items-center justify-center p-8 group cursor-pointer">
+                  <div className="glass w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Plus className="h-8 w-8 text-purple-400" />
+                  </div>
+                  <h3 className="text-white font-semibold mb-2">Add Channel</h3>
+                  <p className="text-sm text-gray-400 text-center">
+                    Add or connect a channel
+                  </p>
                 </div>
-                <h3 className="text-white font-semibold mb-2">Add Channel</h3>
-                <p className="text-sm text-gray-400 text-center">
-                  Add or connect a channel
-                </p>
-              </div>
-            </Link>
-          </TiltCard>
+              </Link>
+            </TiltCard>
+          )}
+        </div>
+      )}
+
+      {/* Channel Limit Message for Free Users */}
+      {!isPremium && channels.length >= 1 && (
+        <div className="glass-card p-6 animate-reveal border border-yellow-400/30 bg-yellow-400/5" style={{ animationDelay: '0.2s' }}>
+          <div className="flex items-start gap-4">
+            <div className="glass w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 bg-yellow-400/20">
+              <Crown className="h-6 w-6 text-yellow-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Channel Limit Reached
+              </h3>
+              <p className="text-gray-300 mb-3">
+                You've reached the maximum of 1 channel for free accounts. Upgrade to add unlimited channels and unlock premium features.
+              </p>
+              <Link href="/pricing">
+                <Button className="glass-button bg-gradient-to-r from-yellow-500/50 to-orange-500/50 text-white">
+                  <Crown className="mr-2 h-4 w-4" />
+                  Upgrade to Premium
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       )}
 

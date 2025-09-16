@@ -42,11 +42,54 @@ export default function VoiceTrainingPage() {
   const [activeProfile, setActiveProfile] = useState(null);
   const [deletingProfile, setDeletingProfile] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [trainingProgress, setTrainingProgress] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchData();
-  }, []);
+    
+    // Set up real-time subscription for voice training updates
+    const supabase = createClient();
+    const subscription = supabase
+      .channel('voice-training-updates')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'channels'
+      }, (payload) => {
+        const { voice_training_status, voice_training_progress } = payload.new;
+        
+        // If training just completed, refresh voice profiles
+        if (voice_training_status === 'completed') {
+          setTimeout(() => {
+            fetchVoiceProfiles();
+            setIsTraining(false);
+            setTrainingStatus(null);
+            toast({
+              title: "Training Complete",
+              description: "Your voice model has been trained successfully!"
+            });
+          }, 1000);
+        }
+        
+        // Update training status if it's in progress
+        if (voice_training_status === 'in_progress' && isTraining) {
+          const progressMessages = {
+            30: 'Extracting voice features...',
+            60: 'Building neural model...',
+            80: 'Optimizing parameters...',
+            100: 'Training complete!'
+          };
+          const message = progressMessages[voice_training_progress] || 'Processing...';
+          setTrainingStatus(message);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [isTraining]);
 
   const fetchData = async () => {
     await Promise.all([
@@ -166,6 +209,18 @@ export default function VoiceTrainingPage() {
 
     setIsTraining(true);
     setTrainingStatus('Preparing training data...');
+    setTrainingProgress(0);
+    
+    // Start simulated progress animation
+    const progressInterval = setInterval(() => {
+      setTrainingProgress(prev => {
+        if (prev >= 95) {
+          clearInterval(progressInterval);
+          return 95; // Stay at 95% until actually complete
+        }
+        return prev + Math.random() * 5; // Increment by 0-5%
+      });
+    }, 1000);
     
     try {
       // Prepare training data
@@ -199,42 +254,46 @@ export default function VoiceTrainingPage() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // Show progress steps
-        const steps = [
-          'Extracting voice features...',
-          'Building neural model...',
-          'Optimizing parameters...',
-          'Validating accuracy...',
-          'Training complete!'
-        ];
+        // Training has been initiated - real-time updates will handle the rest
+        setTrainingStatus('Initializing voice training...');
         
-        for (let i = 0; i < steps.length; i++) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          setTrainingStatus(steps[i]);
-        }
-
-        toast({
-          title: "Training Complete",
-          description: "Your voice model has been trained successfully!"
-        });
+        // Wait a bit for the completion (since API is synchronous)
+        setTimeout(async () => {
+          clearInterval(progressInterval);
+          setTrainingProgress(100);
+          setTrainingStatus('Training complete!');
+          
+          // Refresh profiles after a short delay
+          setTimeout(async () => {
+            await fetchVoiceProfiles();
+            setIsTraining(false);
+            setTrainingStatus(null);
+            setTrainingProgress(0);
+            toast({
+              title: "Training Complete",
+              description: "Your voice model has been trained successfully!"
+            });
+          }, 1500);
+        }, 3000);
         
-        // Reset state and refresh data
+        // Reset file state
         setSelectedFile(null);
         setUploadProgress(0);
-        await fetchVoiceProfiles();
       } else {
+        clearInterval(progressInterval);
         throw new Error(result.error || 'Training failed');
       }
     } catch (error) {
       console.error('Training error:', error);
+      clearInterval(progressInterval);
       toast({
         title: "Training Failed",
         description: error.message || "Failed to train voice model",
         variant: "destructive"
       });
-    } finally {
       setIsTraining(false);
       setTrainingStatus(null);
+      setTrainingProgress(0);
     }
   };
 
@@ -326,7 +385,7 @@ export default function VoiceTrainingPage() {
       </div>
 
       {/* Upload Section */}
-      <TiltCard>
+      <div>
         <div className="glass-card p-8 animate-reveal" style={{ animationDelay: '0.2s' }}>
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
             <Upload className="h-6 w-6 text-purple-400" />
@@ -423,10 +482,6 @@ export default function VoiceTrainingPage() {
               >
                 <Wand2 className="h-4 w-4 mr-2" />
                 Start Voice Training {selectedChannel ? `for ${selectedChannel.title || selectedChannel.name}` : ''}
-                <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                  <Gift className="h-3 w-3" />
-                  FREE
-                </div>
               </Button>
               <p className="text-xs text-center text-gray-400 mt-2">
                 No credits required - Voice training is always FREE!
@@ -441,14 +496,35 @@ export default function VoiceTrainingPage() {
                 <RefreshCw className="h-5 w-5 text-purple-400 animate-spin" />
                 <span className="text-white font-medium">{trainingStatus}</span>
               </div>
+              
+              {/* Progress Bar */}
+              <div className="mb-4">
+                <div className="flex justify-between text-sm text-gray-400 mb-2">
+                  <span>Progress</span>
+                  <span>{Math.round(trainingProgress)}%</span>
+                </div>
+                <div className="w-full h-2 glass rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
+                    style={{ width: `${trainingProgress}%` }}
+                  />
+                </div>
+              </div>
+              
               <div className="space-y-2">
-                {['Analyzing', 'Extracting', 'Building', 'Optimizing', 'Validating'].map((step, index) => (
+                {[
+                  { step: 'Analyzing', threshold: 20 },
+                  { step: 'Extracting', threshold: 40 },
+                  { step: 'Building', threshold: 60 },
+                  { step: 'Optimizing', threshold: 80 },
+                  { step: 'Validating', threshold: 95 }
+                ].map(({ step, threshold }) => (
                   <div key={step} className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      trainingStatus?.includes(step) ? 'bg-purple-400' : 'bg-gray-600'
+                    <div className={`w-2 h-2 rounded-full transition-colors ${
+                      trainingProgress >= threshold ? 'bg-purple-400' : 'bg-gray-600'
                     }`} />
-                    <span className={`text-sm ${
-                      trainingStatus?.includes(step) ? 'text-white' : 'text-gray-500'
+                    <span className={`text-sm transition-colors ${
+                      trainingProgress >= threshold ? 'text-white' : 'text-gray-500'
                     }`}>{step}</span>
                   </div>
                 ))}
@@ -456,7 +532,7 @@ export default function VoiceTrainingPage() {
             </div>
           )}
         </div>
-      </TiltCard>
+      </div>
 
       {/* Voice Profiles */}
       <div className="space-y-4 animate-reveal" style={{ animationDelay: '0.3s' }}>

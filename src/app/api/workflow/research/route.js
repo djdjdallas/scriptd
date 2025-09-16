@@ -92,10 +92,28 @@ export async function POST(request) {
           // Extract related questions if available
           const relatedQuestions = perplexityData.related_questions || [];
 
+          // Charge 1 credit for research
+          const creditsUsed = 1;
+          
+          // Update user credits
+          const { data: currentCredits } = await supabase
+            .from('user_credits')
+            .select('credits_used')
+            .eq('user_id', user.id)
+            .single();
+
+          // Update with incremented value
+          await supabase
+            .from('user_credits')
+            .update({ 
+              credits_used: (currentCredits?.credits_used || 0) + creditsUsed
+            })
+            .eq('user_id', user.id);
+          
           return NextResponse.json({
             results,
             relatedQuestions,
-            creditsUsed: 3, // Perplexity queries might cost more credits
+            creditsUsed,
             researchSummary: mainContent
           });
         }
@@ -176,10 +194,28 @@ export async function POST(request) {
             `Common misconceptions about ${query}`
           ];
 
+          // Charge 1 credit for research
+          const creditsUsed = 1;
+          
+          // Update user credits
+          const { data: currentCredits } = await supabase
+            .from('user_credits')
+            .select('credits_used')
+            .eq('user_id', user.id)
+            .single();
+
+          // Update with incremented value
+          await supabase
+            .from('user_credits')
+            .update({ 
+              credits_used: (currentCredits?.credits_used || 0) + creditsUsed
+            })
+            .eq('user_id', user.id);
+          
           return NextResponse.json({
             results,
             relatedQuestions,
-            creditsUsed: 1, // Claude API usage
+            creditsUsed,
             researchSummary,
             searchProvider: 'claude'
           });
@@ -233,9 +269,27 @@ export async function POST(request) {
       });
     }
 
+    // Charge 1 credit for research (even for educational links)
+    const creditsUsed = 1;
+    
+    // Update user credits
+    const { data: currentCredits } = await supabase
+      .from('user_credits')
+      .select('credits_used')
+      .eq('user_id', user.id)
+      .single();
+
+    // Update with incremented value
+    await supabase
+      .from('user_credits')
+      .update({ 
+        credits_used: (currentCredits?.credits_used || 0) + creditsUsed
+      })
+      .eq('user_id', user.id);
+    
     return NextResponse.json({
       results: educationalResults,
-      creditsUsed: 0, // No credits for educational links
+      creditsUsed,
       message: 'Using educational resources. Configure search API for web results.'
     });
 

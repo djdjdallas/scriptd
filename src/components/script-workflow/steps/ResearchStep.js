@@ -425,7 +425,7 @@ export default function ResearchStep() {
           Research & Fact-Checking
         </h2>
         <p className="text-gray-400">
-          Gather sources and verify information for your script
+          Gather sources and verify information for your script (1 credit per AI search)
         </p>
       </div>
 
@@ -473,7 +473,7 @@ export default function ResearchStep() {
                   ) : (
                     <>
                       <Sparkles className="h-5 w-5" />
-                      AI Web Search for "{workflowData.summary.topic}"
+                      AI Web Search for "{workflowData.summary.topic}" (1 credit)
                     </>
                   )}
                 </button>

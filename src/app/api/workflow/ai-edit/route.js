@@ -34,10 +34,8 @@ export async function POST(request) {
     }
 
     let editedText = text;
-    // Apply script length multiplier to base credits
-    const baseCredits = 2;
-    const scriptMultiplier = getScriptLengthMultiplier(context || text);
-    let creditsUsed = Math.ceil(baseCredits * scriptMultiplier);
+    // Credit charging removed for AI edit
+    let creditsUsed = 0;
 
     // Use Claude API for editing
     if (process.env.ANTHROPIC_API_KEY) {
@@ -89,19 +87,7 @@ Please provide only the edited text without any explanations or markers. Maintai
       creditsUsed = 0;
     }
 
-    // Update credits
-    const { data: currentCredits } = await supabase
-      .from('user_credits')
-      .select('credits_used')
-      .eq('user_id', user.id)
-      .single();
-
-    await supabase
-      .from('user_credits')
-      .update({ 
-        credits_used: (currentCredits?.credits_used || 0) + creditsUsed
-      })
-      .eq('user_id', user.id);
+    // Credit charging removed for AI edit
 
     return NextResponse.json({ 
       editedText,

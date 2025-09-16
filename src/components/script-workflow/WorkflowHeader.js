@@ -53,7 +53,7 @@ export default function WorkflowHeader({ title, isSaving, creditsUsed, targetDur
               
               <div className="flex items-center gap-1 text-sm text-purple-400">
                 <Coins className="h-3 w-3" />
-                <span>{creditsUsed} credits used</span>
+                <span>{creditsUsed > 0 ? `${creditsUsed} credits used` : 'No credits charged yet'}</span>
               </div>
               
               {targetDuration && (

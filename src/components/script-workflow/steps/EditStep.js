@@ -35,6 +35,13 @@ export default function EditStep() {
   const checkPremiumStatus = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('No user found for premium check');
+        setIsPremium(false);
+        return;
+      }
+      
       const { data } = await supabase
         .from('user_subscriptions')
         .select('status')
@@ -44,6 +51,7 @@ export default function EditStep() {
       setIsPremium(data?.status === 'active');
     } catch (error) {
       console.error('Error checking premium status:', error);
+      setIsPremium(false);
     }
   };
 
@@ -79,7 +87,7 @@ export default function EditStep() {
       setSelectedText('');
       setAiEditPrompt('');
       
-      trackCredits(creditsUsed);
+      // trackCredits(creditsUsed); // Credits no longer charged for this step
       toast.success('AI edit applied!');
     } catch (error) {
       toast.error('Failed to apply AI edit');
@@ -119,7 +127,7 @@ export default function EditStep() {
       const { improvedScript, creditsUsed } = await response.json();
       
       setEditedScript(improvedScript);
-      trackCredits(creditsUsed);
+      // trackCredits(creditsUsed); // Credits no longer charged for this step
       toast.success(`Script ${type} improved!`);
     } catch (error) {
       toast.error('Failed to improve script');

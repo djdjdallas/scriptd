@@ -35,6 +35,8 @@ export default function AddChannelPage() {
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState(null);
   const [showCustomForm, setShowCustomForm] = useState(false);
+  const [existingChannelsCount, setExistingChannelsCount] = useState(0);
+  const [isPremium, setIsPremium] = useState(false);
   
   // Custom channel form state
   const [channelTitle, setChannelTitle] = useState('');
@@ -43,6 +45,7 @@ export default function AddChannelPage() {
 
   useEffect(() => {
     fetchUserData();
+    checkExistingChannels();
   }, []);
 
   const fetchUserData = async () => {
@@ -50,6 +53,16 @@ export default function AddChannelPage() {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
+      // Check user subscription
+      const { data: subData } = await supabase
+        .from('user_subscriptions')
+        .select('status')
+        .eq('user_id', user.id)
+        .single();
+      
+      setIsPremium(subData?.status === 'active');
+      
+      // Also get user data
       const { data } = await supabase
         .from('users')
         .select('subscription_tier, credits')
@@ -57,6 +70,20 @@ export default function AddChannelPage() {
         .single();
       
       setUserData(data);
+    }
+  };
+  
+  const checkExistingChannels = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      const { data: channels } = await supabase
+        .from('channels')
+        .select('id')
+        .eq('user_id', user.id);
+      
+      setExistingChannelsCount(channels?.length || 0);
     }
   };
 
@@ -83,6 +110,16 @@ export default function AddChannelPage() {
   };
 
   const handleCustomChannel = async () => {
+    // Check channel limit for free users
+    if (!isPremium && existingChannelsCount >= 1) {
+      toast({
+        title: "Channel Limit Reached",
+        description: "Free users can only have 1 channel. Upgrade to add more channels.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!channelTitle || !targetAudience) {
       toast({
         title: "Missing Information",
@@ -157,6 +194,19 @@ export default function AddChannelPage() {
           Add Your Channel
         </h1>
       </div>
+      
+      {/* Channel Limit Warning */}
+      {!isPremium && existingChannelsCount >= 1 && (
+        <Alert className="border-yellow-400/50 bg-yellow-400/10">
+          <AlertCircle className="h-4 w-4 text-yellow-400" />
+          <AlertDescription className="text-white">
+            <strong>Channel limit reached.</strong> Free users can have 1 channel. 
+            <Link href="/pricing" className="text-yellow-400 hover:text-yellow-300 ml-1 underline">
+              Upgrade to add unlimited channels
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 p-1 glass rounded-lg">

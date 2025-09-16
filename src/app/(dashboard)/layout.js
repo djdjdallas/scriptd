@@ -27,7 +27,8 @@ import {
   TrendingUp,
   Bookmark,
   Youtube,
-  Wrench
+  Wrench,
+  Calendar
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +36,7 @@ const sidebarItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/scripts', label: 'Scripts', icon: FileText },
   { href: '/channels', label: 'Channels', icon: Play },
+  { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/trending', label: 'Trending', icon: TrendingUp },
   { href: '/saved', label: 'Saved Videos', icon: Bookmark },
   { 

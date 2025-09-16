@@ -39,27 +39,32 @@ export function VoiceTrainingStatus({ channelId, initialStatus = 'pending' }) {
         table: 'channels',
         filter: `id=eq.${channelId}`
       }, (payload) => {
-        const { voice_training_status, voice_training_error, voice_profile } = payload.new;
+        const { voice_training_status, voice_training_error, voice_profile, voice_training_progress } = payload.new;
         setStatus(voice_training_status);
         setError(voice_training_error);
         if (voice_profile) {
           setProfile(voice_profile);
         }
         
-        // Update progress based on status
-        switch (voice_training_status) {
-          case 'queued':
-            setProgress(10);
-            break;
-          case 'in_progress':
-            setProgress(50);
-            break;
-          case 'completed':
-            setProgress(100);
-            break;
-          case 'failed':
-            setProgress(0);
-            break;
+        // Use voice_training_progress if available, otherwise fall back to status-based progress
+        if (voice_training_progress !== undefined && voice_training_progress !== null) {
+          setProgress(voice_training_progress);
+        } else {
+          // Fallback to status-based progress
+          switch (voice_training_status) {
+            case 'queued':
+              setProgress(10);
+              break;
+            case 'in_progress':
+              setProgress(50);
+              break;
+            case 'completed':
+              setProgress(100);
+              break;
+            case 'failed':
+              setProgress(0);
+              break;
+          }
         }
       })
       .subscribe();
@@ -76,7 +81,7 @@ export function VoiceTrainingStatus({ channelId, initialStatus = 'pending' }) {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('channels')
-      .select('voice_training_status, voice_training_error, voice_profile')
+      .select('voice_training_status, voice_training_error, voice_profile, voice_training_progress')
       .eq('id', channelId)
       .single();
 
@@ -85,19 +90,24 @@ export function VoiceTrainingStatus({ channelId, initialStatus = 'pending' }) {
       setError(data.voice_training_error);
       setProfile(data.voice_profile);
       
-      // Set progress based on status
-      switch (data.voice_training_status) {
-        case 'queued':
-          setProgress(10);
-          break;
-        case 'in_progress':
-          setProgress(50);
-          break;
-        case 'completed':
-          setProgress(100);
-          break;
-        default:
-          setProgress(0);
+      // Use voice_training_progress if available
+      if (data.voice_training_progress !== undefined && data.voice_training_progress !== null) {
+        setProgress(data.voice_training_progress);
+      } else {
+        // Fallback to status-based progress
+        switch (data.voice_training_status) {
+          case 'queued':
+            setProgress(10);
+            break;
+          case 'in_progress':
+            setProgress(50);
+            break;
+          case 'completed':
+            setProgress(100);
+            break;
+          default:
+            setProgress(0);
+        }
       }
     }
   };

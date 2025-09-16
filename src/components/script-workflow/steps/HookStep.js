@@ -78,7 +78,7 @@ export default function HookStep() {
             Generate Opening Hooks
           </h3>
           <p className="text-gray-400 mb-6">
-            Create attention-grabbing openings for your video
+            Create attention-grabbing openings for your video (1 credit per generation)
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -103,7 +103,7 @@ export default function HookStep() {
             ) : (
               <>
                 <Zap className="h-4 w-4 mr-2" />
-                Generate Hook Variations
+                Generate Hook Variations (1 credit)
               </>
             )}
           </button>
@@ -120,7 +120,7 @@ export default function HookStep() {
               className="glass-button text-sm"
             >
               <RefreshCw className="h-3 w-3 mr-1" />
-              Regenerate
+              Regenerate (1 credit)
             </button>
           </div>
 

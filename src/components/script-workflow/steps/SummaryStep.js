@@ -63,12 +63,27 @@ export default function SummaryStep() {
         return;
       }
 
+      // First get user's channels
+      const { data: userChannels, error: channelError } = await supabase
+        .from("channels")
+        .select("id")
+        .eq("user_id", user.id);
+      
+      if (channelError) throw channelError;
+      
+      if (!userChannels || userChannels.length === 0) {
+        console.log("[SummaryStep] No channels found for user");
+        setVoiceProfiles([]);
+        return;
+      }
+
+      // Get voice profiles for user's channels
+      const channelIds = userChannels.map(c => c.id);
       const { data, error } = await supabase
         .from("voice_profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("is_trained", true) // Only show trained voice profiles
-        .eq("status", "active")
+        .select("*, channels(name, title)")
+        .in("channel_id", channelIds)
+        .eq("is_active", true) // Only show active voice profiles
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -446,12 +461,12 @@ export default function SummaryStep() {
               ...(voiceProfiles.length > 0
                 ? voiceProfiles.map((profile) => ({
                     value: profile.id,
-                    label: `${profile.name} ${profile.is_trained ? "✓" : ""}`,
+                    label: `${profile.profile_name || "Voice Profile"} ${profile.channels?.title ? `(${profile.channels.title})` : ""}`,
                   }))
                 : [
                     {
                       value: "disabled",
-                      label: "No trained voice profiles available",
+                      label: "No voice profiles available",
                       disabled: true,
                     },
                   ]),

@@ -532,7 +532,7 @@ export default function YouTubeResearchPage() {
                           sendMessage(input);
                         }
                       }}
-                      className="glass-input min-h-[60px] text-white"
+                      className="glass-input min-h-[60px] text-white !bg-gray-900/40 dark:!bg-gray-900/60"
                       rows={2}
                     />
                     <Button

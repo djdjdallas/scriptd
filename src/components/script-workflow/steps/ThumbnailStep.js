@@ -94,7 +94,7 @@ export default function ThumbnailStep() {
               Generate Thumbnail Concept
             </h3>
             <p className="text-gray-400 mb-6">
-              AI will create a compelling thumbnail concept based on your title
+              AI will create a compelling thumbnail concept based on your title (1 credit per generation)
             </p>
             <button
               onClick={generateThumbnailIdeas}
@@ -109,7 +109,7 @@ export default function ThumbnailStep() {
               ) : (
                 <>
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Generate Thumbnail Ideas
+                  Generate Thumbnail Ideas (1 credit)
                 </>
               )}
             </button>
@@ -213,7 +213,7 @@ export default function ThumbnailStep() {
                 disabled={isGenerating}
                 className="glass-button"
               >
-                Regenerate Ideas
+                Regenerate Ideas (1 credit)
               </button>
               <button
                 onClick={handleSave}

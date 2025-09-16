@@ -74,7 +74,9 @@ export default function ScriptWorkflow({ workflowId = null }) {
 
       const workflowDataLoaded = data.workflow_data || {};
       setWorkflowData(workflowDataLoaded);
-      setCurrentStep(data.current_step || 1);
+      // Handle both string 'summary' and number current_step values
+      const step = data.current_step === 'summary' ? 1 : (data.current_step || 1);
+      setCurrentStep(typeof step === 'number' ? step : 1);
       setCompletedSteps(data.completed_steps || []);
       setWorkflowTitle(data.title || 'Untitled Script');
       
@@ -115,7 +117,7 @@ export default function ScriptWorkflow({ workflowId = null }) {
         user_id: user.id,
         title: 'Untitled Script',
         workflow_data: {},
-        current_step: 'summary',  // Use string instead of number to match DB schema
+        current_step: 1,  // Start at step 1 (Summary)
         completed_steps: []
       };
       

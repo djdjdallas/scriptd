@@ -18,6 +18,30 @@ export async function POST(request) {
     if (!url) {
       return NextResponse.json({ error: 'YouTube URL is required' }, { status: 400 });
     }
+    
+    // Check if user is on free plan and already has a channel
+    const { data: subscription } = await supabase
+      .from('user_subscriptions')
+      .select('status')
+      .eq('user_id', user.id)
+      .single();
+    
+    const isPremium = subscription?.status === 'active';
+    
+    if (!isPremium) {
+      // Count existing channels for free users
+      const { data: existingChannels } = await supabase
+        .from('channels')
+        .select('id')
+        .eq('user_id', user.id);
+      
+      if (existingChannels && existingChannels.length >= 1) {
+        return NextResponse.json({ 
+          error: 'Channel limit reached. Free users can only have 1 channel. Upgrade to add more channels.',
+          code: 'CHANNEL_LIMIT_REACHED'
+        }, { status: 403 });
+      }
+    }
 
     // Fetch channel data from YouTube
     const channelData = await getChannelByUrl(url);

@@ -1,17 +1,27 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { generateOptimizedScript } from '@/lib/prompts/optimized-youtube-generator';
 
-// Helper function to calculate credit multiplier based on duration
-function getDurationMultiplier(durationInSeconds) {
-  const minutes = durationInSeconds / 60;
+// Helper function to calculate credits based on duration and model
+function calculateCreditsForDuration(durationInSeconds, model = 'claude-3-haiku-20240307') {
+  const minutes = Math.ceil(durationInSeconds / 60);
   
-  if (minutes < 10) {
-    return 1; // Under 10 minutes: normal pricing
-  } else if (minutes <= 30) {
-    return 1.5; // 10-30 minutes: 1.5x credits
-  } else {
-    return 2; // 30-60 minutes: 2x credits
+  // Base rate: 20 credits for 60 minutes = 0.333 credits per minute
+  const baseRate = 20 / 60;
+  
+  // Model multipliers:
+  // Haiku (fastest, cheapest): 1x
+  // Sonnet (balanced): 1.5x  
+  // Opus (best quality): 2x
+  let modelMultiplier = 1;
+  if (model.includes('sonnet')) {
+    modelMultiplier = 1.5;
+  } else if (model.includes('opus')) {
+    modelMultiplier = 2;
   }
+  
+  // Calculate final credits (minimum 1 credit)
+  return Math.max(1, Math.ceil(minutes * baseRate * modelMultiplier));
 }
 
 // Helper function to generate fallback script
@@ -117,7 +127,8 @@ export async function POST(request) {
       thumbnail,
       model = 'claude-3-haiku-20240307',
       targetAudience,
-      tone
+      tone,
+      workflowId // Add workflow ID to link the script
     } = await request.json();
 
     const verifiedSources = research?.sources?.filter(s => s.fact_check_status === 'verified') || [];
@@ -125,12 +136,10 @@ export async function POST(request) {
 
     // Calculate total duration from content points
     const totalDuration = contentPoints?.points?.reduce((acc, p) => acc + p.duration, 0) || 600;
-    const durationMultiplier = getDurationMultiplier(totalDuration);
     
     let script = '';
-    // Apply duration multiplier to base credits
-    const baseCredits = type === 'outline' ? 5 : 20;
-    let creditsUsed = Math.ceil(baseCredits * durationMultiplier);
+    // Calculate credits based on duration and AI model
+    let creditsUsed = calculateCreditsForDuration(totalDuration, model);
 
     // Use Claude API to generate script
     if (process.env.ANTHROPIC_API_KEY) {
@@ -146,11 +155,29 @@ export async function POST(request) {
             model: model === 'claude-3-opus' ? 'claude-3-opus-20240229' : 'claude-3-haiku-20240307',
             max_tokens: 4096,
             temperature: 0.7,
-            system: 'You are an expert YouTube scriptwriter. Create engaging, retention-optimized scripts that keep viewers watching.',
+            system: 'You are an expert YouTube scriptwriter specializing in engaging, factual content with high retention optimization.',
             messages: [
               {
                 role: 'user',
-                content: `Create a ${type === 'outline' ? 'detailed outline' : 'complete script'} for a YouTube video.
+                content: (() => {
+                  // Use optimized generator for better prompts with full workflow context
+                  const optimizedResult = generateOptimizedScript({
+                    topic: title,
+                    targetLength: Math.ceil(totalDuration / 60),
+                    tone: tone || 'professional',
+                    audience: targetAudience || 'general',
+                    // Pass all workflow context
+                    frame: frame,
+                    hook: hook,
+                    contentPoints: contentPoints,
+                    research: research,
+                    voiceProfile: voiceProfile,
+                    thumbnail: thumbnail
+                  });
+                  
+                  if (optimizedResult.error) {
+                    // Fallback to original prompt if error
+                    return `Create a ${type === 'outline' ? 'detailed outline' : 'complete script'} for a YouTube video.
 
 VIDEO DETAILS:
 Title: ${title}
@@ -213,7 +240,15 @@ Format the output with:
 - Production notes in [brackets]
 - Natural, conversational language
 - Smooth transitions between topics
-- Strong opening and closing`
+- Strong opening and closing`;
+                  }
+                  
+                  // Return enhanced prompt from optimized generator
+                  // Context is now fully integrated in the optimized generator
+                  return optimizedResult.prompt + `
+
+SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sections and talking points' : 'Create a complete, ready-to-record script with full narration'}`;
+                })()
               }
             ]
           })
@@ -238,7 +273,8 @@ Format the output with:
     } else {
       // No Claude API key, use fallback
       script = generateFallbackScript(type, title, topic, contentPoints);
-      creditsUsed = 0; // No credits for fallback
+      // Still charge credits based on duration and model even for fallback
+      creditsUsed = calculateCreditsForDuration(totalDuration, model);
     }
     
     // Get current credits
@@ -256,10 +292,86 @@ Format the output with:
       })
       .eq('user_id', user.id);
 
-    return NextResponse.json({ 
-      script,
-      creditsUsed
-    });
+    // Get user's channel (required for scripts table)
+    const { data: userChannel } = await supabase
+      .from('channels')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    // If user has a channel, save the script to the database
+    if (userChannel?.id && script) {
+      try {
+        // Extract title from script if not provided
+        const scriptTitle = title || topic || 'Untitled Script';
+        
+        // Extract description/summary from script (first paragraph or hook)
+        const scriptLines = script.split('\n').filter(line => line.trim());
+        const description = hook || scriptLines.find(line => !line.startsWith('#') && !line.startsWith('[') && line.length > 20) || '';
+        
+        // Extract tags from keywords in the optimized generator metadata
+        const tags = [];
+        if (topic) {
+          const words = topic.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+          tags.push(...words.slice(0, 5));
+        }
+
+        // Create the script record
+        const { data: newScript, error: scriptError } = await supabase
+          .from('scripts')
+          .insert({
+            channel_id: userChannel.id,
+            user_id: user.id,
+            title: scriptTitle,
+            content: script,
+            hook: hook || description.substring(0, 200),
+            description: description.substring(0, 500),
+            tags: tags,
+            credits_used: creditsUsed,
+            status: type === 'outline' ? 'outline' : 'draft',
+            metadata: {
+              type: type,
+              model: model,
+              workflow_id: workflowId,
+              target_audience: targetAudience,
+              tone: tone,
+              voice_profile: voiceProfile,
+              generation_date: new Date().toISOString(),
+              content_points: contentPoints,
+              research_sources: verifiedSources.length + starredSources.length,
+              frame: frame
+            }
+          })
+          .select()
+          .single();
+
+        if (scriptError) {
+          console.error('Error saving script to database:', scriptError);
+          // Don't fail the request if save fails, just log it
+        } else {
+          console.log('Script saved to database with ID:', newScript.id);
+        }
+
+        return NextResponse.json({ 
+          script,
+          creditsUsed,
+          scriptId: newScript?.id // Include script ID in response
+        });
+      } catch (saveError) {
+        console.error('Error saving script:', saveError);
+        // Still return the script even if save fails
+        return NextResponse.json({ 
+          script,
+          creditsUsed
+        });
+      }
+    } else {
+      // No channel or no script, just return without saving
+      return NextResponse.json({ 
+        script,
+        creditsUsed
+      });
+    }
   } catch (error) {
     console.error('Script generation error:', error);
     return NextResponse.json(

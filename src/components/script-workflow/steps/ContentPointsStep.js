@@ -114,7 +114,7 @@ export default function ContentPointsStep() {
             Add Content Points
           </h3>
           <p className="text-gray-400 mb-6">
-            Structure your video with key talking points
+            Structure your video with key talking points (1 credit per generation)
           </p>
           <div className="flex gap-3 justify-center">
             <button
@@ -130,7 +130,7 @@ export default function ContentPointsStep() {
               ) : (
                 <>
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Generate Points
+                  Generate Points (1 credit)
                 </>
               )}
             </button>
@@ -177,7 +177,7 @@ export default function ContentPointsStep() {
                 disabled={isGenerating}
                 className="glass-button text-sm"
               >
-                Regenerate
+                Regenerate (1 credit)
               </button>
               <button
                 onClick={addContentPoint}

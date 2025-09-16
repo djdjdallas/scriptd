@@ -46,14 +46,44 @@ export async function POST(request) {
     // This is a core feature that helps users get started
     console.log('Voice training initiated (FREE - no credits required)');
 
-    // Update channel status to in_progress
-    await supabase
-      .from('channels')
-      .update({
-        voice_training_status: 'in_progress',
-        voice_training_error: null
-      })
-      .eq('id', channelId);
+    // Update channel status to queued first
+    const updateData = {
+      voice_training_status: 'queued',
+      voice_training_error: null
+    };
+    
+    // Try to update with progress, but don't fail if column doesn't exist
+    try {
+      await supabase
+        .from('channels')
+        .update({ ...updateData, voice_training_progress: 10 })
+        .eq('id', channelId);
+    } catch (e) {
+      // Fallback without progress column
+      await supabase
+        .from('channels')
+        .update(updateData)
+        .eq('id', channelId);
+    }
+
+    // Small delay to ensure UI updates
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Update to in_progress
+    try {
+      await supabase
+        .from('channels')
+        .update({
+          voice_training_status: 'in_progress',
+          voice_training_progress: 30
+        })
+        .eq('id', channelId);
+    } catch (e) {
+      await supabase
+        .from('channels')
+        .update({ voice_training_status: 'in_progress' })
+        .eq('id', channelId);
+    }
 
     // Analyze voice style from samples or fetch from YouTube
     let voiceCharacteristics = {};
@@ -153,6 +183,19 @@ export async function POST(request) {
         console.log('Using mock data due to error:', error.message);
       }
     }
+
+    // Update progress to 60% after analysis (with fallback)
+    try {
+      await supabase
+        .from('channels')
+        .update({
+          voice_training_progress: 60
+        })
+        .eq('id', channelId);
+    } catch (e) {
+      // Column might not exist, continue without error
+      console.log('Progress update skipped (column may not exist)');
+    }
     
     // Create comprehensive voice profile with analyzed characteristics
     // Note: Removing is_active due to Supabase schema cache issues
@@ -208,6 +251,18 @@ export async function POST(request) {
       }
     };
 
+    // Update progress to 80% before saving (with fallback)
+    try {
+      await supabase
+        .from('channels')
+        .update({
+          voice_training_progress: 80
+        })
+        .eq('id', channelId);
+    } catch (e) {
+      console.log('Progress update skipped (column may not exist)');
+    }
+
     // Save voice profile - simplified insert without is_active
     const { data: savedProfile, error: saveError } = await supabase
       .from('voice_profiles')
@@ -223,15 +278,25 @@ export async function POST(request) {
       );
     }
 
-    // Update channel with voice training status
-    await supabase
-      .from('channels')
-      .update({
-        voice_training_status: 'completed',
-        voice_profile: savedProfile.id,
-        voice_training_error: null
-      })
-      .eq('id', channelId);
+    // Update to 100% and completed (with fallback)
+    const finalUpdate = {
+      voice_training_status: 'completed',
+      voice_profile: savedProfile.id,
+      voice_training_error: null
+    };
+    
+    try {
+      await supabase
+        .from('channels')
+        .update({ ...finalUpdate, voice_training_progress: 100 })
+        .eq('id', channelId);
+    } catch (e) {
+      // Fallback without progress column
+      await supabase
+        .from('channels')
+        .update(finalUpdate)
+        .eq('id', channelId);
+    }
 
     // NO CREDIT DEDUCTION - Voice training is FREE
     // Log the free training event for analytics

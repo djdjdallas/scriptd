@@ -12,7 +12,8 @@ export default function DraftStep() {
     setGeneratedScript,
     updateStepData,
     markStepComplete,
-    trackCredits 
+    trackCredits,
+    workflowId 
   } = useWorkflow();
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -38,20 +39,21 @@ export default function DraftStep() {
           thumbnail: workflowData.thumbnail,
           model: workflowData.summary?.aiModel || 'claude-3-opus',
           targetAudience: workflowData.summary?.targetAudience,
-          tone: workflowData.summary?.tone
+          tone: workflowData.summary?.tone,
+          workflowId: workflowId // Include workflow ID
         })
       });
 
       if (!response.ok) throw new Error('Failed to generate script');
 
-      const { script, creditsUsed } = await response.json();
+      const { script, creditsUsed, scriptId } = await response.json();
       
       setGeneratedScript(script);
-      updateStepData('draft', { script, type });
+      updateStepData('draft', { script, type, scriptId });
       trackCredits(creditsUsed);
       markStepComplete(8);
       
-      toast.success(`${type === 'outline' ? 'Outline' : 'Full script'} generated!`);
+      toast.success(`${type === 'outline' ? 'Outline' : 'Full script'} generated and saved!`);
     } catch (error) {
       toast.error('Failed to generate script');
       console.error(error);
@@ -184,7 +186,6 @@ export default function DraftStep() {
             <li>• Key talking points</li>
             <li>• Time markers</li>
             <li>• Research citations</li>
-            <li>• ~5 credits</li>
           </ul>
           <button
             onClick={() => generateScript('outline')}
@@ -215,7 +216,6 @@ export default function DraftStep() {
             <li>• Production notes</li>
             <li>• Visual cues</li>
             <li>• Fact-checked sources</li>
-            <li>• ~20 credits</li>
           </ul>
           <button
             onClick={() => generateScript('full')}
@@ -241,6 +241,39 @@ export default function DraftStep() {
           <div>✓ {workflowData.contentPoints?.points?.length || 0} content points</div>
           <div>✓ {workflowData.research?.sources?.filter(s => s.is_starred).length || 0} starred sources</div>
           <div>✓ Voice profile: {workflowData.summary?.voiceProfile?.name || 'Default'}</div>
+        </div>
+        <div className="mt-3 pt-3 border-t border-gray-700">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-400">Script Duration:</span>
+            <span className="text-white font-semibold">
+              {Math.ceil((workflowData.contentPoints?.points?.reduce((acc, p) => acc + p.duration, 0) || 600) / 60)} minutes
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-sm mt-1">
+            <span className="text-gray-400">AI Model:</span>
+            <span className="text-white font-semibold">
+              {workflowData.summary?.aiModel === 'claude-3-opus' ? 'Claude Opus (Best)' :
+               workflowData.summary?.aiModel === 'claude-3-sonnet' ? 'Claude Sonnet (Balanced)' :
+               'Claude Haiku (Fast)'}
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-sm mt-1">
+            <span className="text-gray-400">Credits Required:</span>
+            <span className="text-purple-400 font-semibold">
+              {(() => {
+                const minutes = Math.ceil((workflowData.contentPoints?.points?.reduce((acc, p) => acc + p.duration, 0) || 600) / 60);
+                const baseRate = 20 / 60;
+                const model = workflowData.summary?.aiModel || 'claude-3-haiku';
+                const multiplier = model.includes('opus') ? 2 : model.includes('sonnet') ? 1.5 : 1;
+                return Math.max(1, Math.ceil(minutes * baseRate * multiplier));
+              })()} credits
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 mt-2 italic">
+            Base: 20 credits/60 min • {workflowData.summary?.aiModel?.includes('opus') ? '2x for Opus' :
+                                       workflowData.summary?.aiModel?.includes('sonnet') ? '1.5x for Sonnet' :
+                                       '1x for Haiku'}
+          </p>
         </div>
       </div>
     </div>

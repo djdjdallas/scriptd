@@ -86,10 +86,8 @@ export async function POST(request) {
     const { topic, frame, research, targetAudience, targetDuration } = await request.json();
 
     let points = [];
-    // Apply duration multiplier to base credits
-    const baseCredits = 3;
-    const durationMultiplier = getDurationMultiplier(targetDuration || 300);
-    let creditsUsed = Math.ceil(baseCredits * durationMultiplier);
+    // Charge 1 credit for content points generation
+    let creditsUsed = 1;
 
     // Use Claude API to generate content points
     if (process.env.ANTHROPIC_API_KEY) {
@@ -179,16 +177,16 @@ Requirements:
     } else {
       // No Claude API key, use fallback
       points = generateFallbackPoints(topic, targetAudience, targetDuration);
-      creditsUsed = 0; // No credits for fallback
+      creditsUsed = 0; // No credits charged
     }
     
-    // Get current credits
+    // Update user credits
     const { data: currentCredits } = await supabase
       .from('user_credits')
       .select('credits_used')
       .eq('user_id', user.id)
       .single();
-    
+
     // Update with incremented value
     await supabase
       .from('user_credits')
