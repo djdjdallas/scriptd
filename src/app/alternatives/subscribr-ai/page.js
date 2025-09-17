@@ -21,10 +21,10 @@ import { competitorData, socialProofData, migrationOffers } from '@/lib/comparis
 
 export default function SubscribrAIAlternative() {
   const [showMigrationWizard, setShowMigrationWizard] = useState(false);
-  const competitor = competitorData.genscriptAI;
-  const ourPlatform = competitorData.ourPlatform;
+  const competitor = competitorData.subscribrAI || {};
+  const ourPlatform = competitorData.ourPlatform || {};
 
-  const priceSavings = competitor.pricing.pro - ourPlatform.pricing.professional;
+  const priceSavings = (competitor.pricing?.pro || 59) - (ourPlatform.pricing?.professional || 49);
   const yearlyDifference = priceSavings * 12;
 
   const comparisonFeatures = [
@@ -273,13 +273,13 @@ export default function SubscribrAIAlternative() {
               <ArrowRight className="w-8 h-8 text-green-400" />
             </div>
             <div>
-              <p className="text-gray-400 text-sm mb-2">Subscribr Pro</p>
+              <p className="text-gray-400 text-sm mb-2">Genscript Pro</p>
               <p className="text-3xl font-bold text-green-400">${ourPlatform.pricing.professional}/mo</p>
             </div>
           </div>
           <div className="p-4 bg-green-500/10 rounded-lg">
             <p className="text-2xl font-bold text-green-400">
-              Save ${yearlyDifference}/year by switching
+              Save ${yearlyDifference}/year by switching to Genscript
             </p>
           </div>
         </MarketingCard>

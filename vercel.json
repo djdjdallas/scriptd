@@ -1,0 +1,13 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/collect-metrics",
+      "schedule": "0 */6 * * *"
+    }
+  ],
+  "functions": {
+    "src/app/api/cron/collect-metrics/route.js": {
+      "maxDuration": 60
+    }
+  }
+}

@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { 
   Check, X, ArrowRight, Star, TrendingUp, Shield, Zap, 
-  Brain, Target, BarChart3, Users, Youtube, Sparkles 
+  Brain, Target, BarChart3, Users, Youtube, Sparkles, Award,
+  CheckCircle2
 } from 'lucide-react';
 import {
   MarketingHero,
@@ -17,10 +18,20 @@ import {
   StatsBar
 } from '@/components/marketing/MarketingLayout';
 import { MarketingButton } from '@/components/marketing/MarketingButton';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import ROICalculator from '@/components/comparison/ROICalculator';
+import RetentionChart from '@/components/comparison/RetentionChart';
+import MigrationOffer from '@/components/comparison/MigrationOffer';
 import { competitorData, socialProofData, migrationOffers } from '@/lib/comparison-data';
 
 export default function TubeBuddyAlternativePage() {
-
+  const [activeTab, setActiveTab] = useState('comparison');
+  const [openFAQ, setOpenFAQ] = useState(null);
+  
   const tubebuddy = competitorData.tubebuddy;
   const genscript = competitorData.ourPlatform;
   const migration = migrationOffers.tubebuddy;
@@ -29,52 +40,52 @@ export default function TubeBuddyAlternativePage() {
     { 
       feature: 'Script Generation', 
       competitor: '✗ No script tools', 
-      genscript: 'Full AI generation'
+      subscribr: 'Full AI generation'
     },
     { 
       feature: 'Retention Optimization', 
       competitor: '✗ SEO focus only', 
-      genscript: '68%+ AVD targeting'
+      subscribr: '68%+ AVD targeting'
     },
     { 
       feature: 'Voice Matching', 
       competitor: '✗ Not available', 
-      genscript: 'Authentic creator voice'
+      subscribr: 'Authentic creator voice'
     },
     { 
       feature: 'Fact Checking', 
       competitor: '✗ Not available', 
-      genscript: 'Built-in verification'
+      subscribr: 'Built-in verification'
     },
     { 
       feature: 'PVSS Framework', 
       competitor: '✗ Not available', 
-      genscript: 'Proven viral structure'
+      subscribr: 'Proven viral structure'
     },
     { 
       feature: 'Keyword Research', 
       competitor: 'Core feature', 
-      genscript: 'Included + retention focus'
+      subscribr: 'Included + retention focus'
     },
     { 
       feature: 'SEO Optimization', 
       competitor: 'Advanced tools', 
-      genscript: 'YouTube algorithm focus'
+      subscribr: 'YouTube algorithm focus'
     },
     { 
       feature: 'Thumbnail Testing', 
       competitor: 'A/B testing', 
-      genscript: 'AI-powered creation'
+      subscribr: 'AI-powered creation'
     },
     { 
       feature: 'Hook Library', 
       competitor: '✗ No content library', 
-      genscript: '1000+ tested hooks'
+      subscribr: '1000+ tested hooks'
     },
     { 
       feature: 'Support', 
       competitor: 'Email only', 
-      genscript: '24/7 live chat'
+      subscribr: '24/7 live chat'
     }
   ];
 
@@ -254,9 +265,10 @@ export default function TubeBuddyAlternativePage() {
                 </p>
               </div>
               
-              <ComparisonTable 
-                competitor={tubebuddy}
-                ourPlatform={genscript}
+              <ComparisonSection 
+                title="TubeBuddy vs Subscribr"
+                subtitle="See why creators are switching from keyword research to AI-powered script generation"
+                competitor="TubeBuddy"
                 features={comparisonFeatures}
               />
               
@@ -360,7 +372,7 @@ export default function TubeBuddyAlternativePage() {
               </div>
               
               <div className="max-w-3xl mx-auto">
-                <TestimonialCarousel testimonials={testimonials} />
+                <TestimonialSection testimonials={testimonials} />
               </div>
               
               <div className="grid md:grid-cols-3 gap-4 mt-8">

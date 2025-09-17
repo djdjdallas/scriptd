@@ -7,6 +7,7 @@ import {
   Eye, 
   TrendingUp,
   ChevronLeft,
+  ChevronRight,
   Award,
   Search,
   SortDesc,
@@ -29,10 +30,22 @@ export default function AllRisingChannelsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('growth'); // growth, subscribers, views, upload
   const [filterCategory, setFilterCategory] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    totalPages: 0,
+    totalChannels: 0,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
 
   useEffect(() => {
     fetchAllChannels();
-  }, [filterCategory]); // Re-fetch when category changes
+  }, [filterCategory, currentPage]); // Re-fetch when category or page changes
+
+  useEffect(() => {
+    // Reset to page 1 when category changes
+    setCurrentPage(1);
+  }, [filterCategory]);
 
   useEffect(() => {
     filterAndSortChannels();
@@ -41,17 +54,22 @@ export default function AllRisingChannelsPage() {
   const fetchAllChannels = async () => {
     setLoading(true);
     try {
-      // Include category parameter in API call
+      // Include category and pagination parameters in API call
       const params = new URLSearchParams({
-        limit: '50',
-        category: filterCategory
+        limit: '9',
+        category: filterCategory,
+        page: currentPage.toString()
       });
       const response = await fetch(`/api/trending?${params}`);
       const data = await response.json();
       
       if (data.success) {
         setChannels(data.data.trendingChannels || []);
+        if (data.data.pagination) {
+          setPagination(data.data.pagination);
+        }
       } else {
+        toast.error('Failed to load trending channels from YouTube');
         loadMockChannels();
       }
     } catch (error) {
@@ -64,52 +82,14 @@ export default function AllRisingChannelsPage() {
   };
 
   const loadMockChannels = () => {
-    // Extended mock data
-    const mockChannels = [
-      {
-        id: 1,
-        name: 'TechVision Pro',
-        handle: '@techvisionpro',
-        subscribers: '2.5M',
-        growth: '+45K/week',
-        category: 'Technology',
-        thumbnail: '/youtube-default.svg',
-        avgViews: '500K',
-        uploadFreq: '3/week',
-        topVideo: 'ChatGPT vs Claude: Ultimate Comparison',
-        verified: true,
-        description: 'Tech reviews and AI tutorials'
-      },
-      {
-        id: 2,
-        name: 'FitLife Journey',
-        handle: '@fitlifejourney',
-        subscribers: '890K',
-        growth: '+22K/week',
-        category: 'Fitness',
-        thumbnail: '/youtube-default.svg',
-        avgViews: '250K',
-        uploadFreq: 'Daily',
-        topVideo: '30 Day Transformation Challenge',
-        verified: false,
-        description: 'Fitness transformations and workout guides'
-      },
-      {
-        id: 3,
-        name: 'Gaming Universe',
-        handle: '@gaminguniverse',
-        subscribers: '3.2M',
-        growth: '+38K/week',
-        category: 'Gaming',
-        thumbnail: '/youtube-default.svg',
-        avgViews: '750K',
-        uploadFreq: '5/week',
-        topVideo: 'New Game World Record Speedrun',
-        verified: true,
-        description: 'Gaming content and speedruns'
-      }
-    ];
-    setChannels(mockChannels);
+    // No fallback data - show empty state
+    setChannels([]);
+    setPagination({
+      totalPages: 0,
+      totalChannels: 0,
+      hasNextPage: false,
+      hasPrevPage: false
+    });
   };
 
   const filterAndSortChannels = () => {
@@ -198,7 +178,7 @@ export default function AllRisingChannelsPage() {
           <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
         </h1>
         <p className="text-gray-400 mt-2">
-          Discover {filteredChannels.length} rapidly growing YouTube channels
+          Discover {pagination.totalChannels || filteredChannels.length} rapidly growing YouTube channels
         </p>
       </div>
 
@@ -357,6 +337,108 @@ export default function AllRisingChannelsPage() {
           <Button onClick={() => { setSearchQuery(''); setFilterCategory('all'); }} className="glass-button text-white mt-4">
             Clear Filters
           </Button>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {pagination.totalPages > 1 && (
+        <div className="glass-card p-4 mt-8 animate-reveal">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-gray-400">
+              Showing {((currentPage - 1) * 9) + 1}-{Math.min(currentPage * 9, pagination.totalChannels)} of {pagination.totalChannels} channels
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Previous Button */}
+              <Button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={!pagination.hasPrevPage}
+                className="glass-button text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                size="sm"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1">
+                {/* Show first page */}
+                {currentPage > 3 && (
+                  <>
+                    <button
+                      onClick={() => setCurrentPage(1)}
+                      className="w-8 h-8 rounded-lg glass text-gray-400 hover:text-white hover:bg-purple-500/20 transition-all"
+                    >
+                      1
+                    </button>
+                    {currentPage > 4 && <span className="text-gray-500 px-1">...</span>}
+                  </>
+                )}
+
+                {/* Show pages around current page */}
+                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    return page === currentPage || 
+                           (page >= currentPage - 2 && page <= currentPage + 2);
+                  })
+                  .map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 rounded-lg transition-all ${
+                        page === currentPage
+                          ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-white font-bold'
+                          : 'glass text-gray-400 hover:text-white hover:bg-purple-500/20'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+
+                {/* Show last page */}
+                {currentPage < pagination.totalPages - 2 && (
+                  <>
+                    {currentPage < pagination.totalPages - 3 && <span className="text-gray-500 px-1">...</span>}
+                    <button
+                      onClick={() => setCurrentPage(pagination.totalPages)}
+                      className="w-8 h-8 rounded-lg glass text-gray-400 hover:text-white hover:bg-purple-500/20 transition-all"
+                    >
+                      {pagination.totalPages}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Next Button */}
+              <Button
+                onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                disabled={!pagination.hasNextPage}
+                className="glass-button text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                size="sm"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Go to Page */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-400">Go to:</span>
+              <input
+                type="number"
+                min="1"
+                max={pagination.totalPages}
+                value={currentPage}
+                onChange={(e) => {
+                  const page = parseInt(e.target.value);
+                  if (page >= 1 && page <= pagination.totalPages) {
+                    setCurrentPage(page);
+                  }
+                }}
+                className="w-16 px-2 py-1 bg-gray-800/50 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

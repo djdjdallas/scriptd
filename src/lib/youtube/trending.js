@@ -167,6 +167,73 @@ export async function getRelatedChannels(channelId, maxResults = 10) {
   }
 }
 
+export async function getChannelStatistics(channelIds) {
+  if (!channelIds || channelIds.length === 0) return {};
+  
+  const cacheKey = `channel-stats-${channelIds.join('-')}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  const youtube = getYouTubeClient();
+  
+  try {
+    const response = await withRateLimit('channels', () =>
+      youtube.channels.list({
+        part: ['statistics', 'snippet', 'contentDetails'],
+        id: channelIds,
+        maxResults: 50
+      })
+    );
+
+    const channelStats = {};
+    response.data.items?.forEach(channel => {
+      channelStats[channel.id] = {
+        subscriberCount: parseInt(channel.statistics.subscriberCount || 0),
+        viewCount: parseInt(channel.statistics.viewCount || 0),
+        videoCount: parseInt(channel.statistics.videoCount || 0),
+        customUrl: channel.snippet.customUrl,
+        country: channel.snippet.country,
+        publishedAt: channel.snippet.publishedAt,
+        uploadsPlaylistId: channel.contentDetails?.relatedPlaylists?.uploads
+      };
+    });
+
+    setCache(cacheKey, channelStats);
+    return channelStats;
+  } catch (error) {
+    console.error('Error fetching channel statistics:', error);
+    return {};
+  }
+}
+
+export async function getChannelRecentVideos(playlistId, maxResults = 10) {
+  if (!playlistId) return [];
+  
+  const cacheKey = `channel-recent-${playlistId}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  const youtube = getYouTubeClient();
+  
+  try {
+    const response = await withRateLimit('playlistItems', () =>
+      youtube.playlistItems.list({
+        part: ['snippet', 'contentDetails'],
+        playlistId,
+        maxResults: Math.min(maxResults, 50),
+        order: 'date'
+      })
+    );
+
+    const videos = response.data.items || [];
+    setCache(cacheKey, videos);
+    return videos;
+  } catch (error) {
+    console.error('Error fetching recent videos:', error);
+    return [];
+  }
+}
+
 export async function analyzeTrendingTopics(videos) {
   const analysis = {
     trendingKeywords: {},

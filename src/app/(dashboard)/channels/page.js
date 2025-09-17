@@ -58,8 +58,39 @@ export default function ChannelsPage() {
         if (error) throw error;
         setChannels(channels || []);
         
-        // Fetch growth metrics for each channel
+        // Check if any channels are missing thumbnails and refresh them
         if (channels && channels.length > 0) {
+          const channelsMissingThumbnails = channels.filter(
+            channel => !channel.thumbnail_url && !channel.analytics_data?.thumbnail_url
+          );
+          
+          if (channelsMissingThumbnails.length > 0) {
+            // Refresh thumbnails in the background
+            fetch('/api/channels/refresh-thumbnails', {
+              method: 'POST',
+            }).then(async (response) => {
+              if (response.ok) {
+                const result = await response.json();
+                console.log('Thumbnail refresh result:', result);
+                // Refetch channels if any were updated
+                if (result.updated > 0) {
+                  const { data: updatedChannels } = await supabase
+                    .from('channels')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
+                  
+                  if (updatedChannels) {
+                    setChannels(updatedChannels);
+                  }
+                }
+              }
+            }).catch(err => {
+              console.error('Error refreshing thumbnails:', err);
+            });
+          }
+          
+          // Fetch growth metrics for each channel
           await fetchGrowthMetrics(channels);
           // Store current metrics as snapshots for future comparison
           await storeMetricsSnapshots(channels);
@@ -218,9 +249,12 @@ export default function ChannelsPage() {
                   <div className="flex items-start gap-4 mb-4">
                     <div className="relative">
                       <img 
-                        src={channel.analytics_data?.thumbnail_url || channel.thumbnail_url || '/youtube-default.svg'} 
-                        alt={channel.name || channel.title}
+                        src={channel.thumbnail_url || channel.analytics_data?.thumbnail_url || channel.analytics_data?.thumbnails?.high?.url || channel.analytics_data?.thumbnails?.medium?.url || channel.analytics_data?.thumbnails?.default?.url || '/youtube-default.svg'} 
+                        alt={channel.title || channel.name}
                         className="w-16 h-16 rounded-full object-cover ring-2 ring-red-400/50"
+                        onError={(e) => {
+                          e.target.src = '/youtube-default.svg';
+                        }}
                       />
                       {channel.is_verified && (
                         <CheckCircle className="absolute -bottom-1 -right-1 h-5 w-5 text-blue-400 bg-black rounded-full" />

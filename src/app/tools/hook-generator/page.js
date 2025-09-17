@@ -169,7 +169,7 @@ export default function HookGeneratorPage() {
                   <SelectValue placeholder="Select video type (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any type</SelectItem>
+                  <SelectItem value="any">Any type</SelectItem>
                   {Object.entries(SCRIPT_TYPES).map(([key, value]) => (
                     <SelectItem key={key} value={value}>{value}</SelectItem>
                   ))}

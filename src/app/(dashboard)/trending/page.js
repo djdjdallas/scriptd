@@ -150,16 +150,19 @@ export default function TrendingPage() {
           totalSearchVolume: 0
         });
       } else {
-        // Use fallback mock data if API fails
-        loadMockData();
+        // Show error if API fails
+        toast.error('Failed to load trending data from YouTube');
+        setTrendingTopics([]);
+        setTrendingChannels([]);
       }
 
       // Fetch growth metrics
       fetchGrowthMetrics();
     } catch (error) {
       console.error('Error fetching trending data:', error);
-      toast.error('Failed to load trending data. Using sample data.');
-      loadMockData();
+      toast.error('Failed to load trending data. Please try again.');
+      setTrendingTopics([]);
+      setTrendingChannels([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -185,65 +188,17 @@ export default function TrendingPage() {
   };
 
   const loadMockData = () => {
-    // Fallback mock data
-    setTrendingTopics([
-      {
-        id: 1,
-        topic: 'AI Tools Review',
-        category: 'Technology',
-        growth: '+1,250%',
-        searches: '2.5M',
-        videos: '15K',
-        engagement: 'Very High',
-        hashtags: ['#AITools', '#TechReview', '#AI2024'],
-        description: 'Reviews and tutorials of latest AI tools are seeing massive growth',
-        score: 98
-      },
-      {
-        id: 2,
-        topic: 'Budget Travel 2025',
-        category: 'Travel',
-        growth: '+890%',
-        searches: '1.8M',
-        videos: '8.2K',
-        engagement: 'High',
-        hashtags: ['#BudgetTravel', '#Travel2025', '#CheapFlights'],
-        description: 'Budget travel content for 2025 destinations is trending',
-        score: 92
-      }
-    ]);
-
-    setTrendingChannels([
-      {
-        id: 1,
-        name: 'TechVision Pro',
-        handle: '@techvisionpro',
-        subscribers: '2.5M',
-        growth: '+45K/week',
-        category: 'Technology',
-        thumbnail: '/youtube-default.svg',
-        avgViews: '500K',
-        uploadFreq: '3/week',
-        topVideo: 'ChatGPT vs Claude: Ultimate Comparison',
-        verified: true
-      }
-    ]);
-
-    setHottestTopic({
-      topic: 'AI Voice Cloning Tools',
-      growth: '+2,150%',
-      searches: '5.2M',
-      videos: '28K',
-      avgViews: '850K',
-      hashtags: ['#AIVoice', '#VoiceCloning', '#ContentCreation', '#AI']
-    });
-
+    // No fallback data - show error state instead
+    setTrendingTopics([]);
+    setTrendingChannels([]);
+    setHottestTopic(null);
     setStats({
-      totalTopics: 142,
-      avgGrowthRate: 89,
-      totalChannels: 2800,
-      totalSearchVolume: 15000000
+      totalTopics: 0,
+      avgGrowthRate: 0,
+      totalChannels: 0,
+      totalSearchVolume: 0
     });
+    toast.error('Unable to load trending data. Please check your YouTube API configuration.');
   };
 
   const handleRefresh = () => {

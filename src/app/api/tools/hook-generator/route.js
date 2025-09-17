@@ -24,6 +24,9 @@ export const POST = createApiHandler(async (req) => {
   });
 
   const { topic, videoType = '', targetAudience = '' } = await req.json();
+  
+  // Handle "any" value same as empty
+  const actualVideoType = (videoType === 'any' || !videoType) ? '' : videoType;
 
   if (!topic?.trim()) {
     throw new ApiError('Topic is required', 400);
@@ -43,7 +46,7 @@ export const POST = createApiHandler(async (req) => {
     
     const prompt = `Generate 6 different YouTube video hooks for the following:
 Topic: ${topic}
-${videoType ? `Video Type: ${videoType}` : ''}
+${actualVideoType ? `Video Type: ${actualVideoType}` : ''}
 ${targetAudience ? `Target Audience: ${targetAudience}` : ''}
 
 Create one hook for each style:
@@ -122,7 +125,7 @@ Format each hook on a new line with the style name followed by a colon, then the
         tool: 'hook-generator',
         metadata: {
           topic,
-          videoType,
+          videoType: actualVideoType,
           targetAudience,
           ip: req.headers.get('x-forwarded-for') || 'unknown'
         }

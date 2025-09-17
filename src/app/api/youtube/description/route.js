@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createAIService } from '@/lib/ai';
-import { checkCredits, deductCredits } from '@/lib/credits';
+import { getAIService } from '@/lib/ai';
 
 export async function POST(request) {
   try {
@@ -13,11 +12,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check credits
-    const hasCredits = await checkCredits(user.id, 2);
-    if (!hasCredits) {
-      return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 });
-    }
+    // Credits check removed - implement your own credit system if needed
 
     const { videoTopic, keywords, style, includeHashtags, includeCTA } = await request.json();
 
@@ -29,8 +24,6 @@ export async function POST(request) {
     }
 
     // Generate description using Claude Sonnet
-    const aiService = createAIService('claude-3-5-haiku-20241022');
-    
     const styleGuide = {
       professional: 'Use a professional, informative tone with clear structure',
       casual: 'Use a friendly, conversational tone like talking to a friend',
@@ -55,10 +48,13 @@ ${includeHashtags ? '7. Relevant hashtags (15-20 hashtags)' : ''}
 
 Make it engaging, SEO-optimized, and informative. Use emojis appropriately to make it visually appealing.`;
 
-    const description = await aiService.generateText(prompt);
+    const aiService = getAIService();
+    const response = await aiService.generateText({
+      prompt: prompt,
+      maxTokens: 1000
+    });
     
-    // Deduct credits
-    await deductCredits(user.id, 2, 'youtube_description');
+    const description = response.text || response;
 
     return NextResponse.json({
       success: true,
