@@ -23,28 +23,45 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
     
-    // Call the cron endpoint with the secret
-    const cronUrl = new URL('/api/cron/collect-metrics', request.url);
-    const response = await fetch(cronUrl, {
-      headers: {
-        'Authorization': `Bearer ${process.env.CRON_SECRET || 'default-secret'}`
+    // Option 1: Call Supabase function directly
+    try {
+      const { data: result, error } = await supabase.rpc('collect_metrics_direct');
+      
+      if (error) {
+        throw error;
       }
-    });
-    
-    const result = await response.json();
-    
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: 'Failed to collect metrics', details: result },
-        { status: response.status }
-      );
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Metrics collection completed via Supabase',
+        result
+      });
+    } catch (supabaseError) {
+      console.log('Falling back to API endpoint:', supabaseError);
+      
+      // Option 2: Fall back to calling the cron endpoint
+      const cronUrl = new URL('/api/cron/collect-metrics', request.url);
+      const response = await fetch(cronUrl, {
+        headers: {
+          'Authorization': `Bearer ${process.env.CRON_SECRET || 'default-secret'}`
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        return NextResponse.json(
+          { error: 'Failed to collect metrics', details: result },
+          { status: response.status }
+        );
+      }
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Metrics collection initiated via API',
+        result
+      });
     }
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Metrics collection initiated',
-      result
-    });
     
   } catch (error) {
     console.error('Error triggering metrics collection:', error);
