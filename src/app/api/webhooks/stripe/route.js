@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import { getStripeService } from '@/lib/stripe/client';
 import { createServiceClient } from '@/lib/supabase/service';
 import { PLANS, CREDIT_PACKAGES } from '@/lib/constants';
+import { emailService } from '@/lib/email/email-service';
 
 // Map Stripe price IDs to credit amounts and tiers
 const PRICE_TO_CREDITS = {
@@ -89,10 +90,60 @@ async function handleCheckoutComplete(session) {
     metadata,
     amount_total,
     currency,
-    payment_intent
+    payment_intent,
+    subscription
   } = session;
 
   const userId = metadata?.userId;
+  const teamId = metadata?.teamId;
+
+  // Handle team subscription checkout
+  if (teamId) {
+    const planTier = metadata?.planTier;
+    
+    if (subscription) {
+      // Update team subscription info
+      await supabase
+        .from('teams')
+        .update({
+          stripe_subscription_id: subscription,
+          stripe_customer_id: customer,
+          subscription_tier: planTier,
+          billing_email: session.customer_details?.email
+        })
+        .eq('id', teamId);
+
+      // Update max members based on tier
+      const maxMembers = {
+        'free': 1,
+        'creator': 1,
+        'professional': 3,
+        'agency': 10
+      }[planTier] || 1;
+
+      await supabase
+        .from('teams')
+        .update({ max_members: maxMembers })
+        .eq('id', teamId);
+
+      // Log team activity
+      await supabase
+        .from('team_activity')
+        .insert({
+          team_id: teamId,
+          user_id: userId,
+          activity_type: 'subscription_upgraded',
+          entity_type: 'team',
+          details: {
+            plan_tier: planTier,
+            subscription_id: subscription
+          }
+        });
+
+      console.log(`Team ${teamId} upgraded to ${planTier} plan`);
+      return;
+    }
+  }
 
   if (!userId) {
     console.error('No user ID in checkout session metadata');
@@ -194,11 +245,44 @@ async function handleSubscriptionUpdate(subscription) {
   const supabase = createServiceClient();
   
   const { 
-    metadata: { userId },
+    metadata,
     status,
     current_period_end,
     items
   } = subscription;
+
+  const userId = metadata?.userId;
+  const teamId = metadata?.teamId;
+
+  // Handle team subscription updates
+  if (teamId) {
+    const planTier = metadata?.planTier;
+    
+    // Update team subscription status
+    await supabase
+      .from('teams')
+      .update({
+        subscription_tier: planTier || 'free',
+        stripe_subscription_id: subscription.id
+      })
+      .eq('id', teamId);
+
+    // Update max members based on tier
+    const maxMembers = {
+      'free': 1,
+      'creator': 1,
+      'professional': 3,
+      'agency': 10
+    }[planTier] || 1;
+
+    await supabase
+      .from('teams')
+      .update({ max_members: maxMembers })
+      .eq('id', teamId);
+
+    console.log(`Team ${teamId} subscription updated to ${planTier}`);
+    return;
+  }
 
   if (!userId) {
     console.error('No user ID in subscription');
@@ -271,7 +355,38 @@ async function handleSubscriptionUpdate(subscription) {
 async function handleSubscriptionDeleted(subscription) {
   const supabase = createServiceClient();
   
-  const { metadata: { userId } } = subscription;
+  const { metadata } = subscription;
+  const userId = metadata?.userId;
+  const teamId = metadata?.teamId;
+
+  // Handle team subscription cancellation
+  if (teamId) {
+    // Downgrade team to free tier
+    await supabase
+      .from('teams')
+      .update({
+        subscription_tier: 'free',
+        stripe_subscription_id: null,
+        max_members: 3
+      })
+      .eq('id', teamId);
+
+    // Log team activity
+    await supabase
+      .from('team_activity')
+      .insert({
+        team_id: teamId,
+        user_id: userId,
+        activity_type: 'subscription_cancelled',
+        entity_type: 'team',
+        details: {
+          previous_tier: metadata?.planTier || 'unknown'
+        }
+      });
+
+    console.log(`Team ${teamId} subscription cancelled, downgraded to free tier`);
+    return;
+  }
 
   if (!userId) {
     console.error('No user ID in subscription');
@@ -310,14 +425,14 @@ async function handleInvoicePaymentSucceeded(invoice) {
 async function handleInvoicePaymentFailed(invoice) {
   const supabase = createServiceClient();
   
-  const { subscription, customer } = invoice;
+  const { subscription, customer, next_payment_attempt } = invoice;
 
   if (!subscription) return;
 
   // Get user by Stripe customer ID
   const { data: user } = await supabase
     .from('users')
-    .select('id, email')
+    .select('id, email, full_name')
     .eq('stripe_customer_id', customer)
     .single();
 
@@ -328,7 +443,14 @@ async function handleInvoicePaymentFailed(invoice) {
       .update({ subscription_status: 'past_due' })
       .eq('id', user.id);
 
-    // TODO: Send payment failed email
-    console.log('Payment failed for user:', user.email);
+    // Send payment failed email
+    await emailService.sendPaymentFailedNotification({
+      email: user.email,
+      name: user.full_name,
+      reason: invoice.last_payment_error?.message || 'Payment failed',
+      nextAttemptDate: next_payment_attempt ? new Date(next_payment_attempt * 1000) : null
+    });
+
+    console.log('Payment failed notification sent to:', user.email);
   }
 }

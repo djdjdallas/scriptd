@@ -68,7 +68,7 @@ export const POST = createApiHandler(async (req) => {
       }
     );
 
-    const result = await ai.generateChat({
+    const result = await ai.generateChatCompletion({
       model: 'claude-3-opus-20240229', // Best for voice matching
       messages: [
         { role: 'system', content: prompt.system },

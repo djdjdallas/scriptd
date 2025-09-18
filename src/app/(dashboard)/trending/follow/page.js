@@ -47,120 +47,110 @@ export default function FollowTrendPage() {
   const generateActionPlan = async () => {
     setLoading(true);
     try {
-      // Mock action plan generation
-      const mockActionPlan = {
+      // Call the API to generate a real action plan
+      const response = await fetch('/api/trending/action-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          channelName,
+          topic,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate action plan');
+      }
+
+      const actionPlanData = await response.json();
+      
+      // Ensure the plan has all required fields
+      const processedPlan = {
+        ...actionPlanData,
+        channel: actionPlanData.channel || channelName,
+        topic: actionPlanData.topic || topic,
+        strategy: actionPlanData.strategy || 'Growth Strategy',
+        timeline: actionPlanData.timeline || '30 Days',
+        estimatedResults: actionPlanData.estimatedResults || {
+          views: '10K-50K',
+          subscribers: '+100-500',
+          revenue: '$100-500'
+        },
+        weeklyPlan: actionPlanData.weeklyPlan || [],
+        contentTemplates: actionPlanData.contentTemplates || [],
+        keywords: actionPlanData.keywords || [],
+        equipment: actionPlanData.equipment || [],
+        successMetrics: actionPlanData.successMetrics || {
+          week1: { views: '1K', subscribers: '+10', engagement: '5%' },
+          week2: { views: '5K', subscribers: '+50', engagement: '6%' },
+          week3: { views: '15K', subscribers: '+150', engagement: '7%' },
+          week4: { views: '30K', subscribers: '+300', engagement: '8%' }
+        }
+      };
+      
+      setActionPlan(processedPlan);
+      toast.success('Action plan generated successfully!');
+    } catch (error) {
+      console.error('Error generating action plan:', error);
+      toast.error(error.message || 'Failed to generate action plan');
+      
+      // Set a basic fallback plan if API fails
+      setActionPlan({
         channel: channelName,
         topic: topic,
-        strategy: 'Rapid Growth Strategy',
+        strategy: 'Basic Growth Strategy',
         timeline: '30 Days',
         estimatedResults: {
-          views: '500K-1M',
-          subscribers: '+5K-10K',
-          revenue: '$2K-5K'
+          views: '5K-20K',
+          subscribers: '+50-200',
+          revenue: '$50-200'
         },
-        
-        // Weekly breakdown
         weeklyPlan: [
           {
             week: 1,
-            theme: 'Research & Planning',
+            theme: 'Planning',
             tasks: [
-              { id: 'w1t1', task: 'Analyze top 10 videos in this niche', priority: 'high' },
-              { id: 'w1t2', task: 'Create content calendar', priority: 'high' },
-              { id: 'w1t3', task: 'Design thumbnail templates', priority: 'medium' },
-              { id: 'w1t4', task: 'Write video scripts', priority: 'high' },
-              { id: 'w1t5', task: 'Set up analytics tracking', priority: 'low' }
+              { id: 'w1t1', task: 'Research your niche', priority: 'high' },
+              { id: 'w1t2', task: 'Create content plan', priority: 'high' },
             ]
           },
           {
             week: 2,
-            theme: 'Content Creation',
+            theme: 'Creation',
             tasks: [
-              { id: 'w2t1', task: 'Record 3 main videos', priority: 'high' },
-              { id: 'w2t2', task: 'Create 5 YouTube Shorts', priority: 'medium' },
-              { id: 'w2t3', task: 'Edit and polish videos', priority: 'high' },
-              { id: 'w2t4', task: 'Create engaging thumbnails', priority: 'high' },
-              { id: 'w2t5', task: 'Write SEO-optimized descriptions', priority: 'medium' }
+              { id: 'w2t1', task: 'Create your first videos', priority: 'high' },
+              { id: 'w2t2', task: 'Design thumbnails', priority: 'medium' },
             ]
           },
           {
             week: 3,
-            theme: 'Launch & Promotion',
+            theme: 'Publishing',
             tasks: [
-              { id: 'w3t1', task: 'Upload videos at optimal times', priority: 'high' },
-              { id: 'w3t2', task: 'Share on social media', priority: 'medium' },
-              { id: 'w3t3', task: 'Engage with comments', priority: 'high' },
-              { id: 'w3t4', task: 'Collaborate with other creators', priority: 'medium' },
-              { id: 'w3t5', task: 'Run targeted ads (optional)', priority: 'low' }
+              { id: 'w3t1', task: 'Upload and optimize videos', priority: 'high' },
+              { id: 'w3t2', task: 'Promote on social media', priority: 'medium' },
             ]
           },
           {
             week: 4,
-            theme: 'Optimize & Scale',
+            theme: 'Analysis',
             tasks: [
-              { id: 'w4t1', task: 'Analyze performance metrics', priority: 'high' },
-              { id: 'w4t2', task: 'A/B test thumbnails', priority: 'medium' },
-              { id: 'w4t3', task: 'Create follow-up content', priority: 'high' },
-              { id: 'w4t4', task: 'Build email list', priority: 'medium' },
-              { id: 'w4t5', task: 'Plan next month strategy', priority: 'high' }
+              { id: 'w4t1', task: 'Review analytics', priority: 'high' },
+              { id: 'w4t2', task: 'Plan improvements', priority: 'high' },
             ]
           }
         ],
-        
-        // Content templates
-        contentTemplates: [
-          {
-            type: 'Review Video',
-            title: 'The TRUTH About [Tool Name] - Honest Review 2024',
-            structure: 'Hook (0-15s) → Overview (15-60s) → Deep Dive (1-8min) → Pros/Cons (8-10min) → Verdict (10-12min)',
-            duration: '12-15 minutes'
-          },
-          {
-            type: 'Comparison Video',
-            title: '[Tool A] vs [Tool B]: Which is ACTUALLY Better?',
-            structure: 'Hook → Quick Overview → Feature Comparison → Pricing → Real Tests → Winner',
-            duration: '15-18 minutes'
-          },
-          {
-            type: 'Tutorial',
-            title: 'How to Use [Tool] Like a PRO (Complete Guide)',
-            structure: 'Problem → Solution Intro → Step-by-Step → Advanced Tips → Results',
-            duration: '10-12 minutes'
-          }
-        ],
-        
-        // Keywords to target
-        keywords: [
-          'AI tools 2024',
-          'best AI apps',
-          'ChatGPT alternatives',
-          'AI for business',
-          'AI automation',
-          'AI productivity'
-        ],
-        
-        // Equipment needed
-        equipment: [
-          { item: 'Good microphone', essential: true, budget: '$50-150' },
-          { item: 'Screen recording software', essential: true, budget: '$0-30/mo' },
-          { item: 'Video editor', essential: true, budget: '$0-50/mo' },
-          { item: 'Thumbnail designer', essential: true, budget: '$0-15/mo' },
-          { item: 'Ring light', essential: false, budget: '$30-100' }
-        ],
-        
-        // Success metrics
+        contentTemplates: [],
+        keywords: [topic],
+        equipment: [],
         successMetrics: {
-          week1: { views: '10K', subscribers: '+100', engagement: '5%' },
-          week2: { views: '50K', subscribers: '+500', engagement: '7%' },
-          week3: { views: '200K', subscribers: '+2K', engagement: '8%' },
-          week4: { views: '500K', subscribers: '+5K', engagement: '10%' }
+          week1: { views: '100', subscribers: '+5', engagement: '3%' },
+          week2: { views: '500', subscribers: '+20', engagement: '4%' },
+          week3: { views: '2K', subscribers: '+50', engagement: '5%' },
+          week4: { views: '5K', subscribers: '+100', engagement: '6%' }
         }
-      };
-      
-      setActionPlan(mockActionPlan);
-    } catch (error) {
-      console.error('Error generating action plan:', error);
-      toast.error('Failed to generate action plan');
+      });
     } finally {
       setLoading(false);
     }
@@ -366,6 +356,93 @@ export default function FollowTrendPage() {
           </div>
         </div>
       </div>
+
+      {/* Content Ideas - if available */}
+      {actionPlan.contentIdeas && actionPlan.contentIdeas.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Lightbulb className="h-6 w-6 text-yellow-400" />
+            Specific Content Ideas
+          </h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {actionPlan.contentIdeas.map((idea, index) => (
+              <div key={index} className="glass-card p-4">
+                <h4 className="text-white font-bold mb-2">{idea.title}</h4>
+                <p className="text-purple-300 text-sm mb-2">Hook: {idea.hook}</p>
+                <p className="text-gray-400 text-sm mb-2">{idea.description}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-green-400">Est. {idea.estimatedViews} views</span>
+                  <Button size="sm" className="glass-button text-xs">
+                    <Edit3 className="h-3 w-3 mr-1" />
+                    Use Idea
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Competitor Analysis - if available */}
+      {actionPlan.competitorAnalysis && (
+        <div className="glass-card p-6">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <Target className="h-5 w-5 text-purple-400" />
+            Competitor Analysis
+          </h3>
+          <div className="grid md:grid-cols-3 gap-4">
+            {actionPlan.competitorAnalysis.topChannels && (
+              <div>
+                <p className="text-sm text-gray-400 mb-2">Channels to Study:</p>
+                <div className="space-y-1">
+                  {actionPlan.competitorAnalysis.topChannels.map((channel, i) => (
+                    <p key={i} className="text-sm text-purple-300">• {channel}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+            {actionPlan.competitorAnalysis.successFactors && (
+              <div>
+                <p className="text-sm text-gray-400 mb-2">Success Factors:</p>
+                <div className="space-y-1">
+                  {actionPlan.competitorAnalysis.successFactors.map((factor, i) => (
+                    <p key={i} className="text-sm text-green-300">• {factor}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+            {actionPlan.competitorAnalysis.gaps && (
+              <div>
+                <p className="text-sm text-gray-400 mb-2">Opportunities:</p>
+                <div className="space-y-1">
+                  {actionPlan.competitorAnalysis.gaps.map((gap, i) => (
+                    <p key={i} className="text-sm text-yellow-300">• {gap}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Monetization Strategy - if available */}
+      {actionPlan.monetizationStrategy && actionPlan.monetizationStrategy.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Zap className="h-6 w-6 text-green-400" />
+            Monetization Strategy
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {actionPlan.monetizationStrategy.map((method, index) => (
+              <div key={index} className="glass-card p-4">
+                <h4 className="text-white font-semibold mb-2">{method.method}</h4>
+                <p className="text-xs text-gray-400 mb-1">Timeline: {method.timeline}</p>
+                <p className="text-sm text-green-400 font-semibold">{method.potential}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="glass-card p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10">

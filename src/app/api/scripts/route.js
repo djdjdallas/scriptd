@@ -19,18 +19,30 @@ export const GET = createApiHandler(async (req) => {
   const sortBy = searchParams.get('sortBy') || 'created_at';
   const sortOrder = searchParams.get('sortOrder') || 'desc';
 
-  // Build query - join with channels to get user's scripts
+  // Build query - get user's scripts without complex joins
+  // First get user's channels
+  const { data: userChannels } = await supabase
+    .from('channels')
+    .select('id, name')
+    .eq('user_id', user.id);
+  
+  const channelIds = userChannels?.map(c => c.id) || [];
+  const channelMap = userChannels?.reduce((acc, c) => {
+    acc[c.id] = c.name;
+    return acc;
+  }, {}) || {};
+  
+  // Then get scripts for those channels
   let query = supabase
     .from('scripts')
-    .select(`
-      *,
-      channels!inner(
-        id,
-        name,
-        user_id
-      )
-    `, { count: 'exact' })
-    .eq('channels.user_id', user.id);
+    .select('*', { count: 'exact' });
+  
+  // Filter by user's channels or direct user_id
+  if (channelIds.length > 0) {
+    query = query.or(`channel_id.in.(${channelIds.map(id => `"${id}"`).join(',')}),user_id.eq.${user.id}`);
+  } else {
+    query = query.eq('user_id', user.id);
+  }
 
   // Apply filters
   if (type) {
@@ -70,7 +82,7 @@ export const GET = createApiHandler(async (req) => {
     length: script.metadata?.length || script.length || 5,
     excerpt: script.content ? script.content.substring(0, 200) + '...' : '',
     channelId: script.channel_id,
-    channelName: script.channels?.name,
+    channelName: channelMap[script.channel_id] || 'Unknown Channel',
     createdAt: script.created_at,
     updatedAt: script.updated_at
   }));

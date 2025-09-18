@@ -20,15 +20,18 @@ import {
   Target,
   Eye,
   AtSign,
-  Lightbulb,
   Hash,
   Users,
   PlayCircle,
   BarChart3,
-  Clock,
   ChevronRight,
   Loader2,
   Wrench,
+  Plus,
+  Trash2,
+  Menu,
+  X,
+  Clock,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -149,11 +152,106 @@ export default function YouTubeResearchPage() {
   const [videoUrlInput, setVideoUrlInput] = useState("");
   const [activeTab, setActiveTab] = useState("chat");
   const [sessionId, setSessionId] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [loadingSessions, setLoadingSessions] = useState(true);
 
-  // Initialize session on mount
+  // Initialize session on mount and load sessions
   useEffect(() => {
+    loadSessions();
     createSession();
   }, []);
+
+  const loadSessions = async () => {
+    setLoadingSessions(true);
+    try {
+      const response = await fetch('/api/research/sessions');
+      if (response.ok) {
+        const data = await response.json();
+        setSessions(data.sessions || []);
+      }
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  const createNewSession = async () => {
+    try {
+      const response = await fetch('/api/research/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'New Research Chat' })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        await loadSessions();
+        setSessionId(data.session.id);
+        setMessages([]);
+        toast({
+          title: "New chat created",
+          description: "Started a new research conversation",
+        });
+      }
+    } catch (error) {
+      console.error('Error creating session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create new chat",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadSession = async (session) => {
+    try {
+      const response = await fetch(`/api/research/sessions/${session.id}/messages`);
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data.messages || []);
+        setSessionId(session.id);
+      }
+    } catch (error) {
+      console.error('Error loading session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load conversation",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteSession = async (sessionIdToDelete, e) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this conversation?')) return;
+    
+    try {
+      const response = await fetch(`/api/research/sessions?id=${sessionIdToDelete}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        await loadSessions();
+        if (sessionIdToDelete === sessionId) {
+          setSessionId(null);
+          setMessages([]);
+        }
+        toast({
+          title: "Chat deleted",
+          description: "Conversation has been removed",
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete conversation",
+        variant: "destructive",
+      });
+    }
+  };
 
   const createSession = async () => {
     try {
@@ -210,6 +308,9 @@ export default function YouTubeResearchPage() {
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
+        
+        // Reload sessions to update sidebar
+        await loadSessions();
       }
     } catch (error) {
       toast({
@@ -248,15 +349,57 @@ export default function YouTubeResearchPage() {
     }
   };
 
-  const handleChannelAnalysis = () => {
+  const handleChannelAnalysis = async () => {
     if (!channelInput.trim()) return;
 
-    const prompt = `Analyze @${channelInput.replace(
-      "@",
-      ""
-    )}'s YouTube channel: content strategy, upload frequency, video performance, thumbnail style, and growth tactics.`;
-    sendMessage(prompt);
-    setChannelInput("");
+    setIsLoading(true);
+    const cleanHandle = channelInput.replace("@", "");
+    
+    try {
+      // First fetch actual channel data from YouTube API
+      const channelResponse = await fetch(`/api/youtube/channel?handle=${encodeURIComponent(cleanHandle)}`);
+      
+      if (channelResponse.ok) {
+        const channelData = await channelResponse.json();
+        
+        // Create a detailed prompt with real channel data
+        const prompt = `Analyze @${cleanHandle}'s YouTube channel based on this data:
+
+Channel: ${channelData.title}
+Subscribers: ${channelData.statistics?.subscriberCount?.toLocaleString() || 'N/A'}
+Total Views: ${channelData.statistics?.viewCount?.toLocaleString() || 'N/A'}
+Videos: ${channelData.statistics?.videoCount || 'N/A'}
+Description: ${channelData.description?.substring(0, 500) || 'No description'}
+
+Recent Videos:
+${channelData.recentVideos?.map((v, i) => 
+  `${i + 1}. "${v.title}" - ${v.views?.toLocaleString() || 'N/A'} views`
+).join('\n') || 'No recent videos available'}
+
+Please analyze:
+1. Content strategy and niche focus
+2. Upload frequency and consistency
+3. Video performance and engagement patterns
+4. Thumbnail and title strategy
+5. Growth tactics and audience engagement
+6. Strengths and areas for improvement
+7. Key success factors`;
+        
+        sendMessage(prompt);
+      } else {
+        // Fallback to basic analysis if API fails
+        const prompt = `Analyze @${cleanHandle}'s YouTube channel: content strategy, upload frequency, video performance, thumbnail style, and growth tactics. Please provide insights based on publicly available information.`;
+        sendMessage(prompt);
+      }
+    } catch (error) {
+      console.error("Error fetching channel data:", error);
+      // Fallback to basic analysis
+      const prompt = `Analyze @${cleanHandle}'s YouTube channel: content strategy, upload frequency, video performance, thumbnail style, and growth tactics. Please provide insights based on publicly available information.`;
+      sendMessage(prompt);
+    } finally {
+      setChannelInput("");
+      setIsLoading(false);
+    }
   };
 
   const handleVideoAnalysis = () => {
@@ -272,7 +415,105 @@ export default function YouTubeResearchPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-screen">
+      {/* Sidebar */}
+      <div className={`${isSidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-black/40 border-r border-white/10 overflow-hidden flex flex-col`}>
+        <div className="p-4 border-b border-white/10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">Chat History</h2>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <X className="h-5 w-5 text-gray-400" />
+            </button>
+          </div>
+          <button
+            onClick={createNewSession}
+            className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 hover:from-purple-500/60 hover:to-pink-500/60 transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            New Chat
+          </button>
+        </div>
+        
+        <ScrollArea className="flex-1 p-4">
+          {loadingSessions ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="text-center py-8">
+              <MessageSquare className="h-12 w-12 text-gray-500 mx-auto mb-3" />
+              <p className="text-gray-400 text-sm">No conversations yet</p>
+              <p className="text-gray-500 text-xs mt-1">Start a new chat to begin</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {sessions.map((session) => (
+                <div
+                  key={session.id}
+                  onClick={() => loadSession(session)}
+                  className={`group p-3 rounded-lg cursor-pointer transition-all ${
+                    sessionId === session.id
+                      ? 'glass bg-purple-500/20 ring-2 ring-purple-400'
+                      : 'hover:bg-white/5'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-white truncate">
+                        {session.title}
+                      </h3>
+                      <p className="text-xs text-gray-400 truncate mt-1">
+                        {session.last_message_preview || session.metadata?.lastMessage || 'No messages yet'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Clock className="h-3 w-3 text-gray-500" />
+                        <span className="text-xs text-gray-500">
+                          {new Date(session.updatedAt || session.updated_at).toLocaleDateString()}
+                        </span>
+                        <span className="text-xs text-gray-500">•</span>
+                        <span className="text-xs text-gray-500">
+                          {session.messageCount || 0} messages
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => deleteSession(session.id, e)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all"
+                    >
+                      <Trash2 className="h-4 w-4 text-red-400" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center gap-4">
+            {!isSidebarOpen && (
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <Menu className="h-5 w-5 text-gray-400" />
+              </button>
+            )}
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-white">YouTube Research Assistant</h1>
+              <p className="text-gray-400 text-sm">Analyze channels, generate ideas, and research trending content</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
       {/* Background Effects */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute top-20 right-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl animate-float" />
@@ -433,7 +674,7 @@ export default function YouTubeResearchPage() {
 
           <div className="p-0">
             <TabsContent value="chat" className="m-0">
-              <div className="flex flex-col h-[500px]">
+              <div className="flex flex-col h-[700px]">
                 {/* Messages Area */}
                 <ScrollArea className="flex-1 p-6">
                   {messages.length === 0 ? (
@@ -552,7 +793,7 @@ export default function YouTubeResearchPage() {
             </TabsContent>
 
             <TabsContent value="library" className="m-0">
-              <ScrollArea className="h-[500px] p-6">
+              <ScrollArea className="h-[700px] p-6">
                 <div className="space-y-6">
                   {PROMPT_LIBRARY.map((category) => (
                     <div key={category.category}>
@@ -588,63 +829,6 @@ export default function YouTubeResearchPage() {
           </div>
         </Tabs>
       </div>
-
-      {/* Stats Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-reveal" style={{ animationDelay: '0.4s' }}>
-        <div className="glass-card p-4 glass-hover group">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-400">Research Sessions</p>
-              <p className="text-2xl font-bold text-white">
-                {messages.filter((m) => m.role === "user").length}
-              </p>
-            </div>
-            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-              <MessageSquare className="h-5 w-5 text-purple-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-card p-4 glass-hover group">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-400">Ideas Generated</p>
-              <p className="text-2xl font-bold text-white">
-                {messages.filter((m) => m.role === "assistant").length * 5}
-              </p>
-            </div>
-            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Lightbulb className="h-5 w-5 text-yellow-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-card p-4 glass-hover group">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-400">Channels Analyzed</p>
-              <p className="text-2xl font-bold text-white">
-                {messages.filter((m) => m.content.includes("@")).length}
-              </p>
-            </div>
-            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Users className="h-5 w-5 text-green-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-card p-4 glass-hover group">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-400">Time Saved</p>
-              <p className="text-2xl font-bold text-white">
-                {Math.round(messages.length * 15)} min
-              </p>
-            </div>
-            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Clock className="h-5 w-5 text-blue-400" />
-            </div>
-          </div>
         </div>
       </div>
     </div>

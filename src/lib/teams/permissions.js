@@ -251,3 +251,56 @@ export function getUserPermissions(role) {
     canViewAnalytics: hasPermission(role, PERMISSIONS.VIEW_ANALYTICS),
   };
 }
+
+/**
+ * Check team permission for a user
+ * @param {Object} supabase - Supabase client instance
+ * @param {string} userId - User ID to check
+ * @param {string} teamId - Team ID to check
+ * @param {string} requiredPermission - Permission level required (owner, admin, editor, viewer)
+ * @returns {Promise<Object>} Object with allowed, error, and role properties
+ */
+export async function checkTeamPermission(supabase, userId, teamId, requiredPermission) {
+  try {
+    // Get user's team membership
+    const { data: member, error } = await supabase
+      .from('team_members')
+      .select('role, status')
+      .eq('team_id', teamId)
+      .eq('user_id', userId)
+      .single();
+
+    if (error || !member) {
+      return { 
+        allowed: false, 
+        error: 'Not a team member',
+        role: null 
+      };
+    }
+
+    // Check if member is active
+    if (member.status !== 'active') {
+      return { 
+        allowed: false, 
+        error: 'Team membership is not active',
+        role: member.role 
+      };
+    }
+
+    // Check role level permission
+    const hasAccess = hasRoleLevel(member.role, requiredPermission);
+    
+    return { 
+      allowed: hasAccess, 
+      error: hasAccess ? null : 'Insufficient permissions',
+      role: member.role 
+    };
+  } catch (err) {
+    console.error('Error checking team permission:', err);
+    return { 
+      allowed: false, 
+      error: 'Failed to check permissions',
+      role: null 
+    };
+  }
+}

@@ -1,4 +1,4 @@
-import { getYouTubeClient, withRateLimit, getCached, setCache } from './client.js';
+import { getYouTubeClient, withRateLimit, getCached, setCache, clearCache } from './client.js';
 
 export async function getTrendingVideos(options = {}) {
   const {
@@ -232,6 +232,239 @@ export async function getChannelRecentVideos(playlistId, maxResults = 10) {
     console.error('Error fetching recent videos:', error);
     return [];
   }
+}
+
+// Fetch videos published in the last N hours
+export async function getRecentVideos(options = {}) {
+  const {
+    hours = 24,
+    categoryId = null,
+    regionCode = 'US',
+    maxResults = 50,
+    searchQuery = '',
+    forceRefresh = false
+  } = options;
+
+  const now = new Date();
+  const publishedAfter = new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString();
+  
+  const cacheKey = `recent-${hours}-${categoryId}-${regionCode}-${searchQuery}`;
+  const cached = getCached(cacheKey, forceRefresh);
+  if (cached) return cached;
+
+  const youtube = getYouTubeClient();
+
+  try {
+    // Search for recent videos with relevance and view count sorting
+    const searchParams = {
+      part: ['snippet'],
+      type: ['video'],
+      publishedAfter,
+      regionCode,
+      maxResults: Math.min(maxResults, 50),
+      order: 'date', // Get most recent first
+      relevanceLanguage: 'en',
+    };
+
+    if (categoryId) {
+      searchParams.videoCategoryId = categoryId;
+    }
+
+    if (searchQuery) {
+      searchParams.q = searchQuery;
+    }
+
+    const response = await withRateLimit('search', () =>
+      youtube.search.list(searchParams)
+    );
+
+    // Get video IDs
+    const videoIds = response.data.items
+      ?.filter(item => item.id?.videoId)
+      .map(item => item.id.videoId) || [];
+
+    if (videoIds.length === 0) {
+      return [];
+    }
+
+    // Get detailed stats for these videos
+    const videosResponse = await withRateLimit('videos', () =>
+      youtube.videos.list({
+        part: ['snippet', 'statistics', 'contentDetails'],
+        id: videoIds,
+      })
+    );
+
+    const videos = videosResponse.data.items || [];
+    
+    // Sort by view velocity (views per hour since published)
+    const videosWithVelocity = videos.map(video => {
+      const publishedAt = new Date(video.snippet.publishedAt);
+      const hoursSincePublish = Math.max(1, (now - publishedAt) / (1000 * 60 * 60));
+      const views = parseInt(video.statistics.viewCount || 0);
+      const velocity = views / hoursSincePublish;
+      
+      return {
+        ...video,
+        velocity,
+        hoursSincePublish
+      };
+    });
+
+    // Sort by velocity to get fastest growing videos
+    videosWithVelocity.sort((a, b) => b.velocity - a.velocity);
+    
+    setCache(cacheKey, videosWithVelocity);
+    return videosWithVelocity;
+  } catch (error) {
+    console.error('Error fetching recent videos:', error);
+    return [];
+  }
+}
+
+// Search multiple trending queries to diversify data sources
+export async function searchTrendingQueries(options = {}) {
+  const {
+    queries = [],
+    hours = 24,
+    regionCode = 'US',
+    maxResultsPerQuery = 10
+  } = options;
+
+  const allVideos = [];
+  const now = new Date();
+  const publishedAfter = new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString();
+
+  for (const query of queries) {
+    const cacheKey = `search-trending-${query}-${hours}`;
+    const cached = getCached(cacheKey);
+    
+    if (cached) {
+      allVideos.push(...cached);
+      continue;
+    }
+
+    try {
+      const videos = await searchVideos(query, {
+        maxResults: maxResultsPerQuery,
+        order: 'viewCount',
+        publishedAfter,
+        type: 'video'
+      });
+
+      // Calculate velocity for each video
+      const videosWithMetrics = videos.map(video => {
+        const publishedAt = new Date(video.snippet.publishedAt);
+        const hoursSincePublish = Math.max(1, (now - publishedAt) / (1000 * 60 * 60));
+        const views = parseInt(video.statistics.viewCount || 0);
+        const velocity = views / hoursSincePublish;
+        
+        return {
+          ...video,
+          velocity,
+          hoursSincePublish,
+          searchQuery: query
+        };
+      });
+
+      setCache(cacheKey, videosWithMetrics);
+      allVideos.push(...videosWithMetrics);
+    } catch (error) {
+      console.error(`Error searching for query "${query}":`, error);
+    }
+  }
+
+  return allVideos;
+}
+
+// Get emerging topics by comparing with historical data
+export async function getEmergingTopics(videos, historicalTopics = []) {
+  const currentTopics = new Map();
+  const now = new Date();
+  
+  // Extract topics from current videos
+  videos.forEach(video => {
+    const content = `${video.snippet.title} ${video.snippet.description}`.toLowerCase();
+    const tags = video.snippet.tags || [];
+    
+    // Extract multi-word phrases (2-4 words)
+    const words = content.split(/\s+/).filter(w => w.length > 2);
+    for (let len = 2; len <= 4; len++) {
+      for (let i = 0; i <= words.length - len; i++) {
+        const phrase = words.slice(i, i + len).join(' ');
+        
+        // Skip common phrases
+        if (phrase.match(/^(the|and|for|with|from|about|this|that|have|will)/i)) continue;
+        
+        const topic = phrase.charAt(0).toUpperCase() + phrase.slice(1);
+        
+        if (!currentTopics.has(topic)) {
+          currentTopics.set(topic, {
+            count: 0,
+            videos: [],
+            totalViews: 0,
+            avgVelocity: 0,
+            firstSeen: now,
+            tags: new Set()
+          });
+        }
+        
+        const topicData = currentTopics.get(topic);
+        topicData.count++;
+        topicData.videos.push(video);
+        topicData.totalViews += parseInt(video.statistics?.viewCount || 0);
+        topicData.avgVelocity += video.velocity || 0;
+        tags.forEach(tag => topicData.tags.add(tag));
+      }
+    }
+  });
+  
+  // Calculate growth compared to historical data
+  const emergingTopics = [];
+  
+  for (const [topic, data] of currentTopics) {
+    // Only consider topics that appear in multiple videos
+    if (data.count < 2) continue;
+    
+    const avgVelocity = data.avgVelocity / data.count;
+    const avgViews = data.totalViews / data.count;
+    
+    // Check if this is a new topic (not in historical data)
+    const historical = historicalTopics.find(h => h.topic_name === topic);
+    let growthRate = 100; // Default 100% for new topics
+    let isEmerging = true;
+    
+    if (historical) {
+      // Calculate growth rate with safe division
+      const historicalAvgViews = historical.avg_views || avgViews;
+      if (historicalAvgViews > 0) {
+        growthRate = Math.min(9999, ((avgViews - historicalAvgViews) / historicalAvgViews) * 100);
+      } else {
+        growthRate = avgViews > 0 ? 999 : 0;
+      }
+      
+      // Consider emerging if growth > 50%
+      isEmerging = growthRate > 50;
+    }
+    
+    if (isEmerging) {
+      emergingTopics.push({
+        topic,
+        count: data.count,
+        avgViews,
+        avgVelocity,
+        growthRate,
+        isNew: !historical,
+        videos: data.videos.slice(0, 3), // Top 3 videos
+        tags: Array.from(data.tags).slice(0, 5)
+      });
+    }
+  }
+  
+  // Sort by velocity (fastest growing first)
+  emergingTopics.sort((a, b) => b.avgVelocity - a.avgVelocity);
+  
+  return emergingTopics.slice(0, 20); // Top 20 emerging topics
 }
 
 export async function analyzeTrendingTopics(videos) {

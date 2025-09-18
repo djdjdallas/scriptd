@@ -83,7 +83,7 @@ Be concise but thorough. Cite sources when referencing specific information.`;
 
     // Generate AI response
     const ai = getAIService();
-    const response = await ai.generateChat({
+    const response = await ai.generateChatCompletion({
       messages: [
         { role: 'system', content: systemPrompt },
         ...researchSession.metadata?.messages?.slice(-10) || [], // Include recent history

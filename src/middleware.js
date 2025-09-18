@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 import { createServerClient } from '@supabase/ssr'
+import { logger } from '@/lib/monitoring/logger'
 
 export async function middleware(request) {
+  const start = Date.now()
+  const pathname = request.nextUrl.pathname
+  const method = request.method
+  
   // Update the session
   let response = await updateSession(request)
 
@@ -33,10 +38,30 @@ export async function middleware(request) {
   // Protected routes
   const protectedRoutes = ['/scripts', '/channels', '/research', '/settings', '/billing', '/dashboard', '/teams', '/admin']
   const authRoutes = ['/login', '/signup']
-  const pathname = request.nextUrl.pathname
 
-  // Skip middleware for auth callback and onboarding
-  if (pathname.startsWith('/auth/callback') || pathname.startsWith('/api/')) {
+  // Skip middleware for auth callback
+  if (pathname.startsWith('/auth/callback')) {
+    return response
+  }
+
+  // Add monitoring for API routes
+  if (pathname.startsWith('/api/')) {
+    const ip = request.headers.get('x-forwarded-for') || 'unknown'
+    
+    // Add request ID header
+    response.headers.set('X-Request-ID', crypto.randomUUID())
+    response.headers.set('X-Response-Time', `${Date.now() - start}ms`)
+    
+    // Log API requests in production
+    if (process.env.NODE_ENV === 'production') {
+      logger.info('API request', {
+        pathname,
+        method,
+        ip,
+        userAgent: request.headers.get('user-agent'),
+      })
+    }
+    
     return response
   }
 

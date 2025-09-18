@@ -38,15 +38,43 @@ export async function withRateLimit(key, fn) {
   return fn();
 }
 
-// Cache helper
+// Cache helper with context-aware TTL
 const cache = new Map();
-const CACHE_TTL = 300000; // 5 minutes
+const DEFAULT_CACHE_TTL = 60000; // 1 minute for trending data
+const STATIC_CACHE_TTL = 300000; // 5 minutes for static data like categories
 
-export function getCached(key) {
+// Different cache times for different data types
+const CACHE_TTL_MAP = {
+  'trending': 30000,     // 30 seconds for trending videos
+  'search': 60000,       // 1 minute for search results
+  'recent': 30000,       // 30 seconds for recent videos
+  'categories': 300000,  // 5 minutes for categories (rarely change)
+  'channels': 180000,    // 3 minutes for channel data
+  'related': 120000,     // 2 minutes for related content
+};
+
+export function getCached(key, forceRefresh = false) {
+  if (forceRefresh) {
+    cache.delete(key);
+    return null;
+  }
+  
   const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+  if (!cached) return null;
+  
+  // Determine cache TTL based on key type
+  let ttl = DEFAULT_CACHE_TTL;
+  for (const [type, typeTtl] of Object.entries(CACHE_TTL_MAP)) {
+    if (key.startsWith(type)) {
+      ttl = typeTtl;
+      break;
+    }
+  }
+  
+  if (Date.now() - cached.timestamp < ttl) {
     return cached.data;
   }
+  
   cache.delete(key);
   return null;
 }
@@ -59,6 +87,19 @@ export function setCache(key, data) {
     const entries = Array.from(cache.entries());
     entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
     entries.slice(0, 500).forEach(([k]) => cache.delete(k));
+  }
+}
+
+export function clearCache(pattern = null) {
+  if (!pattern) {
+    cache.clear();
+    return;
+  }
+  
+  for (const key of cache.keys()) {
+    if (key.includes(pattern)) {
+      cache.delete(key);
+    }
   }
 }
 

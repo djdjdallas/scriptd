@@ -26,23 +26,61 @@ export default function AllTrendingTopicsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('score'); // score, growth, views, engagement
   const [filterCategory, setFilterCategory] = useState('all');
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
-    fetchAllTopics();
-  }, []);
+    fetchAllTopics(false, filterCategory);
+    
+    // Set up auto-refresh every 60 seconds if enabled
+    const interval = autoRefresh ? setInterval(() => {
+      fetchAllTopics(true, filterCategory);
+      setLastRefresh(Date.now());
+    }, 60000) : null;
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [autoRefresh, filterCategory]);
 
   useEffect(() => {
     filterAndSortTopics();
   }, [topics, searchQuery, sortBy, filterCategory]);
 
-  const fetchAllTopics = async () => {
+  const fetchAllTopics = async (refresh = false, category = 'all') => {
     setLoading(true);
     try {
-      const response = await fetch('/api/trending?limit=50');
+      // Use the new v2 API with better trend detection
+      const params = new URLSearchParams({
+        limit: 50,
+        timeframe: 'today',
+        refresh: refresh.toString(),
+        category: category
+      });
+      
+      const response = await fetch(`/api/trending/v2?${params}`);
       const data = await response.json();
       
       if (data.success) {
-        setTopics(data.data.trendingTopics || []);
+        // Combine trending and emerging topics
+        const allTopics = [
+          ...(data.data.emergingTopics || []).map(t => ({ ...t, isEmerging: true })),
+          ...(data.data.trendingTopics || [])
+        ];
+        
+        setTopics(allTopics);
+        
+        if (refresh) {
+          toast.success('Topics refreshed with latest data!');
+        }
+        
+        // Show stats
+        if (data.data.stats) {
+          console.log('Trending Stats:', data.data.stats);
+          if (data.data.stats.emergingTopicsFound > 0) {
+            toast.success(`Found ${data.data.stats.emergingTopicsFound} new emerging topics!`);
+          }
+        }
       } else {
         loadMockTopics();
       }
@@ -111,12 +149,7 @@ export default function AllTrendingTopicsPage() {
       );
     }
 
-    // Apply category filter
-    if (filterCategory !== 'all') {
-      filtered = filtered.filter(topic =>
-        topic.category.toLowerCase() === filterCategory.toLowerCase()
-      );
-    }
+    // Category filtering is now done server-side via API
 
     // Apply sorting
     switch (sortBy) {
@@ -179,12 +212,51 @@ export default function AllTrendingTopicsPage() {
 
       {/* Header */}
       <div className="animate-reveal">
-        <Link href="/trending">
-          <Button variant="ghost" className="glass-button mb-4 text-gray-400 hover:text-white">
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to Trending
-          </Button>
-        </Link>
+        <div className="flex items-center justify-between mb-4">
+          <Link href="/trending">
+            <Button variant="ghost" className="glass-button text-gray-400 hover:text-white">
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Back to Trending
+            </Button>
+          </Link>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                fetchAllTopics(true, filterCategory);
+                setLastRefresh(Date.now());
+              }}
+              disabled={loading}
+              className="glass-button text-white"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              <span className="ml-2">Refresh</span>
+            </Button>
+            
+            <div className="flex items-center gap-2 px-3 py-1 glass rounded-lg">
+              <input
+                type="checkbox"
+                id="auto-refresh"
+                checked={autoRefresh}
+                onChange={(e) => setAutoRefresh(e.target.checked)}
+                className="rounded"
+              />
+              <label htmlFor="auto-refresh" className="text-sm text-gray-400">
+                Auto-refresh
+              </label>
+            </div>
+            
+            {lastRefresh && (
+              <div className="text-xs text-gray-500">
+                Updated {new Date(lastRefresh).toLocaleTimeString()}
+              </div>
+            )}
+          </div>
+        </div>
         
         <h1 className="text-4xl font-bold text-white flex items-center gap-3">
           <TrendingUp className="h-10 w-10 text-purple-400" />
@@ -193,6 +265,11 @@ export default function AllTrendingTopicsPage() {
         </h1>
         <p className="text-gray-400 mt-2">
           Explore all {filteredTopics.length} trending topics on YouTube
+          {filteredTopics.filter(t => t.isEmerging || t.isNew).length > 0 && (
+            <span className="ml-2 text-green-400">
+              • {filteredTopics.filter(t => t.isEmerging || t.isNew).length} new emerging topics
+            </span>
+          )}
         </p>
       </div>
 
@@ -229,7 +306,7 @@ export default function AllTrendingTopicsPage() {
           </div>
 
           {/* Refresh */}
-          <Button onClick={fetchAllTopics} className="glass-button text-white">
+          <Button onClick={() => fetchAllTopics(true, filterCategory)} className="glass-button text-white">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -239,9 +316,9 @@ export default function AllTrendingTopicsPage() {
         <div className="flex items-center gap-2">
           <Filter className="h-5 w-5 text-gray-400" />
           <div className="flex flex-wrap gap-2">
-            {categories.map((cat) => (
+            {categories.map((cat, catIndex) => (
               <button
-                key={cat}
+                key={`category-${cat}-${catIndex}`}
                 onClick={() => setFilterCategory(cat)}
                 className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
                   filterCategory === cat
@@ -259,7 +336,7 @@ export default function AllTrendingTopicsPage() {
       {/* Topics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredTopics.map((topic, index) => (
-          <TiltCard key={topic.id || index}>
+          <TiltCard key={`${topic.topic}-${topic.category}-${index}`}>
             <div className="glass-card p-6 h-full animate-reveal" style={{ animationDelay: `${0.2 + (index % 9) * 0.05}s` }}>
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -280,8 +357,8 @@ export default function AllTrendingTopicsPage() {
               <p className="text-sm text-gray-300 mb-4">{topic.description}</p>
 
               <div className="flex flex-wrap gap-2 mb-4">
-                {topic.hashtags?.slice(0, 3).map((tag) => (
-                  <span key={tag} className="text-xs glass px-2 py-1 rounded-full text-purple-300">
+                {topic.hashtags?.slice(0, 3).map((tag, tagIndex) => (
+                  <span key={`${tag}-${tagIndex}`} className="text-xs glass px-2 py-1 rounded-full text-purple-300">
                     {tag}
                   </span>
                 ))}
