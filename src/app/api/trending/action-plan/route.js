@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request) {
   try {
-    const { channelName, topic } = await request.json();
+    const { channelName, topic, channelId } = await request.json();
 
     if (!channelName || !topic) {
       return NextResponse.json(
@@ -26,8 +26,101 @@ export async function POST(request) {
 
     const claude = getClaudeService();
 
+    // Fetch actual channel data from YouTube if possible
+    let channelData = null;
+    let channelAnalytics = '';
+    
+    try {
+      let apiUrl;
+      if (channelId) {
+        // Use channel ID directly
+        apiUrl = `https://www.googleapis.com/youtube/v3/channels?` +
+          `part=snippet,statistics,contentDetails&` +
+          `id=${channelId}&` +
+          `key=${process.env.YOUTUBE_API_KEY}`;
+      } else {
+        // Search for channel by name
+        const searchResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?` +
+          `part=snippet&` +
+          `q=${encodeURIComponent(channelName)}&` +
+          `type=channel&` +
+          `maxResults=1&` +
+          `key=${process.env.YOUTUBE_API_KEY}`
+        );
+        
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          const foundChannelId = searchData.items?.[0]?.snippet?.channelId;
+          
+          if (foundChannelId) {
+            apiUrl = `https://www.googleapis.com/youtube/v3/channels?` +
+              `part=snippet,statistics,contentDetails&` +
+              `id=${foundChannelId}&` +
+              `key=${process.env.YOUTUBE_API_KEY}`;
+          }
+        }
+      }
+      
+      if (apiUrl) {
+        const channelResponse = await fetch(apiUrl);
+        if (channelResponse.ok) {
+          const data = await channelResponse.json();
+          channelData = data.items?.[0];
+          
+          if (channelData) {
+            // Get recent videos for better context
+            const uploadsPlaylistId = channelData.contentDetails?.relatedPlaylists?.uploads;
+            let recentVideos = [];
+            
+            if (uploadsPlaylistId) {
+              const videosResponse = await fetch(
+                `https://www.googleapis.com/youtube/v3/playlistItems?` +
+                `part=snippet&` +
+                `playlistId=${uploadsPlaylistId}&` +
+                `maxResults=5&` +
+                `key=${process.env.YOUTUBE_API_KEY}`
+              );
+              
+              if (videosResponse.ok) {
+                const videosData = await videosResponse.json();
+                recentVideos = videosData.items?.map(item => item.snippet.title) || [];
+              }
+            }
+            
+            // Build channel analytics summary
+            channelAnalytics = `
+Actual Channel Data for "${channelData.snippet.title}":
+` +
+              `- Description: ${channelData.snippet.description || 'No description'}
+` +
+              `- Subscribers: ${parseInt(channelData.statistics?.subscriberCount || 0).toLocaleString()}
+` +
+              `- Total Views: ${parseInt(channelData.statistics?.viewCount || 0).toLocaleString()}
+` +
+              `- Video Count: ${channelData.statistics?.videoCount || 0}
+` +
+              `- Channel Created: ${new Date(channelData.snippet.publishedAt).toLocaleDateString()}
+` +
+              `- Average Views per Video: ${channelData.statistics?.videoCount ? 
+                Math.round(parseInt(channelData.statistics.viewCount) / parseInt(channelData.statistics.videoCount)).toLocaleString() : 'N/A'}
+` +
+              (recentVideos.length > 0 ? `- Recent Video Topics: ${recentVideos.slice(0, 3).join(', ')}\n` : '') +
+              `\nThis channel appears to focus on: ${channelData.snippet.description ? 
+                channelData.snippet.description.substring(0, 200) : 'content related to ' + topic}`;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching YouTube channel data:', error);
+      // Continue without channel data
+    }
+
     // Generate a comprehensive action plan using AI
-    const prompt = `Create a detailed 30-day action plan for a YouTube channel "${channelName}" to capitalize on the trending topic "${topic}".
+    const prompt = `Create a detailed 30-day action plan for a YouTube channel named "${channelName}" to capitalize on the trending topic "${topic}".
+${channelAnalytics}
+
+IMPORTANT: The channel "${channelName}" focuses on "${topic}". Make sure ALL content ideas, strategies, and recommendations are specifically tailored to this channel's focus area and topic. Do not default to technology content unless the topic is actually about technology. Base your recommendations on the actual channel data provided above when available.
 
 Please provide a comprehensive JSON response with the following structure:
 {
@@ -101,7 +194,9 @@ Please provide a comprehensive JSON response with the following structure:
   ]
 }
 
-Make the plan specific, actionable, and realistic for the topic "${topic}". Include current trends and best practices for YouTube growth in 2024.`;
+Make the plan specific, actionable, and realistic for a channel named "${channelName}" focusing on "${topic}". 
+Ensure all content ideas, equipment recommendations, and strategies are relevant to the specific topic area.
+Include current trends and best practices for YouTube growth in 2024 that are relevant to this specific niche.`;
 
     const response = await claude.generateCompletion(prompt, {
       model: 'claude-sonnet-4-20250514',
@@ -132,7 +227,7 @@ Make the plan specific, actionable, and realistic for the topic "${topic}". Incl
     actionPlan.topic = topic;
     actionPlan.generatedAt = new Date().toISOString();
 
-    // Store the plan in the database (optional)
+    // Store the plan in the database
     const { error: dbError } = await supabase
       .from('action_plans')
       .insert({
@@ -146,6 +241,8 @@ Make the plan specific, actionable, and realistic for the topic "${topic}". Incl
     if (dbError) {
       console.error('Failed to store action plan:', dbError);
       // Continue anyway - the plan was generated successfully
+    } else {
+      console.log('Action plan stored successfully for channel:', channelName);
     }
 
     return NextResponse.json(actionPlan);

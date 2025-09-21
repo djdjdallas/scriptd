@@ -28,9 +28,12 @@ export default function AllRisingChannelsPage() {
   const [filteredChannels, setFilteredChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [youtubeSearchQuery, setYoutubeSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
   const [sortBy, setSortBy] = useState('growth'); // growth, subscribers, views, upload
   const [filterCategory, setFilterCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchMode, setSearchMode] = useState(false); // Toggle between trending and search results
   const [pagination, setPagination] = useState({
     totalPages: 0,
     totalChannels: 0,
@@ -92,16 +95,105 @@ export default function AllRisingChannelsPage() {
     });
   };
 
+  const searchYouTubeChannels = async () => {
+    if (!youtubeSearchQuery.trim()) {
+      toast.error('Please enter a channel name to search');
+      return;
+    }
+
+    setSearching(true);
+    setSearchMode(true);
+    try {
+      const response = await fetch(`/api/channels/search?q=${encodeURIComponent(youtubeSearchQuery)}&limit=20`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          toast.error('YouTube search is a premium feature');
+        } else {
+          throw new Error(data.error || 'Failed to search channels');
+        }
+        return;
+      }
+
+      if (data.channels && data.channels.length > 0) {
+        // Transform YouTube search results to match trending channel format
+        const transformedChannels = data.channels.map(channel => ({
+          id: channel.channelId || channel.id,
+          name: channel.title,
+          handle: channel.customUrl || '',
+          description: channel.description?.substring(0, 150) || '',
+          thumbnail: channel.thumbnails?.high?.url || channel.thumbnails?.default?.url || '/youtube-default.svg',
+          category: 'Search Result',
+          subscribers: formatSubscriberCount(channel.subscriberCount),
+          growth: 'N/A',
+          avgViews: formatViewCount(channel.viewCount, channel.videoCount),
+          uploadFreq: 'N/A',
+          topVideo: '',
+          verified: false,
+          isFromDatabase: channel.isFromDatabase,
+          hasAnalysis: channel.hasAnalysis,
+          hasVoiceProfile: channel.hasVoiceProfile
+        }));
+
+        setChannels(transformedChannels);
+        setPagination({
+          totalPages: 1,
+          totalChannels: transformedChannels.length,
+          hasNextPage: false,
+          hasPrevPage: false
+        });
+        toast.success(`Found ${transformedChannels.length} channels`);
+      } else {
+        setChannels([]);
+        toast.info('No channels found matching your search');
+      }
+    } catch (error) {
+      console.error('Error searching YouTube channels:', error);
+      toast.error('Failed to search YouTube channels');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const formatSubscriberCount = (count) => {
+    if (!count) return '0';
+    const num = parseInt(count);
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num.toString();
+  };
+
+  const formatViewCount = (viewCount, videoCount) => {
+    if (!viewCount || !videoCount) return '0';
+    const avgViews = parseInt(viewCount) / parseInt(videoCount);
+    if (avgViews >= 1000000) return `${(avgViews / 1000000).toFixed(1)}M`;
+    if (avgViews >= 1000) return `${(avgViews / 1000).toFixed(1)}K`;
+    return Math.round(avgViews).toString();
+  };
+
+  const clearSearch = () => {
+    setYoutubeSearchQuery('');
+    setSearchMode(false);
+    setCurrentPage(1);
+    fetchAllChannels();
+  };
+
   const filterAndSortChannels = () => {
     let filtered = [...channels];
 
     // Apply search filter
     if (searchQuery) {
-      filtered = filtered.filter(channel =>
-        channel.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        channel.handle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        channel.topVideo.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(channel => {
+        const nameMatch = channel.name?.toLowerCase().includes(query);
+        const handleMatch = channel.handle?.toLowerCase().includes(query);
+        const videoMatch = channel.topVideo?.toLowerCase().includes(query);
+        const categoryMatch = channel.category?.toLowerCase().includes(query);
+        const descriptionMatch = channel.description?.toLowerCase().includes(query);
+        
+        return nameMatch || handleMatch || videoMatch || categoryMatch || descriptionMatch;
+      });
     }
 
     // Category filtering is now handled by the API, no need to filter here
@@ -174,24 +266,71 @@ export default function AllRisingChannelsPage() {
         
         <h1 className="text-4xl font-bold text-white flex items-center gap-3">
           <Youtube className="h-10 w-10 text-red-400" />
-          All Rising Channels
+          {searchMode ? 'YouTube Search Results' : 'All Rising Channels'}
           <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
         </h1>
         <p className="text-gray-400 mt-2">
-          Discover {pagination.totalChannels || filteredChannels.length} rapidly growing YouTube channels
+          {searchMode 
+            ? `Found ${filteredChannels.length} channels matching "${youtubeSearchQuery}"`
+            : `Discover ${pagination.totalChannels || filteredChannels.length} rapidly growing YouTube channels`
+          }
         </p>
       </div>
 
       {/* Filters and Search */}
       <div className="glass-card p-6 space-y-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        {/* YouTube Channel Search */}
+        <div className="border-b border-white/10 pb-4">
+          <label className="block text-sm font-medium text-gray-300 mb-2">Search YouTube Channels</label>
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-red-400" />
               <input
                 type="text"
-                placeholder="Search channels or videos..."
+                placeholder="Search for any YouTube channel..."
+                value={youtubeSearchQuery}
+                onChange={(e) => setYoutubeSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && searchYouTubeChannels()}
+                className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+            </div>
+            <Button 
+              onClick={searchYouTubeChannels} 
+              disabled={searching}
+              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
+            >
+              {searching ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Searching...
+                </>
+              ) : (
+                <>
+                  <Search className="mr-2 h-4 w-4" />
+                  Search YouTube
+                </>
+              )}
+            </Button>
+            {searchMode && (
+              <Button 
+                onClick={clearSearch}
+                variant="outline" 
+                className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              >
+                Clear Search
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Filter current results */}
+          <div className="flex-1">
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Filter current results..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -206,6 +345,7 @@ export default function AllRisingChannelsPage() {
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              disabled={searchMode}
             >
               <option value="growth">Growth Rate</option>
               <option value="subscribers">Subscribers</option>
@@ -215,31 +355,36 @@ export default function AllRisingChannelsPage() {
           </div>
 
           {/* Refresh */}
-          <Button onClick={fetchAllChannels} className="glass-button text-white">
+          <Button 
+            onClick={searchMode ? clearSearch : fetchAllChannels} 
+            className="glass-button text-white"
+          >
             <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+            {searchMode ? 'Back to Trending' : 'Refresh'}
           </Button>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5 text-gray-400" />
-          <div className="flex flex-wrap gap-2">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setFilterCategory(cat)}
-                className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                  filterCategory === cat
-                    ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-white'
-                    : 'glass text-gray-400 hover:text-white'
-                }`}
-              >
-                {cat === 'all' ? 'All Categories' : cat}
-              </button>
-            ))}
+        {/* Category Filter - Only show when not in search mode */}
+        {!searchMode && (
+          <div className="flex items-center gap-2">
+            <Filter className="h-5 w-5 text-gray-400" />
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setFilterCategory(cat)}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                    filterCategory === cat
+                      ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-white'
+                      : 'glass text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {cat === 'all' ? 'All Categories' : cat}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Channels Grid */}
@@ -315,14 +460,26 @@ export default function AllRisingChannelsPage() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button size="sm" className="glass-button flex-1 text-white">
+                    <Button 
+                      size="sm" 
+                      className="glass-button flex-1 text-white"
+                      onClick={() => {
+                        // TODO: Implement analyze functionality
+                        toast.info('Channel analysis coming soon!');
+                      }}
+                    >
                       <Eye className="mr-1 h-3 w-3" />
                       Analyze
                     </Button>
-                    <Button size="sm" className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 flex-1 text-white">
-                      <Users className="mr-1 h-3 w-3" />
-                      Follow
-                    </Button>
+                    <Link 
+                      href={`/trending/follow?channel=${encodeURIComponent(channel.name)}&channelId=${encodeURIComponent(channel.id)}&topic=${encodeURIComponent(channel.category || 'Content Creation')}`}
+                      className="flex-1"
+                    >
+                      <Button size="sm" className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 w-full text-white">
+                        <Users className="mr-1 h-3 w-3" />
+                        Follow Trend
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -340,8 +497,8 @@ export default function AllRisingChannelsPage() {
         </div>
       )}
 
-      {/* Pagination Controls */}
-      {pagination.totalPages > 1 && (
+      {/* Pagination Controls - Only show for trending, not search results */}
+      {!searchMode && pagination.totalPages > 1 && (
         <div className="glass-card p-4 mt-8 animate-reveal">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-400">

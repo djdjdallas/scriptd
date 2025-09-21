@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Subscription Status</title>
+</head>
+<body>
+    <h1>Testing Subscription Status</h1>
+    <button onclick="checkStatus()">Check Status</button>
+    <pre id="result"></pre>
+    
+    <script>
+        async function checkStatus() {
+            try {
+                const response = await fetch('http://localhost:3000/api/debug-subscription', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

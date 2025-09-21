@@ -35,14 +35,51 @@ import Link from 'next/link';
 export default function FollowTrendPage() {
   const searchParams = useSearchParams();
   const channelName = searchParams.get('channel') || 'TechVision Pro';
+  const channelId = searchParams.get('channelId') || null;
   const topic = searchParams.get('topic') || 'AI Tools & Applications';
+  const planId = searchParams.get('planId') || null; // Get planId if viewing existing plan
   const [actionPlan, setActionPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [completedSteps, setCompletedSteps] = useState(new Set());
 
   useEffect(() => {
-    generateActionPlan();
-  }, [channelName, topic]);
+    if (planId) {
+      // If we have a planId, fetch the existing plan
+      fetchExistingPlan();
+    } else {
+      // Otherwise generate a new one
+      generateActionPlan();
+    }
+  }, [planId, channelName, channelId, topic]);
+
+  const fetchExistingPlan = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/trending/action-plans/${planId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch action plan');
+      }
+
+      const existingPlan = await response.json();
+      
+      // Use the plan_data from the stored plan
+      const processedPlan = {
+        ...existingPlan.plan_data,
+        channel: existingPlan.channel_name,
+        topic: existingPlan.topic
+      };
+      
+      setActionPlan(processedPlan);
+    } catch (error) {
+      console.error('Error fetching existing plan:', error);
+      toast.error('Failed to load action plan');
+      // Fall back to generating a new plan
+      generateActionPlan();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const generateActionPlan = async () => {
     setLoading(true);
@@ -55,6 +92,7 @@ export default function FollowTrendPage() {
         },
         body: JSON.stringify({
           channelName,
+          channelId,
           topic,
         }),
       });

@@ -56,6 +56,7 @@ export default function ChannelsPage() {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
+        console.log('Fetched channels:', channels); // Debug log
         setChannels(channels || []);
         
         // Check if any channels are missing thumbnails and refresh them
@@ -248,21 +249,28 @@ export default function ChannelsPage() {
                   {/* Channel Header */}
                   <div className="flex items-start gap-4 mb-4">
                     <div className="relative">
-                      <img 
-                        src={channel.thumbnail_url || channel.analytics_data?.thumbnail_url || channel.analytics_data?.thumbnails?.high?.url || channel.analytics_data?.thumbnails?.medium?.url || channel.analytics_data?.thumbnails?.default?.url || '/youtube-default.svg'} 
-                        alt={channel.title || channel.name}
-                        className="w-16 h-16 rounded-full object-cover ring-2 ring-red-400/50"
-                        onError={(e) => {
-                          e.target.src = '/youtube-default.svg';
-                        }}
-                      />
+                      {channel.thumbnail_url || channel.analytics_data?.thumbnail_url || channel.analytics_data?.thumbnails?.high?.url ? (
+                        <img 
+                          src={channel.thumbnail_url || channel.analytics_data?.thumbnail_url || channel.analytics_data?.thumbnails?.high?.url || channel.analytics_data?.thumbnails?.medium?.url || channel.analytics_data?.thumbnails?.default?.url} 
+                          alt={channel.title || channel.name}
+                          className="w-16 h-16 rounded-full object-cover ring-2 ring-red-400/50 bg-gray-800"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/youtube-default.svg';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500/20 to-pink-500/20 flex items-center justify-center ring-2 ring-red-400/50">
+                          <Youtube className="h-8 w-8 text-red-400" />
+                        </div>
+                      )}
                       {channel.is_verified && (
                         <CheckCircle className="absolute -bottom-1 -right-1 h-5 w-5 text-blue-400 bg-black rounded-full" />
                       )}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-white text-lg">{channel.title}</h3>
-                      <p className="text-sm text-gray-400">@{channel.handle || channel.channel_id}</p>
+                      <h3 className="font-semibold text-white text-lg">{channel.title || channel.name || 'Unnamed Channel'}</h3>
+                      <p className="text-sm text-gray-400">@{channel.handle || channel.custom_url?.replace('@', '') || channel.youtube_channel_id}</p>
                     </div>
                   </div>
 
@@ -283,7 +291,7 @@ export default function ChannelsPage() {
                         Total Views
                       </div>
                       <p className="text-white font-semibold">
-                        {formatNumber(channel.view_count || 0)}
+                        {channel.view_count ? formatNumber(channel.view_count) : '0'}
                       </p>
                     </div>
                     <div className="glass p-3 rounded-lg">
@@ -320,7 +328,7 @@ export default function ChannelsPage() {
                   {/* Status */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      {channel.is_active ? (
+                      {channel.is_active !== false ? (
                         <>
                           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                           <span className="text-xs text-green-400">Active</span>

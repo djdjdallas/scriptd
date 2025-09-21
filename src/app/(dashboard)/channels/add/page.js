@@ -33,6 +33,7 @@ export default function AddChannelPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('existing');
   const [loading, setLoading] = useState(false);
+  const [checkingPremium, setCheckingPremium] = useState(true);
   const [userData, setUserData] = useState(null);
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [existingChannelsCount, setExistingChannelsCount] = useState(0);
@@ -53,16 +54,7 @@ export default function AddChannelPage() {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
-      // Check user subscription
-      const { data: subData } = await supabase
-        .from('user_subscriptions')
-        .select('status')
-        .eq('user_id', user.id)
-        .single();
-      
-      setIsPremium(subData?.status === 'active');
-      
-      // Also get user data
+      // Check user subscription from users table (same as trending page)
       const { data } = await supabase
         .from('users')
         .select('subscription_tier, credits')
@@ -70,7 +62,19 @@ export default function AddChannelPage() {
         .single();
       
       setUserData(data);
+      
+      // Debug logging
+      console.log('User data from DB:', data);
+      console.log('Subscription tier:', data?.subscription_tier);
+      
+      // Check if premium based on subscription_tier (not 'free')
+      const isPremiumUser = data?.subscription_tier && data.subscription_tier !== 'free';
+      console.log('Is premium user?', isPremiumUser);
+      
+      setIsPremium(isPremiumUser);
     }
+    
+    setCheckingPremium(false);
   };
   
   const checkExistingChannels = async () => {
@@ -93,7 +97,12 @@ export default function AddChannelPage() {
   };
 
   const handleTabChange = (tab) => {
-    if (isPremiumFeature(tab) && (!userData || userData.subscription_tier === 'free')) {
+    // Don't allow tab changes while checking premium status
+    if (checkingPremium) {
+      return;
+    }
+    
+    if (isPremiumFeature(tab) && !isPremium) {
       toast({
         title: "Premium Feature",
         description: "Upgrade to a paid plan to access this feature",
@@ -365,43 +374,86 @@ My content: Quick tutorials on productivity tools, coding shortcuts, and time ma
 
       {activeTab === 'remix' && (
         <div className="glass-card p-8 text-center space-y-6">
-          <div className="inline-flex items-center justify-center w-20 h-20 glass rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20">
-            <Crown className="h-10 w-10 text-yellow-400" />
-          </div>
-          
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-3">
-              Premium Feature
-            </h2>
-            <p className="text-gray-400 max-w-md mx-auto mb-6">
-              Remix successful channels by combining their best elements with your unique perspective.
-            </p>
-          </div>
+          {!isPremium ? (
+            <>
+              <div className="inline-flex items-center justify-center w-20 h-20 glass rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20">
+                <Crown className="h-10 w-10 text-yellow-400" />
+              </div>
+              
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-3">
+                  Premium Feature
+                </h2>
+                <p className="text-gray-400 max-w-md mx-auto mb-6">
+                  Remix successful channels by combining their best elements with your unique perspective.
+                </p>
+              </div>
 
-          <div className="space-y-3 max-w-sm mx-auto text-left">
-            <div className="flex items-start gap-3">
-              <Shuffle className="h-5 w-5 text-purple-400 mt-0.5" />
-              <p className="text-gray-300">Combine multiple channel strategies</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <TrendingUp className="h-5 w-5 text-green-400 mt-0.5" />
-              <p className="text-gray-300">Leverage proven growth tactics</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <Users className="h-5 w-5 text-blue-400 mt-0.5" />
-              <p className="text-gray-300">Target combined audiences</p>
-            </div>
-          </div>
+              <div className="space-y-3 max-w-sm mx-auto text-left">
+                <div className="flex items-start gap-3">
+                  <Shuffle className="h-5 w-5 text-purple-400 mt-0.5" />
+                  <p className="text-gray-300">Combine multiple channel strategies</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <TrendingUp className="h-5 w-5 text-green-400 mt-0.5" />
+                  <p className="text-gray-300">Leverage proven growth tactics</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Users className="h-5 w-5 text-blue-400 mt-0.5" />
+                  <p className="text-gray-300">Target combined audiences</p>
+                </div>
+              </div>
 
-          <Link href="/pricing">
-            <Button 
-              className="glass-button bg-gradient-to-r from-yellow-500/50 to-orange-500/50 text-white"
-              size="lg"
-            >
-              <Lock className="mr-2 h-5 w-5" />
-              Unlock with Creator Plan
-            </Button>
-          </Link>
+              <Link href="/pricing">
+                <Button 
+                  className="glass-button bg-gradient-to-r from-yellow-500/50 to-orange-500/50 text-white"
+                  size="lg"
+                >
+                  <Lock className="mr-2 h-5 w-5" />
+                  Unlock with Creator Plan
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <div className="space-y-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 glass rounded-full">
+                <Shuffle className="h-10 w-10 text-purple-400" />
+              </div>
+              
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-3">
+                  Remix a Channel
+                </h2>
+                <p className="text-gray-400 max-w-md mx-auto">
+                  Combine successful channel strategies with your unique perspective to create something fresh.
+                </p>
+              </div>
+
+              <div className="space-y-3 max-w-sm mx-auto text-left">
+                <div className="flex items-start gap-3">
+                  <Shuffle className="h-5 w-5 text-purple-400 mt-0.5" />
+                  <p className="text-gray-300">Select 2-3 successful channels</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <TrendingUp className="h-5 w-5 text-green-400 mt-0.5" />
+                  <p className="text-gray-300">Combine their best strategies</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Users className="h-5 w-5 text-blue-400 mt-0.5" />
+                  <p className="text-gray-300">Create your unique hybrid approach</p>
+                </div>
+              </div>
+
+              <Button 
+                onClick={() => router.push('/channels/remix')}
+                className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+                size="lg"
+              >
+                <Shuffle className="mr-2 h-5 w-5" />
+                Start Remixing Channels
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -32,7 +32,7 @@ export default function SummaryStep() {
     workflowData.summary?.voiceProfile || null
   );
   const [aiModel, setAiModel] = useState(
-    workflowData.summary?.aiModel || "claude-3-opus"
+    workflowData.summary?.aiModel || "claude-3-5-sonnet"
   );
   const [voiceProfiles, setVoiceProfiles] = useState([]);
   const [channels, setChannels] = useState([]);
@@ -138,8 +138,43 @@ export default function SummaryStep() {
   };
 
   const handleSave = () => {
-    const finalAudience =
-      audienceType === "custom" ? customAudience : targetAudience;
+    // Validate based on audience type
+    let finalAudience = "";
+    let isValid = true;
+
+    if (audienceType === "custom") {
+      finalAudience = customAudience;
+      if (!customAudience.trim()) {
+        isValid = false;
+        toast.error("Please enter a custom audience description");
+      }
+    } else if (audienceType === "channel") {
+      if (!selectedChannel) {
+        isValid = false;
+        toast.error("Please select a YouTube channel");
+      } else {
+        // Use the channel's audience description if available, 
+        // otherwise use the channel itself as the audience indicator
+        const channel = channels.find((c) => c.id === selectedChannel);
+        finalAudience = targetAudience || (channel ? `Audience of ${channel.title}` : "Channel audience");
+      }
+    } else { // preset
+      finalAudience = targetAudience;
+      if (!targetAudience) {
+        isValid = false;
+        toast.error("Please select a target audience");
+      }
+    }
+
+    if (!topic.trim()) {
+      isValid = false;
+      toast.error("Please enter a video topic");
+      return;
+    }
+
+    if (!isValid) {
+      return;
+    }
 
     const summaryData = {
       topic,
@@ -155,15 +190,10 @@ export default function SummaryStep() {
 
     updateStepData("summary", summaryData);
     updateWorkflowTitle(topic || "Untitled Script");
-
-    if (topic && finalAudience) {
-      markStepComplete(1);
-      toast.success("Summary saved!");
-      // Navigate to next step (Research)
-      goToStep(2);
-    } else {
-      toast.error("Please fill in all required fields");
-    }
+    markStepComplete(1);
+    toast.success("Summary saved!");
+    // Navigate to next step (Research)
+    goToStep(2);
   };
 
   const presetAudiences = [
@@ -420,7 +450,7 @@ export default function SummaryStep() {
             <label className="block mb-2">
               <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
                 <Brain className="h-4 w-4" />
-                AI Model
+                Script Quality
               </span>
             </label>
             <CustomDropdown
@@ -428,16 +458,19 @@ export default function SummaryStep() {
               onChange={(e) => setAiModel(e.target.value)}
               options={[
                 {
-                  value: "claude-4-opus",
-                  label: "Claude 4 Opus (Best Quality)",
+                  value: "claude-opus-4-1",
+                  label: "Hollywood (15 credits)",
                 },
                 {
-                  value: "claude-3-sonnet",
-                  label: "Claude 3 Sonnet (Balanced)",
+                  value: "claude-3-5-sonnet",
+                  label: "Professional (8 credits)",
                 },
-                { value: "claude-3-haiku", label: "Claude 3 Haiku (Faster)" },
+                { value: "claude-3-5-haiku", label: "Fast (3 credits)" },
               ]}
             />
+            <p className="text-xs text-gray-500 mt-2">
+              Higher quality uses more advanced AI for better storytelling
+            </p>
           </div>
         </div>
 

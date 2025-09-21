@@ -34,12 +34,12 @@ export const MODEL_TIERS = {
   },
   PREMIUM: {
     id: 'premium',
-    name: 'Viral-Ready',
-    description: 'Maximum quality with advanced optimization',
+    name: 'Hollywood Studio',
+    description: 'Cinema-grade scripts with maximum creativity',
     baseCredits: 15,
     actualModel: 'claude-opus-4-1-20250805', // Hidden from user
-    features: ['5 minute generation', 'Advanced reasoning', 'Complex topics'],
-    icon: '💎'
+    features: ['State-of-the-art AI', 'Maximum creativity', 'Best for viral content'],
+    icon: '🎬'
   }
 };
 

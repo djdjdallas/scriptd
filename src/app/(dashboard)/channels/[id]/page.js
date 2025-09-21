@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, BarChart3, Trash2, RefreshCw, Video } from 'lucide-react';
+import { ArrowLeft, BarChart3, Trash2, RefreshCw, Video, Users, Mic, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -200,6 +200,169 @@ export default function ChannelDetailPage({ params }) {
             </CardContent>
           </Card>
         </div>
+
+        {/* Remix Channel Cards - Show audience and voice profile for remix channels */}
+        {channel.is_remix && (
+          <div className="grid gap-4 md:grid-cols-2 mt-8">
+            {/* Audience Card */}
+            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Target Audience
+                </CardTitle>
+                <CardDescription className="text-white/60">
+                  Combined audience profile from remixed channels
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {channel.audience_description ? (
+                  <div className="space-y-4">
+                    <p className="text-white/90 text-sm leading-relaxed">
+                      {channel.audience_description}
+                    </p>
+                    {channel.analytics_data?.audience && (
+                      <div className="space-y-3 pt-3 border-t border-white/10">
+                        {channel.analytics_data.audience.interests && (
+                          <div>
+                            <p className="text-xs font-medium text-white/60 mb-2">Key Interests</p>
+                            <div className="flex flex-wrap gap-2">
+                              {channel.analytics_data.audience.interests.slice(0, 5).map((interest, i) => (
+                                <span
+                                  key={i}
+                                  className="px-2 py-1 bg-purple-500/20 text-purple-200 text-xs rounded-full"
+                                >
+                                  {interest}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {channel.analytics_data.audience.demographics && (
+                          <div>
+                            <p className="text-xs font-medium text-white/60 mb-2">Demographics</p>
+                            <p className="text-white/80 text-xs">
+                              {Object.entries(channel.analytics_data.audience.demographics)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join(' • ')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-white/50 text-sm">
+                    No audience analysis available yet
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Voice Profile Card */}
+            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Mic className="h-5 w-5" />
+                  Voice Profile
+                </CardTitle>
+                <CardDescription className="text-white/60">
+                  Combined voice characteristics from remixed channels
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(channel.voice_profile && Object.keys(channel.voice_profile).length > 0) || 
+                 (channel.analytics_data?.voiceProfile && Object.keys(channel.analytics_data.voiceProfile).length > 0) ? (
+                  <div className="space-y-4">
+                    {(() => {
+                      const voiceData = channel.voice_profile || channel.analytics_data?.voiceProfile || {};
+                      return (
+                        <>
+                          {voiceData.tone && (
+                            <div>
+                              <p className="text-xs font-medium text-white/60 mb-2">Tone</p>
+                              <div className="flex flex-wrap gap-2">
+                                {(Array.isArray(voiceData.tone) ? voiceData.tone : [voiceData.tone]).map((t, i) => (
+                                  <span
+                                    key={i}
+                                    className="px-2 py-1 bg-blue-500/20 text-blue-200 text-xs rounded-full"
+                                  >
+                                    {t}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {voiceData.style && (
+                            <div>
+                              <p className="text-xs font-medium text-white/60 mb-2">Style</p>
+                              <div className="flex flex-wrap gap-2">
+                                {(Array.isArray(voiceData.style) ? voiceData.style : [voiceData.style]).map((s, i) => (
+                                  <span
+                                    key={i}
+                                    className="px-2 py-1 bg-green-500/20 text-green-200 text-xs rounded-full"
+                                  >
+                                    {s}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {voiceData.energy && (
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-medium text-white/60">Energy Level</p>
+                              <span className="text-white/80 text-sm capitalize">{voiceData.energy}</span>
+                            </div>
+                          )}
+                          {voiceData.pace && (
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-medium text-white/60">Speaking Pace</p>
+                              <span className="text-white/80 text-sm capitalize">{voiceData.pace}</span>
+                            </div>
+                          )}
+                          {voiceData.catchphrases && voiceData.catchphrases.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-white/60 mb-2">Signature Phrases</p>
+                              <div className="space-y-1">
+                                {voiceData.catchphrases.slice(0, 3).map((phrase, i) => (
+                                  <p key={i} className="text-white/70 text-xs italic">"{phrase}"</p>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <p className="text-white/50 text-sm">
+                    No voice profile configured yet
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Source Channels for Remix */}
+        {channel.is_remix && channel.remix_source_ids && channel.remix_source_ids.length > 0 && (
+          <Card className="mt-8 bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Remix Sources
+              </CardTitle>
+              <CardDescription className="text-white/60">
+                Channels combined to create this remix
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-white/70 text-sm">
+                This channel combines strategies from {channel.remix_source_ids.length} source channels
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Channel Analysis Component - Now integrated directly */}
         <div className="mt-8">

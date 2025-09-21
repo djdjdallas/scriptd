@@ -37,7 +37,16 @@ const sidebarItems = [
   { href: '/scripts', label: 'Scripts', icon: FileText },
   { href: '/channels', label: 'Channels', icon: Play },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/trending', label: 'Trending', icon: TrendingUp },
+  { 
+    href: '/trending', 
+    label: 'Trending', 
+    icon: TrendingUp,
+    subItems: [
+      { href: '/trending', label: 'Trending Overview', icon: TrendingUp },
+      { href: '/trending/channels', label: 'Rising Channels', icon: Youtube },
+      { href: '/trending/action-plans', label: 'My Action Plans', icon: Zap }
+    ]
+  },
   { href: '/saved', label: 'Saved Videos', icon: Bookmark },
   { 
     href: '/research', 
@@ -60,7 +69,7 @@ export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [hoveredItem, setHoveredItem] = useState(null);
-  const [expandedItems, setExpandedItems] = useState(['research']); // Keep research expanded by default
+  const [expandedItems, setExpandedItems] = useState(['research', 'trending']); // Keep research and trending expanded by default
   const [credits, setCredits] = useState(0);
   const [creditsLoading, setCreditsLoading] = useState(true);
   const pathname = usePathname();
