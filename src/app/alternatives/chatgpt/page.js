@@ -31,52 +31,52 @@ export default function ChatGPTAlternativePage() {
     { 
       feature: 'YouTube Specialization', 
       competitor: '✗ General purpose AI', 
-      subscribr: 'Built exclusively for YouTube'
+      genscript: 'Built exclusively for YouTube'
     },
     { 
       feature: 'Retention Optimization', 
       competitor: '✗ No retention focus', 
-      subscribr: '68%+ AVD targeting'
+      genscript: '68%+ AVD targeting'
     },
     { 
       feature: 'Script Structure', 
       competitor: 'Requires manual prompting', 
-      subscribr: 'Auto-structured for video'
+      genscript: 'Auto-structured for video'
     },
     { 
       feature: 'Consistency', 
       competitor: 'Variable output quality', 
-      subscribr: 'Consistent high quality'
+      genscript: 'Consistent high quality'
     },
     { 
       feature: 'Voice Matching', 
       competitor: '✗ Generic responses', 
-      subscribr: 'Personal AI voice cloning'
+      genscript: 'Personal AI voice cloning'
     },
     { 
       feature: 'Fact Checking', 
       competitor: 'Limited verification', 
-      subscribr: 'Full automated verification'
+      genscript: 'Full automated verification'
     },
     { 
       feature: 'Hook Library', 
       competitor: '✗ No hook system', 
-      subscribr: '1000+ viral hooks'
+      genscript: '1000+ viral hooks'
     },
     { 
       feature: 'PVSS Framework', 
       competitor: '✗ Not available', 
-      subscribr: 'Built-in viral structure'
+      genscript: 'Built-in viral structure'
     },
     { 
       feature: 'Time to Results', 
       competitor: '30+ minutes of prompting', 
-      subscribr: '30 seconds to perfect script'
+      genscript: '30 seconds to perfect script'
     },
     { 
       feature: 'Support', 
       competitor: 'Community forums only', 
-      subscribr: '24/7 expert support'
+      genscript: '24/7 expert support'
     }
   ];
 
@@ -161,8 +161,8 @@ You: Make it sound more like my style
 ChatGPT: I'll try to adjust the tone...
 [Continue refining for 30+ minutes]`,
     
-    subscribr: `You: Create a script about productivity tips
-Subscribr: ✓ Analyzed 10,000+ productivity videos
+    genscript: `You: Create a script about productivity tips
+GenScript: ✓ Analyzed 10,000+ productivity videos
 ✓ Generated 68%+ retention structure
 ✓ Matched your voice profile
 ✓ Added viral hooks
@@ -190,7 +190,7 @@ Subscribr: ✓ Analyzed 10,000+ productivity videos
     },
     {
       question: 'Can I use both tools together?',
-      answer: 'Many creators use ChatGPT for general tasks and Subscribr specifically for YouTube scripts. However, most find our platform handles all their YouTube content needs more efficiently.'
+      answer: 'Many creators use ChatGPT for general tasks and GenScript specifically for YouTube scripts. However, most find our platform handles all their YouTube content needs more efficiently.'
     },
     {
       question: 'How much time will I actually save?',
@@ -257,10 +257,10 @@ Subscribr: ✓ Analyzed 10,000+ productivity videos
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <Check className="w-6 h-6 text-green-400" />
-                  <h3 className="text-xl font-bold text-white">Subscribr Process</h3>
+                  <h3 className="text-xl font-bold text-white">GenScript Process</h3>
                 </div>
                 <pre className="text-xs text-gray-300 bg-gray-800/50 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap">
-                  {promptComparison.subscribr}
+                  {promptComparison.genscript}
                 </pre>
                 <div className="p-3 bg-green-500/10 rounded-lg">
                   <p className="text-sm text-green-400">⏱️ Average time: 30 seconds</p>

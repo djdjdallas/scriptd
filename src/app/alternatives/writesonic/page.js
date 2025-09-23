@@ -33,52 +33,52 @@ export default function WritesonicAlternativePage() {
     { 
       feature: 'YouTube Specialization', 
       competitor: '✗ Generic content', 
-      subscribr: 'Built exclusively for YouTube'
+      genscript: 'Built exclusively for YouTube'
     },
     { 
       feature: 'Retention Optimization', 
       competitor: '✗ No retention focus', 
-      subscribr: '68%+ AVD targeting'
+      genscript: '68%+ AVD targeting'
     },
     { 
       feature: 'Script Generation', 
       competitor: 'Basic templates', 
-      subscribr: 'Advanced AI with PVSS framework'
+      genscript: 'Advanced AI with PVSS framework'
     },
     { 
       feature: 'Voice Matching', 
       competitor: 'Generic tone options', 
-      subscribr: 'Authentic creator voice AI'
+      genscript: 'Authentic creator voice AI'
     },
     { 
       feature: 'Content Limits', 
       competitor: '100K words/month', 
-      subscribr: 'Unlimited generation'
+      genscript: 'Unlimited generation'
     },
     { 
       feature: 'Fact Checking', 
       competitor: '✗ Not available', 
-      subscribr: 'Built-in verification'
+      genscript: 'Built-in verification'
     },
     { 
       feature: 'PVSS Framework', 
       competitor: '✗ Not available', 
-      subscribr: 'Proven viral system'
+      genscript: 'Proven viral system'
     },
     { 
       feature: 'Hook Library', 
       competitor: '25 basic hooks', 
-      subscribr: '1000+ tested viral hooks'
+      genscript: '1000+ tested viral hooks'
     },
     { 
       feature: 'Pricing', 
       competitor: '$13-$500/month', 
-      subscribr: '$19-$79/month'
+      genscript: '$39-$199/month'
     },
     { 
       feature: 'API Access', 
       competitor: 'Pro plans only', 
-      subscribr: 'All paid plans'
+      genscript: 'All paid plans'
     }
   ];
 
@@ -276,7 +276,7 @@ export default function WritesonicAlternativePage() {
               <ArrowRight className="w-8 h-8 text-green-400" />
             </div>
             <div>
-              <p className="text-gray-400 text-sm mb-2">Subscribr Pro</p>
+              <p className="text-gray-400 text-sm mb-2">GenScript Pro</p>
               <p className="text-3xl font-bold text-green-400">${ourPlatform.pricing.professional}/mo</p>
               <p className="text-xs text-gray-400">Unlimited scripts</p>
             </div>

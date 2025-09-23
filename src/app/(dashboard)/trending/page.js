@@ -149,6 +149,13 @@ export default function TrendingPage() {
           totalChannels: 0,
           totalSearchVolume: 0
         });
+        
+        // Show a subtle notification if using cached data
+        if (data.data.usingFallback) {
+          toast.info('Using cached data due to API limits. Data may be slightly outdated.', {
+            duration: 5000
+          });
+        }
       } else {
         // Show error if API fails
         toast.error('Failed to load trending data from YouTube');

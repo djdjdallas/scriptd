@@ -24,7 +24,7 @@ export default function SubscribrAIAlternative() {
   const competitor = competitorData.subscribrAI || {};
   const ourPlatform = competitorData.ourPlatform || {};
 
-  const priceSavings = (competitor.pricing?.pro || 59) - (ourPlatform.pricing?.professional || 49);
+  const priceSavings = (competitor.pricing?.pro || 59) - (ourPlatform.pricing?.professional || 79);
   const yearlyDifference = priceSavings * 12;
 
   const comparisonFeatures = [
@@ -36,7 +36,7 @@ export default function SubscribrAIAlternative() {
     { 
       feature: 'Pricing (Pro)', 
       competitor: '$59/month', 
-      genscript: '$49/month'
+      genscript: '$79/month'
     },
     { 
       feature: 'Script Limits', 

@@ -38,16 +38,30 @@ export async function GET(request) {
           .map(([topicName, records]) => {
             const latestScore = records[0]?.score || 0;
             const previousScore = records[1]?.score || latestScore;
-            const growthRate = previousScore > 0 ? ((latestScore - previousScore) / previousScore * 100) : 0;
+            let growthRate = 0;
+            
+            // Only calculate growth if we have at least 2 data points
+            if (records.length > 1 && previousScore > 0) {
+              growthRate = ((latestScore - previousScore) / previousScore * 100);
+            } else if (records.length === 1) {
+              // New topic, show as "New" in UI
+              growthRate = null; // Will be handled in UI as "New"
+            }
             
             return {
               topic_name: topicName,
               category: records[0]?.category || 'unknown',
               current_score: latestScore,
-              growth_rate: growthRate.toFixed(2)
+              growth_rate: growthRate !== null ? growthRate.toFixed(2) : null,
+              is_new: records.length === 1
             };
           })
-          .sort((a, b) => b.growth_rate - a.growth_rate)
+          .sort((a, b) => {
+            // Sort nulls (new items) to the top
+            if (a.growth_rate === null) return -1;
+            if (b.growth_rate === null) return 1;
+            return parseFloat(b.growth_rate) - parseFloat(a.growth_rate);
+          })
           .slice(0, limit);
       }
     } catch (err) {
@@ -78,26 +92,40 @@ export async function GET(request) {
           .map(([channelName, records]) => {
             const latestViews = records[0]?.avg_views || 0;
             const previousViews = records[1]?.avg_views || latestViews;
-            const growthRate = previousViews > 0 ? ((latestViews - previousViews) / previousViews * 100) : 0;
+            let growthRate = 0;
+            
+            // Only calculate growth if we have at least 2 data points
+            if (records.length > 1 && previousViews > 0) {
+              growthRate = ((latestViews - previousViews) / previousViews * 100);
+            } else if (records.length === 1) {
+              // New channel, show as "New" in UI
+              growthRate = null;
+            }
             
             return {
               channel_name: channelName,
               channel_id: records[0]?.channel_id,
               category: records[0]?.category || 'unknown',
               current_views: latestViews,
-              view_growth_rate: growthRate.toFixed(2)
+              view_growth_rate: growthRate !== null ? growthRate.toFixed(2) : null,
+              is_new: records.length === 1
             };
           })
-          .sort((a, b) => b.view_growth_rate - a.view_growth_rate)
+          .sort((a, b) => {
+            // Sort nulls (new items) to the top
+            if (a.view_growth_rate === null) return -1;
+            if (b.view_growth_rate === null) return 1;
+            return parseFloat(b.view_growth_rate) - parseFloat(a.view_growth_rate);
+          })
           .slice(0, limit);
       }
     } catch (err) {
       console.error('Error processing channels:', err);
     }
 
-    // Calculate historical growth trends
+    // Calculate historical growth trends from topics history
     const { data: historicalData, error: histError } = await supabase
-      .from('trending_topics_growth')
+      .from('trending_topics_history')
       .select('*')
       .order('recorded_at', { ascending: false })
       .limit(100);
@@ -134,8 +162,26 @@ export async function GET(request) {
 function processGrowthTrends(data) {
   const trends = {};
   
+  // Group data by date and topic to calculate daily growth
+  const topicsByDate = {};
+  
   data.forEach(item => {
     const date = new Date(item.recorded_at).toLocaleDateString();
+    const topic = item.topic_name;
+    
+    if (!topicsByDate[date]) {
+      topicsByDate[date] = {};
+    }
+    
+    if (!topicsByDate[date][topic]) {
+      topicsByDate[date][topic] = [];
+    }
+    
+    topicsByDate[date][topic].push(item);
+  });
+  
+  // Calculate growth rates for each day
+  Object.entries(topicsByDate).forEach(([date, topics]) => {
     if (!trends[date]) {
       trends[date] = {
         date,
@@ -145,11 +191,20 @@ function processGrowthTrends(data) {
       };
     }
     
-    trends[date].avgGrowth += item.growth_rate || 0;
-    trends[date].count += 1;
-    trends[date].topics.push({
-      name: item.topic_name,
-      growth: item.growth_rate || 0
+    Object.entries(topics).forEach(([topicName, records]) => {
+      // Calculate growth if we have multiple records for this topic
+      if (records.length > 1) {
+        const latestScore = records[0]?.score || 0;
+        const previousScore = records[records.length - 1]?.score || latestScore;
+        const growthRate = previousScore > 0 ? ((latestScore - previousScore) / previousScore * 100) : 0;
+        
+        trends[date].avgGrowth += growthRate;
+        trends[date].count += 1;
+        trends[date].topics.push({
+          name: topicName,
+          growth: growthRate
+        });
+      }
     });
   });
 
@@ -161,14 +216,20 @@ function processGrowthTrends(data) {
 
 function calculateAvgGrowth(topics) {
   if (topics.length === 0) return 0;
-  const total = topics.reduce((sum, topic) => sum + (topic.growth_rate || 0), 0);
-  return (total / topics.length).toFixed(2);
+  // Filter out new topics (null growth rate) for average calculation
+  const topicsWithGrowth = topics.filter(t => t.growth_rate !== null);
+  if (topicsWithGrowth.length === 0) return 0;
+  const total = topicsWithGrowth.reduce((sum, topic) => sum + parseFloat(topic.growth_rate || 0), 0);
+  return (total / topicsWithGrowth.length).toFixed(2);
 }
 
 function calculateAvgChannelGrowth(channels) {
   if (channels.length === 0) return 0;
-  const total = channels.reduce((sum, channel) => sum + (channel.view_growth_rate || 0), 0);
-  return (total / channels.length).toFixed(2);
+  // Filter out new channels (null growth rate) for average calculation
+  const channelsWithGrowth = channels.filter(c => c.view_growth_rate !== null);
+  if (channelsWithGrowth.length === 0) return 0;
+  const total = channelsWithGrowth.reduce((sum, channel) => sum + parseFloat(channel.view_growth_rate || 0), 0);
+  return (total / channelsWithGrowth.length).toFixed(2);
 }
 
 function findTopGrowthCategory(topics) {

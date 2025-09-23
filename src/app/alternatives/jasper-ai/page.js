@@ -34,7 +34,7 @@ export default function JasperAIAlternativePage() {
     { feature: 'YouTube Analytics', jasper: false, genscript: 'Real-time insights' },
     { feature: 'Fact Checking', jasper: false, genscript: 'Automated verification' },
     { feature: 'Creator Community', jasper: 'General users', genscript: 'YouTube creators only' },
-    { feature: 'Pricing', jasper: '$39-$125/mo', genscript: '$19-$79/mo' },
+    { feature: 'Pricing', jasper: '$39-$125/mo', genscript: '$39-$199/mo' },
     { feature: 'Words/Scripts Limit', jasper: '50K words', genscript: 'Unlimited scripts' },
   ];
 
@@ -76,7 +76,7 @@ export default function JasperAIAlternativePage() {
     },
     {
       question: 'How does the pricing compare to Jasper?',
-      answer: 'We\'re 50-60% more affordable than Jasper. Our Professional plan at $49/mo offers more YouTube-specific features than Jasper\'s Boss Mode at $125/mo. Plus, we don\'t have word limits - you pay for unlimited script generation.'
+      answer: 'We\'re competitive with Jasper\'s pricing. Our Creator plan at $39/mo and Professional plan at $79/mo offer more YouTube-specific features than Jasper\'s general plans. Plus, we don\'t have word limits - you pay for unlimited script generation.'
     },
     {
       question: 'What about Jasper\'s Chrome extension?',

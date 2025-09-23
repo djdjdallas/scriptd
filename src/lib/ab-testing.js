@@ -31,7 +31,7 @@ export const abTests = {
       variant_b: {
         weight: 0.25,
         headline: 'Better Than {competitor}: Scripts That Get 70%+ Retention',
-        subheadline: 'Join 15,000+ creators who switched from {competitor} for better results.'
+        subheadline: 'Join 200+ creators who switched from {competitor} for better results.'
       }
     }
   },

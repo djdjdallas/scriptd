@@ -115,7 +115,7 @@ export default function DashboardLayout({ children }) {
 
   useEffect(() => {
     // Fetch credits when user is available
-    if (user && !creditsLoading) {
+    if (user) {
       console.log('[DashboardLayout] Fetching credits for user:', user.email);
       fetchCredits();
     }
@@ -218,7 +218,7 @@ export default function DashboardLayout({ children }) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed left-0 top-0 h-full glass border-r border-white/10 transition-all duration-300 z-40 flex flex-col",
+        "fixed left-0 top-0 h-full glass border-r border-white/10 transition-all duration-300 z-40 flex flex-col overflow-hidden",
         sidebarCollapsed ? "w-20" : "w-64",
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
@@ -234,7 +234,7 @@ export default function DashboardLayout({ children }) {
           )}
         </button>
 
-        <div className="p-6 flex-1 flex flex-col">
+        <div className="p-6 flex-1 flex flex-col overflow-y-auto">
           {/* Logo */}
           <div className="mb-8">
             <Link href="/" className="flex items-center gap-2">
@@ -396,26 +396,6 @@ export default function DashboardLayout({ children }) {
         "transition-all duration-300",
         sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"
       )}>
-        {/* Top Bar - Hide for script creation workflow */}
-        {!pathname.includes('/scripts/create') && (
-          <header className="glass border-b border-white/10 px-6 py-4 sticky top-0 z-30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <h2 className="text-xl font-semibold text-white">
-                  {sidebarItems.find(item => item.href === pathname)?.label || 'Dashboard'}
-                </h2>
-                <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <Button className="glass-button text-white">
-                  <Zap className="h-4 w-4 mr-2" />
-                  Quick Actions
-                </Button>
-              </div>
-            </div>
-          </header>
-        )}
 
         {/* Page Content */}
         <div className="p-6">

@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import { TiltCard } from '@/components/ui/tilt-card';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { TransferToCalendar } from '@/components/trending/TransferToCalendar';
 
 export default function FollowTrendPage() {
   const searchParams = useSearchParams();
@@ -213,6 +214,106 @@ export default function FollowTrendPage() {
     }
   };
 
+  const exportPlan = () => {
+    if (!actionPlan) {
+      toast.error('No plan to export');
+      return;
+    }
+
+    try {
+      // Create a formatted text version of the plan
+      let exportContent = `# ACTION PLAN: ${actionPlan.channel}\n`;
+      exportContent += `## Topic: ${actionPlan.topic}\n`;
+      exportContent += `## Strategy: ${actionPlan.strategy}\n`;
+      exportContent += `## Timeline: ${actionPlan.timeline}\n\n`;
+      
+      exportContent += `---\n\n`;
+      
+      // Add estimated results
+      exportContent += `### 📊 ESTIMATED RESULTS\n`;
+      exportContent += `- Views: ${actionPlan.estimatedResults?.views || 'TBD'}\n`;
+      exportContent += `- Subscribers: ${actionPlan.estimatedResults?.subscribers || 'TBD'}\n`;
+      exportContent += `- Revenue: ${actionPlan.estimatedResults?.revenue || 'TBD'}\n\n`;
+      
+      exportContent += `---\n\n`;
+      
+      // Add weekly plan
+      if (actionPlan.weeklyPlan && actionPlan.weeklyPlan.length > 0) {
+        exportContent += `### 📅 WEEKLY BREAKDOWN\n\n`;
+        actionPlan.weeklyPlan.forEach((week) => {
+          exportContent += `#### Week ${week.week}: ${week.theme}\n`;
+          week.tasks.forEach((task, taskIndex) => {
+            const isCompleted = completedSteps.has(task.id);
+            exportContent += `${taskIndex + 1}. [${isCompleted ? 'x' : ' '}] ${task.task} (Priority: ${task.priority})\n`;
+          });
+          exportContent += `\n`;
+        });
+      }
+      
+      // Add content templates
+      if (actionPlan.contentTemplates && actionPlan.contentTemplates.length > 0) {
+        exportContent += `---\n\n`;
+        exportContent += `### 📝 CONTENT TEMPLATES\n\n`;
+        actionPlan.contentTemplates.forEach((template, index) => {
+          exportContent += `**${index + 1}. ${template.title}**\n`;
+          exportContent += `- Format: ${template.format}\n`;
+          exportContent += `- Hook: ${template.hook}\n`;
+          exportContent += `- Duration: ${template.duration}\n\n`;
+        });
+      }
+      
+      // Add keywords
+      if (actionPlan.keywords && actionPlan.keywords.length > 0) {
+        exportContent += `---\n\n`;
+        exportContent += `### 🔍 KEYWORDS & HASHTAGS\n\n`;
+        exportContent += actionPlan.keywords.join(', ') + '\n\n';
+      }
+      
+      // Add equipment
+      if (actionPlan.equipment && actionPlan.equipment.length > 0) {
+        exportContent += `---\n\n`;
+        exportContent += `### 🎥 RECOMMENDED EQUIPMENT\n\n`;
+        actionPlan.equipment.forEach((item, index) => {
+          exportContent += `${index + 1}. **${item.item}**\n`;
+          exportContent += `   - Purpose: ${item.purpose}\n`;
+          exportContent += `   - Budget: ${item.budget}\n\n`;
+        });
+      }
+      
+      // Add success metrics
+      if (actionPlan.successMetrics) {
+        exportContent += `---\n\n`;
+        exportContent += `### 📈 SUCCESS METRICS BY WEEK\n\n`;
+        Object.entries(actionPlan.successMetrics).forEach(([week, metrics]) => {
+          exportContent += `**${week.charAt(0).toUpperCase() + week.slice(1)}:**\n`;
+          exportContent += `- Views: ${metrics.views}\n`;
+          exportContent += `- Subscribers: ${metrics.subscribers}\n`;
+          exportContent += `- Engagement: ${metrics.engagement}\n\n`;
+        });
+      }
+      
+      exportContent += `---\n\n`;
+      exportContent += `Generated: ${new Date().toLocaleDateString()}\n`;
+      exportContent += `Source: Subscribr AI Trend Analysis\n`;
+      
+      // Create blob and download
+      const blob = new Blob([exportContent], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `action-plan-${actionPlan.channel.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Action plan exported successfully!');
+    } catch (error) {
+      console.error('Error exporting plan:', error);
+      toast.error('Failed to export plan');
+    }
+  };
+
   if (loading || !actionPlan) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
@@ -262,8 +363,45 @@ export default function FollowTrendPage() {
         </div>
       </div>
 
+      {/* Action Buttons */}
+      <div className="glass-card p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 animate-reveal" style={{ animationDelay: '0.1s' }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-1">Ready to start?</h3>
+            <p className="text-gray-400 text-sm">Follow this plan to ride the trend wave</p>
+          </div>
+          <div className="flex gap-3">
+            <TransferToCalendar 
+              actionPlan={actionPlan} 
+              actionPlanId={planId}
+            />
+            <Button 
+              className="glass-button text-white"
+              onClick={exportPlan}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export Plan
+            </Button>
+            <Button 
+              className="glass-button text-white"
+              onClick={() => toast.info('Reminders feature coming soon!')}
+            >
+              <Bell className="h-4 w-4 mr-2" />
+              Set Reminders
+            </Button>
+            <Button 
+              className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+              onClick={() => toast.success('Good luck with Week 1! Start with the first task.')}
+            >
+              <Rocket className="h-4 w-4 mr-2" />
+              Start Week 1
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Strategy Overview */}
-      <div className="glass-card p-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10 animate-reveal" style={{ animationDelay: '0.1s' }}>
+      <div className="glass-card p-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10 animate-reveal" style={{ animationDelay: '0.2s' }}>
         <div className="grid md:grid-cols-4 gap-6">
           <div>
             <p className="text-sm text-gray-400 mb-1">Strategy</p>
@@ -292,7 +430,7 @@ export default function FollowTrendPage() {
         </h2>
         
         {actionPlan.weeklyPlan.map((week, weekIndex) => (
-          <div key={week.week} className="glass-card p-6 animate-reveal" style={{ animationDelay: `${0.2 + weekIndex * 0.1}s` }}>
+          <div key={week.week} className="glass-card p-6 animate-reveal" style={{ animationDelay: `${0.3 + weekIndex * 0.1}s` }}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-white">Week {week.week}: {week.theme}</h3>
@@ -482,29 +620,6 @@ export default function FollowTrendPage() {
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="glass-card p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-1">Ready to start?</h3>
-            <p className="text-gray-400 text-sm">Follow this plan to ride the trend wave</p>
-          </div>
-          <div className="flex gap-3">
-            <Button className="glass-button text-white">
-              <Download className="h-4 w-4 mr-2" />
-              Export Plan
-            </Button>
-            <Button className="glass-button text-white">
-              <Bell className="h-4 w-4 mr-2" />
-              Set Reminders
-            </Button>
-            <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
-              <Rocket className="h-4 w-4 mr-2" />
-              Start Week 1
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

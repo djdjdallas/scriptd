@@ -34,7 +34,7 @@ export default function VidIQAlternativePage() {
     { feature: 'Quality Tiers', vidiq: false, genscript: 'Fast/Balanced/Premium' },
     { feature: 'SEO Optimization', vidiq: true, genscript: true },
     { feature: 'Thumbnail Analysis', vidiq: true, genscript: 'AI-powered creation' },
-    { feature: 'Pricing', vidiq: '$7.50-$39/mo', genscript: '$19-$79/mo' },
+    { feature: 'Pricing', vidiq: '$7.50-$39/mo', genscript: '$39-$199/mo' },
   ];
 
   const testimonials = [
@@ -89,7 +89,7 @@ export default function VidIQAlternativePage() {
       {/* SEO Meta Tags */}
       <head>
         <title>VidIQ Alternative - Better YouTube Scripts with 70%+ Retention | Genscript</title>
-        <meta name="description" content="Looking for a VidIQ alternative? Genscript optimizes scripts for 70%+ viewer retention, not just SEO. See why 15,000+ creators switched. Try free for 14 days." />
+        <meta name="description" content="Looking for a VidIQ alternative? Genscript optimizes scripts for 70%+ viewer retention, not just SEO. See why 200+ creators switched. Try free for 14 days." />
         <meta name="keywords" content="vidiq alternative, vidiq competitor, youtube script generator, retention optimization, youtube tools" />
       </head>
 
@@ -99,7 +99,7 @@ export default function VidIQAlternativePage() {
           <div className="text-center">
             <Badge className="mb-4" variant="secondary">
               <Star className="w-4 h-4 mr-1" />
-              Trusted by 15,000+ Creators
+              Trusted by 200+ Creators
             </Badge>
             
             <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -308,7 +308,7 @@ export default function VidIQAlternativePage() {
 
           <div className="mt-12 p-8 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-950/50 dark:to-pink-950/50 rounded-2xl text-center">
             <h3 className="text-2xl font-bold mb-4">
-              Join 15,000+ Creators Getting Better Results
+              Join 200+ Creators Getting Better Results
             </h3>
             <div className="flex gap-8 justify-center mb-6 text-sm">
               <div>

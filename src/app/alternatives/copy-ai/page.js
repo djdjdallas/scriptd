@@ -46,7 +46,7 @@ export default function CopyAIAlternativePage() {
     { label: 'PVSS Framework', competitorValue: false, ourValue: 'Built-in' },
     { label: 'Fact Checking', competitorValue: false, ourValue: 'Automated' },
     { label: 'API Access', competitorValue: 'Enterprise only', ourValue: 'All Plans' },
-    { label: 'Starting Price', competitorValue: '$49/mo', ourValue: '$19/mo' },
+    { label: 'Starting Price', competitorValue: '$49/mo', ourValue: '$39/mo' },
     { label: 'Support', competitorValue: 'Email only', ourValue: '24/7 Live Chat' }
   ];
 
@@ -113,7 +113,7 @@ export default function CopyAIAlternativePage() {
     },
     {
       question: 'Is the price difference worth it?',
-      answer: 'Genscript starts at $19/mo with unlimited scripts. Copy.ai charges $49/mo for 40K words. You get more content, better features, and YouTube-specific optimization for less than half the price.'
+      answer: 'Genscript starts at $39/mo with unlimited scripts. Copy.ai charges $49/mo for 40K words. You get more content, better features, and YouTube-specific optimization for a competitive price.'
     },
     {
       question: 'Can I migrate my Copy.ai templates?',
@@ -273,7 +273,7 @@ export default function CopyAIAlternativePage() {
               </div>
               <CardHeader>
                 <CardDescription>Genscript Pro</CardDescription>
-                <CardTitle className="text-3xl">$19/mo</CardTitle>
+                <CardTitle className="text-3xl">$39/mo</CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm">

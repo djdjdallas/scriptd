@@ -415,14 +415,15 @@ export const competitorData = {
   },
   
   ourPlatform: {
-    name: 'Subscribr',
-    slug: 'subscribr',
+    name: 'GenScript',
+    slug: 'genscript',
     category: 'YouTube Script Optimizer',
     mainFocus: 'Retention & Virality',
     pricing: {
-      starter: 19,
-      professional: 49,
-      enterprise: 79
+      free: 0,
+      creator: 39,
+      professional: 79,
+      agency: 199
     },
     strengths: [
       '70%+ retention optimization',
@@ -470,7 +471,7 @@ export const headlineVariations = {
     {
       id: 'v3',
       headline: 'Better Than VidIQ: Scripts That Get 70%+ Retention',
-      subheadline: 'Join 15,000+ creators who switched from VidIQ for better results.'
+      subheadline: 'Join 200+ creators who switched from VidIQ for better results.'
     }
   ],
   
@@ -563,7 +564,7 @@ export const socialProofData = {
         name: 'Sarah Williams',
         channel: '@LifestyleDaily',
         subscribers: '8.5K',
-        quote: 'VidIQ helped with SEO, but Subscribr actually helps me keep viewers watching.',
+        quote: 'VidIQ helped with SEO, but GenScript actually helps me keep viewers watching.',
         rating: 5,
         verified: true
       }
@@ -573,7 +574,7 @@ export const socialProofData = {
         name: 'Mike Johnson',
         channel: '@GamingHub',
         subscribers: '25K',
-        quote: 'TubeBuddy was great for keywords, but I needed actual scripts. Subscribr delivers.',
+        quote: 'TubeBuddy was great for keywords, but I needed actual scripts. GenScript delivers.',
         rating: 5,
         verified: true
       },
@@ -591,7 +592,7 @@ export const socialProofData = {
         name: 'David Park',
         channel: '@BusinessTips',
         subscribers: '5K',
-        quote: 'Writesonic was too generic. Subscribr understands YouTube specifically.',
+        quote: 'Writesonic was too generic. GenScript understands YouTube specifically.',
         rating: 5,
         verified: true
       }
@@ -601,7 +602,7 @@ export const socialProofData = {
         name: 'Lisa Martinez',
         channel: '@FitnessFirst',
         subscribers: '18K',
-        quote: 'ChatGPT required too much prompting. Subscribr just gets it right.',
+        quote: 'ChatGPT required too much prompting. GenScript just gets it right.',
         rating: 5,
         verified: true
       }
@@ -611,7 +612,7 @@ export const socialProofData = {
         name: 'James Wilson',
         channel: '@TechReviews',
         subscribers: '9K',
-        quote: 'Copy.ai was good for ads, not YouTube. Subscribr is built for creators.',
+        quote: 'Copy.ai was good for ads, not YouTube. GenScript is built for creators.',
         rating: 5,
         verified: true
       }
@@ -701,13 +702,13 @@ export const migrationOffers = {
 // SEO Meta Data
 export const seoData = {
   vidiq: {
-    title: 'VidIQ Alternative - Better YouTube Scripts with 70%+ Retention | Subscribr',
-    description: 'Looking for a VidIQ alternative? Subscribr optimizes scripts for 70%+ viewer retention, not just SEO. See why 15,000+ creators switched. Try free for 14 days.',
+    title: 'VidIQ Alternative - Better YouTube Scripts with 70%+ Retention | GenScript',
+    description: 'Looking for a VidIQ alternative? GenScript optimizes scripts for 70%+ viewer retention, not just SEO. See why 200+ creators switched. Try free for 14 days.',
     keywords: ['vidiq alternative', 'vidiq competitor', 'youtube script generator', 'retention optimization', 'youtube tools'],
     schema: {
       '@context': 'https://schema.org',
       '@type': 'SoftwareApplication',
-      name: 'Subscribr',
+      name: 'GenScript',
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web',
       offers: {

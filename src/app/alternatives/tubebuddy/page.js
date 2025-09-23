@@ -40,52 +40,52 @@ export default function TubeBuddyAlternativePage() {
     { 
       feature: 'Script Generation', 
       competitor: '✗ No script tools', 
-      subscribr: 'Full AI generation'
+      genscript: 'Full AI generation'
     },
     { 
       feature: 'Retention Optimization', 
       competitor: '✗ SEO focus only', 
-      subscribr: '68%+ AVD targeting'
+      genscript: '68%+ AVD targeting'
     },
     { 
       feature: 'Voice Matching', 
       competitor: '✗ Not available', 
-      subscribr: 'Authentic creator voice'
+      genscript: 'Authentic creator voice'
     },
     { 
       feature: 'Fact Checking', 
       competitor: '✗ Not available', 
-      subscribr: 'Built-in verification'
+      genscript: 'Built-in verification'
     },
     { 
       feature: 'PVSS Framework', 
       competitor: '✗ Not available', 
-      subscribr: 'Proven viral structure'
+      genscript: 'Proven viral structure'
     },
     { 
       feature: 'Keyword Research', 
       competitor: 'Core feature', 
-      subscribr: 'Included + retention focus'
+      genscript: 'Included + retention focus'
     },
     { 
       feature: 'SEO Optimization', 
       competitor: 'Advanced tools', 
-      subscribr: 'YouTube algorithm focus'
+      genscript: 'YouTube algorithm focus'
     },
     { 
       feature: 'Thumbnail Testing', 
       competitor: 'A/B testing', 
-      subscribr: 'AI-powered creation'
+      genscript: 'AI-powered creation'
     },
     { 
       feature: 'Hook Library', 
       competitor: '✗ No content library', 
-      subscribr: '1000+ tested hooks'
+      genscript: '1000+ tested hooks'
     },
     { 
       feature: 'Support', 
       competitor: 'Email only', 
-      subscribr: '24/7 live chat'
+      genscript: '24/7 live chat'
     }
   ];
 
