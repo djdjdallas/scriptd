@@ -208,6 +208,16 @@ export function OnboardingContainer({ children, currentStep, onNext, onBack, onS
             </p>
           </div>
         )}
+        
+        <ConfirmationModal
+          isOpen={skipModal.isOpen}
+          onClose={() => setSkipModal({ isOpen: false })}
+          onConfirm={handleSkipAll}
+          title="Skip Onboarding"
+          message="Are you sure you want to skip the onboarding? You can always access these features later from the dashboard."
+          confirmText="Skip"
+          cancelText="Continue Setup"
+        />
       </div>
     </div>
   );

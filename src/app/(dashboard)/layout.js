@@ -67,7 +67,8 @@ export default function DashboardLayout({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Start collapsed
+  const [sidebarHovered, setSidebarHovered] = useState(false); // Track hover state
   const [hoveredItem, setHoveredItem] = useState(null);
   const [expandedItems, setExpandedItems] = useState(['research', 'trending']); // Keep research and trending expanded by default
   const [credits, setCredits] = useState(0);
@@ -217,17 +218,21 @@ export default function DashboardLayout({ children }) {
       </button>
 
       {/* Sidebar */}
-      <aside className={cn(
+      <aside 
+        onMouseEnter={() => setSidebarHovered(true)}
+        onMouseLeave={() => setSidebarHovered(false)}
+        className={cn(
         "fixed left-0 top-0 h-full glass border-r border-white/10 transition-all duration-300 z-40 flex flex-col overflow-hidden",
-        sidebarCollapsed ? "w-20" : "w-64",
+        (sidebarCollapsed && !sidebarHovered) ? "w-20" : "w-64",
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
-        {/* Collapse Button - Desktop Only */}
+        {/* Collapse Button - Desktop Only - Now toggles auto-expand on hover */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="hidden lg:flex absolute -right-3 top-8 w-6 h-6 glass rounded-full items-center justify-center hover:scale-110 transition-transform"
+          title={sidebarCollapsed ? "Pin sidebar open" : "Auto-hide sidebar"}
         >
-          {sidebarCollapsed ? (
+          {(sidebarCollapsed && !sidebarHovered) ? (
             <ChevronRight className="h-3 w-3 text-white" />
           ) : (
             <ChevronLeft className="h-3 w-3 text-white" />
@@ -239,14 +244,14 @@ export default function DashboardLayout({ children }) {
           <div className="mb-8">
             <Link href="/" className="flex items-center gap-2">
               <Zap className="h-8 w-8 text-purple-400 neon-glow flex-shrink-0" />
-              {!sidebarCollapsed && (
+              {!(sidebarCollapsed && !sidebarHovered) && (
                 <span className="text-2xl font-bold gradient-text">GenScript</span>
               )}
             </Link>
           </div>
 
           {/* User Info */}
-          {!sidebarCollapsed && user && (
+          {!(sidebarCollapsed && !sidebarHovered) && user && (
             <div className="glass-card p-4 mb-6">
               <p className="text-sm text-gray-400">Logged in as</p>
               <p className="text-white font-medium truncate">{user.email}</p>
@@ -264,7 +269,7 @@ export default function DashboardLayout({ children }) {
               <div key={item.href}>
                 <div
                   onClick={() => {
-                    if (item.subItems && !sidebarCollapsed) {
+                    if (item.subItems && !(sidebarCollapsed && !sidebarHovered)) {
                       setExpandedItems(prev => 
                         prev.includes(item.label.toLowerCase())
                           ? prev.filter(i => i !== item.label.toLowerCase())
@@ -278,7 +283,7 @@ export default function DashboardLayout({ children }) {
                   onMouseLeave={() => setHoveredItem(null)}
                   className={cn(
                     "flex items-center gap-3 rounded-xl transition-all duration-300 group relative cursor-pointer",
-                    sidebarCollapsed ? "justify-center px-3 py-3" : "px-4 py-3",
+                    (sidebarCollapsed && !sidebarHovered) ? "justify-center px-3 py-3" : "px-4 py-3",
                     isActive
                       ? "glass bg-purple-500/20 text-white"
                       : "hover:glass hover:bg-white/10 text-gray-300 hover:text-white"
@@ -289,7 +294,7 @@ export default function DashboardLayout({ children }) {
                     isActive && "text-purple-400",
                     hoveredItem === item.href && "scale-110"
                   )} />
-                  {!sidebarCollapsed && (
+                  {!(sidebarCollapsed && !sidebarHovered) && (
                     <>
                       <span className="font-medium">{item.label}</span>
                       {item.subItems ? (
@@ -310,7 +315,7 @@ export default function DashboardLayout({ children }) {
                   )}
                   
                   {/* Tooltip for collapsed state */}
-                  {sidebarCollapsed && hoveredItem === item.href && (
+                  {(sidebarCollapsed && !sidebarHovered) && hoveredItem === item.href && (
                     <div className="absolute left-full ml-2 px-3 py-1 glass rounded-lg whitespace-nowrap z-50">
                       <span className="text-sm text-white">{item.label}</span>
                     </div>
@@ -318,7 +323,7 @@ export default function DashboardLayout({ children }) {
                 </div>
                 
                 {/* Sub-items */}
-                {item.subItems && !sidebarCollapsed && isExpanded && (
+                {item.subItems && !(sidebarCollapsed && !sidebarHovered) && isExpanded && (
                   <div className="ml-6 mt-1 space-y-1">
                     {item.subItems.map((subItem) => {
                       const SubIcon = subItem.icon;
@@ -351,7 +356,7 @@ export default function DashboardLayout({ children }) {
         </nav>
 
           {/* Credits Display */}
-          {!sidebarCollapsed && (
+          {!(sidebarCollapsed && !sidebarHovered) && (
             <div className="glass-card p-4 mt-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-400">Credits</span>
@@ -381,11 +386,11 @@ export default function DashboardLayout({ children }) {
               onClick={handleSignOut}
               className={cn(
                 "glass-button text-white w-full",
-                sidebarCollapsed && "px-3"
+                (sidebarCollapsed && !sidebarHovered) && "px-3"
               )}
             >
               <LogOut className="h-4 w-4 flex-shrink-0" />
-              {!sidebarCollapsed && <span className="ml-2">Sign Out</span>}
+              {!(sidebarCollapsed && !sidebarHovered) && <span className="ml-2">Sign Out</span>}
             </Button>
           </div>
         </div>
@@ -394,7 +399,7 @@ export default function DashboardLayout({ children }) {
       {/* Main Content */}
       <main className={cn(
         "transition-all duration-300",
-        sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"
+        (sidebarCollapsed && !sidebarHovered) ? "lg:ml-20" : "lg:ml-64"
       )}>
 
         {/* Page Content */}

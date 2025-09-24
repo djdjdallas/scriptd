@@ -86,7 +86,7 @@ export default function WeekView({ contents, currentDate, onContentClick }) {
         <button
           onClick={() => setViewMode('day')}
           className={cn(
-            "px-3 py-1 rounded flex items-center gap-2 text-sm",
+            "px-3 py-1 rounded flex items-center gap-2 text-sm text-white",
             viewMode === 'day' ? "glass bg-purple-600/30" : "hover:bg-white/10"
           )}
         >
@@ -96,7 +96,7 @@ export default function WeekView({ contents, currentDate, onContentClick }) {
         <button
           onClick={() => setViewMode('hour')}
           className={cn(
-            "px-3 py-1 rounded flex items-center gap-2 text-sm",
+            "px-3 py-1 rounded flex items-center gap-2 text-sm text-white",
             viewMode === 'hour' ? "glass bg-purple-600/30" : "hover:bg-white/10"
           )}
         >

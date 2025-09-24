@@ -1,17 +1,38 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import Script from "next/script";
+import { 
+  homepageMetadata, 
+  structuredData, 
+  faqStructuredData, 
+  organizationStructuredData,
+  marketStatsStructuredData 
+} from "./metadata";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
-  title: "GenScript - AI YouTube Script Generator",
-  description: "Generate viral YouTube scripts with AI. Analyze your channel, learn your voice, and create engaging content that drives views.",
-};
+export const metadata = homepageMetadata;
 
 export default function RootLayout({ children }) {
+  const allStructuredData = [
+    structuredData,
+    faqStructuredData,
+    organizationStructuredData,
+    marketStatsStructuredData
+  ];
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <Script
+          id="structured-data"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(allStructuredData)
+          }}
+        />
+      </head>
       <body className={`${inter.className} antialiased`}>
         {children}
         <Toaster 

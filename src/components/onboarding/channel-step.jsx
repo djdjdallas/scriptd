@@ -19,6 +19,7 @@ import {
   Play,
   BarChart3
 } from 'lucide-react';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export function ChannelStep({ userData, onComplete }) {
   const [channelUrl, setChannelUrl] = useState('');
@@ -26,6 +27,7 @@ export function ChannelStep({ userData, onComplete }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [channelData, setChannelData] = useState(null);
   const [error, setError] = useState('');
+  const [skipModal, setSkipModal] = useState({ isOpen: false });
 
   const validateYouTubeUrl = (url) => {
     const patterns = [
@@ -83,10 +85,13 @@ export function ChannelStep({ userData, onComplete }) {
     }
   };
 
+  const handleSkipClick = () => {
+    setSkipModal({ isOpen: true });
+  };
+
   const handleSkip = async () => {
-    if (confirm('You can connect your channel later from the dashboard. Continue without connecting?')) {
-      await onComplete({ skipped: true });
-    }
+    await onComplete({ skipped: true });
+    setSkipModal({ isOpen: false });
   };
 
   return (
@@ -189,7 +194,7 @@ export function ChannelStep({ userData, onComplete }) {
           <div className="text-center">
             <Button
               variant="ghost"
-              onClick={handleSkip}
+              onClick={handleSkipClick}
               className="text-gray-400 hover:text-white"
             >
               I'll connect my channel later
@@ -279,6 +284,16 @@ export function ChannelStep({ userData, onComplete }) {
           </div>
         </div>
       )}
+      
+      <ConfirmationModal
+        isOpen={skipModal.isOpen}
+        onClose={() => setSkipModal({ isOpen: false })}
+        onConfirm={handleSkip}
+        title="Skip Channel Connection"
+        message="You can connect your channel later from the dashboard. Continue without connecting?"
+        confirmText="Continue"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

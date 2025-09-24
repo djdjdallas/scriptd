@@ -27,6 +27,7 @@ import { TiltCard } from '@/components/ui/tilt-card';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export default function ActionPlansPage() {
   const [actionPlans, setActionPlans] = useState([]);
@@ -37,6 +38,7 @@ export default function ActionPlansPage() {
   const [user, setUser] = useState(null);
   const [hoveredPlan, setHoveredPlan] = useState(null);
   const [hasCheckedUser, setHasCheckedUser] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, planId: null, planTitle: '' });
 
   useEffect(() => {
     checkUser();
@@ -102,11 +104,18 @@ export default function ActionPlansPage() {
     setFilteredPlans(filtered);
   };
 
-  const deletePlan = async (planId) => {
-    if (!confirm('Are you sure you want to delete this action plan?')) {
-      return;
-    }
+  const handleDeleteClick = (planId, planTitle) => {
+    setDeleteModal({ 
+      isOpen: true, 
+      planId, 
+      planTitle: planTitle || 'this action plan'
+    });
+  };
 
+  const handleDeleteConfirm = async () => {
+    const planId = deleteModal.planId;
+    setDeleteModal({ isOpen: false, planId: null, planTitle: '' });
+    
     setDeleteLoading(true);
     try {
       const response = await fetch(`/api/trending/action-plans/${planId}`, {
@@ -125,6 +134,10 @@ export default function ActionPlansPage() {
     } finally {
       setDeleteLoading(false);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({ isOpen: false, planId: null, planTitle: '' });
   };
 
   const formatDate = (dateString) => {
@@ -302,7 +315,7 @@ export default function ActionPlansPage() {
                     variant="ghost"
                     onClick={(e) => {
                       e.stopPropagation();
-                      deletePlan(plan.id);
+                      handleDeleteClick(plan.id, plan.channel_name);
                     }}
                     disabled={deleteLoading}
                     className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
@@ -424,6 +437,18 @@ export default function ActionPlansPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Action Plan"
+        message={`Are you sure you want to delete the action plan for ${deleteModal.planTitle}? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        loading={deleteLoading}
+      />
     </div>
   );
 }

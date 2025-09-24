@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useRef } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { useMagnetic } from "@/hooks/useMagnetic";
+import { StatHero, AnimatedCounter } from "@/components/stats";
 import {
   ArrowRight,
   Sparkles,
@@ -28,84 +30,10 @@ import {
 } from "lucide-react";
 
 export default function Home() {
-  const [scrollY, setScrollY] = useState(0);
-  const [activeFeature, setActiveFeature] = useState(null);
   const heroRef = useRef(null);
   const magneticRef1 = useMagnetic(0.3);
   const magneticRef2 = useMagnetic(0.4);
   const magneticRef3 = useMagnetic(0.5);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
-  const parallaxStyle = (speed = 1) => ({
-    transform: `translateY(${scrollY * speed}px)`,
-  });
-
-  const features = [
-    {
-      id: "voice",
-      icon: Mic,
-      title: "Voice Cloning",
-      description:
-        "AI learns your unique style from samples. Never lose your authentic voice.",
-      color: "purple",
-      gradient: "from-purple-500/20",
-    },
-    {
-      id: "viral",
-      icon: TrendingUp,
-      title: "Viral Analysis",
-      description:
-        "Study what works. Extract patterns from millions of successful videos.",
-      color: "pink",
-      gradient: "from-pink-500/20",
-    },
-    {
-      id: "research",
-      icon: Brain,
-      title: "Smart Research",
-      description:
-        "Pull insights from trending content and your knowledge base instantly.",
-      color: "blue",
-      gradient: "from-blue-500/20",
-    },
-    {
-      id: "hook",
-      icon: Play,
-      title: "Hook Generator",
-      description:
-        "Create attention-grabbing intros that keep viewers watching.",
-      color: "green",
-      gradient: "from-green-500/20",
-    },
-    {
-      id: "tracking",
-      icon: BarChart3,
-      title: "Performance Tracking",
-      description:
-        "Monitor script performance and optimize your content strategy.",
-      color: "orange",
-      gradient: "from-orange-500/20",
-    },
-    {
-      id: "team",
-      icon: Users,
-      title: "Team Workspace",
-      description: "Collaborate seamlessly with editors and team members.",
-      color: "indigo",
-      gradient: "from-indigo-500/20",
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 overflow-hidden">
@@ -158,7 +86,7 @@ export default function Home() {
                 Math.sin(seed * 12.9898 + multiplier * 78.233) * 43758.5453;
               return x - Math.floor(x);
             };
-            
+
             // Pre-calculate all values and format them consistently
             const left = (seededRandom(i, 1) * 100).toFixed(4);
             const top = (seededRandom(i, 2) * 100).toFixed(4);
@@ -186,10 +114,7 @@ export default function Home() {
       {/* Glassmorphic Navigation */}
       <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 glass-nav noise-texture">
         <div className="flex items-center gap-8">
-          <Link
-            href="/"
-            className="text-2xl font-bold gradient-text"
-          >
+          <Link href="/" className="text-2xl font-bold gradient-text">
             GenScript
           </Link>
           <div className="hidden md:flex items-center gap-6">
@@ -208,16 +133,10 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <Link href="/login">
-              <Button
-                className="glass-button text-white"
-              >
-                Sign In
-              </Button>
+              <Button className="glass-button text-white">Sign In</Button>
             </Link>
             <Link href="/signup">
-              <Button
-                className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
-              >
+              <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
                 Get Started
               </Button>
             </Link>
@@ -277,11 +196,11 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto text-center stagger-children">
-          {/* Glowing Badge */}
+          {/* Glowing Badge with Market Validation */}
           <div className="inline-flex items-center gap-2 glass-card px-4 py-2 mb-8 animate-glow">
             <Star className="w-4 h-4 text-yellow-400" />
             <span className="text-sm text-gray-200">
-              Trusted by 150+ creators
+              Join 69M+ YouTube creators using AI
             </span>
           </div>
 
@@ -292,10 +211,15 @@ export default function Home() {
             </span>
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
             Generate YouTube scripts in your unique voice. Analyze top
             performers, research trends, and create content that drives views.
           </p>
+
+          {/* Hero Market Stats */}
+          <div className="mb-12">
+            <StatHero />
+          </div>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -309,10 +233,7 @@ export default function Home() {
               </Button>
             </Link>
             <Link href="/tools">
-              <Button
-                size="lg"
-                className="glass-button text-white"
-              >
+              <Button size="lg" className="glass-button text-white">
                 Try Free Tools
               </Button>
             </Link>
@@ -329,111 +250,65 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Interactive Features Grid */}
-      <section className="relative py-32 px-4" style={parallaxStyle(0.3)}>
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              Superpowers for{" "}
-              <span className="gradient-text">Content Creators</span>
-            </h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Advanced AI tools designed to amplify your creative process
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-children">
-            {features.map((feature) => (
-              <TiltCard key={feature.id}>
-                <div
-                  className="glass-card group cursor-pointer glass-hover h-full"
-                  onMouseEnter={() => {
-                    setActiveFeature(feature.id);
-                  }}
-                  onMouseLeave={() => {
-                    setActiveFeature(null);
-                  }}
-                >
-                  <div
-                    className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl`}
-                  />
-                  <div className="relative z-10">
-                    <div className="w-16 h-16 glass rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                      <feature.icon
-                        className={`w-8 h-8 text-${feature.color}-400`}
-                      />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-3">
-                      {feature.title}
-                    </h3>
-                    <p className="text-gray-300">{feature.description}</p>
-                    {activeFeature === feature.id && (
-                      <div className="mt-4 glass rounded-lg p-3 animate-reveal">
-                        <p className="text-sm text-purple-300">
-                          Click to explore →
-                        </p>
+      {/* Lazy load Features Section */}
+      {(() => {
+        const OptimizedFeatures = dynamic(
+          () =>
+            import("@/components/OptimizedFeatures").then((mod) => ({
+              default: mod.OptimizedFeatures,
+            })),
+          {
+            ssr: true,
+            loading: () => (
+              <div className="py-32 px-4">
+                <div className="max-w-7xl mx-auto">
+                  <div className="h-20 bg-gray-700 rounded mb-8 animate-pulse"></div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {[...Array(6)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="glass-card p-6 h-48 animate-pulse"
+                      >
+                        <div className="h-16 bg-gray-700 rounded mb-4"></div>
+                        <div className="h-4 bg-gray-600 rounded"></div>
                       </div>
-                    )}
+                    ))}
                   </div>
                 </div>
-              </TiltCard>
-            ))}
-          </div>
-        </div>
-      </section>
+              </div>
+            ),
+          }
+        );
+        return <OptimizedFeatures />;
+      })()}
 
-      {/* Stats with Counter Animation */}
-      <section className="relative py-32 px-4" style={parallaxStyle(0.2)}>
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="glass-card text-center group">
-              <div className="text-5xl font-bold gradient-text mb-2 holographic bg-clip-text">
-                2,500+
+      {/* Import SocialProofStats component dynamically */}
+      {(() => {
+        const SocialProofStats = dynamic(
+          () =>
+            import("@/components/stats").then((mod) => ({
+              default: mod.SocialProofStats,
+            })),
+          {
+            ssr: false,
+            loading: () => (
+              <div className="py-32 px-4">
+                <div className="max-w-7xl mx-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="glass-card p-6 animate-pulse">
+                        <div className="h-12 bg-gray-700 rounded mb-4"></div>
+                        <div className="h-4 bg-gray-600 rounded"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <p className="text-xl text-gray-300">Scripts Generated</p>
-              <div className="mt-4 flex justify-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-2 h-8 glass rounded animate-pulse"
-                    style={{ animationDelay: `${i * 0.1}s` }}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="glass-card text-center group">
-              <div className="text-5xl font-bold gradient-text mb-2 holographic bg-clip-text">
-                1.2M+
-              </div>
-              <p className="text-xl text-gray-300">Views Generated</p>
-              <div className="mt-4 flex justify-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-2 h-8 glass rounded animate-pulse"
-                    style={{ animationDelay: `${i * 0.1}s` }}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="glass-card text-center group">
-              <div className="text-5xl font-bold gradient-text mb-2 holographic bg-clip-text">
-                95%
-              </div>
-              <p className="text-xl text-gray-300">Creator Satisfaction</p>
-              <div className="mt-4 flex justify-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-2 h-8 glass rounded animate-pulse"
-                    style={{ animationDelay: `${i * 0.1}s` }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            ),
+          }
+        );
+        return <SocialProofStats />;
+      })()}
 
       {/* Final CTA with Parallax */}
       <section className="relative py-32 px-4 mt-40">
@@ -450,8 +325,10 @@ export default function Home() {
             </div>
           </div>
           <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto relative z-10">
-            Join Hundreds of creators who've transformed their content game with
-            AI
+            Join <AnimatedCounter end={250} startOnView={true} />+ creators
+            achieving{" "}
+            <AnimatedCounter end={180} suffix="%" startOnView={true} /> faster
+            growth
           </p>
           <Link href="/signup">
             <Button
@@ -507,10 +384,7 @@ export default function Home() {
               >
                 Terms
               </Link>
-              <Link
-                href="/blog"
-                className="hover:text-white transition-colors"
-              >
+              <Link href="/blog" className="hover:text-white transition-colors">
                 Blog
               </Link>
               <Link

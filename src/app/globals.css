@@ -72,10 +72,15 @@
   /* Glassmorphic Components */
   .glass {
     @apply backdrop-blur-xl bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-100/10;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
   
   .glass-card {
     @apply backdrop-blur-xl bg-gray-900/40 dark:bg-gray-900/60 border border-gray-700/50 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl relative overflow-hidden;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: auto;
   }
   
   .glass-card-no-overflow {
@@ -96,7 +101,11 @@
   
   /* Gradient Orbs */
   .gradient-orb {
-    @apply absolute rounded-full blur-3xl opacity-30 animate-float;
+    @apply absolute rounded-full blur-3xl opacity-30;
+    animation: float 20s ease-in-out infinite;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
   
   /* Custom Animations */
@@ -160,6 +169,9 @@
   
   .animate-float {
     animation: float 20s ease-in-out infinite;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
   
   .animate-fadeIn {

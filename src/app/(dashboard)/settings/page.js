@@ -32,6 +32,7 @@ import {
   Trash2,
   FileText
 } from 'lucide-react';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -59,6 +60,7 @@ export default function SettingsPage() {
   });
   const [activeTab, setActiveTab] = useState('profile');
   const { toast } = useToast();
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false });
 
   useEffect(() => {
     fetchUserSettings();
@@ -146,11 +148,11 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      return;
-    }
+  const handleDeleteAccountClick = () => {
+    setDeleteModal({ isOpen: true });
+  };
 
+  const handleDeleteAccount = async () => {
     try {
       // In production, this would call an API endpoint to delete the account
       toast({
@@ -159,6 +161,8 @@ export default function SettingsPage() {
       });
     } catch (error) {
       console.error('Error deleting account:', error);
+    } finally {
+      setDeleteModal({ isOpen: false });
     }
   };
 
@@ -437,7 +441,7 @@ export default function SettingsPage() {
                     Once you delete your account, there is no going back.
                   </p>
                   <Button
-                    onClick={handleDeleteAccount}
+                    onClick={handleDeleteAccountClick}
                     className="glass-button text-red-400 hover:bg-red-500/20"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
@@ -492,6 +496,16 @@ export default function SettingsPage() {
           </a>
         </div>
       </div>
+      
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false })}
+        onConfirm={handleDeleteAccount}
+        title="Delete Account"
+        message="Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed."
+        confirmText="Delete Account"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

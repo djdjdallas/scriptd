@@ -590,17 +590,10 @@ export default function VoiceTrainingPage() {
                     
                     {/* Status */}
                     <div className="flex items-center gap-2">
-                      {(profile.parameters?.status === 'trained' || profile.status === 'trained') ? (
-                        <Button className="glass-button text-white">
-                          <Play className="h-4 w-4 mr-2" />
-                          Use Voice
-                        </Button>
-                      ) : (
-                        <div className="flex items-center gap-2 glass px-4 py-2 rounded-lg">
-                          <RefreshCw className="h-4 w-4 text-yellow-400 animate-spin" />
-                          <span className="text-sm text-yellow-400">Training...</span>
-                        </div>
-                      )}
+                      <Button className="glass-button text-white">
+                        <Play className="h-4 w-4 mr-2" />
+                        Use Voice
+                      </Button>
                     </div>
                   </div>
                 </div>

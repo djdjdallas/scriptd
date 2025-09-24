@@ -19,7 +19,7 @@ export const GET = createApiHandler(async (req) => {
       data: {
         id: user.id,
         email: user.email,
-        credits: 15, // Default credits
+        credits: 50, // Default credits
         subscription_tier: 'free'
       }
     });
@@ -29,7 +29,7 @@ export const GET = createApiHandler(async (req) => {
     data: {
       id: userData.id,
       email: userData.email,
-      credits: userData.credits || 15,
+      credits: userData.credits || 50,
       subscription_tier: userData.subscription_tier || 'free',
       name: userData.name,
       avatar_url: userData.avatar_url

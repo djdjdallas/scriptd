@@ -32,20 +32,24 @@ export default function VoiceMatchingPage() {
     setIsAnalyzing(true);
     const interval = setInterval(() => {
       setAnalysisStep(prev => {
-        if (prev >= 3) {
+        const nextStep = prev + 1;
+        if (nextStep >= 4) {
           clearInterval(interval);
-          setIsAnalyzing(false);
-          setVoiceProfile({
-            tone: 'Conversational & Energetic',
-            vocabulary: 'Tech-savvy with accessible explanations',
-            pacing: 'Dynamic with strategic pauses',
-            personality: 'Enthusiastic educator',
-            uniquePhrases: ['Let\'s dive in', 'Here\'s the thing', 'But wait, there\'s more'],
-            matchScore: 95
-          });
-          return 0;
+          setTimeout(() => {
+            setIsAnalyzing(false);
+            setVoiceProfile({
+              tone: 'Conversational & Energetic',
+              vocabulary: 'Tech-savvy with accessible explanations',
+              pacing: 'Dynamic with strategic pauses',
+              personality: 'Enthusiastic educator',
+              uniquePhrases: ['Let\'s dive in', 'Here\'s the thing', 'But wait, there\'s more'],
+              matchScore: 95
+            });
+            setAnalysisStep(0);
+          }, 500);
+          return prev;
         }
-        return prev + 1;
+        return nextStep;
       });
     }, 1500);
   };

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export default function ScriptPage({ params }) {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function ScriptPage({ params }) {
   const [script, setScript] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copying, setCopying] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false });
 
   // Unwrap params Promise
   const resolvedParams = use(params);
@@ -193,9 +195,11 @@ export default function ScriptPage({ params }) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this script?")) return;
+  const handleDeleteClick = () => {
+    setDeleteModal({ isOpen: true });
+  };
 
+  const handleDelete = async () => {
     try {
       const response = await fetch(`/api/scripts/${scriptId}`, {
         method: "DELETE",
@@ -217,6 +221,8 @@ export default function ScriptPage({ params }) {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setDeleteModal({ isOpen: false });
     }
   };
 
@@ -301,7 +307,7 @@ export default function ScriptPage({ params }) {
               Download
             </Button>
             <Button
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               className="glass-button hover:bg-red-500/20"
             >
               <Trash2 className="h-4 w-4 mr-2" />
@@ -409,6 +415,16 @@ export default function ScriptPage({ params }) {
           </div>
         )}
       </div>
+      
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false })}
+        onConfirm={handleDelete}
+        title="Delete Script"
+        message={`Are you sure you want to delete "${script?.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

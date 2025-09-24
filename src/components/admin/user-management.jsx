@@ -31,6 +31,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 const USER_ROLES = [
   { value: 'user', label: 'User' },
@@ -54,6 +55,13 @@ export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    type: null, // 'role' or 'suspend'
+    user: null,
+    newRole: null,
+    shouldSuspend: null
+  });
 
   useEffect(() => {
     loadUsers();
@@ -107,32 +115,50 @@ export default function UserManagement() {
     }
   };
 
-  const handleUpdateUserRole = async (userId, newRole) => {
-    if (!confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
-      return;
-    }
+  const handleUpdateUserRole = (userId, newRole) => {
+    const user = users.find(u => u.id === userId);
+    setConfirmationModal({
+      isOpen: true,
+      type: 'role',
+      user,
+      newRole,
+      shouldSuspend: null
+    });
+  };
 
+  const confirmUpdateUserRole = async () => {
     try {
-      await adminService.updateUserRole(userId, newRole);
+      await adminService.updateUserRole(confirmationModal.user.id, confirmationModal.newRole);
       loadUsers(); // Refresh the list
     } catch (error) {
       console.error('Error updating user role:', error);
       alert('Error updating user role. Please try again.');
+    } finally {
+      setConfirmationModal({ isOpen: false, type: null, user: null, newRole: null, shouldSuspend: null });
     }
   };
 
-  const handleSuspendUser = async (userId, shouldSuspend = true) => {
-    const action = shouldSuspend ? 'suspend' : 'unsuspend';
-    if (!confirm(`Are you sure you want to ${action} this user?`)) {
-      return;
-    }
+  const handleSuspendUser = (userId, shouldSuspend = true) => {
+    const user = users.find(u => u.id === userId);
+    setConfirmationModal({
+      isOpen: true,
+      type: 'suspend',
+      user,
+      newRole: null,
+      shouldSuspend
+    });
+  };
 
+  const confirmSuspendUser = async () => {
+    const action = confirmationModal.shouldSuspend ? 'suspend' : 'unsuspend';
     try {
-      await adminService.suspendUser(userId, shouldSuspend);
+      await adminService.suspendUser(confirmationModal.user.id, confirmationModal.shouldSuspend);
       loadUsers(); // Refresh the list
     } catch (error) {
       console.error(`Error ${action}ing user:`, error);
       alert(`Error ${action}ing user. Please try again.`);
+    } finally {
+      setConfirmationModal({ isOpen: false, type: null, user: null, newRole: null, shouldSuspend: null });
     }
   };
 
@@ -309,6 +335,22 @@ export default function UserManagement() {
           )}
         </DialogContent>
       </Dialog>
+      
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        onClose={() => setConfirmationModal({ isOpen: false, type: null, user: null, newRole: null, shouldSuspend: null })}
+        onConfirm={confirmationModal.type === 'role' ? confirmUpdateUserRole : confirmSuspendUser}
+        title={confirmationModal.type === 'role' ? 'Change User Role' : (confirmationModal.shouldSuspend ? 'Suspend User' : 'Unsuspend User')}
+        message={
+          confirmationModal.type === 'role' 
+            ? `Are you sure you want to change ${confirmationModal.user?.email}'s role to ${confirmationModal.newRole}?`
+            : confirmationModal.shouldSuspend 
+              ? `Are you sure you want to suspend ${confirmationModal.user?.email}? They will lose access to the platform.`
+              : `Are you sure you want to unsuspend ${confirmationModal.user?.email}? They will regain access to the platform.`
+        }
+        confirmText={confirmationModal.type === 'role' ? 'Change Role' : (confirmationModal.shouldSuspend ? 'Suspend' : 'Unsuspend')}
+        cancelText="Cancel"
+      />
     </div>
   );
 }

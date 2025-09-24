@@ -377,6 +377,17 @@ export default function ScriptActions({
         )}
         Delete
       </Button>
+      
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false })}
+        onConfirm={handleDelete}
+        title="Delete Script"
+        message={`Are you sure you want to delete "${script.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        loading={deleting}
+      />
     </div>
   );
 }

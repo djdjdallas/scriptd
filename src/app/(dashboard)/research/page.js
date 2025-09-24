@@ -34,6 +34,7 @@ import {
   Clock,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 // Preset research templates
 const RESEARCH_TEMPLATES = [
@@ -155,11 +156,12 @@ export default function YouTubeResearchPage() {
   const [sessions, setSessions] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [loadingSessions, setLoadingSessions] = useState(true);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, sessionId: null, sessionTitle: '' });
+  const [showTemplates, setShowTemplates] = useState(false);
 
-  // Initialize session on mount and load sessions
+  // Load sessions on mount
   useEffect(() => {
     loadSessions();
-    createSession();
   }, []);
 
   const loadSessions = async () => {
@@ -223,12 +225,16 @@ export default function YouTubeResearchPage() {
     }
   };
 
-  const deleteSession = async (sessionIdToDelete, e) => {
+  const handleDeleteClick = (sessionIdToDelete, sessionTitle, e) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this conversation?')) return;
+    setDeleteModal({ isOpen: true, sessionId: sessionIdToDelete, sessionTitle });
+  };
+
+  const deleteSession = async () => {
+    const { sessionId: sessionIdToDelete } = deleteModal;
     
     try {
-      const response = await fetch(`/api/research/sessions?id=${sessionIdToDelete}`, {
+      const response = await fetch(`/api/research/sessions/${sessionIdToDelete}`, {
         method: 'DELETE'
       });
       
@@ -250,6 +256,8 @@ export default function YouTubeResearchPage() {
         description: "Failed to delete conversation",
         variant: "destructive",
       });
+    } finally {
+      setDeleteModal({ isOpen: false, sessionId: null, sessionTitle: '' });
     }
   };
 
@@ -273,7 +281,15 @@ export default function YouTubeResearchPage() {
   };
 
   const sendMessage = async (messageText) => {
-    if (!messageText.trim() || !sessionId) return;
+    if (!messageText.trim()) return;
+    
+    // Create a session if we don't have one
+    let currentSessionId = sessionId;
+    if (!currentSessionId) {
+      await createSession();
+      currentSessionId = sessionId;
+      if (!currentSessionId) return;
+    }
 
     const userMessage = {
       id: Date.now().toString(),
@@ -288,7 +304,7 @@ export default function YouTubeResearchPage() {
 
     try {
       const response = await fetch(
-        `/api/research/sessions/${sessionId}/messages`,
+        `/api/research/sessions/${currentSessionId}/messages`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -417,7 +433,7 @@ Please analyze:
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <div className={`${isSidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-black/40 border-r border-white/10 overflow-hidden flex flex-col`}>
+      <div className={`${isSidebarOpen ? 'w-96' : 'w-0'} transition-all duration-300 bg-black/40 border-r border-white/10 overflow-hidden flex flex-col`}>
         <div className="p-4 border-b border-white/10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">Chat History</h2>
@@ -437,7 +453,7 @@ Please analyze:
           </button>
         </div>
         
-        <ScrollArea className="flex-1 p-4">
+        <div className="flex-1 overflow-y-auto p-4">
           {loadingSessions ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
@@ -453,44 +469,48 @@ Please analyze:
               {sessions.map((session) => (
                 <div
                   key={session.id}
-                  onClick={() => loadSession(session)}
-                  className={`group p-3 rounded-lg cursor-pointer transition-all ${
+                  className={`group rounded-lg transition-all relative ${
                     sessionId === session.id
                       ? 'glass bg-purple-500/20 ring-2 ring-purple-400'
                       : 'hover:bg-white/5'
                   }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-white truncate">
-                        {session.title}
+                  <div className="flex items-start p-3">
+                    <div 
+                      onClick={() => loadSession(session)}
+                      className="flex-1 cursor-pointer pr-10 min-w-0"
+                    >
+                      <h3 className="text-sm font-medium text-white truncate max-w-[280px]">
+                        {session.title.length > 40 ? session.title.substring(0, 40) + '...' : session.title}
                       </h3>
-                      <p className="text-xs text-gray-400 truncate mt-1">
-                        {session.last_message_preview || session.metadata?.lastMessage || 'No messages yet'}
+                      <p className="text-xs text-gray-400 truncate mt-1 max-w-[280px]">
+                        {(session.last_message_preview || session.metadata?.lastMessage || 'No messages yet').substring(0, 50) + 
+                          ((session.last_message_preview || session.metadata?.lastMessage || '').length > 50 ? '...' : '')}
                       </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Clock className="h-3 w-3 text-gray-500" />
-                        <span className="text-xs text-gray-500">
+                      <div className="flex items-center gap-1 mt-2 flex-wrap">
+                        <Clock className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                        <span className="text-xs text-gray-500 truncate max-w-[100px]">
                           {new Date(session.updatedAt || session.updated_at).toLocaleDateString()}
                         </span>
                         <span className="text-xs text-gray-500">•</span>
-                        <span className="text-xs text-gray-500">
-                          {session.messageCount || 0} messages
+                        <span className="text-xs text-gray-500 truncate">
+                          {session.messageCount || 0} msgs
                         </span>
                       </div>
                     </div>
                     <button
-                      onClick={(e) => deleteSession(session.id, e)}
-                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all"
+                      onClick={(e) => handleDeleteClick(session.id, session.title, e)}
+                      className="absolute top-3 right-3 p-1.5 bg-red-500/40 hover:bg-red-500/60 rounded-lg transition-all border border-red-400/50"
+                      title="Delete"
                     >
-                      <Trash2 className="h-4 w-4 text-red-400" />
+                      <Trash2 className="h-3.5 w-3.5 text-red-200" />
                     </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -506,10 +526,6 @@ Please analyze:
                 <Menu className="h-5 w-5 text-gray-400" />
               </button>
             )}
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-white">YouTube Research Assistant</h1>
-              <p className="text-gray-400 text-sm">Analyze channels, generate ideas, and research trending content</p>
-            </div>
           </div>
         </div>
 
@@ -599,37 +615,6 @@ Please analyze:
         </div>
       </div>
 
-      {/* Research Templates */}
-      <div className="animate-reveal" style={{ animationDelay: '0.2s' }}>
-        <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-          <Zap className="h-5 w-5 text-yellow-400" />
-          Quick Research Templates
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {RESEARCH_TEMPLATES.map((template, index) => (
-            <div
-              key={template.id}
-              className="glass-card p-4 glass-hover cursor-pointer group"
-              onClick={() => handleTemplateClick(template)}
-              style={{ animationDelay: `${0.2 + index * 0.05}s` }}
-            >
-              <div className="flex items-start gap-3">
-                <div className="glass w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform text-purple-400">
-                  {template.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium text-white mb-1 truncate">
-                    {template.title}
-                  </h4>
-                  <p className="text-xs text-gray-400 line-clamp-2">
-                    {template.description}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Main Chat/Library Interface */}
       <div className="glass-card overflow-hidden animate-reveal" style={{ animationDelay: '0.3s' }}>
@@ -689,7 +674,32 @@ Please analyze:
                         Ask anything about YouTube channels, content strategy,
                         or video ideas
                       </p>
-                      <div className="flex flex-wrap gap-2 justify-center">
+                      
+                      {/* Quick Templates Grid in Chat */}
+                      <div className="w-full max-w-4xl mx-auto">
+                        <h4 className="text-sm font-medium text-gray-400 mb-4">Quick Templates</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          {RESEARCH_TEMPLATES.slice(0, 8).map((template) => (
+                            <button
+                              key={template.id}
+                              onClick={() => handleTemplateClick(template)}
+                              className="glass glass-hover p-3 text-left group"
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="text-purple-400">
+                                  {template.icon}
+                                </div>
+                              </div>
+                              <p className="text-xs font-medium text-white">{template.title}</p>
+                              <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+                                {template.description}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2 justify-center mt-6">
                         {[
                           "What makes MrBeast's videos viral?",
                           "Generate 10 tech review video ideas",
@@ -762,7 +772,14 @@ Please analyze:
 
                 {/* Input Area */}
                 <div className="border-t border-white/10 p-4">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mb-2">
+                    <Button
+                      onClick={() => setShowTemplates(!showTemplates)}
+                      className="glass-button bg-gradient-to-r from-purple-500/30 to-pink-500/30 hover:from-purple-500/40 hover:to-pink-500/40 text-white shrink-0 px-3 py-2"
+                    >
+                      <Sparkles className="h-4 w-4 mr-1" />
+                      Templates
+                    </Button>
                     <Textarea
                       placeholder="Ask anything about YouTube..."
                       value={input}
@@ -784,7 +801,36 @@ Please analyze:
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-400 mt-2">
+                  
+                  {/* Collapsible Templates */}
+                  {showTemplates && (
+                    <div className="mb-3 p-3 glass rounded-lg">
+                      <div className="grid grid-cols-2 gap-2">
+                        {RESEARCH_TEMPLATES.slice(0, 8).map((template) => (
+                          <button
+                            key={template.id}
+                            onClick={() => {
+                              handleTemplateClick(template);
+                              setShowTemplates(false);
+                            }}
+                            className="p-2 text-left text-xs glass glass-hover rounded transition-colors"
+                          >
+                            <div className="flex items-center gap-1 mb-1">
+                              <div className="text-purple-400">
+                                {template.icon}
+                              </div>
+                              <span className="font-medium text-white">{template.title}</span>
+                            </div>
+                            <p className="text-gray-400 line-clamp-1">
+                              {template.description}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-gray-400">
                     Shift+Enter for new line • {messages.length} messages in
                     this session
                   </p>
@@ -831,6 +877,16 @@ Please analyze:
       </div>
         </div>
       </div>
+      
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, sessionId: null, sessionTitle: '' })}
+        onConfirm={deleteSession}
+        title="Delete Conversation"
+        message={`Are you sure you want to delete "${deleteModal.sessionTitle}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

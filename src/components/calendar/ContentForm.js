@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Clock, Hash, Target, Users, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { PLATFORMS, CONTENT_TYPES, CONTENT_STATUS, BEST_POSTING_TIMES } from '@/lib/calendar/constants';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export default function ContentForm({ content, onSave, onDelete, onClose }) {
   const [formData, setFormData] = useState({
@@ -26,6 +27,7 @@ export default function ContentForm({ content, onSave, onDelete, onClose }) {
   const [tagInput, setTagInput] = useState('');
   const [keywordInput, setKeywordInput] = useState('');
   const [errors, setErrors] = useState({});
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false });
 
   const validateForm = () => {
     const newErrors = {};
@@ -332,12 +334,7 @@ export default function ContentForm({ content, onSave, onDelete, onClose }) {
             {content && onDelete && (
               <button
                 type="button"
-                onClick={() => {
-                  if (confirm('Are you sure you want to delete this content?')) {
-                    onDelete();
-                    onClose();
-                  }
-                }}
+                onClick={() => setDeleteModal({ isOpen: true })}
                 className="glass-button bg-red-600/30 hover:bg-red-600/40 flex items-center"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -355,6 +352,20 @@ export default function ContentForm({ content, onSave, onDelete, onClose }) {
           </div>
         </div>
       </div>
+      
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false })}
+        onConfirm={() => {
+          onDelete();
+          onClose();
+          setDeleteModal({ isOpen: false });
+        }}
+        title="Delete Content"
+        message="Are you sure you want to delete this content? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

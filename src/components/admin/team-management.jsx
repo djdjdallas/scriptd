@@ -27,6 +27,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export default function TeamManagement() {
   const [teams, setTeams] = useState([]);
@@ -38,6 +39,7 @@ export default function TeamManagement() {
   const [showTeamDetails, setShowTeamDetails] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedTeams, setExpandedTeams] = useState(new Set());
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, team: null });
 
   useEffect(() => {
     loadTeams();
@@ -77,17 +79,19 @@ export default function TeamManagement() {
     }
   };
 
-  const handleDeleteTeam = async (team) => {
-    if (!confirm(`Are you sure you want to delete the team "${team.name}"? This action cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteTeam = (team) => {
+    setDeleteModal({ isOpen: true, team });
+  };
 
+  const confirmDeleteTeam = async () => {
     try {
-      await adminService.deleteTeam(team.id);
+      await adminService.deleteTeam(deleteModal.team.id);
       loadTeams(); // Refresh the list
     } catch (error) {
       console.error('Error deleting team:', error);
       alert('Error deleting team. Please try again.');
+    } finally {
+      setDeleteModal({ isOpen: false, team: null });
     }
   };
 
@@ -257,6 +261,16 @@ export default function TeamManagement() {
           )}
         </DialogContent>
       </Dialog>
+      
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, team: null })}
+        onConfirm={confirmDeleteTeam}
+        title="Delete Team"
+        message={`Are you sure you want to delete the team "${deleteModal.team?.name}"? This action cannot be undone.`}
+        confirmText="Delete Team"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

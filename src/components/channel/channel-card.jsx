@@ -22,8 +22,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { useState } from 'react';
 
 export function ChannelCard({ channel, onRefresh, onDelete }) {
+  const [disconnectModal, setDisconnectModal] = useState({ isOpen: false });
   const handleRefresh = async () => {
     try {
       const response = await fetch(`/api/channels/${channel.id}`, {
@@ -43,11 +46,11 @@ export function ChannelCard({ channel, onRefresh, onDelete }) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to disconnect this channel?')) {
-      return;
-    }
+  const handleDeleteClick = () => {
+    setDisconnectModal({ isOpen: true });
+  };
 
+  const handleDelete = async () => {
     try {
       const response = await fetch(`/api/channels/${channel.id}`, {
         method: 'DELETE',
@@ -63,6 +66,8 @@ export function ChannelCard({ channel, onRefresh, onDelete }) {
       }
     } catch (error) {
       toast.error('Failed to disconnect channel');
+    } finally {
+      setDisconnectModal({ isOpen: false });
     }
   };
 
@@ -92,7 +97,7 @@ export function ChannelCard({ channel, onRefresh, onDelete }) {
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh Data
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+            <DropdownMenuItem onClick={handleDeleteClick} className="text-destructive">
               <Trash className="mr-2 h-4 w-4" />
               Disconnect
             </DropdownMenuItem>
@@ -169,6 +174,16 @@ export function ChannelCard({ channel, onRefresh, onDelete }) {
           </Link>
         </div>
       </CardContent>
+      
+      <ConfirmationModal
+        isOpen={disconnectModal.isOpen}
+        onClose={() => setDisconnectModal({ isOpen: false })}
+        onConfirm={handleDelete}
+        title="Disconnect Channel"
+        message={`Are you sure you want to disconnect "${channel.title}"? This will remove the channel and all associated data from your account.`}
+        confirmText="Disconnect"
+        cancelText="Cancel"
+      />
     </Card>
   );
 }

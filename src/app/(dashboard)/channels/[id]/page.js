@@ -9,12 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { calculateChannelMetrics } from '@/lib/utils/channel-metrics';
 import { ChannelAnalyzer } from '@/components/channel/channel-analyzer';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export default function ChannelDetailPage({ params }) {
   const router = useRouter();
   const [channel, setChannel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false });
   
   // Unwrap params using React.use()
   const resolvedParams = use(params);
@@ -66,11 +68,13 @@ export default function ChannelDetailPage({ params }) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to remove this channel?')) {
-      return;
-    }
+  const handleDeleteClick = () => {
+    setDeleteModal({ isOpen: true });
+  };
 
+  const handleDeleteConfirm = async () => {
+    setDeleteModal({ isOpen: false });
+    
     try {
       const response = await fetch(`/api/channels/${channelId}`, {
         method: 'DELETE',
@@ -86,6 +90,10 @@ export default function ChannelDetailPage({ params }) {
       console.error('Error deleting channel:', error);
       toast.error('Failed to remove channel');
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({ isOpen: false });
   };
 
   if (loading) {
@@ -154,7 +162,7 @@ export default function ChannelDetailPage({ params }) {
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={handleDelete}
+                onClick={handleDeleteClick}
                 className="bg-red-600 hover:bg-red-700"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -411,6 +419,17 @@ export default function ChannelDetailPage({ params }) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Remove Channel"
+        message="Are you sure you want to remove this channel? This action cannot be undone."
+        confirmText="Remove"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

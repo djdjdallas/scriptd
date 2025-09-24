@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import CalendarView from '@/components/calendar/CalendarView';
 import CalendarHeader from '@/components/calendar/CalendarHeader';
 import ContentForm from '@/components/calendar/ContentForm';
-import { Plus, Download, Filter, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, Download, Filter, Sparkles, Loader2, Trash2 } from 'lucide-react';
 import { loadFromStorage, saveToStorage } from '@/lib/calendar/storage';
 import { exportToCSV, exportToICS } from '@/lib/calendar/export-utils';
 import { createClient } from '@/lib/supabase/client';
@@ -15,6 +15,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export default function CalendarPage() {
   const [contents, setContents] = useState([]);
@@ -23,12 +25,54 @@ export default function CalendarPage() {
   const [selectedContent, setSelectedContent] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [deleteAllModal, setDeleteAllModal] = useState({ isOpen: false });
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const supabase = createClient();
 
   // Fetch content from Supabase on mount
   useEffect(() => {
     fetchCalendarContent();
   }, []);
+
+  const handleDeleteAll = () => {
+    setDeleteAllModal({ isOpen: true });
+  };
+
+  const handleDeleteAllConfirm = async () => {
+    setDeleteAllModal({ isOpen: false });
+    setDeleteLoading(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('User not authenticated');
+        return;
+      }
+
+      // Delete all calendar events for the current user
+      const { error } = await supabase
+        .from('content_calendar')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Clear local state
+      setContents([]);
+      toast.success('All calendar events deleted successfully');
+    } catch (error) {
+      console.error('Error deleting all events:', error);
+      toast.error('Failed to delete all events');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteAllCancel = () => {
+    setDeleteAllModal({ isOpen: false });
+  };
 
   const fetchCalendarContent = async () => {
     try {
@@ -214,6 +258,19 @@ export default function CalendarPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Delete All Button */}
+            {contents.length > 0 && (
+              <Button
+                onClick={handleDeleteAll}
+                disabled={deleteLoading}
+                variant="destructive"
+                className="bg-red-600/30 hover:bg-red-600/40 flex items-center"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete All
+              </Button>
+            )}
+
             {/* Add Content Button */}
             <button 
               onClick={() => setIsFormOpen(true)}
@@ -294,6 +351,18 @@ export default function CalendarPage() {
           }}
         />
       )}
+
+      {/* Delete All Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteAllModal.isOpen}
+        onClose={handleDeleteAllCancel}
+        onConfirm={handleDeleteAllConfirm}
+        title="Delete All Calendar Events"
+        message={`Are you sure you want to delete all ${contents.length} calendar events? This action cannot be undone.`}
+        confirmText="Delete All"
+        cancelText="Cancel"
+        loading={deleteLoading}
+      />
     </div>
   );
 }

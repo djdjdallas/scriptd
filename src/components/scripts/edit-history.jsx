@@ -28,6 +28,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export default function EditHistory({ 
   scriptId, 
@@ -42,6 +43,7 @@ export default function EditHistory({
   const [expandedVersions, setExpandedVersions] = useState(new Set());
   const [reverting, setReverting] = useState(null);
   const [diffView, setDiffView] = useState(null);
+  const [revertModal, setRevertModal] = useState({ isOpen: false, version: null });
 
   useEffect(() => {
     fetchVersionHistory();
@@ -70,12 +72,14 @@ export default function EditHistory({
     }
   };
 
-  const handleRevert = async (versionId) => {
-    if (!confirm('Are you sure you want to revert to this version? This will create a new version with the reverted content.')) {
-      return;
-    }
+  const handleRevertClick = (version) => {
+    setRevertModal({ isOpen: true, version });
+  };
 
+  const handleRevert = async () => {
+    const versionId = revertModal.version.id;
     setReverting(versionId);
+    
     try {
       if (onRevert) {
         await onRevert(versionId);
@@ -105,6 +109,7 @@ export default function EditHistory({
       });
     } finally {
       setReverting(null);
+      setRevertModal({ isOpen: false, version: null });
     }
   };
 
@@ -327,7 +332,7 @@ export default function EditHistory({
 
                         {!isCurrent && (
                           <Button 
-                            onClick={() => handleRevert(version.id)}
+                            onClick={() => handleRevertClick(version)}
                             className="glass-button hover:bg-yellow-500/20"
                             size="sm"
                             disabled={reverting === version.id}
@@ -444,6 +449,17 @@ export default function EditHistory({
           </DialogContent>
         </Dialog>
       )}
+      
+      <ConfirmationModal
+        isOpen={revertModal.isOpen}
+        onClose={() => setRevertModal({ isOpen: false, version: null })}
+        onConfirm={handleRevert}
+        title="Revert to Previous Version"
+        message={`Are you sure you want to revert to Version ${revertModal.version ? versions.length - versions.findIndex(v => v.id === revertModal.version.id) : ''}? This will create a new version with the reverted content.`}
+        confirmText="Revert"
+        cancelText="Cancel"
+        loading={reverting !== null}
+      />
     </div>
   );
 }

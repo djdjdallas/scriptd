@@ -32,6 +32,7 @@ import {
 import { SCRIPT_TYPES } from "@/lib/constants";
 import { useToast } from "@/components/ui/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export default function ScriptsPage() {
   const { toast } = useToast();
@@ -43,6 +44,7 @@ export default function ScriptsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [hoveredScript, setHoveredScript] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, script: null });
 
   // Refs for cleanup and debouncing
   const abortControllerRef = useRef(null);
@@ -217,9 +219,12 @@ export default function ScriptsPage() {
     };
   }, [search, typeFilter, sortBy, page]); // Dependencies without fetchScripts
 
-  const handleDelete = async (scriptId) => {
-    if (!confirm("Are you sure you want to delete this script?")) return;
+  const handleDeleteClick = (script) => {
+    setDeleteModal({ isOpen: true, script });
+  };
 
+  const handleDelete = async () => {
+    const scriptId = deleteModal.script.id;
     console.log(`[ScriptsPage] Deleting script: ${scriptId}`);
 
     try {
@@ -251,6 +256,8 @@ export default function ScriptsPage() {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setDeleteModal({ isOpen: false, script: null });
     }
   };
 
@@ -543,7 +550,7 @@ export default function ScriptsPage() {
                           <Button
                             className="glass-button hover:bg-pink-500/20"
                             size="icon"
-                            onClick={() => handleDelete(script.id)}
+                            onClick={() => handleDeleteClick(script)}
                             title="Delete Script"
                           >
                             <Trash2 className="h-4 w-4 text-white" />
@@ -606,6 +613,16 @@ export default function ScriptsPage() {
           </p>
         </div>
       )}
+      
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, script: null })}
+        onConfirm={handleDelete}
+        title="Delete Script"
+        message={`Are you sure you want to delete "${deleteModal.script?.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }
