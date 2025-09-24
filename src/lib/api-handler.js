@@ -146,6 +146,7 @@ export function createErrorResponse(error, status = 400) {
 
 // Export alternative naming for compatibility
 export const createApiHandler = createAPIHandler;
+export const apiHandler = createAPIHandler;
 
 // API Error class
 export class ApiError extends Error {
