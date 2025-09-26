@@ -13,6 +13,276 @@ const anthropic = new Anthropic({
 const VOICE_MODEL = process.env.VOICE_MODEL || process.env.PREMIUM_MODEL || 'claude-sonnet-4-20250514';
 
 /**
+ * Analyze transcript voice with deep linguistic profiling
+ */
+async function analyzeTranscriptVoice(transcripts, channelName) {
+  const transcriptText = transcripts.map(t => t.text).join('\n\n');
+  
+  const enhancedPrompt = `Analyze this YouTube channel's speaking voice and create a comprehensive linguistic profile.
+Channel: ${channelName}
+
+DEEP ANALYSIS REQUIREMENTS:
+
+1. LINGUISTIC FINGERPRINTS
+- Signature opening patterns (exact phrases they use to start videos)
+- Transition phrases between topics (specific words/phrases)
+- Closing patterns (how they end videos)
+- Filler words and their frequency
+- Unique idioms or catchphrases
+- Question patterns (rhetorical vs engaging)
+
+2. NARRATIVE STRUCTURE
+- Story arc patterns (how they build narratives)
+- Information revelation style (dramatic vs methodical)
+- Example/evidence presentation patterns
+- Personal anecdote frequency and placement
+- Cliffhanger and hook placement patterns
+
+3. EMOTIONAL DYNAMICS
+- Energy curve throughout videos (opening energy vs middle vs end)
+- Emotional beat patterns (e.g., serious→humorous→serious)
+- Authenticity markers (when they're most genuine)
+- Passion indicators (topics that elevate energy)
+- Vulnerability moments and frequency
+
+4. CONTENT POSITIONING
+- Self-reference patterns (how often they mention personal experience)
+- Audience relationship (teacher, friend, fellow learner, critic)
+- Authority stance (expert vs explorer vs commentator)
+- Value proposition style (educate vs entertain vs inspire)
+
+5. CULTURAL & TOPICAL REFERENCES
+- Types of examples used (pop culture, history, science, etc.)
+- Metaphor categories preferred
+- Current events integration style
+- Meme/internet culture usage
+- Academic vs colloquial balance
+
+6. TECHNICAL PATTERNS
+- Average words per sentence
+- Paragraph/section length patterns
+- Vocabulary complexity distribution
+- Technical jargon frequency and explanation style
+- Data/statistics presentation style
+
+7. ENGAGEMENT TECHNIQUES
+- Direct address frequency ("you" usage)
+- Inclusive language patterns ("we" vs "I" vs "you")
+- Call-to-action style and placement
+- Question deployment strategy
+- Community building language
+
+8. PACING DYNAMICS
+- Speed variations and triggers
+- Pause patterns and purposes
+- Emphasis techniques (repetition, volume, speed)
+- Breathing patterns affecting delivery
+- Edit rhythm preferences
+
+TRANSCRIPTS TO ANALYZE:
+${transcriptText}
+
+Return a detailed JSON voice profile with ALL these categories filled with specific examples from the transcripts. Include:
+- Exact quoted examples for each pattern identified
+- Frequency metrics where applicable
+- Confidence scores for each finding
+- Specific implementation notes for replication`;
+
+  const response = await anthropic.messages.create({
+    model: VOICE_MODEL,
+    max_tokens: 4000,
+    temperature: 0.3,
+    system: "You are an expert linguistic analyst specializing in YouTube content creator voice patterns. Provide detailed, actionable analysis with specific examples.",
+    messages: [{
+      role: 'user',
+      content: enhancedPrompt
+    }]
+  });
+
+  return parseEnhancedVoiceAnalysis(response.content[0].text);
+}
+
+// Parse enhanced voice analysis
+function parseEnhancedVoiceAnalysis(analysisText) {
+  try {
+    const parsed = JSON.parse(analysisText);
+    
+    // Ensure all required deep analysis fields are present
+    const enhancedProfile = {
+      // Core voice characteristics (existing)
+      tone: parsed.tone || [],
+      style: parsed.style || [],
+      pace: parsed.pace || 'moderate',
+      energy: parsed.energy || 'medium',
+      personality: parsed.personality || [],
+      
+      // Enhanced linguistic patterns (new)
+      linguisticFingerprints: {
+        openingPatterns: parsed.linguisticFingerprints?.openingPatterns || [],
+        transitionPhrases: parsed.linguisticFingerprints?.transitionPhrases || [],
+        closingPatterns: parsed.linguisticFingerprints?.closingPatterns || [],
+        fillerWords: parsed.linguisticFingerprints?.fillerWords || {},
+        signaturePhrases: parsed.linguisticFingerprints?.signaturePhrases || [],
+        questionPatterns: parsed.linguisticFingerprints?.questionPatterns || {}
+      },
+      
+      narrativeStructure: {
+        storyArcPattern: parsed.narrativeStructure?.storyArcPattern || '',
+        informationFlow: parsed.narrativeStructure?.informationFlow || '',
+        exampleStyle: parsed.narrativeStructure?.exampleStyle || '',
+        anecdoteUsage: parsed.narrativeStructure?.anecdoteUsage || {},
+        hookPlacement: parsed.narrativeStructure?.hookPlacement || []
+      },
+      
+      emotionalDynamics: {
+        energyCurve: parsed.emotionalDynamics?.energyCurve || [],
+        emotionalBeats: parsed.emotionalDynamics?.emotionalBeats || [],
+        authenticityMarkers: parsed.emotionalDynamics?.authenticityMarkers || [],
+        passionTriggers: parsed.emotionalDynamics?.passionTriggers || [],
+        vulnerabilityPattern: parsed.emotionalDynamics?.vulnerabilityPattern || ''
+      },
+      
+      contentPositioning: {
+        selfReferenceRate: parsed.contentPositioning?.selfReferenceRate || 0,
+        audienceRelationship: parsed.contentPositioning?.audienceRelationship || '',
+        authorityStance: parsed.contentPositioning?.authorityStance || '',
+        valueProposition: parsed.contentPositioning?.valueProposition || ''
+      },
+      
+      culturalReferences: {
+        exampleCategories: parsed.culturalReferences?.exampleCategories || [],
+        metaphorTypes: parsed.culturalReferences?.metaphorTypes || [],
+        currentEventsStyle: parsed.culturalReferences?.currentEventsStyle || '',
+        internetCultureUsage: parsed.culturalReferences?.internetCultureUsage || '',
+        formalityBalance: parsed.culturalReferences?.formalityBalance || ''
+      },
+      
+      technicalPatterns: {
+        avgWordsPerSentence: parsed.technicalPatterns?.avgWordsPerSentence || 15,
+        vocabularyComplexity: parsed.technicalPatterns?.vocabularyComplexity || '',
+        jargonUsage: parsed.technicalPatterns?.jargonUsage || {},
+        dataPresentation: parsed.technicalPatterns?.dataPresentation || ''
+      },
+      
+      engagementTechniques: {
+        directAddressFrequency: parsed.engagementTechniques?.directAddressFrequency || 0,
+        pronounUsage: parsed.engagementTechniques?.pronounUsage || {},
+        ctaStyle: parsed.engagementTechniques?.ctaStyle || '',
+        questionStrategy: parsed.engagementTechniques?.questionStrategy || '',
+        communityLanguage: parsed.engagementTechniques?.communityLanguage || []
+      },
+      
+      pacingDynamics: {
+        speedVariations: parsed.pacingDynamics?.speedVariations || [],
+        pausePatterns: parsed.pacingDynamics?.pausePatterns || {},
+        emphasisTechniques: parsed.pacingDynamics?.emphasisTechniques || [],
+        rhythmPreferences: parsed.pacingDynamics?.rhythmPreferences || ''
+      },
+      
+      // Implementation guidance
+      implementationNotes: parsed.implementationNotes || {},
+      confidenceScores: parsed.confidenceScores || {},
+      
+      // Backwards compatibility
+      dos: parsed.dos || [],
+      donts: parsed.donts || [],
+      vocabulary: parsed.vocabulary || '',
+      sentenceStructure: parsed.sentenceStructure || '',
+      hooks: parsed.hooks || '',
+      transitions: parsed.transitions || '',
+      engagement: parsed.engagement || '',
+      humor: parsed.humor || '',
+      signature_phrases: parsed.signature_phrases || [],
+      summary: parsed.summary || ''
+    };
+    
+    return enhancedProfile;
+    
+  } catch (error) {
+    console.error('Error parsing enhanced voice analysis:', error);
+    // Return a default structure if parsing fails
+    return generateDefaultEnhancedProfile();
+  }
+}
+
+// Generate default enhanced profile structure
+function generateDefaultEnhancedProfile() {
+  return {
+    tone: ['conversational'],
+    style: ['informal'],
+    pace: 'moderate',
+    energy: 'medium',
+    personality: ['engaging'],
+    linguisticFingerprints: {
+      openingPatterns: [],
+      transitionPhrases: [],
+      closingPatterns: [],
+      fillerWords: {},
+      signaturePhrases: [],
+      questionPatterns: {}
+    },
+    narrativeStructure: {
+      storyArcPattern: 'linear',
+      informationFlow: 'sequential',
+      exampleStyle: 'illustrative',
+      anecdoteUsage: { frequency: 'moderate' },
+      hookPlacement: ['beginning']
+    },
+    emotionalDynamics: {
+      energyCurve: ['steady'],
+      emotionalBeats: [],
+      authenticityMarkers: [],
+      passionTriggers: [],
+      vulnerabilityPattern: 'occasional'
+    },
+    contentPositioning: {
+      selfReferenceRate: 0.1,
+      audienceRelationship: 'educator',
+      authorityStance: 'knowledgeable',
+      valueProposition: 'informative'
+    },
+    culturalReferences: {
+      exampleCategories: ['general'],
+      metaphorTypes: ['common'],
+      currentEventsStyle: 'occasional',
+      internetCultureUsage: 'minimal',
+      formalityBalance: 'balanced'
+    },
+    technicalPatterns: {
+      avgWordsPerSentence: 15,
+      vocabularyComplexity: 'moderate',
+      jargonUsage: { frequency: 'low' },
+      dataPresentation: 'simplified'
+    },
+    engagementTechniques: {
+      directAddressFrequency: 0.2,
+      pronounUsage: { you: 40, we: 30, i: 30 },
+      ctaStyle: 'gentle',
+      questionStrategy: 'occasional',
+      communityLanguage: []
+    },
+    pacingDynamics: {
+      speedVariations: ['consistent'],
+      pausePatterns: { frequency: 'natural' },
+      emphasisTechniques: ['repetition'],
+      rhythmPreferences: 'steady'
+    },
+    implementationNotes: {},
+    confidenceScores: {},
+    dos: [],
+    donts: [],
+    vocabulary: 'accessible',
+    sentenceStructure: 'varied',
+    hooks: 'topical',
+    transitions: 'smooth',
+    engagement: 'moderate',
+    humor: 'occasional',
+    signature_phrases: [],
+    summary: 'Standard conversational style'
+  };
+}
+
+/**
  * Fetch and analyze actual transcripts from YouTube channels
  * This provides real voice analysis instead of theoretical blending
  */
@@ -104,14 +374,24 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
       let source = 'none';
       
       if (transcripts.length > 0) {
-        console.log(`  🧠 Analyzing ${transcripts.length} transcripts...`);
+        console.log(`  🧠 Analyzing ${transcripts.length} transcripts with enhanced profiling...`);
         
-        // Run both basic and advanced analysis
+        // Prepare transcript data for enhanced analysis
+        const transcriptData = transcripts.map((text, index) => ({
+          text: text,
+          videoTitle: analyzedVideos[index]?.title || `Video ${index + 1}`
+        }));
+        
+        // Run enhanced linguistic analysis
+        const enhancedAnalysis = await analyzeTranscriptVoice(transcriptData, channel.title || channel.name);
+        
+        // Also run basic and advanced analysis for backwards compatibility
         const basicAnalysis = await analyzeVoiceStyle(transcripts);
         const advancedAnalysis = await analyzeVoiceStyleAdvanced(transcripts);
         
         voiceAnalysis = {
-          ...basicAnalysis,
+          ...enhancedAnalysis,
+          basic: basicAnalysis,
           advanced: advancedAnalysis,
           analyzedVideos: analyzedVideos,
           transcriptCount: transcripts.length
@@ -165,7 +445,7 @@ export async function combineRealVoiceAnalyses(channelAnalyses, config) {
     return {
       success: false,
       error: 'No voice analyses available',
-      fallback: generateFallbackVoiceProfile()
+      fallback: generateDefaultEnhancedProfile()
     };
   }
 
@@ -179,7 +459,7 @@ export async function combineRealVoiceAnalyses(channelAnalyses, config) {
       videosAnalyzed: ca.videosAnalyzed
     }));
 
-    const prompt = `You are an expert voice coach and linguistic analyst. You need to create a COMBINED voice profile from these real voice analyses of YouTube channels.
+    const enhancedCombinationPrompt = `You are an expert voice coach and linguistic analyst. You need to create a COMBINED voice profile from these enhanced voice analyses of YouTube channels.
 
 ANALYZED CHANNELS:
 ${analysisData.map((data, i) => `
@@ -196,42 +476,50 @@ REMIX CONFIGURATION:
 - Channel Name: ${config.name}
 - Description: ${config.description || 'Not provided'}
 
-Create a UNIFIED voice profile that:
-1. Combines the ACTUAL analyzed speech patterns weighted by importance
-2. Merges vocabulary, tone, and style based on real data
-3. Creates a cohesive voice that draws from all sources
-4. Is based on REAL content analysis, not theoretical
+Create a UNIFIED ENHANCED voice profile that:
+1. Preserves the strongest linguistic fingerprints from each source
+2. Identifies complementary narrative structures
+3. Merges emotional dynamics based on weights
+4. Creates hybrid engagement techniques
+5. Balances technical patterns appropriately
+6. Combines ALL deep linguistic patterns weighted by importance
 
-The combined voice should feel natural and authentic, not like multiple personalities.
+The combined voice should feel natural and authentic, drawing from all sources.
 
-Include in your response:
-- tone: Array of 3-5 tone descriptors
-- style: Array of style elements
-- personality: Array of 5-7 personality traits
-- pace: Speaking pace (slow/moderate/fast/variable)
-- energy: Energy level (low/medium/high/variable)
-- vocabulary: Vocabulary style
-- sentenceStructure: How they structure sentences
-- hooks: Common hook patterns
-- transitions: How they transition between topics
-- engagement: How they engage the audience
-- humor: Humor style and frequency
-- signature_phrases: Any notable phrases or patterns
-- dos: List of things to do
-- donts: List of things to avoid
-- summary: A brief description of the combined voice
+Include in your response ALL of these categories:
+
+BASIC PROFILE:
+- tone, style, personality, pace, energy
+- vocabulary, sentenceStructure, hooks, transitions
+- engagement, humor, signature_phrases
+- dos, donts, summary
+
+ENHANCED PROFILE:
+- linguisticFingerprints: (openingPatterns, transitionPhrases, closingPatterns, fillerWords, signaturePhrases, questionPatterns)
+- narrativeStructure: (storyArcPattern, informationFlow, exampleStyle, anecdoteUsage, hookPlacement)
+- emotionalDynamics: (energyCurve, emotionalBeats, authenticityMarkers, passionTriggers, vulnerabilityPattern)
+- contentPositioning: (selfReferenceRate, audienceRelationship, authorityStance, valueProposition)
+- culturalReferences: (exampleCategories, metaphorTypes, currentEventsStyle, internetCultureUsage, formalityBalance)
+- technicalPatterns: (avgWordsPerSentence, vocabularyComplexity, jargonUsage, dataPresentation)
+- engagementTechniques: (directAddressFrequency, pronounUsage, ctaStyle, questionStrategy, communityLanguage)
+- pacingDynamics: (speedVariations, pausePatterns, emphasisTechniques, rhythmPreferences)
+- implementationNotes: Specific instructions for replicating each pattern
+- confidenceScores: Confidence levels for each finding
+
+Create a cohesive enhanced voice profile that can generate authentic-sounding content.
+Include specific implementation instructions for each pattern.
 
 Format as JSON.`;
 
     const response = await anthropic.messages.create({
       model: VOICE_MODEL,
-      max_tokens: 3000,
+      max_tokens: 4000,
       temperature: 0.7,
-      system: "You are an expert at analyzing and combining speaking styles based on real transcript data. Create authentic, data-driven voice profiles.",
+      system: "You are an expert at analyzing and combining speaking styles based on real transcript data. Create authentic, data-driven voice profiles with deep linguistic patterns.",
       messages: [
         {
           role: 'user',
-          content: prompt
+          content: enhancedCombinationPrompt
         }
       ]
     });
@@ -282,28 +570,41 @@ Format as JSON.`;
 }
 
 /**
- * Generate a fallback voice profile
+ * Generate a fallback voice profile (redirects to enhanced version)
  */
 function generateFallbackVoiceProfile() {
-  return {
-    tone: ['engaging', 'authentic', 'conversational'],
-    style: ['informative', 'approachable'],
-    personality: ['knowledgeable', 'friendly', 'enthusiastic'],
-    pace: 'moderate',
-    energy: 'medium',
-    vocabulary: 'accessible',
-    sentenceStructure: 'clear and concise',
-    hooks: ['questions', 'surprising facts'],
-    transitions: 'smooth and logical',
-    engagement: 'direct address to audience',
-    humor: 'light and occasional',
-    signature_phrases: [],
-    dos: ['Be authentic', 'Engage with the audience', 'Provide value'],
-    donts: ['Overcomplicate', 'Rush through content'],
-    summary: 'A balanced, engaging voice that combines multiple influences',
-    metadata: {
-      basedOnRealData: false,
-      fallback: true
-    }
-  };
+  return generateDefaultEnhancedProfile();
+}
+
+/**
+ * Generate script using enhanced voice patterns
+ */
+export async function generateScriptWithEnhancedVoice(channel, topic, options = {}) {
+  const { generateScript } = await import('../prompts/enhanced-script-generation.js');
+  
+  // Ensure channel has enhanced voice profile
+  if (!channel.voice_profile?.linguisticFingerprints) {
+    console.warn('Channel missing enhanced voice profile, attempting to generate...');
+    // You would need to implement fetchChannelTranscripts based on your data model
+    // For now, use basic generation as fallback
+    return generateScript({
+      channel: {
+        ...channel,
+        voice_profile: generateDefaultEnhancedProfile()
+      },
+      topic,
+      tier: options.tier || 'balanced',
+      features: options.features || {}
+    });
+  }
+  
+  // Generate script using enhanced voice patterns
+  const script = await generateScript({
+    channel,
+    topic,
+    tier: options.tier || 'balanced',
+    features: options.features || {}
+  });
+  
+  return script;
 }
