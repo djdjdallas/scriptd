@@ -459,18 +459,36 @@ export default function SummaryStep() {
               options={[
                 {
                   value: "claude-opus-4-1",
-                  label: "Hollywood (15 credits)",
+                  label: "Hollywood (3.5x credits)",
                 },
                 {
                   value: "claude-3-5-sonnet",
-                  label: "Professional (8 credits)",
+                  label: "Professional (1.5x credits)",
                 },
-                { value: "claude-3-5-haiku", label: "Fast (3 credits)" },
+                { value: "claude-3-5-haiku", label: "Fast (1x credits)" },
               ]}
             />
             <p className="text-xs text-gray-500 mt-2">
               Higher quality uses more advanced AI for better storytelling
             </p>
+            <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-400">Estimated Credits:</span>
+                <span className="text-purple-400 font-semibold">
+                  {(() => {
+                    const minutes = Math.ceil(targetDuration / 60);
+                    const baseRate = 0.33;
+                    const multiplier = aiModel === 'claude-opus-4-1' ? 3.5 : 
+                                     aiModel === 'claude-3-5-sonnet' ? 1.5 : 1;
+                    return Math.max(1, Math.round(minutes * baseRate * multiplier));
+                  })()} credits
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {Math.ceil(targetDuration / 60)} min × {aiModel === 'claude-opus-4-1' ? '3.5x Hollywood' : 
+                 aiModel === 'claude-3-5-sonnet' ? '1.5x Professional' : '1x Fast'}
+              </p>
+            </div>
           </div>
         </div>
 

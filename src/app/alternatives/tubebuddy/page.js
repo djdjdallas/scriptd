@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Script from 'next/script';
 import { 
   Check, X, ArrowRight, Star, TrendingUp, Shield, Zap, 
   Brain, Target, BarChart3, Users, Youtube, Sparkles, Award,
@@ -145,14 +146,47 @@ export default function TubeBuddyAlternativePage() {
     }
   ];
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Genscript",
+    "applicationCategory": "YouTube Script Generator",
+    "operatingSystem": "Web",
+    "alternativeOf": {
+      "@type": "SoftwareApplication",
+      "name": "TubeBuddy"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "39.00",
+      "priceCurrency": "USD",
+      "priceValidUntil": "2025-12-31"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "reviewCount": "2500"
+    },
+    "featureList": [
+      "AI YouTube script generation",
+      "68%+ retention optimization",
+      "Voice matching technology",
+      "Built-in fact checking",
+      "PVSS viral framework",
+      "Psychographic targeting"
+    ]
+  };
+
   return (
     <>
-      {/* SEO Meta Tags */}
-      <head>
-        <title>TubeBuddy Alternative - AI Script Generation with 68%+ Retention | Genscript</title>
-        <meta name="description" content="Looking for a TubeBuddy alternative that does more than keywords? Genscript creates AI-powered scripts with 68%+ viewer retention. Try free for 14 days." />
-        <meta name="keywords" content="tubebuddy alternative, tubebuddy competitor, youtube script generator, ai script writing, youtube retention" />
-      </head>
+      {/* Structured Data for SEO */}
+      <Script
+        id="tubebuddy-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData)
+        }}
+      />
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-purple-50 to-white dark:from-purple-950/20 dark:to-background py-20">
@@ -164,7 +198,7 @@ export default function TubeBuddyAlternativePage() {
             </Badge>
             
             <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              The TubeBuddy Alternative That Actually Creates Your Scripts
+              TubeBuddy Alternative with AI Script Writing and Retention Optimization
             </h1>
             
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
@@ -202,7 +236,7 @@ export default function TubeBuddyAlternativePage() {
       <section className="py-16 bg-white dark:bg-background border-y">
         <div className="container mx-auto px-4 max-w-5xl">
           <h2 className="text-2xl font-bold text-center mb-8">
-            The TubeBuddy Problem: Keywords Don't Write Scripts
+            TubeBuddy Alternative for YouTube Script Generation 2025
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Card className="text-center">
@@ -258,7 +292,7 @@ export default function TubeBuddyAlternativePage() {
             <TabsContent value="comparison" className="space-y-8">
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold mb-4">
-                  TubeBuddy vs Genscript: Complete Comparison
+                  TubeBuddy vs Professional Script Generator Comparison
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
                   See why creators are switching from keyword research to AI-powered script generation
@@ -283,10 +317,10 @@ export default function TubeBuddyAlternativePage() {
             <TabsContent value="features" className="space-y-8">
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold mb-4">
-                  Features TubeBuddy Can't Match
+                  Beyond TubeBuddy: Script Writing Tools for Serious Creators
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Go beyond optimization - create content that captivates
+                  Why Script Generation Beats Keyword Research Alone
                 </p>
               </div>
               

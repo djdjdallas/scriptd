@@ -1,10 +1,7 @@
-import { createClient } from '@/lib/supabase/client';
 import { CREDIT_COSTS } from '@/lib/constants';
 
-export class CreditManager {
-  static async checkBalance(userId) {
-    const supabase = createClient();
-    
+export class ServerCreditManager {
+  static async checkBalance(supabase, userId) {
     // Get user's credit balance from users table
     const { data: userData, error: userError } = await supabase
       .from('users')
@@ -41,9 +38,7 @@ export class CreditManager {
     return userData?.credits || 0;
   }
 
-  static async deductCredits(userId, feature, options = {}) {
-    const supabase = createClient();
-    
+  static async deductCredits(supabase, userId, feature, options = {}) {
     // Allow custom calculated cost to override feature cost
     const cost = options.calculatedCost || this.getFeatureCost(feature, options);
     
@@ -52,7 +47,7 @@ export class CreditManager {
     }
     
     // Check if user has enough credits
-    const balance = await this.checkBalance(userId);
+    const balance = await this.checkBalance(supabase, userId);
     
     if (balance < cost) {
       return { 
@@ -156,119 +151,68 @@ export class CreditManager {
         return 'Description generation';
       case 'THUMBNAIL_IDEAS':
         return 'Thumbnail ideas generation';
-      case 'VOICE_TRAINING':
-        return 'Voice profile training';
-      case 'VOICE_MATCHING':
-        return 'Voice matching analysis';
-      case 'KEYWORD_RESEARCH':
-        return 'Keyword research';
-      case 'IDEATION':
-        return 'Content ideation';
+      case 'HASHTAG_GENERATION':
+        return 'Hashtag generation';
+      case 'VIDEO_IDEAS':
+        return 'Video idea generation';
+      case 'CHANNEL_ANALYSIS':
+        return 'Channel analysis';
+      case 'RESEARCH_SESSION':
+        return 'Research session';
       default:
         return featureName;
     }
   }
 
-  static async canAffordFeature(userId, feature, options = {}) {
-    const cost = this.getFeatureCost(feature, options);
-    const balance = await this.checkBalance(userId);
-    
-    return {
-      canAfford: balance >= cost,
-      cost,
-      balance,
-      shortfall: Math.max(0, cost - balance)
-    };
-  }
-
-  static async recordUsage(userId, feature, options = {}) {
-    // This is an alias for deductCredits but can be extended
-    // to include analytics, usage tracking, etc.
-    const result = await this.deductCredits(userId, feature, options);
-    
-    if (result.success) {
-      // Could add analytics tracking here
-      console.log(`Credit usage recorded: ${feature} for user ${userId}`);
+  static async addCredits(supabase, userId, amount, description = 'Credit purchase', metadata = {}) {
+    try {
+      // Get current balance
+      const currentBalance = await this.checkBalance(supabase, userId);
+      
+      // Update user's credit balance
+      const { data: updateData, error: updateError } = await supabase
+        .from('users')
+        .update({ 
+          credits: currentBalance + amount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select('credits')
+        .single();
+      
+      if (updateError) {
+        console.error('Error updating user credits:', updateError);
+        return { 
+          success: false, 
+          error: 'Failed to add credits' 
+        };
+      }
+      
+      // Record the transaction
+      const { error: txError } = await supabase
+        .from('credits_transactions')
+        .insert({
+          user_id: userId,
+          amount: amount,
+          type: metadata.type || 'purchase',
+          description: description,
+          metadata: metadata
+        });
+      
+      if (txError) {
+        console.error('Error recording credit transaction:', txError);
+      }
+      
+      return { 
+        success: true, 
+        newBalance: updateData.credits
+      };
+    } catch (error) {
+      console.error('Error adding credits:', error);
+      return { 
+        success: false, 
+        error: 'Failed to add credits' 
+      };
     }
-    
-    return result;
-  }
-
-  static async refundCredits(userId, amount, reason) {
-    const supabase = createClient();
-    
-    const { error } = await supabase
-      .from('credits_transactions')
-      .insert({
-        user_id: userId,
-        amount: amount,
-        type: 'refund',
-        description: reason || 'Credit refund'
-      });
-    
-    if (error) {
-      console.error('Error refunding credits:', error);
-      return { success: false, error: 'Failed to refund credits' };
-    }
-    
-    return { success: true, amount };
-  }
-
-  static async getTransactionHistory(userId, limit = 20) {
-    const supabase = createClient();
-    
-    const { data, error } = await supabase
-      .from('credits_transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-    
-    if (error) {
-      console.error('Error fetching transaction history:', error);
-      return [];
-    }
-    
-    return data || [];
-  }
-
-  static async getPurchaseHistory(userId) {
-    const supabase = createClient();
-    
-    const { data, error } = await supabase
-      .from('credit_purchase_history')
-      .select('*, credit_packages(*)')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching purchase history:', error);
-      return [];
-    }
-    
-    return data || [];
-  }
-
-  static async getExpiringCredits(userId, daysAhead = 30) {
-    const supabase = createClient();
-    
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + daysAhead);
-    
-    const { data, error } = await supabase
-      .from('credits_transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('type', 'purchase')
-      .eq('is_expired', false)
-      .lt('expires_at', expiryDate.toISOString())
-      .order('expires_at', { ascending: true });
-    
-    if (error) {
-      console.error('Error fetching expiring credits:', error);
-      return [];
-    }
-    
-    return data || [];
   }
 }

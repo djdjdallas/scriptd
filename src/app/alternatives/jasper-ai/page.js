@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Script from 'next/script';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -95,14 +96,47 @@ export default function JasperAIAlternativePage() {
     { metric: 'Subscriber Growth', before: '1.2K/mo', after: '4.8K/mo', improvement: '+300%' },
   ];
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Genscript",
+    "applicationCategory": "YouTube Script Generator",
+    "operatingSystem": "Web",
+    "alternativeOf": {
+      "@type": "SoftwareApplication",
+      "name": "Jasper AI"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "39.00",
+      "priceCurrency": "USD",
+      "priceValidUntil": "2025-12-31"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "reviewCount": "2500"
+    },
+    "featureList": [
+      "AI YouTube script generation",
+      "70%+ retention optimization",
+      "Voice matching technology",
+      "Built-in fact checking",
+      "PVSS viral framework",
+      "Psychographic targeting"
+    ]
+  };
+
   return (
     <>
-      {/* SEO Meta Tags */}
-      <head>
-        <title>Jasper AI Alternative for YouTube - Specialized Script Generator | Genscript</title>
-        <meta name="description" content="The Jasper AI alternative built for YouTube creators. Get retention-optimized scripts, viral hooks, and YouTube-specific features for 50% less. Try free today." />
-        <meta name="keywords" content="jasper ai alternative, jasper competitor, youtube script generator, ai writing tool, content creation" />
-      </head>
+      {/* Structured Data for SEO */}
+      <Script
+        id="jasper-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData)
+        }}
+      />
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-red-50 to-white dark:from-red-950/20 dark:to-background py-20">
@@ -114,12 +148,12 @@ export default function JasperAIAlternativePage() {
             </Badge>
             
             <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
-              The Jasper AI Alternative That Actually Understands YouTube
+              Jasper Alternative for YouTube Script Generation with Viral Frameworks
             </h1>
             
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Jasper writes generic content. We create <span className="font-semibold text-foreground">YouTube scripts that get 70%+ retention</span>, 
-              with viral hooks, perfect pacing, and audience-specific optimization.
+              Jasper writes blogs. Genscript writes videos that keep viewers watching. Get <span className="font-semibold text-foreground">YouTube scripts with 70%+ retention</span>, 
+              viral hooks, perfect pacing, and audience-specific optimization.
             </p>
 
             <div className="flex gap-4 justify-center mb-8">

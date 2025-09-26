@@ -18,6 +18,9 @@ export default function DraftStep() {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationType, setGenerationType] = useState('');
+  
+  // Debug: Log workflow data
+  console.log('DraftStep - workflowData.summary:', workflowData.summary);
 
   const generateScript = async (type) => {
     setIsGenerating(true);
@@ -37,14 +40,19 @@ export default function DraftStep() {
           hook: workflowData.hook?.selected,
           contentPoints: workflowData.contentPoints,
           thumbnail: workflowData.thumbnail,
-          model: workflowData.summary?.aiModel || 'claude-3-opus',
+          model: workflowData.summary?.aiModel || 'claude-3-5-haiku',
           targetAudience: workflowData.summary?.targetAudience,
           tone: workflowData.summary?.tone,
+          targetDuration: workflowData.summary?.targetDuration || 300, // Add target duration
           workflowId: workflowId // Include workflow ID
         })
       });
 
-      if (!response.ok) throw new Error('Failed to generate script');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Script generation error:', errorData);
+        throw new Error(errorData.error || 'Failed to generate script');
+      }
 
       const { script, creditsUsed, scriptId } = await response.json();
       
@@ -55,8 +63,8 @@ export default function DraftStep() {
       
       toast.success(`${type === 'outline' ? 'Outline' : 'Full script'} generated and saved!`);
     } catch (error) {
-      toast.error('Failed to generate script');
-      console.error(error);
+      toast.error(error.message || 'Failed to generate script');
+      console.error('Generation error:', error);
     } finally {
       setIsGenerating(false);
       setGenerationType('');
@@ -246,33 +254,58 @@ export default function DraftStep() {
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-400">Script Duration:</span>
             <span className="text-white font-semibold">
-              {Math.ceil((workflowData.contentPoints?.points?.reduce((acc, p) => acc + p.duration, 0) || 600) / 60)} minutes
+              {Math.ceil((workflowData.summary?.targetDuration || 300) / 60)} minutes
             </span>
           </div>
           <div className="flex justify-between items-center text-sm mt-1">
             <span className="text-gray-400">AI Model:</span>
             <span className="text-white font-semibold">
-              {workflowData.summary?.aiModel === 'claude-3-opus' ? 'Claude Opus (Best)' :
-               workflowData.summary?.aiModel === 'claude-3-sonnet' ? 'Claude Sonnet (Balanced)' :
-               'Claude Haiku (Fast)'}
+              {workflowData.summary?.aiModel === 'claude-opus-4-1' ? 'Hollywood' :
+               workflowData.summary?.aiModel === 'claude-3-5-sonnet' ? 'Professional' :
+               'Fast'}
             </span>
           </div>
           <div className="flex justify-between items-center text-sm mt-1">
             <span className="text-gray-400">Credits Required:</span>
             <span className="text-purple-400 font-semibold">
               {(() => {
-                const minutes = Math.ceil((workflowData.contentPoints?.points?.reduce((acc, p) => acc + p.duration, 0) || 600) / 60);
-                const baseRate = 20 / 60;
-                const model = workflowData.summary?.aiModel || 'claude-3-haiku';
-                const multiplier = model.includes('opus') ? 2 : model.includes('sonnet') ? 1.5 : 1;
-                return Math.max(1, Math.ceil(minutes * baseRate * multiplier));
+                const targetDuration = workflowData.summary?.targetDuration || 300;
+                const minutes = Math.ceil(targetDuration / 60);
+                // Base rate: 0.33 credits per minute (so 10 min Professional = 5 credits)
+                const baseRate = 0.33;
+                const model = workflowData.summary?.aiModel || 'claude-3-5-haiku';
+                const multiplier = model === 'claude-opus-4-1' ? 3.5 : model === 'claude-3-5-sonnet' ? 1.5 : 1;
+                const credits = Math.max(1, Math.round(minutes * baseRate * multiplier));
+                
+                console.log('Credit Calculation Debug:', {
+                  targetDuration,
+                  minutes,
+                  model,
+                  multiplier,
+                  baseRate,
+                  calculation: `${minutes} * ${baseRate} * ${multiplier} = ${minutes * baseRate * multiplier}`,
+                  credits
+                });
+                
+                return credits;
               })()} credits
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-2 italic">
-            Base: 20 credits/60 min • {workflowData.summary?.aiModel?.includes('opus') ? '2x for Opus' :
-                                       workflowData.summary?.aiModel?.includes('sonnet') ? '1.5x for Sonnet' :
-                                       '1x for Haiku'}
+            {(() => {
+              const targetDuration = workflowData.summary?.targetDuration || 300;
+              const minutes = Math.ceil(targetDuration / 60);
+              const baseRate = 0.33; // 0.33 credits per minute
+              const baseCredits = minutes * baseRate;
+              const modelName = workflowData.summary?.aiModel === 'claude-opus-4-1' ? 'Hollywood' :
+                               workflowData.summary?.aiModel === 'claude-3-5-sonnet' ? 'Professional' : 'Fast';
+              const multiplierNum = workflowData.summary?.aiModel === 'claude-opus-4-1' ? 3.5 :
+                                   workflowData.summary?.aiModel === 'claude-3-5-sonnet' ? 1.5 : 1;
+              const multiplier = workflowData.summary?.aiModel === 'claude-opus-4-1' ? '3.5x' :
+                                workflowData.summary?.aiModel === 'claude-3-5-sonnet' ? '1.5x' : '1x';
+              const finalCredits = Math.max(1, Math.round(baseCredits * multiplierNum));
+              return `${minutes} min × ${baseRate} credits/min = ${baseCredits} base × ${multiplier} (${modelName}) = ${finalCredits} total`;
+            })()}
           </p>
         </div>
       </div>

@@ -34,7 +34,16 @@ import { cn } from '@/lib/utils';
 
 const sidebarItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/scripts', label: 'Scripts', icon: FileText },
+  { 
+    href: '/scripts', 
+    label: 'Scripts', 
+    icon: FileText,
+    subItems: [
+      { href: '/scripts', label: 'All Scripts', icon: FileText },
+      { href: '/workflows', label: 'Workflow Studio', icon: Zap },
+      { href: '/scripts/create', label: 'Quick Create', icon: Sparkles }
+    ]
+  },
   { href: '/channels', label: 'Channels', icon: Play },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { 
@@ -70,7 +79,7 @@ export default function DashboardLayout({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Start collapsed
   const [sidebarHovered, setSidebarHovered] = useState(false); // Track hover state
   const [hoveredItem, setHoveredItem] = useState(null);
-  const [expandedItems, setExpandedItems] = useState(['research', 'trending']); // Keep research and trending expanded by default
+  const [expandedItems, setExpandedItems] = useState(['scripts', 'research', 'trending']); // Keep scripts, research and trending expanded by default
   const [credits, setCredits] = useState(0);
   const [creditsLoading, setCreditsLoading] = useState(true);
   const pathname = usePathname();

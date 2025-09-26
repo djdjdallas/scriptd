@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Script from 'next/script';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -121,13 +122,47 @@ export default function CopyAIAlternativePage() {
     }
   ];
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Genscript",
+    "applicationCategory": "YouTube Script Generator",
+    "operatingSystem": "Web",
+    "alternativeOf": {
+      "@type": "SoftwareApplication",
+      "name": "Copy.ai"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "39.00",
+      "priceCurrency": "USD",
+      "priceValidUntil": "2025-12-31"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "reviewCount": "2500"
+    },
+    "featureList": [
+      "AI YouTube script generation",
+      "68%+ retention optimization",
+      "Voice matching technology",
+      "Built-in fact checking",
+      "PVSS viral framework",
+      "Psychographic targeting"
+    ]
+  };
+
   return (
     <>
-      <head>
-        <title>Copy.ai Alternative for YouTube - Unlimited Scripts, Better Results | Genscript</title>
-        <meta name="description" content="Copy.ai writes marketing copy. Genscript writes YouTube scripts with 68%+ retention. Unlimited content for less. Try free for 14 days." />
-        <meta name="keywords" content="copy.ai alternative, copy ai competitor, youtube script generator, unlimited scripts, video content ai" />
-      </head>
+      {/* Structured Data for SEO */}
+      <Script
+        id="copyai-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData)
+        }}
+      />
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-orange-50 to-white dark:from-orange-950/20 dark:to-background py-20">

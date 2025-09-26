@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Script from 'next/script';
 import { 
   Check, X, ArrowRight, Star, TrendingUp, Clock, Users, 
   Shield, Zap, ChevronRight, Infinity, Target
@@ -20,6 +21,7 @@ import { MarketingButton } from '@/components/marketing/MarketingButton';
 import { competitorData, socialProofData, migrationOffers } from '@/lib/comparison-data';
 
 export default function WritesonicAlternativePage() {
+  // SEO Meta Tags will be added to return statement
   const [showMigrationWizard, setShowMigrationWizard] = useState(false);
 
   const competitor = competitorData.writesonic;
@@ -173,8 +175,48 @@ export default function WritesonicAlternativePage() {
     }
   ];
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Genscript",
+    "applicationCategory": "YouTube Script Generator",
+    "operatingSystem": "Web",
+    "alternativeOf": {
+      "@type": "SoftwareApplication",
+      "name": "Writesonic"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "39.00",
+      "priceCurrency": "USD",
+      "priceValidUntil": "2025-12-31"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "reviewCount": "2500"
+    },
+    "featureList": [
+      "AI YouTube script generation",
+      "68%+ retention optimization",
+      "Voice matching technology",
+      "Built-in fact checking",
+      "PVSS viral framework",
+      "Psychographic targeting"
+    ]
+  };
+
   return (
     <>
+      {/* Structured Data for SEO */}
+      <Script
+        id="writesonic-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData)
+        }}
+      />
+
       {/* Hero Section */}
       <MarketingHero
         badge={
@@ -183,7 +225,7 @@ export default function WritesonicAlternativePage() {
             <span className="text-sm text-purple-400">Unlimited Scripts vs Word Limits</span>
           </>
         }
-        title="The Writesonic Alternative That Breaks the Word Limit Barrier"
+        title="Writesonic vs Specialized YouTube Script Generator for Content Creators"
         subtitle={`While Writesonic caps you at 100K words, we give you unlimited YouTube scripts with ${socialProofData.metrics.averageRetention}% retention. See why ${socialProofData.metrics.totalUsers}+ creators switched from generic AI to YouTube-specific intelligence.`}
         primaryCTA={
           <MarketingButton href="/signup?source=writesonic&offer=unlimited" size="large" icon={ArrowRight} iconRight>

@@ -1,27 +1,29 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateOptimizedScript } from '@/lib/prompts/optimized-youtube-generator';
+import { ServerCreditManager } from '@/lib/credits/server-manager';
+import { LongFormScriptHandler } from '@/lib/script-generation/long-form-handler';
 
 // Helper function to calculate credits based on duration and model
-function calculateCreditsForDuration(durationInSeconds, model = 'claude-3-haiku-20240307') {
+function calculateCreditsForDuration(durationInSeconds, model = 'claude-3-5-haiku') {
   const minutes = Math.ceil(durationInSeconds / 60);
   
-  // Base rate: 20 credits for 60 minutes = 0.333 credits per minute
-  const baseRate = 20 / 60;
+  // Base rate: 0.33 credits per minute (so 10 min Professional = 5 credits)
+  const baseRate = 0.33;
   
-  // Model multipliers:
-  // Haiku (fastest, cheapest): 1x
-  // Sonnet (balanced): 1.5x  
-  // Opus (best quality): 2x
+  // Model multipliers based on new model names:
+  // claude-3-5-haiku (Fast): 1x
+  // claude-3-5-sonnet (Professional): 1.5x  
+  // claude-opus-4-1 (Hollywood): 3.5x
   let modelMultiplier = 1;
-  if (model.includes('sonnet')) {
+  if (model === 'claude-3-5-sonnet') {
     modelMultiplier = 1.5;
-  } else if (model.includes('opus')) {
-    modelMultiplier = 2;
+  } else if (model === 'claude-opus-4-1') {
+    modelMultiplier = 3.5;
   }
   
   // Calculate final credits (minimum 1 credit)
-  return Math.max(1, Math.ceil(minutes * baseRate * modelMultiplier));
+  return Math.max(1, Math.round(minutes * baseRate * modelMultiplier));
 }
 
 // Helper function to generate fallback script
@@ -112,7 +114,8 @@ export async function POST(request) {
     
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.error('Auth error:', authError);
+      return NextResponse.json({ error: 'Unauthorized', details: authError?.message }, { status: 401 });
     }
 
     const { 
@@ -125,37 +128,159 @@ export async function POST(request) {
       hook,
       contentPoints,
       thumbnail,
-      model = 'claude-3-haiku-20240307',
+      model = 'claude-3-5-haiku',
       targetAudience,
       tone,
+      targetDuration, // Add targetDuration from summary
       workflowId // Add workflow ID to link the script
     } = await request.json();
+
+    // Check if user has bypass_credits enabled
+    const { data: userSettings } = await supabase
+      .from('users')
+      .select('bypass_credits')
+      .eq('id', user.id)
+      .single();
+    
+    const bypassCredits = userSettings?.bypass_credits || process.env.BYPASS_CREDIT_CHECKS === 'true';
 
     const verifiedSources = research?.sources?.filter(s => s.fact_check_status === 'verified') || [];
     const starredSources = research?.sources?.filter(s => s.is_starred) || [];
 
-    // Calculate total duration from content points
-    const totalDuration = contentPoints?.points?.reduce((acc, p) => acc + p.duration, 0) || 600;
+    // Use targetDuration from summary if available, otherwise calculate from content points
+    const totalDuration = targetDuration || contentPoints?.points?.reduce((acc, p) => acc + p.duration, 0) || 600;
+    const totalMinutes = Math.ceil(totalDuration / 60);
     
     let script = '';
-    // Calculate credits based on duration and AI model
-    let creditsUsed = calculateCreditsForDuration(totalDuration, model);
+    // Check if we need chunked generation for long scripts
+    const needsChunking = LongFormScriptHandler.needsChunking(totalDuration);
+    
+    // Calculate credits based on duration and AI model (add multiplier for chunks)
+    const chunkConfig = LongFormScriptHandler.getChunkConfig(totalMinutes);
+    const chunkMultiplier = needsChunking ? 1.2 : 1; // 20% extra for chunked generation overhead
+    let creditsUsed = Math.ceil(calculateCreditsForDuration(totalDuration, model) * chunkMultiplier);
 
     // Use Claude API to generate script
     if (process.env.ANTHROPIC_API_KEY) {
       try {
-        const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': process.env.ANTHROPIC_API_KEY,
-            'anthropic-version': '2023-06-01'
-          },
-          body: JSON.stringify({
-            model: model === 'claude-3-opus' ? 'claude-3-opus-20240229' : 'claude-3-haiku-20240307',
-            max_tokens: 4096,
+        // Get the actual model name
+        const actualModel = (() => {
+          if (model === 'claude-opus-4-1') return 'claude-3-opus-20240229';
+          if (model === 'claude-3-5-sonnet') return 'claude-3-5-sonnet-20241022';
+          return 'claude-3-haiku-20240307';
+        })();
+
+        if (needsChunking) {
+          console.log(`Using chunked generation for ${totalMinutes}-minute script (${chunkConfig.chunks} chunks)`);
+          
+          // Generate chunks
+          const chunkPrompts = LongFormScriptHandler.generateChunkPrompts({
+            totalMinutes,
+            title,
+            topic,
+            contentPoints: contentPoints?.points || [],
+            type,
+            hook,
+            voiceProfile
+          });
+          
+          const scriptChunks = [];
+          
+          for (let i = 0; i < chunkPrompts.length; i++) {
+            console.log(`Generating chunk ${i + 1}/${chunkPrompts.length}...`);
+            
+            const chunkResponse = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': process.env.ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01'
+              },
+              body: JSON.stringify({
+                model: actualModel,
+                max_tokens: 4096,
+                temperature: 0.7,
+                system: `You are an expert YouTube scriptwriter who ALWAYS completes your assigned section FULLY.
+
+ABSOLUTE REQUIREMENTS:
+1. Write your ENTIRE assigned section - no exceptions
+2. NEVER say "I'll continue", "due to length", or similar
+3. NEVER use [...] or promise to continue later
+4. Complete EVERYTHING for your time range
+5. NO placeholders or shortcuts anywhere`,
+                messages: [{
+                  role: 'user',
+                  content: chunkPrompts[i]
+                }]
+              })
+            });
+            
+            if (chunkResponse.ok) {
+              const chunkData = await chunkResponse.json();
+              const chunkScript = chunkData.content?.[0]?.text || '';
+              
+              if (chunkScript) {
+                scriptChunks.push(chunkScript);
+              } else {
+                console.error(`Empty response for chunk ${i + 1}`);
+                throw new Error(`Failed to generate chunk ${i + 1}`);
+              }
+            } else {
+              console.error(`Failed to generate chunk ${i + 1}:`, await chunkResponse.text());
+              throw new Error(`Failed to generate chunk ${i + 1}`);
+            }
+          }
+          
+          // Stitch chunks together
+          script = LongFormScriptHandler.stitchChunks(scriptChunks);
+          
+          // Validate completeness
+          const validation = LongFormScriptHandler.validateCompleteness(script, totalMinutes);
+          if (!validation.isValid) {
+            console.warn('Script validation issues:', validation.issues);
+          }
+          
+        } else {
+          // Single generation for shorter scripts
+          console.log(`Using single generation for ${totalMinutes}-minute script`);
+          const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': process.env.ANTHROPIC_API_KEY,
+              'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+              model: actualModel,
+            max_tokens: (() => {
+              // Calculate tokens based on script duration
+              const minutes = Math.ceil(totalDuration / 60);
+              const estimatedWords = minutes * 150;
+              const estimatedTokens = Math.ceil(estimatedWords * 1.33);
+              
+              // Cap at model limits
+              // Claude 3 models support up to 4096 output tokens per request
+              // For very long scripts, we need a different approach
+              if (estimatedTokens > 4096) {
+                console.log(`Script requires ~${estimatedTokens} tokens, but model limited to 4096. Will generate condensed version.`);
+                return 4096;
+              }
+              
+              return Math.min(estimatedTokens + 500, 4096); // Add buffer, cap at model limit
+            })(),
             temperature: 0.7,
-            system: 'You are an expert YouTube scriptwriter specializing in engaging, factual content with high retention optimization.',
+            system: `You are an expert YouTube scriptwriter who ALWAYS completes scripts in ONE response.
+
+ABSOLUTE REQUIREMENTS:
+1. COMPLETE the ENTIRE script in THIS response - no exceptions
+2. NEVER say "I'll continue", "due to length", "in the next response", or similar
+3. NEVER use [...], "Continue with", or "Note: This is just the first portion"
+4. Write ALL content from [0:00] to [${Math.ceil(totalDuration / 60)}:00] NOW
+5. If the title says "7 secrets", write ALL 7 secrets COMPLETELY
+6. Include COMPLETE description with timestamps and tags - not placeholders
+7. Approximately ${Math.ceil(totalDuration / 60) * 150} words for ${Math.ceil(totalDuration / 60)} minutes
+
+YOU WILL BE PENALIZED for incomplete scripts or continuation messages.`,
             messages: [
               {
                 role: 'user',
@@ -240,7 +365,12 @@ Format the output with:
 - Production notes in [brackets]
 - Natural, conversational language
 - Smooth transitions between topics
-- Strong opening and closing`;
+- Strong opening and closing
+
+COMPLETENESS REQUIREMENT:
+You MUST write out the ENTIRE script from start to finish. Do NOT use any shortcuts, ellipses, or placeholder text. 
+If the title mentions "7 secrets" or "5 tips", you MUST write out ALL 7 or 5 items in FULL DETAIL.
+Every minute of the ${Math.ceil(totalDuration / 60)}-minute script must be accounted for with actual content.`;
                   }
                   
                   // Return enhanced prompt from optimized generator
@@ -254,18 +384,39 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           })
         });
 
-        if (claudeResponse.ok) {
-          const claudeData = await claudeResponse.json();
-          script = claudeData.content?.[0]?.text || '';
-          
-          if (!script) {
-            console.log('Empty Claude response, using fallback');
+          if (claudeResponse.ok) {
+            const claudeData = await claudeResponse.json();
+            script = claudeData.content?.[0]?.text || '';
+            
+            if (!script) {
+              console.log('Empty Claude response, using fallback');
+              script = generateFallbackScript(type, title, topic, contentPoints);
+            }
+            
+            // Validate for placeholders and continuation messages
+            const continuationPatterns = [
+              /\[Rest of.*\]/i,
+              /\[Continue.*\]/i,
+              /\[Add more.*\]/i,
+              /\.\.\.\]/,
+              /I'll continue/i,
+              /I'll provide the rest/i,
+              /in the next response/i,
+              /due to length limits/i,
+              /This is just the first portion/i,
+              /Would you like me to continue/i
+            ];
+            
+            const hasIssues = continuationPatterns.some(pattern => pattern.test(script));
+            if (hasIssues) {
+              console.error('❌ Script contains continuation/placeholder text - regenerating may be needed');
+              // Could potentially trigger a regeneration here
+            }
+          } else {
+            console.error('Claude API error response:', await claudeResponse.text());
             script = generateFallbackScript(type, title, topic, contentPoints);
           }
-        } else {
-          console.error('Claude API error response:', await claudeResponse.text());
-          script = generateFallbackScript(type, title, topic, contentPoints);
-        }
+        } // End of else block for single generation
       } catch (claudeError) {
         console.error('Claude API error:', claudeError);
         script = generateFallbackScript(type, title, topic, contentPoints);
@@ -277,20 +428,46 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       creditsUsed = calculateCreditsForDuration(totalDuration, model);
     }
     
-    // Get current credits
-    const { data: currentCredits } = await supabase
-      .from('user_credits')
-      .select('credits_used')
-      .eq('user_id', user.id)
-      .single();
+    // Handle credit deduction
+    let deductResult = { success: true, cost: 0 };
+    
+    if (!bypassCredits) {
+      // Log credit calculation details
+      console.log('Credit calculation:', {
+        totalDuration,
+        model,
+        creditsUsed,
+        userId: user.id
+      });
+      
+      // Deduct credits using ServerCreditManager
+      deductResult = await ServerCreditManager.deductCredits(
+        supabase,
+        user.id,
+        'SCRIPT_GENERATION',
+        { 
+          model: model.includes('haiku') ? 'GPT35' : model.includes('sonnet') ? 'GPT4' : 'GPT4',
+          duration: totalDuration,
+          calculatedCost: creditsUsed // Override with our calculated cost
+        }
+      );
 
-    // Update with incremented value
-    await supabase
-      .from('user_credits')
-      .update({ 
-        credits_used: (currentCredits?.credits_used || 0) + creditsUsed
-      })
-      .eq('user_id', user.id);
+      console.log('Deduct result:', deductResult);
+
+      if (!deductResult.success) {
+        console.error('Credit deduction failed:', deductResult);
+        return NextResponse.json(
+          { 
+            error: deductResult.error || 'Insufficient credits',
+            required: creditsUsed,
+            balance: deductResult.balance 
+          },
+          { status: 402 }
+        );
+      }
+    } else {
+      console.log('Credits bypassed for user:', user.id);
+    }
 
     // Get user's channel (required for scripts table)
     const { data: userChannel } = await supabase

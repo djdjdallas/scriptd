@@ -26,7 +26,7 @@ export default function WorkflowHeader({ title, isSaving, creditsUsed, targetDur
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push('/scripts')}
+            onClick={() => router.push('/workflows')}
             className="text-gray-400 hover:text-white transition-colors"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -75,7 +75,7 @@ export default function WorkflowHeader({ title, isSaving, creditsUsed, targetDur
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => router.push('/scripts')}
+            onClick={() => router.push('/workflows')}
             className="glass-button text-sm"
           >
             Save & Exit

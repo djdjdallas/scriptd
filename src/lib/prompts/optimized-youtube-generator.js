@@ -155,33 +155,71 @@ const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext =
     - Excessive repetition
     - Copyright violations
     - Harmful or misleading information
+    - PLACEHOLDER TEXT OR SHORTCUTS (e.g., "continue with...", "[add more here]", "...")
   </must_avoid>
   <must_include>
     - Accurate, fact-checked information
     - Clear value proposition
     - Actionable takeaways
     - Proper content warnings if needed
+    - COMPLETE CONTENT FOR ENTIRE ${targetLength}-MINUTE DURATION
+    - EVERY promised item (if title says "7 secrets", write ALL 7 in FULL)
   </must_include>
 </constraints>
+
+<CRITICAL_COMPLETENESS_RULE>
+YOU MUST WRITE THE ENTIRE SCRIPT FROM START TO FINISH IN ONE RESPONSE.
+- Write approximately ${targetLength * 150} words for a ${targetLength}-minute video
+- FORBIDDEN: Never say "I'll continue", "due to length limits", "in the next response"
+- FORBIDDEN: Never use [...], "Continue with", "Note: This is just the first portion"
+- FORBIDDEN: Never stop mid-script or promise to continue later
+- If you mention "7 secrets", write ALL 7 secrets completely
+- Write EVERYTHING from [0:00] to [${targetLength}:00] NOW
+</CRITICAL_COMPLETENESS_RULE>
 
 <output_format>
   # ${topic} - YouTube Script
   
   ## Video Metadata
   - Target Length: ${targetLength} minutes
-  - Primary Keywords: [list keywords]
-  - Suggested Title Options: [2-3 options]
+  - Primary Keywords: Write 5-7 actual keywords separated by commas
+  - Suggested Title Options:
+    1. Write complete title here
+    2. Write complete title here
+    3. Write complete title here
   
   ## Full Script
-  [Complete script with all sections, timestamps, and production notes]
+  Write the COMPLETE script from [0:00] to [${targetLength}:00] with ALL sections.
+  Include all timestamps, visual cues, and content.
+  DO NOT STOP UNTIL YOU REACH THE END TIME.
   
   ## Description Template
-  [First 125 characters optimized for SEO]
-  [Rest of description with timestamps and links]
+  Write a COMPLETE YouTube description with these sections:
+  
+  🔍 Opening hook - first 125 characters with main keyword
+  
+  Full paragraph about what viewers will learn
+  
+  ⏱️ TIMESTAMPS:
+  0:00 Introduction
+  List ALL timestamps from your script
+  
+  📚 RESOURCES MENTIONED:
+  List resources if any
+  
+  🔔 SUBSCRIBE for more content
+  
+  📱 CONNECT WITH US:
+  Social links
+  
+  #️⃣ HASHTAGS:
+  Relevant hashtags
   
   ## Tags
-  [10-15 relevant tags]
+  Write 10-15 actual tags separated by commas like: tag1, tag2, tag3
 </output_format>
+
+ABSOLUTE REQUIREMENT: Complete EVERYTHING in this single response. No continuations.
 `;
 };
 
@@ -194,12 +232,29 @@ const validateScriptOutput = (script) => {
     };
   }
 
+  // Check for placeholder patterns that indicate incomplete generation
+  const placeholderPatterns = [
+    /\[Rest of.*\]/i,
+    /\[Continue.*\]/i,
+    /\[Add more.*\]/i,
+    /\[.*remaining.*\]/i,
+    /\.\.\.\]$/,  // Ends with ...]
+    /etc\.\]$/,   // Ends with etc.]
+    /\[Insert.*\]/i,
+    /\[Include.*here\]/i
+  ];
+  
+  const hasPlaceholders = placeholderPatterns.some(pattern => pattern.test(script));
+  
   const validationChecks = {
     hasTimestamps: /\d{1,2}:\d{2}/.test(script),
     hasVisualCues: /\[.*\]/.test(script),
     hasQuestions: /\?/.test(script),
     hasSections: script.includes('(') && script.includes(')'),
-    reasonable_length: script.length > 1000 && script.length < 50000
+    reasonable_length: script.length > 1000 && script.length < 50000,
+    noPlaceholders: !hasPlaceholders,
+    hasDescription: script.includes('## Description') && script.includes('TIMESTAMPS:'),
+    hasTags: script.includes('## Tags') && !script.includes('[10-15')
   };
   
   const errors = [];
@@ -208,6 +263,9 @@ const validateScriptOutput = (script) => {
   if (!validationChecks.hasQuestions) errors.push("No engagement questions");
   if (!validationChecks.hasSections) errors.push("Missing section markers");
   if (!validationChecks.reasonable_length) errors.push("Script length seems incorrect");
+  if (!validationChecks.noPlaceholders) errors.push("Contains placeholder text - script incomplete");
+  if (!validationChecks.hasDescription) errors.push("Missing complete description section");
+  if (!validationChecks.hasTags) errors.push("Missing or incomplete tags section");
   
   return {
     isValid: errors.length === 0,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Script from 'next/script';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,7 @@ import { Check, X, Star, ArrowRight, Zap, TrendingUp, Shield, Users } from 'luci
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Link from 'next/link';
 import Image from 'next/image';
+import InternalLinkingSection from '@/components/alternatives/InternalLinkingSection';
 
 export default function VidIQAlternativePage() {
   const [openFAQ, setOpenFAQ] = useState(null);
@@ -63,35 +65,72 @@ export default function VidIQAlternativePage() {
 
   const faqs = [
     {
+      question: 'Is there a VidIQ alternative that actually writes scripts?',
+      answer: 'Yes! Genscript is specifically designed for YouTube script generation, unlike VidIQ which focuses on SEO and analytics. We create complete, retention-optimized scripts in 30 seconds with voice matching and fact-checking built in.'
+    },
+    {
+      question: 'How does Genscript compare to VidIQ for YouTube retention optimization?',
+      answer: 'While VidIQ provides analytics and SEO tools, Genscript actively optimizes your scripts for 70%+ retention using AI trained on millions of viral videos. Our users report 2x higher retention rates compared to traditional scripting methods.'
+    },
+    {
+      question: 'Can I use Genscript as a VidIQ alternative for keyword research and script writing?',
+      answer: 'Absolutely! Genscript includes keyword optimization features plus advanced script generation that VidIQ lacks. Many creators use both tools together - VidIQ for research and Genscript for creating the actual content.'
+    },
+    {
+      question: 'What makes Genscript better than VidIQ for faceless YouTube channels?',
+      answer: 'Faceless channels rely entirely on script quality to keep viewers engaged. Genscript\'s retention optimization, voice matching, and PVSS framework create scripts specifically designed for faceless content, unlike VidIQ\'s generic SEO approach.'
+    },
+    {
       question: 'How easy is it to switch from VidIQ?',
       answer: 'Extremely easy! You can start using Genscript immediately - no data migration needed. Our onboarding team provides free setup assistance for all new users switching from VidIQ.'
     },
     {
-      question: 'Can I use both VidIQ and Genscript together?',
-      answer: 'Absolutely! Many creators use VidIQ for keyword research and Genscript for script generation and retention optimization. They complement each other perfectly.'
-    },
-    {
-      question: 'What makes Genscript better for retention?',
-      answer: 'We analyze millions of high-retention videos to understand psychological hooks, pacing, and structure. Our AI optimizes every sentence for maximum engagement, not just SEO.'
-    },
-    {
       question: 'Is the pricing worth it compared to VidIQ?',
       answer: 'While our starting price is slightly higher, users report 3-5x ROI within the first month through improved retention and monetization. We also offer a 14-day free trial.'
-    },
-    {
-      question: 'Do you offer the same SEO features as VidIQ?',
-      answer: 'We include essential SEO optimization, but our focus is retention-first content. Most creators find combining our retention optimization with basic SEO outperforms SEO-only strategies.'
     }
   ];
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Genscript",
+    "applicationCategory": "YouTube Script Generator",
+    "operatingSystem": "Web",
+    "alternativeOf": {
+      "@type": "SoftwareApplication",
+      "name": "VidIQ"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "39.00",
+      "priceCurrency": "USD",
+      "priceValidUntil": "2025-12-31"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "reviewCount": "2500"
+    },
+    "featureList": [
+      "AI YouTube script generation",
+      "70%+ retention optimization",
+      "Voice matching technology",
+      "Built-in fact checking",
+      "PVSS viral framework",
+      "Psychographic targeting"
+    ]
+  };
+
   return (
     <>
-      {/* SEO Meta Tags */}
-      <head>
-        <title>VidIQ Alternative - Better YouTube Scripts with 70%+ Retention | Genscript</title>
-        <meta name="description" content="Looking for a VidIQ alternative? Genscript optimizes scripts for 70%+ viewer retention, not just SEO. See why 200+ creators switched. Try free for 14 days." />
-        <meta name="keywords" content="vidiq alternative, vidiq competitor, youtube script generator, retention optimization, youtube tools" />
-      </head>
+      {/* Structured Data for SEO */}
+      <Script
+        id="vidiq-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData)
+        }}
+      />
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-purple-50 to-white dark:from-purple-950/20 dark:to-background py-20">
@@ -103,7 +142,7 @@ export default function VidIQAlternativePage() {
             </Badge>
             
             <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Looking for a VidIQ Alternative That Actually Improves Retention?
+              VidIQ Alternative for YouTube Script Generation with Retention Optimization
             </h1>
             
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
@@ -113,7 +152,7 @@ export default function VidIQAlternativePage() {
 
             <div className="flex gap-4 justify-center mb-8">
               <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600">
-                Start Free 14-Day Trial
+                Start Creating YouTube Scripts with 70%+ Retention
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button size="lg" variant="outline">
@@ -137,7 +176,7 @@ export default function VidIQAlternativePage() {
       <section className="py-20 bg-white dark:bg-background">
         <div className="container mx-auto px-4 max-w-4xl">
           <h2 className="text-3xl font-bold text-center mb-12">
-            VidIQ vs Genscript: Feature Comparison
+            VidIQ vs Specialized YouTube Script Generator: Feature Comparison
           </h2>
           
           <Card>
@@ -177,7 +216,7 @@ export default function VidIQAlternativePage() {
 
           <div className="text-center mt-8">
             <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600">
-              Get Genscript Free for 14 Days
+              Switch from VidIQ to Specialized YouTube Tools
               <Zap className="ml-2 w-5 h-5" />
             </Button>
           </div>
@@ -188,10 +227,10 @@ export default function VidIQAlternativePage() {
       <section className="py-20 bg-gradient-to-b from-white to-purple-50 dark:from-background dark:to-purple-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
           <h2 className="text-3xl font-bold text-center mb-4">
-            Why Creators Switch from VidIQ to Genscript
+            Why Genscript is the Best VidIQ Alternative for Script Writing in 2025
           </h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            VidIQ helps you get discovered. We help you keep viewers watching.
+            VidIQ helps you get discovered. We help you keep viewers watching with retention-optimized scripts.
           </p>
 
           <div className="grid md:grid-cols-2 gap-8">
@@ -275,8 +314,165 @@ export default function VidIQAlternativePage() {
         </div>
       </section>
 
-      {/* Social Proof */}
+      {/* VidIQ Alternative with Fact Checking Section */}
+      <section className="py-20 bg-gradient-to-b from-purple-50 to-white dark:from-purple-950/20 dark:to-background">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <h2 className="text-3xl font-bold text-center mb-4">
+            VidIQ Alternative with Built-in Fact Checking and Voice Matching
+          </h2>
+          <p className="text-center text-muted-foreground mb-12 max-w-3xl mx-auto">
+            Unlike VidIQ's SEO-only approach, Genscript ensures every script is factually accurate and matches your unique voice
+          </p>
+          
+          <div className="grid md:grid-cols-2 gap-8 mb-16">
+            <Card className="border-2 border-purple-200 dark:border-purple-800">
+              <CardHeader>
+                <Shield className="w-12 h-12 text-purple-600 mb-3" />
+                <CardTitle className="text-xl">YouTube Script Generator with Built-in Fact Checker 2025</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4">
+                  Never publish misinformation again. Unlike VidIQ, which focuses on keywords, Genscript verifies every 
+                  claim and statistic in your scripts with real-time fact-checking powered by trusted sources.
+                </p>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-green-500 mt-0.5" />
+                    <span>Automatic source verification for all claims</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-green-500 mt-0.5" />
+                    <span>Real-time fact-checking during generation</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-green-500 mt-0.5" />
+                    <span>Citation links included for transparency</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-purple-200 dark:border-purple-800">
+              <CardHeader>
+                <Users className="w-12 h-12 text-purple-600 mb-3" />
+                <CardTitle className="text-xl">AI Script Writer That Adapts to Creator Voice Style</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4">
+                  Your scripts sound authentically you. Our voice matching technology analyzes your existing content 
+                  to maintain consistency, something VidIQ's keyword tools can't provide.
+                </p>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-green-500 mt-0.5" />
+                    <span>Analyzes your speaking patterns and vocabulary</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-green-500 mt-0.5" />
+                    <span>Maintains your unique storytelling style</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-green-500 mt-0.5" />
+                    <span>Perfect for maintaining brand consistency</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Switch from SEO to Retention Section */}
       <section className="py-20 bg-white dark:bg-background">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <h2 className="text-3xl font-bold text-center mb-4">
+            Switch from VidIQ SEO to Retention-First YouTube Scripts
+          </h2>
+          <p className="text-center text-muted-foreground mb-12 max-w-3xl mx-auto">
+            Retention Analytics vs SEO: Why Scripts Matter More Than Keywords
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            <Card className="text-center">
+              <CardHeader>
+                <div className="text-4xl font-bold text-purple-600 mb-2">35%</div>
+                <CardTitle className="text-lg">VidIQ SEO Strategy</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Average retention with keyword-focused content
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center border-2 border-purple-500">
+              <CardHeader>
+                <div className="text-4xl font-bold text-purple-600 mb-2">72%</div>
+                <CardTitle className="text-lg">Genscript Scripts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Average retention with psychology-optimized scripts
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <div className="text-4xl font-bold text-purple-600 mb-2">3.2x</div>
+                <CardTitle className="text-lg">Revenue Impact</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Higher monetization from better watch time
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-0">
+            <CardContent className="p-8">
+              <h3 className="text-xl font-bold mb-4">VidIQ Alternative for Faceless YouTube Automation</h3>
+              <p className="mb-6">
+                Running a faceless channel? Your script IS your content. While VidIQ helps with discovery, 
+                Genscript ensures viewers stay engaged without on-camera charisma. Our PVSS framework and 
+                psychographic targeting create scripts that hook viewers from second one.
+              </p>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold mb-2">Perfect for:</h4>
+                  <ul className="space-y-1 text-sm">
+                    <li>• Educational content channels</li>
+                    <li>• Documentary-style videos</li>
+                    <li>• Explainer and how-to content</li>
+                    <li>• News and commentary channels</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Key Benefits:</h4>
+                  <ul className="space-y-1 text-sm">
+                    <li>• No personality needed - script does the work</li>
+                    <li>• Consistent quality across all videos</li>
+                    <li>• Scale content production efficiently</li>
+                    <li>• Maintain high retention without face reveal</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-6">
+                <Link href="/for/faceless-channels">
+                  <Button className="bg-gradient-to-r from-purple-600 to-pink-600">
+                    Learn More About Faceless Channel Scripts
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Social Proof */}
+      <section className="py-20 bg-gradient-to-b from-white to-purple-50 dark:from-background dark:to-purple-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
           <h2 className="text-3xl font-bold text-center mb-4">
             Creators Who Switched from VidIQ
@@ -325,10 +521,150 @@ export default function VidIQAlternativePage() {
               </div>
             </div>
             <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600">
-              Start Your Free Trial Today
+              Generate Your First Viral Script in 30 Seconds
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </div>
+        </div>
+      </section>
+
+      {/* Psychographic and Multi-Tier Features */}
+      <section className="py-20 bg-white dark:bg-background">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="grid md:grid-cols-2 gap-12">
+            <div>
+              <h3 className="text-2xl font-bold mb-4">YouTube Script Generator with Psychographic Analysis</h3>
+              <p className="text-muted-foreground mb-6">
+                Unlike VidIQ, Genscript analyzes your audience's psychology to create scripts that resonate on a deeper level. 
+                We go beyond demographics to understand what truly motivates your viewers.
+              </p>
+              <Card className="border-purple-200 dark:border-purple-800">
+                <CardContent className="p-6">
+                  <h4 className="font-semibold mb-3">Psychographic Targeting Includes:</h4>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-5 h-5 text-green-500 mt-0.5" />
+                      <span>Emotional trigger identification</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-5 h-5 text-green-500 mt-0.5" />
+                      <span>Value system alignment</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-5 h-5 text-green-500 mt-0.5" />
+                      <span>Interest and passion mapping</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-5 h-5 text-green-500 mt-0.5" />
+                      <span>Behavioral pattern analysis</span>
+                    </li>
+                  </ul>
+                  <div className="mt-4">
+                    <Link href="/features/psychographic-targeting">
+                      <Button variant="outline" size="sm">
+                        Learn More About Psychographic Targeting
+                        <ArrowRight className="ml-2 w-4 h-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div>
+              <h3 className="text-2xl font-bold mb-4">Fast, Premium, Balanced: YouTube Script Generator Quality Tiers</h3>
+              <p className="text-muted-foreground mb-6">
+                Choose your speed and quality preference. VidIQ gives you templates; we give you flexibility with three 
+                generation modes tailored to your needs.
+              </p>
+              <div className="space-y-3">
+                <Card className="border-green-200 dark:border-green-800">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <h5 className="font-semibold text-green-600">Fast Mode</h5>
+                      <p className="text-sm text-muted-foreground">30 seconds • Good for daily content</p>
+                    </div>
+                    <Zap className="w-6 h-6 text-green-500" />
+                  </CardContent>
+                </Card>
+                <Card className="border-blue-200 dark:border-blue-800">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <h5 className="font-semibold text-blue-600">Balanced Mode</h5>
+                      <p className="text-sm text-muted-foreground">2 minutes • Optimal quality/speed</p>
+                    </div>
+                    <TrendingUp className="w-6 h-6 text-blue-500" />
+                  </CardContent>
+                </Card>
+                <Card className="border-purple-200 dark:border-purple-800">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <h5 className="font-semibold text-purple-600">Premium Mode</h5>
+                      <p className="text-sm text-muted-foreground">5 minutes • Maximum retention</p>
+                    </div>
+                    <Star className="w-6 h-6 text-purple-500" />
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="mt-4">
+                <Link href="/features/quality-tiers">
+                  <Button variant="outline" size="sm">
+                    Compare Quality Tiers
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* PVSS Methodology Section */}
+          <Card className="mt-12 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-0">
+            <CardContent className="p-8">
+              <h3 className="text-2xl font-bold mb-4">PVSS Structure YouTube Script Generator Tool</h3>
+              <p className="mb-6">
+                Scripts built on proven viral content frameworks. The PVSS (Pattern-Value-Story-Surprise) methodology 
+                has generated over 2.5 billion views for our users - something VidIQ's keyword tools alone can't achieve.
+              </p>
+              <div className="grid md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="bg-white dark:bg-background rounded-lg p-4 mb-2">
+                    <div className="text-2xl font-bold text-purple-600">P</div>
+                  </div>
+                  <h5 className="font-semibold">Pattern</h5>
+                  <p className="text-sm text-muted-foreground">Hook with familiar concepts</p>
+                </div>
+                <div className="text-center">
+                  <div className="bg-white dark:bg-background rounded-lg p-4 mb-2">
+                    <div className="text-2xl font-bold text-purple-600">V</div>
+                  </div>
+                  <h5 className="font-semibold">Value</h5>
+                  <p className="text-sm text-muted-foreground">Deliver immediate benefit</p>
+                </div>
+                <div className="text-center">
+                  <div className="bg-white dark:bg-background rounded-lg p-4 mb-2">
+                    <div className="text-2xl font-bold text-purple-600">S</div>
+                  </div>
+                  <h5 className="font-semibold">Story</h5>
+                  <p className="text-sm text-muted-foreground">Engage with narrative</p>
+                </div>
+                <div className="text-center">
+                  <div className="bg-white dark:bg-background rounded-lg p-4 mb-2">
+                    <div className="text-2xl font-bold text-purple-600">S</div>
+                  </div>
+                  <h5 className="font-semibold">Surprise</h5>
+                  <p className="text-sm text-muted-foreground">Twist for memorability</p>
+                </div>
+              </div>
+              <div className="mt-6 text-center">
+                <Link href="/features/pvss-framework">
+                  <Button className="bg-gradient-to-r from-purple-600 to-pink-600">
+                    Learn the PVSS Framework
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
@@ -365,6 +701,9 @@ export default function VidIQAlternativePage() {
         </div>
       </section>
 
+      {/* Internal Linking Section */}
+      <InternalLinkingSection currentPage="vidiq" />
+
       {/* Final CTA */}
       <section className="py-20 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
         <div className="container mx-auto px-4 max-w-4xl text-center">
@@ -382,7 +721,7 @@ export default function VidIQAlternativePage() {
             </p>
             <div className="flex gap-4 justify-center">
               <Button size="lg" variant="secondary">
-                Claim Your Discount
+                Get the YouTube Script Generator Built for Retention
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
