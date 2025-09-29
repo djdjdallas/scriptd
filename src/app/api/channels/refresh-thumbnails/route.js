@@ -36,6 +36,12 @@ export async function POST(request) {
             return null;
           }
 
+          // Skip remix channels (they have fake YouTube IDs)
+          if (channel.youtube_channel_id.startsWith('remix_')) {
+            console.log(`Skipping remix channel ${channel.id}`);
+            return null;
+          }
+
           // Fetch fresh channel data from YouTube
           const channelData = await getChannelById(channel.youtube_channel_id);
           const parsedChannel = parseChannelData(channelData);

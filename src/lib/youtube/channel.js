@@ -14,68 +14,131 @@ export async function getChannelByUrl(url) {
 
   try {
     let channelId;
+    let channelData = null;
 
     if (channelInfo.type === 'id') {
       channelId = channelInfo.value;
     } else {
       // For @handles, we need to use a different approach
-      // First try searching by the handle/username
-      console.log('Searching for channel with identifier:', channelInfo.value);
+      console.log('Looking up channel with handle:', channelInfo.value);
       
       // Clean the handle (remove @ if present)
       const cleanHandle = channelInfo.value.replace('@', '');
       
-      // Try searching for the channel
+      // First, try using the forHandle parameter (most accurate for handles)
+      try {
+        console.log('Attempting direct handle lookup with forHandle parameter...');
+        const handleResponse = await withRateLimit('channels', () =>
+          youtube.channels.list({
+            part: ['snippet', 'statistics', 'contentDetails', 'brandingSettings'],
+            forHandle: cleanHandle,
+          })
+        );
+
+        if (handleResponse.data.items && handleResponse.data.items.length > 0) {
+          channelData = handleResponse.data.items[0];
+          console.log('Successfully found channel via forHandle:', channelData.snippet.title);
+          setCache(cacheKey, channelData);
+          return channelData;
+        }
+      } catch (handleError) {
+        console.log('forHandle lookup failed, trying fallback search...');
+      }
+
+      // Fallback: Search for the channel
       const searchResponse = await withRateLimit('search', () =>
         youtube.search.list({
           part: ['snippet'],
           q: cleanHandle,
           type: ['channel'],
-          maxResults: 10,
+          maxResults: 25, // Increased to find better matches
         })
       );
 
       console.log('Search response items:', searchResponse.data.items?.length || 0);
 
-      // Try to find exact match or closest match
-      let channel = searchResponse.data.items?.find(item => {
-        const title = item.snippet.channelTitle.toLowerCase();
-        const searchTerm = cleanHandle.toLowerCase();
-        
-        // Check for exact match or if title contains the search term
-        return title === searchTerm || 
-               title.includes(searchTerm) ||
-               item.snippet.description?.toLowerCase().includes(searchTerm);
-      });
-
-      // If no exact match, try to use forHandle parameter (YouTube API v3)
-      if (!channel && searchResponse.data.items?.length > 0) {
-        // Use the first result as fallback
-        channel = searchResponse.data.items[0];
-        console.log('Using first search result as fallback:', channel.snippet.channelTitle);
-      }
-
-      if (!channel) {
-        console.error('No channel found for identifier:', channelInfo.value);
+      if (!searchResponse.data.items || searchResponse.data.items.length === 0) {
         throw new Error(`Channel not found for: ${channelInfo.value}`);
       }
 
-      channelId = channel.snippet.channelId;
+      // Priority matching system
+      let bestMatch = null;
+      let bestScore = -1;
+
+      for (const item of searchResponse.data.items) {
+        const title = item.snippet.channelTitle;
+        const titleLower = title.toLowerCase();
+        const searchTerm = cleanHandle.toLowerCase();
+        const customUrl = item.snippet.customUrl?.toLowerCase().replace('@', '');
+        
+        let score = 0;
+        
+        // Priority 1: Exact customUrl match (highest priority)
+        if (customUrl === searchTerm) {
+          score = 100;
+          console.log(`Found exact customUrl match: ${title}`);
+        }
+        // Priority 2: Exact title match (case-insensitive)
+        else if (titleLower === searchTerm) {
+          score = 90;
+          console.log(`Found exact title match: ${title}`);
+        }
+        // Priority 3: Title without spaces/special chars matches
+        else if (titleLower.replace(/[^a-z0-9]/g, '') === searchTerm.replace(/[^a-z0-9]/g, '')) {
+          score = 80;
+          console.log(`Found normalized title match: ${title}`);
+        }
+        // Priority 4: Title starts with search term
+        else if (titleLower.startsWith(searchTerm)) {
+          score = 70;
+        }
+        // Priority 5: Title contains exact search term as a word
+        else if (new RegExp(`\\b${searchTerm}\\b`).test(titleLower)) {
+          score = 60;
+        }
+        // Priority 6: Title contains search term
+        else if (titleLower.includes(searchTerm)) {
+          score = 50;
+        }
+        // Priority 7: Description contains search term
+        else if (item.snippet.description?.toLowerCase().includes(searchTerm)) {
+          score = 30;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = item;
+        }
+      }
+
+      if (!bestMatch) {
+        console.error('No suitable channel match found for:', channelInfo.value);
+        // Last resort: use first result
+        bestMatch = searchResponse.data.items[0];
+        console.log('Using first search result as last resort:', bestMatch.snippet.channelTitle);
+      } else {
+        console.log(`Selected best match: ${bestMatch.snippet.channelTitle} (score: ${bestScore})`);
+      }
+
+      channelId = bestMatch.snippet.channelId;
     }
 
-    // Get full channel details
-    const response = await withRateLimit('channels', () =>
-      youtube.channels.list({
-        part: ['snippet', 'statistics', 'contentDetails', 'brandingSettings'],
-        id: [channelId],
-      })
-    );
+    // Get full channel details if we don't have them already
+    if (!channelData) {
+      const response = await withRateLimit('channels', () =>
+        youtube.channels.list({
+          part: ['snippet', 'statistics', 'contentDetails', 'brandingSettings'],
+          id: [channelId],
+        })
+      );
 
-    if (!response.data.items || response.data.items.length === 0) {
-      throw new Error('Channel not found');
+      if (!response.data.items || response.data.items.length === 0) {
+        throw new Error('Channel not found');
+      }
+
+      channelData = response.data.items[0];
     }
-
-    const channelData = response.data.items[0];
+    
     setCache(cacheKey, channelData);
     return channelData;
   } catch (error) {

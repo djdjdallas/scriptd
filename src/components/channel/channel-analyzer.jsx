@@ -33,7 +33,7 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { TiltCard } from '@/components/ui/tilt-card';
 
-export function ChannelAnalyzer({ channelId }) {
+export function ChannelAnalyzer({ channelId, isRemix = false, channelData = null }) {
   const router = useRouter();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -216,9 +216,15 @@ export function ChannelAnalyzer({ channelId }) {
     );
   }
 
-  const { analytics, persona, insights, audienceAnalysis, contentIdeas } = analysisData;
+  const { analytics, persona, insights, audienceAnalysis, contentIdeas } = analysisData || {};
 
   const formatNumber = (num) => {
+    // Handle null, undefined, or non-numeric values
+    if (num === null || num === undefined || isNaN(num)) {
+      return '0';
+    }
+    // Ensure num is a number
+    num = Number(num);
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M';
     } else if (num >= 1000) {
@@ -230,8 +236,8 @@ export function ChannelAnalyzer({ channelId }) {
   const tabs = [
     { id: 'insights', label: 'Insights', icon: ChartBar },
     { id: 'audience', label: 'Audience', icon: Users },
-    { id: 'content', label: 'Content', icon: Video },
-    { id: 'performance', label: 'Performance', icon: TrendingUp },
+    ...(!isRemix ? [{ id: 'content', label: 'Content', icon: Video }] : []),
+    ...(!isRemix ? [{ id: 'performance', label: 'Performance', icon: TrendingUp }] : []),
     ...(contentIdeas ? [{ id: 'ideas', label: 'Video Ideas', icon: Lightbulb }] : [])
   ];
 
@@ -260,7 +266,7 @@ export function ChannelAnalyzer({ channelId }) {
               onClick={startAnalysis}
               size="sm"
               variant="outline"
-              className="glass-button"
+              className="glass-button text-black"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Run Fresh Analysis
@@ -269,7 +275,8 @@ export function ChannelAnalyzer({ channelId }) {
         </div>
       )}
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Hide for remix channels */}
+      {!isRemix && (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <TiltCard>
           <div className="glass-card p-6 group">
@@ -278,10 +285,10 @@ export function ChannelAnalyzer({ channelId }) {
               <Eye className="h-5 w-5 text-purple-400 group-hover:scale-110 transition-transform" />
             </div>
             <div className="text-3xl font-bold text-white mb-1">
-              {formatNumber(analytics.channel.totalViews)}
+              {formatNumber(analytics?.channel?.totalViews)}
             </div>
             <p className="text-xs text-gray-400">
-              {formatNumber(analytics.performance.avgViewsPerVideo)} per video
+              {formatNumber(analytics?.performance?.avgViewsPerVideo)} per video
             </p>
           </div>
         </TiltCard>
@@ -293,10 +300,10 @@ export function ChannelAnalyzer({ channelId }) {
               <Users className="h-5 w-5 text-blue-400 group-hover:scale-110 transition-transform" />
             </div>
             <div className="text-3xl font-bold text-white mb-1">
-              {formatNumber(analytics.channel.subscriberCount)}
+              {formatNumber(analytics?.channel?.subscriberCount)}
             </div>
             <p className="text-xs text-gray-400 flex items-center gap-1">
-              <span className="text-green-400">+{analytics.performance.viewsToSubscriberRatio}%</span>
+              <span className="text-green-400">+{analytics?.performance?.viewsToSubscriberRatio || 0}%</span>
               view rate
             </p>
           </div>
@@ -309,10 +316,10 @@ export function ChannelAnalyzer({ channelId }) {
               <ThumbsUp className="h-5 w-5 text-green-400 group-hover:scale-110 transition-transform" />
             </div>
             <div className="text-3xl font-bold text-white mb-1">
-              {analytics.performance.avgEngagementRate}%
+              {analytics?.performance?.avgEngagementRate || analytics?.performance?.engagementRate || 0}%
             </div>
             <p className="text-xs text-gray-400">
-              {formatNumber(analytics.performance.totalEngagements)} total
+              {formatNumber(analytics?.performance?.totalEngagements)} total
             </p>
           </div>
         </TiltCard>
@@ -324,14 +331,15 @@ export function ChannelAnalyzer({ channelId }) {
               <Video className="h-5 w-5 text-red-400 group-hover:scale-110 transition-transform" />
             </div>
             <div className="text-3xl font-bold text-white mb-1">
-              {analytics.channel.videoCount}
+              {analytics?.channel?.videoCount || 0}
             </div>
             <p className="text-xs text-gray-400">
-              {analytics.analysisMetadata.videosAnalyzed} analyzed
+              {analytics?.analysisMetadata?.videosAnalyzed || analytics?.channel?.videoCount || 0} analyzed
             </p>
           </div>
         </TiltCard>
       </div>
+      )}
 
       {/* Tab Navigation */}
       <div className="glass-card p-2">
@@ -372,13 +380,13 @@ export function ChannelAnalyzer({ channelId }) {
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-white font-medium">Performance Score</span>
                     <span className="text-2xl font-bold text-purple-400">
-                      {insights.metrics.performanceScore}/100
+                      {insights?.metrics?.performanceScore || 0}/100
                     </span>
                   </div>
                   <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden">
                     <div 
                       className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-purple-400 rounded-full transition-all duration-700"
-                      style={{ width: `${insights.metrics.performanceScore}%` }}
+                      style={{ width: `${insights?.metrics?.performanceScore || 0}%` }}
                     />
                   </div>
                 </div>
@@ -387,13 +395,13 @@ export function ChannelAnalyzer({ channelId }) {
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-white font-medium">Growth Potential</span>
                     <span className="text-2xl font-bold text-blue-400">
-                      {insights.metrics.growthPotential}/100
+                      {insights?.metrics?.growthPotential || 0}/100
                     </span>
                   </div>
                   <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden">
                     <div 
                       className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-700"
-                      style={{ width: `${insights.metrics.growthPotential}%` }}
+                      style={{ width: `${insights?.metrics?.growthPotential || 0}%` }}
                     />
                   </div>
                 </div>
@@ -402,13 +410,13 @@ export function ChannelAnalyzer({ channelId }) {
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-white font-medium">Audience Quality</span>
                     <span className="text-2xl font-bold text-green-400">
-                      {insights.metrics.audienceQuality}/100
+                      {insights?.metrics?.audienceQuality || 0}/100
                     </span>
                   </div>
                   <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden">
                     <div 
                       className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-700"
-                      style={{ width: `${insights.metrics.audienceQuality}%` }}
+                      style={{ width: `${insights?.metrics?.audienceQuality || 0}%` }}
                     />
                   </div>
                 </div>
@@ -423,7 +431,7 @@ export function ChannelAnalyzer({ channelId }) {
                   Strengths
                 </h3>
                 <ul className="space-y-3">
-                  {insights.strengths.map((strength, index) => (
+                  {(insights?.strengths || []).map((strength, index) => (
                     <li key={index} className="flex items-start gap-3">
                       <div className="mt-1">
                         <div className="w-2 h-2 bg-green-400 rounded-full" />
@@ -440,8 +448,8 @@ export function ChannelAnalyzer({ channelId }) {
                   Opportunities
                 </h3>
                 <ul className="space-y-3">
-                  {insights.opportunities && insights.opportunities.length > 0 ? (
-                    insights.opportunities.map((opportunity, index) => (
+                  {insights?.opportunities && insights?.opportunities.length > 0 ? (
+                    insights?.opportunities.map((opportunity, index) => (
                       <li key={index} className="flex items-start gap-3">
                         <div className="mt-1">
                           <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
@@ -463,7 +471,7 @@ export function ChannelAnalyzer({ channelId }) {
                 Recommendations
               </h3>
               <div className="grid gap-3">
-                {insights.recommendations.map((rec, index) => (
+                {(insights?.recommendations || []).map((rec, index) => (
                   <div key={index} className="glass p-4 rounded-lg flex items-start gap-3 group hover:bg-white/5 transition-colors">
                     <TrendingUp className="h-5 w-5 text-purple-400 mt-0.5 group-hover:scale-110 transition-transform" />
                     <span className="text-gray-300 text-sm">{rec}</span>
@@ -484,21 +492,25 @@ export function ChannelAnalyzer({ channelId }) {
               </h3>
               
               {/* Audience Description */}
-              {audienceAnalysis?.persona && (
-                <div className="mb-6">
-                  <div className="glass p-4 rounded-lg">
-                    <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
-                      Audience Profile
-                      {audienceAnalysis.aiInsights && (
-                        <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">
-                          AI Enhanced
-                        </span>
-                      )}
-                    </h4>
-                    <p className="text-gray-300 leading-relaxed">{audienceAnalysis.persona}</p>
-                  </div>
+              <div className="mb-6">
+                <div className="glass p-4 rounded-lg">
+                  <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                    Audience Profile
+                    {(audienceAnalysis?.aiInsights || channelData?.remix_analysis?.analysis_data?.audience) && (
+                      <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">
+                        AI Enhanced
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-gray-300 leading-relaxed">
+                    {channelData?.audience_description || 
+                     audienceAnalysis?.persona || 
+                     channelData?.remix_analysis?.analysis_data?.audience?.audience_analysis?.demographic_profile?.age_distribution?.median_age 
+                       ? `Median age ${channelData.remix_analysis.analysis_data.audience.audience_analysis.demographic_profile.age_distribution.median_age} with interests in ${channelData?.remix_analysis?.analysis_data?.audience?.audience_analysis?.audience_overlap?.common_interests?.slice(0, 3).join(', ')}`
+                       : 'Run analysis to see your audience profile'}
+                  </p>
                 </div>
-              )}
+              </div>
               
               {/* AI Insights if available */}
               {audienceAnalysis?.aiInsights && (
@@ -509,7 +521,7 @@ export function ChannelAnalyzer({ channelId }) {
                       Content Gaps
                     </h4>
                     <ul className="space-y-2">
-                      {audienceAnalysis.aiInsights.contentGaps?.map((gap, index) => (
+                      {audienceAnalysis?.aiInsights?.contentGaps?.map((gap, index) => (
                         <li key={index} className="text-gray-300 text-sm flex items-start gap-2">
                           <span className="text-yellow-400 mt-1">•</span>
                           <span>{gap}</span>
@@ -524,7 +536,7 @@ export function ChannelAnalyzer({ channelId }) {
                       Audience Needs
                     </h4>
                     <ul className="space-y-2">
-                      {audienceAnalysis.aiInsights.audienceNeeds?.map((need, index) => (
+                      {audienceAnalysis?.aiInsights?.audienceNeeds?.map((need, index) => (
                         <li key={index} className="text-gray-300 text-sm flex items-start gap-2">
                           <span className="text-green-400 mt-1">•</span>
                           <span>{need}</span>
@@ -535,26 +547,141 @@ export function ChannelAnalyzer({ channelId }) {
                 </div>
               )}
               
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
-                      <UserCheck className="h-4 w-4 text-green-400" />
-                      Engagement Level
+              {/* Remix Audience Data */}
+              {channelData?.remix_analysis?.analysis_data?.audience && (() => {
+                const remixAudience = channelData.remix_analysis.analysis_data.audience.audience_analysis;
+                return (
+                  <div className="space-y-6 mb-6">
+                    {/* Demographics */}
+                    {remixAudience?.demographic_profile && (
+                      <div className="glass p-4 rounded-lg">
+                        <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                          <UserCheck className="h-4 w-4 text-green-400" />
+                          Demographics
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          {remixAudience.demographic_profile.age_distribution?.median_age && (
+                            <div>
+                              <span className="text-gray-400">Median Age:</span>
+                              <span className="text-white ml-2">{remixAudience.demographic_profile.age_distribution.median_age}</span>
+                            </div>
+                          )}
+                          {remixAudience.demographic_profile.gender_distribution && (
+                            <div>
+                              <span className="text-gray-400">Gender:</span>
+                              <span className="text-white ml-2">
+                                {Object.entries(remixAudience.demographic_profile.gender_distribution)
+                                  .slice(0, 2)
+                                  .map(([k, v]) => `${k}: ${v}`)
+                                  .join(', ')}
+                              </span>
+                            </div>
+                          )}
+                          {remixAudience.demographic_profile.education_income?.education_level && (
+                            <div>
+                              <span className="text-gray-400">Education:</span>
+                              <span className="text-white ml-2">
+                                {Object.entries(remixAudience.demographic_profile.education_income.education_level)
+                                  .sort((a, b) => parseInt(b[1]) - parseInt(a[1]))
+                                  .slice(0, 1)
+                                  .map(([k, v]) => `${k.replace('_', ' ')}: ${v}`)
+                                  .join('')}
+                              </span>
+                            </div>
+                          )}
+                          {remixAudience.demographic_profile.geographic_distribution?.top_countries && (
+                            <div>
+                              <span className="text-gray-400">Regions:</span>
+                              <span className="text-white ml-2">
+                                {remixAudience.demographic_profile.geographic_distribution.top_countries.slice(0, 3).join(', ')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Core Values */}
+                    {remixAudience?.psychographic_analysis?.core_values && (
+                      <div className="glass p-4 rounded-lg">
+                        <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                          <Star className="h-4 w-4 text-yellow-400" />
+                          Core Values
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {remixAudience.psychographic_analysis.core_values.map((value, i) => (
+                            <span key={i} className="px-3 py-1 bg-purple-500/20 text-purple-200 text-sm rounded-full">
+                              {value}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Common Interests */}
+                    {remixAudience?.audience_overlap?.common_interests && (
+                      <div className="glass p-4 rounded-lg">
+                        <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                          <Target className="h-4 w-4 text-blue-400" />
+                          Common Interests
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {remixAudience.audience_overlap.common_interests.map((interest, i) => (
+                            <span key={i} className="px-3 py-1 bg-blue-500/20 text-blue-200 text-sm rounded-full">
+                              {interest}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Content Ideas */}
+                    {channelData?.remix_analysis?.analysis_data?.audience?.contentIdeas && (
+                      <div className="glass p-4 rounded-lg">
+                        <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                          <Lightbulb className="h-4 w-4 text-orange-400" />
+                          Video Ideas
+                        </h4>
+                        <div className="space-y-3">
+                          {channelData.remix_analysis.analysis_data.audience.contentIdeas.slice(0, 3).map((idea, i) => (
+                            <div key={i} className="p-3 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg">
+                              <h5 className="text-white font-medium mb-1">{idea.title}</h5>
+                              <p className="text-gray-300 text-sm mb-2">{idea.description}</p>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-gray-400">Format: {idea.format}</span>
+                                <span className="text-xs text-green-400">Potential: {idea.growth_potential}/10</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+              
+              {/* Default Audience Characteristics - Only show if no remix data */}
+              {(!channelData?.remix_analysis?.analysis_data?.audience || !isRemix) && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                        <UserCheck className="h-4 w-4 text-green-400" />
+                        Engagement Level
                     </h4>
                     <div className="glass p-4 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-purple-400 font-bold text-lg">
-                          {persona.behavior.engagementLevel}
+                          {persona?.behavior?.engagementLevel || 'N/A'}
                         </span>
                         <span className="text-gray-400 text-sm">
-                          Score: {persona.behavior.loyaltyScore}/100
+                          Score: {persona?.behavior?.loyaltyScore || 0}/100
                         </span>
                       </div>
                       <div className="relative h-2 bg-gray-800 rounded-full overflow-hidden">
                         <div 
                           className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-green-400 rounded-full"
-                          style={{ width: `${persona.behavior.loyaltyScore}%` }}
+                          style={{ width: `${persona?.behavior?.loyaltyScore || 0}%` }}
                         />
                       </div>
                     </div>
@@ -566,7 +693,7 @@ export function ChannelAnalyzer({ channelId }) {
                       Viewing Patterns
                     </h4>
                     <div className="glass p-4 rounded-lg">
-                      <p className="text-gray-300">{persona.behavior.viewingPatterns}</p>
+                      <p className="text-gray-300">{persona?.behavior?.viewingPatterns || 'No viewing pattern data'}</p>
                     </div>
                   </div>
                 </div>
@@ -578,7 +705,7 @@ export function ChannelAnalyzer({ channelId }) {
                       Content Preferences
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {persona.demographics.contentPreferences.map((pref, index) => (
+                      {(persona?.demographics?.contentPreferences || []).map((pref, index) => (
                         <span key={index} className="glass px-3 py-1 rounded-full text-sm text-purple-300">
                           {pref}
                         </span>
@@ -592,7 +719,7 @@ export function ChannelAnalyzer({ channelId }) {
                       Top Interests
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {persona.demographics.interests.map((interest, index) => (
+                      {(persona?.demographics?.interests || []).map((interest, index) => (
                         <span key={index} className="glass px-3 py-1 rounded-full text-sm text-yellow-300">
                           {interest}
                         </span>
@@ -601,6 +728,7 @@ export function ChannelAnalyzer({ channelId }) {
                   </div>
                 </div>
               </div>
+              )}
             </div>
 
             {/* Audience Insights */}
@@ -658,7 +786,8 @@ export function ChannelAnalyzer({ channelId }) {
                     <div className="glass p-4 rounded-lg">
                       <h5 className="text-sm font-medium text-purple-400 mb-2">Core Topics</h5>
                       <div className="space-y-2">
-                        {analytics.content?.topKeywords?.slice(0, 5).map(([keyword], i) => (
+                        {(analytics?.content?.topKeywords || []).length > 0 ? (
+                          analytics.content.topKeywords.slice(0, 5).map(([keyword], i) => (
                           <div key={i} className="flex items-center justify-between">
                             <span className="text-sm text-gray-300">{keyword}</span>
                             <div className={`w-2 h-2 rounded-full ${
@@ -667,7 +796,9 @@ export function ChannelAnalyzer({ channelId }) {
                               'bg-gray-400'
                             }`} />
                           </div>
-                        ))}
+                        ))) : (
+                          <p className="text-sm text-gray-400">No topic data available</p>
+                        )}
                       </div>
                     </div>
                     
@@ -712,8 +843,8 @@ export function ChannelAnalyzer({ channelId }) {
                       Content Types
                     </h4>
                     <div className="space-y-3">
-                      {analytics.content?.contentTypes && Object.keys(analytics.content.contentTypes).length > 0 ? (
-                        Object.entries(analytics.content.contentTypes).map(([type, count]) => (
+                      {analytics?.content?.contentTypes && Object.keys(analytics?.content?.contentTypes || {}).length > 0 ? (
+                        Object.entries(analytics?.content?.contentTypes || {}).map(([type, count]) => (
                           <div key={type} className="glass p-3 rounded-lg">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-white capitalize">{type}</span>
@@ -723,7 +854,7 @@ export function ChannelAnalyzer({ channelId }) {
                               <div 
                                 className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
                                 style={{ 
-                                  width: `${(count / Math.max(analytics.channel.videoCount, 1)) * 100}%` 
+                                  width: `${(count / Math.max(analytics?.channel?.videoCount || 1, 1)) * 100}%` 
                                 }}
                               />
                             </div>
@@ -924,7 +1055,7 @@ export function ChannelAnalyzer({ channelId }) {
               </h3>
               
               <div className="space-y-3">
-                {analytics.topVideos.map((video, index) => {
+                {(analytics?.topVideos || []).map((video, index) => {
                   const isTop3 = index < 3;
                   return (
                     <div 
@@ -967,18 +1098,18 @@ export function ChannelAnalyzer({ channelId }) {
                       </div>
 
                       <div className="flex-shrink-0">
-                        {video.views > analytics.performance.avgViewsPerVideo ? (
+                        {video.views > (analytics?.performance?.avgViewsPerVideo || 0) ? (
                           <div className="flex items-center gap-1 text-green-400">
                             <ArrowUpRight className="h-4 w-4" />
                             <span className="text-xs font-medium">
-                              +{Math.round((video.views / analytics.performance.avgViewsPerVideo - 1) * 100)}%
+                              +{Math.round((video.views / (analytics?.performance?.avgViewsPerVideo || 1) - 1) * 100)}%
                             </span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1 text-red-400">
                             <ArrowDownRight className="h-4 w-4" />
                             <span className="text-xs font-medium">
-                              -{Math.round((1 - video.views / analytics.performance.avgViewsPerVideo) * 100)}%
+                              -{Math.round((1 - video.views / (analytics?.performance?.avgViewsPerVideo || 1)) * 100)}%
                             </span>
                           </div>
                         )}
@@ -999,7 +1130,7 @@ export function ChannelAnalyzer({ channelId }) {
                   </div>
                   <p className="text-gray-400 text-sm mb-1">Avg Views/Video</p>
                   <p className="text-2xl font-bold text-white">
-                    {formatNumber(analytics.performance.avgViewsPerVideo)}
+                    {formatNumber(analytics?.performance?.avgViewsPerVideo)}
                   </p>
                 </div>
               </TiltCard>
@@ -1012,7 +1143,7 @@ export function ChannelAnalyzer({ channelId }) {
                   </div>
                   <p className="text-gray-400 text-sm mb-1">Watch Time</p>
                   <p className="text-2xl font-bold text-white">
-                    {Math.round(analytics.performance.avgViewsPerVideo * 4.5 / 60)}h
+                    {Math.round((analytics?.performance?.avgViewsPerVideo || 0) * 4.5 / 60)}h
                   </p>
                 </div>
               </TiltCard>
@@ -1025,7 +1156,7 @@ export function ChannelAnalyzer({ channelId }) {
                   </div>
                   <p className="text-gray-400 text-sm mb-1">CTR</p>
                   <p className="text-2xl font-bold text-white">
-                    {(analytics.performance.avgEngagementRate * 1.2).toFixed(1)}%
+                    {((analytics?.performance?.avgEngagementRate || analytics?.performance?.engagementRate || 0) * 1.2).toFixed(1)}%
                   </p>
                 </div>
               </TiltCard>
@@ -1042,14 +1173,14 @@ export function ChannelAnalyzer({ channelId }) {
                 AI-Generated Video Ideas
               </h3>
               
-              {contentIdeas.viralPotentialIdeas && contentIdeas.viralPotentialIdeas.length > 0 && (
+              {contentIdeas?.viralPotentialIdeas && contentIdeas?.viralPotentialIdeas.length > 0 && (
                 <div className="mb-8">
                   <h4 className="text-lg font-semibold text-purple-400 mb-4 flex items-center gap-2">
                     <Star className="h-4 w-4" />
                     High Viral Potential
                   </h4>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {contentIdeas.viralPotentialIdeas.slice(0, 4).map((idea, i) => (
+                    {contentIdeas?.viralPotentialIdeas?.slice(0, 4).map((idea, i) => (
                       <div key={i} className="glass p-4 rounded-lg border border-purple-500/20 hover:border-purple-500/40 transition-colors">
                         <h5 className="text-white font-medium mb-2">{idea.title}</h5>
                         <p className="text-sm text-gray-300 mb-3">{idea.concept}</p>
@@ -1087,14 +1218,14 @@ export function ChannelAnalyzer({ channelId }) {
                 </div>
               )}
               
-              {contentIdeas.quickWins && contentIdeas.quickWins.length > 0 && (
+              {contentIdeas?.quickWins && contentIdeas?.quickWins.length > 0 && (
                 <div>
                   <h4 className="text-lg font-semibold text-green-400 mb-4 flex items-center gap-2">
                     <Zap className="h-4 w-4" />
                     Quick Win Ideas
                   </h4>
                   <div className="space-y-3">
-                    {contentIdeas.quickWins.slice(0, 3).map((idea, i) => (
+                    {contentIdeas?.quickWins?.slice(0, 3).map((idea, i) => (
                       <div key={i} className="glass p-3 rounded-lg flex items-start gap-3">
                         <div className="w-8 h-8 bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
                           <span className="text-green-400 text-sm font-bold">{i + 1}</span>

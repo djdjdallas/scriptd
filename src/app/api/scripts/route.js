@@ -32,15 +32,20 @@ export const GET = createApiHandler(async (req) => {
     return acc;
   }, {}) || {};
   
-  // Then get scripts for those channels
+  // Then get scripts for those channels or directly owned by user
   let query = supabase
     .from('scripts')
     .select('*', { count: 'exact' });
   
-  // Filter by user's channels or direct user_id
+  // Filter by user's channels AND/OR direct user_id
+  // This ensures we get scripts that are either:
+  // 1. Associated with user's channels
+  // 2. Directly owned by the user (even if no channel association)
   if (channelIds.length > 0) {
+    // Get scripts from user's channels OR scripts directly owned by user
     query = query.or(`channel_id.in.(${channelIds.map(id => `"${id}"`).join(',')}),user_id.eq.${user.id}`);
   } else {
+    // If no channels, just get scripts owned by user
     query = query.eq('user_id', user.id);
   }
 
@@ -65,6 +70,7 @@ export const GET = createApiHandler(async (req) => {
     console.error('[API /scripts] Database error:', error);
     console.error('[API /scripts] Query details:', { 
       userId: user.id, 
+      channelIds,
       type, 
       search, 
       sortBy, 
@@ -73,7 +79,23 @@ export const GET = createApiHandler(async (req) => {
     throw new ApiError(`Failed to fetch scripts: ${error.message}`, 500);
   }
 
+  console.log(`[API /scripts] Query details:`, {
+    userId: user.id,
+    channelIds,
+    channelCount: channelIds.length
+  });
   console.log(`[API /scripts] Found ${scripts?.length || 0} scripts, total count: ${count}`);
+  
+  // Debug: Log first few scripts to see what we're getting
+  if (scripts && scripts.length > 0) {
+    console.log('[API /scripts] Sample script:', {
+      id: scripts[0].id,
+      title: scripts[0].title,
+      channel_id: scripts[0].channel_id,
+      user_id: scripts[0].user_id,
+      metadata: scripts[0].metadata
+    });
+  }
 
   const items = (scripts || []).map(script => ({
     id: script.id,

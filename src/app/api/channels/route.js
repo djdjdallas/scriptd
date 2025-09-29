@@ -38,7 +38,9 @@ export const POST = createApiHandler(async (req) => {
       user_id: user.id,
       name: body.name,
       youtube_channel_id: body.youtube_channel_id,
-      description: body.description || ''
+      description: body.description || '',
+      voice_training_status: 'pending', // Set default voice training status
+      auto_train_enabled: true // Enable auto training by default
     })
     .select()
     .single();

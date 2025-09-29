@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TiltCard } from '@/components/ui/tilt-card';
+import { useToast } from '@/components/ui/use-toast';
 import {
   Search,
   Youtube,
@@ -16,15 +17,21 @@ import {
   Check,
   Loader2,
   Sparkles,
-  TrendingUp
+  TrendingUp,
+  Link
 } from 'lucide-react';
 
 export function ChannelSelector({ selectedChannels, onSelectChannel, onRemoveChannel, maxChannels = 3 }) {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [popularChannels, setPopularChannels] = useState([]);
   const [loadingPopular, setLoadingPopular] = useState(true);
+  const [inputMode, setInputMode] = useState('search'); // 'search' or 'url'
+  const [urlInput, setUrlInput] = useState('');
+  const [isFetchingUrl, setIsFetchingUrl] = useState(false);
+  const [urlError, setUrlError] = useState('');
 
   useEffect(() => {
     fetchPopularChannels();
@@ -47,6 +54,16 @@ export function ChannelSelector({ selectedChannels, onSelectChannel, onRemoveCha
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
+    // Check if the input looks like a YouTube URL
+    if (searchQuery.includes('youtube.com') || searchQuery.includes('youtu.be')) {
+      // Auto-switch to URL mode and process
+      setInputMode('url');
+      setUrlInput(searchQuery);
+      setSearchQuery('');
+      await handleUrlAdd(searchQuery);
+      return;
+    }
+
     setIsSearching(true);
     try {
       const response = await fetch(`/api/channels/search?q=${encodeURIComponent(searchQuery)}`);
@@ -62,6 +79,57 @@ export function ChannelSelector({ selectedChannels, onSelectChannel, onRemoveCha
       console.error('Search error:', error);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleUrlAdd = async (url = urlInput) => {
+    if (!url?.trim()) {
+      setUrlError('Please enter a YouTube channel URL');
+      return;
+    }
+
+    setIsFetchingUrl(true);
+    setUrlError('');
+
+    try {
+      const response = await fetch('/api/channels/fetch-by-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url.trim() })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setUrlError(data.message || data.error || 'Failed to fetch channel');
+        return;
+      }
+
+      if (data.channel) {
+        // Check if already selected
+        const alreadySelected = selectedChannels.some(c => 
+          c.youtube_channel_id === data.channel.youtube_channel_id ||
+          c.channelId === data.channel.youtube_channel_id
+        );
+
+        if (alreadySelected) {
+          setUrlError('This channel is already selected');
+          return;
+        }
+
+        // Add the channel
+        onSelectChannel(data.channel);
+        setUrlInput('');
+        setUrlError('');
+        
+        // Switch back to search mode after successful add
+        setInputMode('search');
+      }
+    } catch (error) {
+      console.error('Error fetching channel by URL:', error);
+      setUrlError('Failed to fetch channel. Please check the URL and try again.');
+    } finally {
+      setIsFetchingUrl(false);
     }
   };
 
@@ -187,33 +255,24 @@ export function ChannelSelector({ selectedChannels, onSelectChannel, onRemoveCha
             </Button>
           ) : (
             <Button
-              onClick={async () => {
+              onClick={() => {
                 console.log('ChannelSelector - Selecting channel:', channel);
                 
-                // Ensure channel has a YouTube ID
-                let channelToSelect = { ...channel };
-                
+                // Check if channel has a YouTube ID
                 if (!channel.channelId && !channel.youtube_channel_id) {
-                  console.log('Channel missing YouTube ID, fetching...');
-                  try {
-                    const response = await fetch('/api/channels/lookup', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ channelName: channel.title })
-                    });
-                    
-                    if (response.ok) {
-                      const data = await response.json();
-                      channelToSelect.channelId = data.channelId;
-                      channelToSelect.youtube_channel_id = data.channelId;
-                      console.log(`Found YouTube ID: ${data.channelId}`);
-                    }
-                  } catch (error) {
-                    console.error('Failed to lookup channel ID:', error);
-                  }
+                  console.log('Channel missing YouTube ID, prompting user to use URL method');
+                  // Show toast with instructions
+                  toast({
+                    title: "YouTube ID Required",
+                    description: "Please use the URL input method to add this channel. Switch to URL mode and paste the channel's YouTube URL.",
+                    variant: "destructive",
+                  });
+                  // Auto-switch to URL mode for convenience
+                  setInputMode('url');
+                  return;
                 }
                 
-                onSelectChannel(channelToSelect);
+                onSelectChannel(channel);
               }}
               disabled={selectedChannels.length >= maxChannels}
               size="sm"
@@ -267,31 +326,92 @@ export function ChannelSelector({ selectedChannels, onSelectChannel, onRemoveCha
         </div>
       )}
 
-      {/* Search */}
+      {/* Mode Toggle */}
       <div className="space-y-3">
-        <h4 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-          Search Channels
-        </h4>
-        <div className="flex gap-2">
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder="Search for channels..."
-            className="glass-input flex-1"
-          />
-          <Button
-            onClick={handleSearch}
-            disabled={isSearching || !searchQuery.trim()}
-            className="glass-button"
-          >
-            {isSearching ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Search className="h-4 w-4" />
-            )}
-          </Button>
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+            Add Channels
+          </h4>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setInputMode('search')}
+              size="sm"
+              variant={inputMode === 'search' ? 'default' : 'ghost'}
+              className={inputMode === 'search' ? 'glass-button bg-purple-500/20' : 'text-gray-400'}
+            >
+              <Search className="h-4 w-4 mr-1" />
+              Search
+            </Button>
+            <Button
+              onClick={() => setInputMode('url')}
+              size="sm"
+              variant={inputMode === 'url' ? 'default' : 'ghost'}
+              className={inputMode === 'url' ? 'glass-button bg-purple-500/20' : 'text-gray-400'}
+            >
+              <Link className="h-4 w-4 mr-1" />
+              URL
+            </Button>
+          </div>
         </div>
+
+        {/* Search Input */}
+        {inputMode === 'search' && (
+          <div className="flex gap-2">
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Search for channels or paste YouTube URL..."
+              className="glass-input flex-1"
+            />
+            <Button
+              onClick={handleSearch}
+              disabled={isSearching || !searchQuery.trim()}
+              className="glass-button"
+            >
+              {isSearching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* URL Input */}
+        {inputMode === 'url' && (
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                value={urlInput}
+                onChange={(e) => {
+                  setUrlInput(e.target.value);
+                  setUrlError('');
+                }}
+                onKeyPress={(e) => e.key === 'Enter' && handleUrlAdd()}
+                placeholder="Paste YouTube channel URL (e.g., youtube.com/@channelname)"
+                className="glass-input flex-1"
+              />
+              <Button
+                onClick={() => handleUrlAdd()}
+                disabled={isFetchingUrl || !urlInput.trim() || selectedChannels.length >= maxChannels}
+                className="glass-button"
+              >
+                {isFetchingUrl ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            {urlError && (
+              <p className="text-sm text-red-400">{urlError}</p>
+            )}
+            <div className="text-xs text-gray-500">
+              Supported formats: youtube.com/@handle, youtube.com/channel/ID, youtube.com/c/customname
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Search Results */}

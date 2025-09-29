@@ -1,15 +1,30 @@
-'use client';
+"use client";
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, BarChart3, Trash2, RefreshCw, Video, Users, Mic, Sparkles } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { calculateChannelMetrics } from '@/lib/utils/channel-metrics';
-import { ChannelAnalyzer } from '@/components/channel/channel-analyzer';
-import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { useState, useEffect, use } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  BarChart3,
+  Trash2,
+  RefreshCw,
+  Video,
+  Users,
+  Mic,
+  Sparkles,
+} from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { toast } from "sonner";
+import { calculateChannelMetrics } from "@/lib/utils/channel-metrics";
+import { ChannelAnalyzer } from "@/components/channel/channel-analyzer";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 export default function ChannelDetailPage({ params }) {
   const router = useRouter();
@@ -17,7 +32,7 @@ export default function ChannelDetailPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false });
-  
+
   // Unwrap params using React.use()
   const resolvedParams = use(params);
   const channelId = resolvedParams.id;
@@ -32,14 +47,14 @@ export default function ChannelDetailPage({ params }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch channel');
+        throw new Error(data.error || "Failed to fetch channel");
       }
 
       setChannel(data.channel);
     } catch (error) {
-      console.error('Error fetching channel:', error);
-      toast.error('Failed to load channel');
-      router.push('/channels');
+      console.error("Error fetching channel:", error);
+      toast.error("Failed to load channel");
+      router.push("/channels");
     } finally {
       setLoading(false);
     }
@@ -49,20 +64,20 @@ export default function ChannelDetailPage({ params }) {
     setRefreshing(true);
     try {
       const response = await fetch(`/api/channels/${channelId}`, {
-        method: 'PUT',
+        method: "PUT",
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to refresh channel');
+        throw new Error(data.error || "Failed to refresh channel");
       }
 
       setChannel(data.channel);
-      toast.success('Channel data refreshed');
+      toast.success("Channel data refreshed");
     } catch (error) {
-      console.error('Error refreshing channel:', error);
-      toast.error('Failed to refresh channel');
+      console.error("Error refreshing channel:", error);
+      toast.error("Failed to refresh channel");
     } finally {
       setRefreshing(false);
     }
@@ -74,21 +89,21 @@ export default function ChannelDetailPage({ params }) {
 
   const handleDeleteConfirm = async () => {
     setDeleteModal({ isOpen: false });
-    
+
     try {
       const response = await fetch(`/api/channels/${channelId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete channel');
+        throw new Error("Failed to delete channel");
       }
 
-      toast.success('Channel removed successfully');
-      router.push('/channels');
+      toast.success("Channel removed successfully");
+      router.push("/channels");
     } catch (error) {
-      console.error('Error deleting channel:', error);
-      toast.error('Failed to remove channel');
+      console.error("Error deleting channel:", error);
+      toast.error("Failed to remove channel");
     }
   };
 
@@ -116,22 +131,26 @@ export default function ChannelDetailPage({ params }) {
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 -z-10" />
       <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
-      
+
       <div className="relative">
         {/* Header */}
         <div className="mb-8">
           <Link href="/channels">
-            <Button variant="ghost" size="sm" className="mb-4 text-white hover:text-white hover:bg-white/10">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mb-4 text-white hover:text-white hover:bg-white/10"
+            >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Channels
             </Button>
           </Link>
-          
+
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">
               {channel.thumbnail_url ? (
-                <img 
-                  src={channel.thumbnail_url} 
+                <img
+                  src={channel.thumbnail_url}
                   alt={channel.name || channel.title}
                   className="w-20 h-20 rounded-full object-cover border-2 border-white/20"
                 />
@@ -141,13 +160,15 @@ export default function ChannelDetailPage({ params }) {
                 </div>
               )}
               <div>
-                <h1 className="text-3xl font-bold tracking-tight text-white">{channel.name || channel.title}</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-white">
+                  {channel.name || channel.title}
+                </h1>
                 <p className="text-white/70 mt-1">
                   {channel.subscriber_count?.toLocaleString() || 0} subscribers
                 </p>
               </div>
             </div>
-            
+
             <div className="flex gap-2">
               <Button
                 variant="secondary"
@@ -156,7 +177,9 @@ export default function ChannelDetailPage({ params }) {
                 disabled={refreshing}
                 className="bg-white/90 hover:bg-white text-black"
               >
-                <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+                />
                 Refresh
               </Button>
               <Button
@@ -172,209 +195,423 @@ export default function ChannelDetailPage({ params }) {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
-          <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-white/70">Total Views</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-white">
-                {channel.view_count?.toLocaleString() || '0'}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-white/70">Videos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-white">
-                {channel.video_count || 0}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-white/70">Channel Score</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-white">
-                {metrics.performanceScore}
-                <span className="text-sm font-normal text-white/50">/100</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Remix Channel Cards - Show audience and voice profile for remix channels */}
-        {channel.is_remix && (
-          <div className="grid gap-4 md:grid-cols-2 mt-8">
-            {/* Audience Card */}
+        {/* Stats Cards - Only show for non-remix channels */}
+        {!channel.is_remix && (
+          <div className="grid gap-4 md:grid-cols-3 mb-6">
             <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Target Audience
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-white/70">
+                  Total Views
                 </CardTitle>
-                <CardDescription className="text-white/60">
-                  Combined audience profile from remixed channels
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                {channel.audience_description ? (
-                  <div className="space-y-4">
-                    <p className="text-white/90 text-sm leading-relaxed">
-                      {channel.audience_description}
-                    </p>
-                    {channel.analytics_data?.audience && (
-                      <div className="space-y-3 pt-3 border-t border-white/10">
-                        {channel.analytics_data.audience.interests && (
-                          <div>
-                            <p className="text-xs font-medium text-white/60 mb-2">Key Interests</p>
-                            <div className="flex flex-wrap gap-2">
-                              {channel.analytics_data.audience.interests.slice(0, 5).map((interest, i) => (
-                                <span
-                                  key={i}
-                                  className="px-2 py-1 bg-purple-500/20 text-purple-200 text-xs rounded-full"
-                                >
-                                  {interest}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {channel.analytics_data.audience.demographics && (
-                          <div>
-                            <p className="text-xs font-medium text-white/60 mb-2">Demographics</p>
-                            <p className="text-white/80 text-xs">
-                              {Object.entries(channel.analytics_data.audience.demographics)
-                                .map(([key, value]) => `${key}: ${value}`)
-                                .join(' • ')}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-white/50 text-sm">
-                    No audience analysis available yet
-                  </p>
-                )}
+                <div className="text-3xl font-bold text-white">
+                  {channel.view_count?.toLocaleString() || "0"}
+                </div>
               </CardContent>
             </Card>
 
-            {/* Voice Profile Card */}
             <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Mic className="h-5 w-5" />
-                  Voice Profile
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-white/70">
+                  Videos
                 </CardTitle>
-                <CardDescription className="text-white/60">
-                  Combined voice characteristics from remixed channels
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                {(channel.voice_profile && Object.keys(channel.voice_profile).length > 0) || 
-                 (channel.analytics_data?.voiceProfile && Object.keys(channel.analytics_data.voiceProfile).length > 0) ? (
-                  <div className="space-y-4">
-                    {(() => {
-                      const voiceData = channel.voice_profile || channel.analytics_data?.voiceProfile || {};
-                      return (
-                        <>
-                          {voiceData.tone && (
-                            <div>
-                              <p className="text-xs font-medium text-white/60 mb-2">Tone</p>
-                              <div className="flex flex-wrap gap-2">
-                                {(Array.isArray(voiceData.tone) ? voiceData.tone : [voiceData.tone]).map((t, i) => (
-                                  <span
-                                    key={i}
-                                    className="px-2 py-1 bg-blue-500/20 text-blue-200 text-xs rounded-full"
-                                  >
-                                    {t}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {voiceData.style && (
-                            <div>
-                              <p className="text-xs font-medium text-white/60 mb-2">Style</p>
-                              <div className="flex flex-wrap gap-2">
-                                {(Array.isArray(voiceData.style) ? voiceData.style : [voiceData.style]).map((s, i) => (
-                                  <span
-                                    key={i}
-                                    className="px-2 py-1 bg-green-500/20 text-green-200 text-xs rounded-full"
-                                  >
-                                    {s}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {voiceData.energy && (
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs font-medium text-white/60">Energy Level</p>
-                              <span className="text-white/80 text-sm capitalize">{voiceData.energy}</span>
-                            </div>
-                          )}
-                          {voiceData.pace && (
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs font-medium text-white/60">Speaking Pace</p>
-                              <span className="text-white/80 text-sm capitalize">{voiceData.pace}</span>
-                            </div>
-                          )}
-                          {voiceData.catchphrases && voiceData.catchphrases.length > 0 && (
-                            <div>
-                              <p className="text-xs font-medium text-white/60 mb-2">Signature Phrases</p>
-                              <div className="space-y-1">
-                                {voiceData.catchphrases.slice(0, 3).map((phrase, i) => (
-                                  <p key={i} className="text-white/70 text-xs italic">"{phrase}"</p>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  <p className="text-white/50 text-sm">
-                    No voice profile configured yet
-                  </p>
-                )}
+                <div className="text-3xl font-bold text-white">
+                  {channel.video_count || 0}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-white/70">
+                  Channel Score
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-white">
+                  {metrics.performanceScore}
+                  <span className="text-sm font-normal text-white/50">/100</span>
+                </div>
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* Source Channels for Remix */}
-        {channel.is_remix && channel.remix_source_ids && channel.remix_source_ids.length > 0 && (
-          <Card className="mt-8 bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+        {/* Audience and Voice Profile Cards - Show for all channels */}
+        <div className="grid gap-4 md:grid-cols-2 mt-8">
+          {/* Audience Card */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                Remix Sources
+                <Users className="h-5 w-5" />
+                Target Audience
               </CardTitle>
               <CardDescription className="text-white/60">
-                Channels combined to create this remix
+                {channel.is_remix
+                  ? "Combined audience profile from remixed channels"
+                  : "Your target audience profile"}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-white/70 text-sm">
-                This channel combines strategies from {channel.remix_source_ids.length} source channels
-              </p>
+              {(() => {
+                const audienceData =
+                  channel.remix_analysis?.analysis_data?.audience
+                    ?.audience_analysis ||
+                  channel.audience_analysis?.audience_analysis ||
+                  channel.analytics_data?.audience;
+                const hasAudienceData =
+                  channel.audience_description || audienceData;
+
+                if (!hasAudienceData) {
+                  return (
+                    <p className="text-white/50 text-sm">
+                      No audience analysis available yet
+                    </p>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {/* Audience Description */}
+                    {channel.audience_description && (
+                      <p className="text-white/90 text-sm leading-relaxed">
+                        {channel.audience_description}
+                      </p>
+                    )}
+
+                    {/* Demographics */}
+                    {audienceData?.demographic_profile && (
+                      <div className="space-y-3 pt-3 border-t border-white/10">
+                        <p className="text-xs font-medium text-white/60 mb-2">
+                          Demographics
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          {audienceData.demographic_profile.age_distribution
+                            ?.median_age && (
+                            <div>
+                              <span className="text-white/50">Median Age:</span>
+                              <span className="text-white ml-2">
+                                {
+                                  audienceData.demographic_profile
+                                    .age_distribution.median_age
+                                }
+                              </span>
+                            </div>
+                          )}
+                          {audienceData.demographic_profile
+                            .gender_distribution && (
+                            <div>
+                              <span className="text-white/50">Gender:</span>
+                              <span className="text-white ml-2">
+                                {Object.entries(
+                                  audienceData.demographic_profile
+                                    .gender_distribution
+                                )
+                                  .slice(0, 2)
+                                  .map(([k, v]) => `${k}: ${v}`)
+                                  .join(", ")}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Core Values */}
+                    {audienceData?.psychographic_analysis?.core_values && (
+                      <div className="pt-3 border-t border-white/10">
+                        <p className="text-xs font-medium text-white/60 mb-2">
+                          Core Values
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {audienceData.psychographic_analysis.core_values
+                            .slice(0, 3)
+                            .map((value, i) => (
+                              <span
+                                key={i}
+                                className="px-2 py-1 bg-purple-500/20 text-purple-200 text-xs rounded-full"
+                              >
+                                {value}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Common Interests */}
+                    {audienceData?.audience_overlap?.common_interests && (
+                      <div className="pt-3 border-t border-white/10">
+                        <p className="text-xs font-medium text-white/60 mb-2">
+                          Common Interests
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {audienceData.audience_overlap.common_interests
+                            .slice(0, 5)
+                            .map((interest, i) => (
+                              <span
+                                key={i}
+                                className="px-2 py-1 bg-purple-500/20 text-purple-200 text-xs rounded-full"
+                              >
+                                {interest}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
-        )}
+
+          {/* Voice Profile Card */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Mic className="h-5 w-5" />
+                Voice Profile
+              </CardTitle>
+              <CardDescription className="text-white/60">
+                {channel.is_remix
+                  ? "Combined voice characteristics from remixed channels"
+                  : "Your channel's voice characteristics"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                // Try multiple sources for voice data
+                let voiceData = {};
+
+                // Debug logging
+                console.log("Voice Profile Debug:", {
+                  combined_voice_profile: channel.combined_voice_profile,
+                  remix_data_voice: channel.remix_data?.combined_voice_profile,
+                  voice_profile: channel.voice_profile,
+                  analytics_voice: channel.analytics_data?.voiceProfile
+                });
+
+                // First try combined_voice_profile from various sources
+                if (
+                  channel.combined_voice_profile &&
+                  typeof channel.combined_voice_profile === "object" &&
+                  Object.keys(channel.combined_voice_profile).length > 0
+                ) {
+                  voiceData = channel.combined_voice_profile;
+                  console.log("Using channel.combined_voice_profile", voiceData);
+                }
+                // Try from remix_data
+                else if (
+                  channel.remix_data?.combined_voice_profile &&
+                  typeof channel.remix_data.combined_voice_profile ===
+                    "object" &&
+                  Object.keys(channel.remix_data.combined_voice_profile)
+                    .length > 0
+                ) {
+                  voiceData = channel.remix_data.combined_voice_profile;
+                  console.log("Using channel.remix_data.combined_voice_profile", voiceData);
+                }
+                // Then try regular voice_profile
+                else if (
+                  channel.voice_profile &&
+                  typeof channel.voice_profile === "object" &&
+                  Object.keys(channel.voice_profile).length > 0
+                ) {
+                  voiceData = channel.voice_profile;
+                  console.log("Using channel.voice_profile", voiceData);
+                }
+                // Try analytics data
+                else if (
+                  channel.analytics_data?.voiceProfile &&
+                  Object.keys(channel.analytics_data.voiceProfile).length > 0
+                ) {
+                  voiceData = channel.analytics_data.voiceProfile;
+                  console.log("Using channel.analytics_data.voiceProfile", voiceData);
+                }
+
+                // Check if we have actual voice properties (not just an empty object)
+                // Voice data can be nested under 'basic' or at the root level
+                const basicVoice = voiceData?.basic || voiceData;
+                const hasVoiceData =
+                  basicVoice &&
+                  Object.keys(basicVoice).length > 0 &&
+                  (basicVoice.tone ||
+                    basicVoice.style ||
+                    basicVoice.energy ||
+                    basicVoice.pace ||
+                    basicVoice.personality ||
+                    basicVoice.catchphrases ||
+                    basicVoice.signature_phrases);
+
+                if (!hasVoiceData) {
+                  return (
+                    <div className="text-center py-4">
+                      <p className="text-white/50 text-sm mb-2">
+                        No voice profile configured yet
+                      </p>
+                      {channel.is_remix && (
+                        <p className="text-white/30 text-xs">
+                          Voice analysis will be generated when the remix is
+                          analyzed
+                        </p>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {basicVoice.tone && (
+                      <div>
+                        <p className="text-xs font-medium text-white/60 mb-2">
+                          Tone
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {(Array.isArray(basicVoice.tone)
+                            ? basicVoice.tone
+                            : [basicVoice.tone]
+                          )
+                            .filter(Boolean)
+                            .map((t, i) => (
+                              <span
+                                key={i}
+                                className="px-2 py-1 bg-blue-500/20 text-blue-200 text-xs rounded-full"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                    {basicVoice.style && (
+                      <div>
+                        <p className="text-xs font-medium text-white/60 mb-2">
+                          Style
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {(Array.isArray(basicVoice.style)
+                            ? basicVoice.style
+                            : [basicVoice.style]
+                          ).map((s, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-1 bg-green-500/20 text-green-200 text-xs rounded-full"
+                            >
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {basicVoice.energy && (
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-medium text-white/60">
+                          Energy Level
+                        </p>
+                        <span className="text-white/80 text-sm capitalize">
+                          {basicVoice.energy}
+                        </span>
+                      </div>
+                    )}
+                    {basicVoice.pace && (
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-medium text-white/60">
+                          Speaking Pace
+                        </p>
+                        <span className="text-white/80 text-sm capitalize">
+                          {basicVoice.pace}
+                        </span>
+                      </div>
+                    )}
+                    {basicVoice.personality && (
+                      <div>
+                        <p className="text-xs font-medium text-white/60 mb-2">
+                          Personality
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {(Array.isArray(basicVoice.personality)
+                            ? basicVoice.personality
+                            : [basicVoice.personality]
+                          ).map((p, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-1 bg-purple-500/20 text-purple-200 text-xs rounded-full"
+                            >
+                              {p}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {basicVoice.summary && (
+                      <div>
+                        <p className="text-xs font-medium text-white/60 mb-2">
+                          Voice Summary
+                        </p>
+                        <p className="text-white/70 text-xs leading-relaxed">
+                          {basicVoice.summary}
+                        </p>
+                      </div>
+                    )}
+                    {(basicVoice.signature_phrases || basicVoice.catchphrases) && 
+                      (basicVoice.signature_phrases || basicVoice.catchphrases).length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-white/60 mb-2">
+                            Signature Phrases
+                          </p>
+                          <div className="space-y-1">
+                            {(basicVoice.signature_phrases || basicVoice.catchphrases)
+                              .slice(0, 3)
+                              .map((phrase, i) => (
+                                <p
+                                  key={i}
+                                  className="text-white/70 text-xs italic"
+                                >
+                                  "{phrase}"
+                                </p>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Source Channels for Remix */}
+        {channel.is_remix &&
+          channel.remix_source_ids &&
+          channel.remix_source_ids.length > 0 && (
+            <Card className="mt-8 bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  Remix Sources
+                </CardTitle>
+                <CardDescription className="text-white/60">
+                  Channels combined to create this remix
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-white/70 text-sm">
+                  This channel combines strategies from{" "}
+                  {channel.remix_source_ids.length} source channels
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
         {/* Channel Analysis Component - Now integrated directly */}
         <div className="mt-8">
-          <ChannelAnalyzer channelId={channelId} />
+          <ChannelAnalyzer 
+            channelId={channelId} 
+            isRemix={channel.is_remix}
+            channelData={channel}
+          />
         </div>
 
         {/* Channel Information Card */}
@@ -385,14 +622,20 @@ export default function ChannelDetailPage({ params }) {
           <CardContent>
             <dl className="space-y-4">
               <div>
-                <dt className="text-sm font-medium text-white/60">YouTube ID</dt>
-                <dd className="text-sm mt-1 font-mono text-white">{channel.youtube_channel_id}</dd>
+                <dt className="text-sm font-medium text-white/60">
+                  YouTube ID
+                </dt>
+                <dd className="text-sm mt-1 font-mono text-white">
+                  {channel.youtube_channel_id}
+                </dd>
               </div>
               {channel.custom_url && (
                 <div>
-                  <dt className="text-sm font-medium text-white/60">Custom URL</dt>
+                  <dt className="text-sm font-medium text-white/60">
+                    Custom URL
+                  </dt>
                   <dd className="text-sm mt-1">
-                    <a 
+                    <a
                       href={`https://youtube.com/${channel.custom_url}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -405,7 +648,9 @@ export default function ChannelDetailPage({ params }) {
               )}
               {channel.description && (
                 <div>
-                  <dt className="text-sm font-medium text-white/60">Description</dt>
+                  <dt className="text-sm font-medium text-white/60">
+                    Description
+                  </dt>
                   <dd className="text-sm mt-1 text-white/80 line-clamp-3">
                     {channel.description}
                   </dd>
@@ -413,7 +658,9 @@ export default function ChannelDetailPage({ params }) {
               )}
               <div>
                 <dt className="text-sm font-medium text-white/60">Connected</dt>
-                <dd className="text-sm mt-1 text-white">{new Date(channel.created_at).toLocaleDateString()}</dd>
+                <dd className="text-sm mt-1 text-white">
+                  {new Date(channel.created_at).toLocaleDateString()}
+                </dd>
               </div>
             </dl>
           </CardContent>

@@ -41,16 +41,16 @@ export function RemixChannelWizard() {
   const [isCreating, setIsCreating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState("");
+  const [analysisProgress, setAnalysisProgress] = useState(0);
 
-  // Debug selectedChannels state changes
+  // Monitor selectedChannels for validation
   useEffect(() => {
-    console.log(
-      "selectedChannels state updated:",
-      selectedChannels.length,
-      "channels"
-    );
     if (selectedChannels.length > 0) {
-      console.log("First channel:", selectedChannels[0]);
+      // Validate all channels have YouTube IDs
+      const missingIds = selectedChannels.filter(c => !c.youtube_channel_id && !c.channelId);
+      if (missingIds.length > 0) {
+        console.warn('Channels missing YouTube IDs:', missingIds);
+      }
     }
   }, [selectedChannels]);
 
@@ -76,13 +76,31 @@ export function RemixChannelWizard() {
   ];
 
   const handleNext = async () => {
-    if (currentStep === 0 && selectedChannels.length < 2) {
-      toast({
-        title: "Select More Channels",
-        description: "Please select at least 2 channels to remix",
-        variant: "destructive",
+    if (currentStep === 0) {
+      if (selectedChannels.length < 2) {
+        toast({
+          title: "Select More Channels",
+          description: "Please select at least 2 channels to remix",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate all channels have YouTube IDs
+      const invalidChannels = selectedChannels.filter(channel => {
+        const ytId = channel.youtube_channel_id || channel.channelId;
+        return !ytId || ytId === '';
       });
-      return;
+
+      if (invalidChannels.length > 0) {
+        toast({
+          title: "Invalid Channel Selection",
+          description: `${invalidChannels.length} channel(s) are missing YouTube IDs. Please re-select using the URL input option.`,
+          variant: "destructive",
+        });
+        console.error('Channels missing YouTube IDs:', invalidChannels);
+        return;
+      }
     }
 
     if (currentStep === 1) {
@@ -103,37 +121,35 @@ export function RemixChannelWizard() {
 
   const analyzeRemix = async () => {
     setIsAnalyzing(true);
-    setAnalysisStep("Analyzing remix...");
+    setAnalysisStep("Initializing analysis...");
+    setAnalysisProgress(0);
 
     try {
-      // Simulate progress steps
-      setTimeout(() => setAnalysisStep("Generating voice profile..."), 1000);
-      setTimeout(
-        () => setAnalysisStep("Generating audience insights..."),
-        2000
-      );
-      setTimeout(() => setAnalysisStep("Generating content ideas..."), 3000);
-
-      console.log(
-        "Selected channels full data:",
-        JSON.stringify(selectedChannels, null, 2)
-      );
+      // Extract YouTube channel IDs (not database IDs)
       const channelIds = selectedChannels.map((c) => {
-        // Log all possible ID fields
-        console.log("Channel object keys:", Object.keys(c));
-        console.log("Channel details:", {
-          id: c.id,
-          channelId: c.channelId,
-          youtube_channel_id: c.youtube_channel_id,
-          title: c.title,
-        });
-        const id = c.id || c.channelId || c.youtube_channel_id;
-        console.log("Extracted ID:", id);
-        return id;
-      });
-      console.log("Final channelIds for analysis:", channelIds);
+        // Prioritize youtube_channel_id, then channelId
+        const ytId = c.youtube_channel_id || c.channelId;
+        if (!ytId) {
+          console.error('Channel missing YouTube ID:', c);
+        }
+        return ytId;
+      }).filter(Boolean); // Remove any null/undefined values
 
-      const response = await fetch("/api/channels/remix/analyze", {
+      if (channelIds.length !== selectedChannels.length) {
+        console.error('Some channels are missing YouTube IDs');
+        toast({
+          title: "Channel Data Error",
+          description: "Some channels are missing YouTube IDs. Please re-select them.",
+          variant: "destructive",
+        });
+        setIsAnalyzing(false);
+        return;
+      }
+
+      console.log("Starting SSE analysis for channels:", channelIds);
+
+      // Use Server-Sent Events for real-time progress updates
+      const response = await fetch("/api/channels/remix/analyze-sse", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -145,15 +161,56 @@ export function RemixChannelWizard() {
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        console.error("Analysis failed:", data);
-        throw new Error(data.error || "Failed to analyze remix");
+        throw new Error("Failed to start analysis");
       }
 
-      setAnalysisData(data);
-      setAnalysisStep("");
+      // Set up SSE reader
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.step) {
+                if (data.step.startsWith('error:')) {
+                  throw new Error(data.step.slice(6));
+                }
+                setAnalysisStep(data.step);
+              }
+              
+              if (data.progress !== undefined) {
+                setAnalysisProgress(data.progress);
+              }
+              
+              if (data.type === 'complete' && data.result) {
+                setAnalysisData(data.result);
+                setAnalysisStep("Analysis complete!");
+                setAnalysisProgress(100);
+                setTimeout(() => {
+                  setAnalysisStep("");
+                  setAnalysisProgress(0);
+                }, 1500);
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
+            }
+          }
+        }
+      }
+
     } catch (error) {
       console.error("Analysis error:", error);
       toast({
@@ -287,19 +344,44 @@ export function RemixChannelWizard() {
         {/* Loading State */}
         {isAnalyzing && (
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="relative">
+            <div className="relative mb-8">
               <div className="w-20 h-20 rounded-full border-4 border-purple-200 animate-pulse"></div>
               <div className="absolute inset-0 w-20 h-20 rounded-full border-4 border-t-purple-500 animate-spin"></div>
             </div>
-            <h3 className="text-xl font-bold text-white mt-6 mb-2">
+            
+            <h3 className="text-xl font-bold text-white mb-4">
               Analyzing Your Remix
             </h3>
-            <p className="text-gray-400 animate-pulse">{analysisStep}</p>
-            <div className="mt-4 space-y-2 text-center">
-              <p className="text-sm text-gray-500">
-                Combining {selectedChannels.length} channels
+            
+            <div className="w-full max-w-md space-y-4">
+              {/* Progress bar */}
+              <div className="relative">
+                <Progress value={analysisProgress} className="h-2" />
+                <span className="absolute -top-6 right-0 text-xs text-gray-400">
+                  {analysisProgress}%
+                </span>
+              </div>
+              
+              {/* Status text */}
+              <p className="text-gray-400 text-center animate-pulse min-h-[24px]">
+                {analysisStep}
               </p>
-              <p className="text-sm text-gray-500">May take a couple mintues</p>
+            </div>
+            
+            <div className="mt-6 space-y-2 text-center">
+              <p className="text-sm text-gray-500">
+                Combining strategies from {selectedChannels.length} channels
+              </p>
+              <div className="flex flex-wrap justify-center gap-2 mt-2">
+                {selectedChannels.map((channel, idx) => (
+                  <span key={idx} className="text-xs px-2 py-1 bg-gray-800 rounded-full text-gray-400">
+                    {channel.title || channel.name}
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs text-gray-600 mt-4">
+                This may take a few minutes for thorough analysis
+              </p>
             </div>
           </div>
         )}
@@ -309,17 +391,22 @@ export function RemixChannelWizard() {
           <ChannelSelector
             selectedChannels={selectedChannels}
             onSelectChannel={(channel) => {
-              console.log(
-                "Selecting channel:",
-                JSON.stringify(channel, null, 2)
-              );
-              console.log("Channel has these keys:", Object.keys(channel));
+              // Validate channel has YouTube ID before adding
+              const ytId = channel.youtube_channel_id || channel.channelId;
+              if (!ytId) {
+                console.error('Attempted to select channel without YouTube ID:', channel);
+                toast({
+                  title: "Invalid Channel",
+                  description: "This channel is missing a YouTube ID. Please try selecting it via URL.",
+                  variant: "destructive",
+                });
+                return;
+              }
+
               if (selectedChannels.length < 3) {
                 const newChannels = [...selectedChannels, channel];
                 console.log(
-                  "Updated selectedChannels:",
-                  newChannels.length,
-                  "channels"
+                  `Added channel: ${channel.title} (${ytId})`
                 );
                 setSelectedChannels(newChannels);
               }
@@ -327,7 +414,10 @@ export function RemixChannelWizard() {
             onRemoveChannel={(channelId) => {
               setSelectedChannels(
                 selectedChannels.filter(
-                  (c) => (c.id || c.channelId) !== channelId
+                  (c) => {
+                    const cId = c.youtube_channel_id || c.channelId || c.id;
+                    return cId !== channelId;
+                  }
                 )
               );
             }}

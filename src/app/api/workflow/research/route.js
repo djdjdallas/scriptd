@@ -1,15 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-
-// Helper function to extract relevant snippet from content
-function extractRelevantSnippet(content, index) {
-  // Try to find a relevant sentence from the content
-  const sentences = content.split('. ');
-  if (sentences[index]) {
-    return sentences[index] + '.';
-  }
-  return content.substring(index * 100, (index + 1) * 100) + '...';
-}
+import ResearchService from '@/lib/ai/research-service';
 
 export async function POST(request) {
   try {
@@ -21,209 +12,51 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { query, topic, workflowId } = await request.json();
+    const { query, topic, workflowId, context } = await request.json();
 
     if (!query) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
-    // Use Perplexity API for comprehensive research
-    if (process.env.PERPLEXITY_API_KEY) {
-      try {
-        const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: 'sonar-small-online', // or 'sonar-medium-online' for better quality
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a research assistant helping to gather information for YouTube video scripts. Provide comprehensive, factual information with sources.'
-              },
-              {
-                role: 'user',
-                content: `Research the following topic for a YouTube video script: "${query}". ${topic ? `The main video topic is: ${topic}.` : ''} Please provide key facts, statistics, recent developments, and interesting angles. Include sources.`
-              }
-            ],
-            stream: false,
-            return_citations: true,
-            return_related_questions: true,
-            search_recency_filter: 'month', // Get recent information
-            top_p: 0.9,
-            temperature: 0.1 // Low temperature for factual responses
-          })
-        });
+    // Use the new ResearchService with Perplexity primary and Claude fallback
+    const researchResult = await ResearchService.performResearch({
+      query,
+      topic,
+      context,
+      includeSources: true
+    });
 
-        if (perplexityResponse.ok) {
-          const perplexityData = await perplexityResponse.json();
-          
-          // Extract the main content
-          const mainContent = perplexityData.choices?.[0]?.message?.content || '';
-          
-          // Parse citations from the response
-          const citations = perplexityData.citations || [];
-          
-          // Format results to match our structure
-          const results = citations.map((citation, index) => ({
-            url: citation.url || citation,
-            title: citation.title || `Source ${index + 1}`,
-            snippet: citation.snippet || citation.text || extractRelevantSnippet(mainContent, index),
-            relevance: citation.score || 0.8,
-            isVerified: true
-          }));
+    if (researchResult.success) {
+      // Charge 1 credit for research
+      const creditsUsed = researchResult.creditsUsed || 1;
+      
+      // Update user credits
+      const { data: currentCredits } = await supabase
+        .from('user_credits')
+        .select('credits_used')
+        .eq('user_id', user.id)
+        .single();
 
-          // Add the synthesized answer as the first "source"
-          if (mainContent) {
-            results.unshift({
-              url: '#synthesized',
-              title: '🤖 AI Research Summary',
-              snippet: mainContent.substring(0, 500) + (mainContent.length > 500 ? '...' : ''),
-              fullContent: mainContent,
-              relevance: 1.0,
-              isVerified: true,
-              isSynthesized: true
-            });
-          }
-
-          // Extract related questions if available
-          const relatedQuestions = perplexityData.related_questions || [];
-
-          // Charge 1 credit for research
-          const creditsUsed = 1;
-          
-          // Update user credits
-          const { data: currentCredits } = await supabase
-            .from('user_credits')
-            .select('credits_used')
-            .eq('user_id', user.id)
-            .single();
-
-          // Update with incremented value
-          await supabase
-            .from('user_credits')
-            .update({ 
-              credits_used: (currentCredits?.credits_used || 0) + creditsUsed
-            })
-            .eq('user_id', user.id);
-          
-          return NextResponse.json({
-            results,
-            relatedQuestions,
-            creditsUsed,
-            researchSummary: mainContent
-          });
-        }
-      } catch (perplexityError) {
-        console.error('Perplexity API error:', perplexityError);
-      }
+      // Update with incremented value
+      await supabase
+        .from('user_credits')
+        .update({ 
+          credits_used: (currentCredits?.credits_used || 0) + creditsUsed
+        })
+        .eq('user_id', user.id);
+      
+      return NextResponse.json({
+        results: researchResult.results,
+        relatedQuestions: researchResult.relatedQuestions,
+        creditsUsed,
+        researchSummary: researchResult.summary,
+        insights: researchResult.insights,
+        searchProvider: researchResult.provider,
+        citations: researchResult.citations
+      });
     }
 
-    // Try Claude Web Search as fallback
-    if (process.env.ANTHROPIC_API_KEY) {
-      try {
-        const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': process.env.ANTHROPIC_API_KEY,
-            'anthropic-version': '2023-06-01'
-          },
-          body: JSON.stringify({
-            model: 'claude-3-haiku-20240307',
-            max_tokens: 1024,
-            temperature: 0.1,
-            system: 'You are a research assistant. Search the web for information and return relevant results in JSON format.',
-            messages: [
-              {
-                role: 'user',
-                content: `Search the web for: "${query}". Return results as JSON with this structure: { "results": [{ "title": "...", "url": "...", "snippet": "..." }], "summary": "..." }`
-              }
-            ],
-            tools: [
-              {
-                type: 'computer_20241022',
-                name: 'web_search',
-                description: 'Search the web for information',
-                input_schema: {
-                  type: 'object',
-                  properties: {
-                    query: { type: 'string' }
-                  },
-                  required: ['query']
-                }
-              }
-            ]
-          })
-        });
-
-        if (claudeResponse.ok) {
-          const claudeData = await claudeResponse.json();
-          
-          // Parse the response to extract search results
-          let results = [];
-          let researchSummary = '';
-          
-          try {
-            const content = claudeData.content?.[0]?.text || '';
-            const parsed = JSON.parse(content);
-            
-            results = parsed.results?.map((item, index) => ({
-              url: item.url,
-              title: item.title,
-              snippet: item.snippet,
-              relevance: 1 - (index * 0.05),
-              isVerified: false
-            })) || [];
-            
-            researchSummary = parsed.summary || `Found ${results.length} results for "${query}"`;
-          } catch (parseError) {
-            // If parsing fails, create mock results from the response
-            console.log('Claude response parsing failed, using fallback');
-          }
-
-          // Suggest related searches
-          const relatedQuestions = [
-            `What are the latest developments in ${query}?`,
-            `How does ${query} work?`,
-            `What are the benefits of ${query}?`,
-            `${query} best practices`,
-            `Common misconceptions about ${query}`
-          ];
-
-          // Charge 1 credit for research
-          const creditsUsed = 1;
-          
-          // Update user credits
-          const { data: currentCredits } = await supabase
-            .from('user_credits')
-            .select('credits_used')
-            .eq('user_id', user.id)
-            .single();
-
-          // Update with incremented value
-          await supabase
-            .from('user_credits')
-            .update({ 
-              credits_used: (currentCredits?.credits_used || 0) + creditsUsed
-            })
-            .eq('user_id', user.id);
-          
-          return NextResponse.json({
-            results,
-            relatedQuestions,
-            creditsUsed,
-            researchSummary,
-            searchProvider: 'claude'
-          });
-        }
-      } catch (claudeError) {
-        console.error('Claude Web Search error:', claudeError);
-      }
-    }
+    // If research service fails, try educational fallback
 
     // If no search APIs are configured, return educational results
     // These are real, useful resources for content creators

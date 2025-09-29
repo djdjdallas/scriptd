@@ -21,7 +21,7 @@ export async function POST(request, { params }) {
     // Get channel from database
     const { data: dbChannel, error: fetchError } = await supabase
       .from('channels')
-      .select('youtube_channel_id')
+      .select('*')
       .eq('id', id)
       .eq('user_id', user.id)
       .single();
@@ -30,7 +30,96 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Channel not found' }, { status: 404 });
     }
 
-    // Fetch fresh channel data
+    // Check if this is a remix channel
+    if (dbChannel.is_remix) {
+      // For remix channels, return the pre-analyzed data
+      const { data: remixData } = await supabase
+        .from('remix_channels')
+        .select('*, source_channel_ids')
+        .eq('channel_id', id)
+        .single();
+
+      if (remixData) {
+        // Check for remix analyses first
+        const { data: remixAnalyses } = await supabase
+          .from('channel_remix_analyses')
+          .select('*')
+          .eq('remix_channel_id', remixData.id)
+          .order('generated_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        const combinedAnalytics = remixData.combined_analytics || {};
+        const analysisData = remixAnalyses?.analysis_data || {};
+        
+        // Calculate combined stats from source channels if needed
+        let totalViews = 0;
+        let totalSubscribers = 0;
+        let totalVideos = 0;
+        
+        // Try to get stats from source channels
+        if (remixData.source_channel_ids && remixData.source_channel_ids.length > 0) {
+          const { data: sourceChannels } = await supabase
+            .from('channels')
+            .select('view_count, subscriber_count, video_count')
+            .in('id', remixData.source_channel_ids);
+          
+          if (sourceChannels) {
+            totalViews = sourceChannels.reduce((sum, ch) => sum + (ch.view_count || 0), 0);
+            totalSubscribers = sourceChannels.reduce((sum, ch) => sum + (ch.subscriber_count || 0), 0);
+            totalVideos = sourceChannels.reduce((sum, ch) => sum + (ch.video_count || 0), 0);
+          }
+        }
+        
+        // Format the response to match expected structure
+        const formattedAnalytics = {
+          channel: {
+            totalViews: totalViews || dbChannel.view_count || 0,
+            subscriberCount: totalSubscribers || dbChannel.subscriber_count || 0,
+            videoCount: totalVideos || dbChannel.video_count || 0,
+            title: dbChannel.name || dbChannel.title,
+            description: dbChannel.description
+          },
+          performance: {
+            avgViewsPerVideo: totalVideos > 0 ? Math.round(totalViews / totalVideos) : 0,
+            viewsToSubscriberRatio: totalSubscribers > 0 ? Math.round((totalViews / totalSubscribers) * 100) : 0,
+            engagementRate: combinedAnalytics.engagementRate || 5,
+            performanceScore: combinedAnalytics.performanceScore || 75,
+            growthPotential: typeof combinedAnalytics.growthPotential === 'number' ? combinedAnalytics.growthPotential : 80
+          },
+          audience: combinedAnalytics.audience || analysisData.audience || {},
+          contentTrends: combinedAnalytics.contentTrends || [],
+          competitorAnalysis: combinedAnalytics.competitorAnalysis || []
+        };
+        
+        // Return the pre-computed remix analysis with proper structure
+        return NextResponse.json({
+          analytics: formattedAnalytics,
+          persona: analysisData.audience?.audience_analysis || combinedAnalytics.audience || {},
+          insights: {
+            strengths: analysisData.insights || combinedAnalytics.insights || [],
+            opportunities: analysisData.recommendations || combinedAnalytics.recommendations || [],
+            metrics: {
+              performanceScore: formattedAnalytics.performance.performanceScore,
+              growthPotential: typeof formattedAnalytics.performance.growthPotential === 'number' ? formattedAnalytics.performance.growthPotential : 80,
+              audienceQuality: 85 // Default high quality for remix
+            }
+          },
+          audienceAnalysis: analysisData.audience?.audience_analysis || combinedAnalytics.audience || {},
+          contentIdeas: combinedAnalytics.contentIdeas || analysisData.recommendations || [],
+          voiceProfile: remixData.combined_voice_profile || combinedAnalytics.voiceProfile || {},
+          isRemix: true,
+          message: 'Remix channel analysis loaded from combined data'
+        });
+      }
+      
+      // If no remix data found, return error for remix channels
+      return NextResponse.json({ 
+        error: 'Remix channel analysis not available. Please recreate the remix.' 
+      }, { status: 400 });
+    }
+
+    // Fetch fresh channel data (only for non-remix channels)
     const channel = await getChannelById(dbChannel.youtube_channel_id);
     
     // Fetch recent videos for analysis

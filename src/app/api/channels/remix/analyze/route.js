@@ -6,8 +6,6 @@ import {
   generateRemixContentIdeas,
   generateAudienceInsights 
 } from '@/lib/ai/remix-analyzer';
-import { getKnownChannelId } from '@/lib/youtube/known-channels';
-import { findChannelIdByName } from '@/lib/youtube/channel-lookup';
 
 export async function POST(request) {
   try {
@@ -120,25 +118,18 @@ export async function POST(request) {
                          providedChannel.youtube_channel_id ||
                          channelId;
         
-        // If no YouTube ID found, try to lookup by channel name
+        // CRITICAL: Reject channels without YouTube IDs to prevent wrong channel selection
         if (!ytChannelId) {
-          const channelTitle = providedChannel.title || providedChannel.name;
-          console.log(`No YouTube ID for "${channelTitle}", attempting lookup...`);
+          const channelTitle = providedChannel.title || providedChannel.name || 'Unknown';
+          console.error(`❌ Channel "${channelTitle}" is missing YouTube channel ID`);
+          console.error('Channel data:', providedChannel);
           
-          // First try known channels (fast)
-          ytChannelId = getKnownChannelId(channelTitle);
-          
-          // If not found in known channels, search YouTube API (slower but comprehensive)
-          if (!ytChannelId) {
-            console.log(`  Not in known channels, searching YouTube...`);
-            ytChannelId = await findChannelIdByName(channelTitle);
-          }
-          
-          if (ytChannelId) {
-            console.log(`  ✅ Found YouTube ID for "${channelTitle}": ${ytChannelId}`);
-          } else {
-            console.log(`  ❌ Could not find YouTube ID for "${channelTitle}"`);
-          }
+          // Do NOT attempt to lookup by name - this causes wrong channels to be selected
+          return NextResponse.json({ 
+            error: 'Invalid channel data',
+            message: `Channel "${channelTitle}" is missing a YouTube channel ID. Please re-select the channel using the URL input option.`,
+            details: 'All channels must have valid YouTube IDs for remix analysis'
+          }, { status: 400 });
         }
         
         channels.push({

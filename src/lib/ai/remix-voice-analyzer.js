@@ -82,11 +82,19 @@ DEEP ANALYSIS REQUIREMENTS:
 TRANSCRIPTS TO ANALYZE:
 ${transcriptText}
 
-Return a detailed JSON voice profile with ALL these categories filled with specific examples from the transcripts. Include:
-- Exact quoted examples for each pattern identified
-- Frequency metrics where applicable
-- Confidence scores for each finding
-- Specific implementation notes for replication`;
+Return ONLY valid JSON (no markdown, no code blocks, just pure JSON). 
+
+CRITICAL JSON RULES:
+- All quotes inside string values MUST be escaped with backslash (\")
+- All newlines in strings must be escaped as \\n
+- No trailing commas in arrays or objects
+- All string values must be properly quoted
+
+Create a detailed voice profile with these categories, using specific examples from the transcripts. Include frequency metrics and confidence scores where applicable.
+
+IMPORTANT: When including example phrases, ensure all quotes are properly escaped. For example:
+Instead of: "She said "hello""
+Use: "She said \\"hello\\""`;
 
   const response = await anthropic.messages.create({
     model: VOICE_MODEL,
@@ -102,107 +110,260 @@ Return a detailed JSON voice profile with ALL these categories filled with speci
   return parseEnhancedVoiceAnalysis(response.content[0].text);
 }
 
-// Parse enhanced voice analysis
+// Parse enhanced voice analysis with improved JSON fixing
 function parseEnhancedVoiceAnalysis(analysisText) {
   try {
-    const parsed = JSON.parse(analysisText);
+    // Clean up markdown code blocks if present
+    let cleanedText = analysisText;
+    if (analysisText.includes('```')) {
+      // Remove markdown code blocks
+      cleanedText = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    }
     
-    // Ensure all required deep analysis fields are present
-    const enhancedProfile = {
-      // Core voice characteristics (existing)
-      tone: parsed.tone || [],
-      style: parsed.style || [],
-      pace: parsed.pace || 'moderate',
-      energy: parsed.energy || 'medium',
-      personality: parsed.personality || [],
-      
-      // Enhanced linguistic patterns (new)
-      linguisticFingerprints: {
-        openingPatterns: parsed.linguisticFingerprints?.openingPatterns || [],
-        transitionPhrases: parsed.linguisticFingerprints?.transitionPhrases || [],
-        closingPatterns: parsed.linguisticFingerprints?.closingPatterns || [],
-        fillerWords: parsed.linguisticFingerprints?.fillerWords || {},
-        signaturePhrases: parsed.linguisticFingerprints?.signaturePhrases || [],
-        questionPatterns: parsed.linguisticFingerprints?.questionPatterns || {}
-      },
-      
-      narrativeStructure: {
-        storyArcPattern: parsed.narrativeStructure?.storyArcPattern || '',
-        informationFlow: parsed.narrativeStructure?.informationFlow || '',
-        exampleStyle: parsed.narrativeStructure?.exampleStyle || '',
-        anecdoteUsage: parsed.narrativeStructure?.anecdoteUsage || {},
-        hookPlacement: parsed.narrativeStructure?.hookPlacement || []
-      },
-      
-      emotionalDynamics: {
-        energyCurve: parsed.emotionalDynamics?.energyCurve || [],
-        emotionalBeats: parsed.emotionalDynamics?.emotionalBeats || [],
-        authenticityMarkers: parsed.emotionalDynamics?.authenticityMarkers || [],
-        passionTriggers: parsed.emotionalDynamics?.passionTriggers || [],
-        vulnerabilityPattern: parsed.emotionalDynamics?.vulnerabilityPattern || ''
-      },
-      
-      contentPositioning: {
-        selfReferenceRate: parsed.contentPositioning?.selfReferenceRate || 0,
-        audienceRelationship: parsed.contentPositioning?.audienceRelationship || '',
-        authorityStance: parsed.contentPositioning?.authorityStance || '',
-        valueProposition: parsed.contentPositioning?.valueProposition || ''
-      },
-      
-      culturalReferences: {
-        exampleCategories: parsed.culturalReferences?.exampleCategories || [],
-        metaphorTypes: parsed.culturalReferences?.metaphorTypes || [],
-        currentEventsStyle: parsed.culturalReferences?.currentEventsStyle || '',
-        internetCultureUsage: parsed.culturalReferences?.internetCultureUsage || '',
-        formalityBalance: parsed.culturalReferences?.formalityBalance || ''
-      },
-      
-      technicalPatterns: {
-        avgWordsPerSentence: parsed.technicalPatterns?.avgWordsPerSentence || 15,
-        vocabularyComplexity: parsed.technicalPatterns?.vocabularyComplexity || '',
-        jargonUsage: parsed.technicalPatterns?.jargonUsage || {},
-        dataPresentation: parsed.technicalPatterns?.dataPresentation || ''
-      },
-      
-      engagementTechniques: {
-        directAddressFrequency: parsed.engagementTechniques?.directAddressFrequency || 0,
-        pronounUsage: parsed.engagementTechniques?.pronounUsage || {},
-        ctaStyle: parsed.engagementTechniques?.ctaStyle || '',
-        questionStrategy: parsed.engagementTechniques?.questionStrategy || '',
-        communityLanguage: parsed.engagementTechniques?.communityLanguage || []
-      },
-      
-      pacingDynamics: {
-        speedVariations: parsed.pacingDynamics?.speedVariations || [],
-        pausePatterns: parsed.pacingDynamics?.pausePatterns || {},
-        emphasisTechniques: parsed.pacingDynamics?.emphasisTechniques || [],
-        rhythmPreferences: parsed.pacingDynamics?.rhythmPreferences || ''
-      },
-      
-      // Implementation guidance
-      implementationNotes: parsed.implementationNotes || {},
-      confidenceScores: parsed.confidenceScores || {},
-      
-      // Backwards compatibility
-      dos: parsed.dos || [],
-      donts: parsed.donts || [],
-      vocabulary: parsed.vocabulary || '',
-      sentenceStructure: parsed.sentenceStructure || '',
-      hooks: parsed.hooks || '',
-      transitions: parsed.transitions || '',
-      engagement: parsed.engagement || '',
-      humor: parsed.humor || '',
-      signature_phrases: parsed.signature_phrases || [],
-      summary: parsed.summary || ''
-    };
+    // Trim any whitespace
+    cleanedText = cleanedText.trim();
     
-    return enhancedProfile;
-    
+    // Try to fix common JSON issues
+    try {
+      // First attempt: direct parse
+      const parsed = JSON.parse(cleanedText);
+      return processEnhancedProfile(parsed);
+    } catch (e) {
+      console.error('Initial parse failed, attempting comprehensive fixes...');
+      
+      // Advanced JSON repair strategy
+      let fixedText = cleanedText;
+      
+      // Step 1: Protect already escaped quotes
+      fixedText = fixedText.replace(/\\"/g, '\u0001ESCAPEDQUOTE\u0001');
+      
+      // Step 2: Fix quotes in string values more carefully
+      // This handles cases like: "example": "She said "hello" to him"
+      fixedText = fixedText.replace(
+        /"([^":\\,\[\]{}]+)":\s*"([^"]*)"/g,
+        (match, key, value) => {
+          // Escape any unescaped quotes in the value
+          let fixedValue = value.replace(/"/g, '\\"');
+          return `"${key}": "${fixedValue}"`;
+        }
+      );
+      
+      // Step 3: Fix quotes in array string elements
+      // Handle: ["item1", "She said "hello"", "item3"]
+      fixedText = fixedText.replace(
+        /\[([^\]]*)\]/g,
+        (match, content) => {
+          // Split by comma but respect quotes
+          const items = [];
+          let current = '';
+          let inQuotes = false;
+          let escapeNext = false;
+          
+          for (let i = 0; i < content.length; i++) {
+            const char = content[i];
+            
+            if (escapeNext) {
+              current += char;
+              escapeNext = false;
+              continue;
+            }
+            
+            if (char === '\\') {
+              escapeNext = true;
+              current += char;
+              continue;
+            }
+            
+            if (char === '"') {
+              inQuotes = !inQuotes;
+            }
+            
+            if (char === ',' && !inQuotes) {
+              items.push(current.trim());
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          
+          if (current.trim()) {
+            items.push(current.trim());
+          }
+          
+          // Fix each item
+          const fixedItems = items.map(item => {
+            if (item.startsWith('"') && item.endsWith('"')) {
+              // It's a string, fix internal quotes
+              const inner = item.slice(1, -1);
+              // Count quotes - if odd number, we have unescaped quotes
+              const quoteCount = (inner.match(/"/g) || []).length;
+              const escapedQuoteCount = (inner.match(/\\"/g) || []).length;
+              
+              if (quoteCount > escapedQuoteCount) {
+                // We have unescaped quotes
+                const fixed = inner.replace(/(?<!\\)"/g, '\\"');
+                return `"${fixed}"`;
+              }
+            }
+            return item;
+          });
+          
+          return '[' + fixedItems.join(', ') + ']';
+        }
+      );
+      
+      // Step 4: Restore protected escaped quotes
+      fixedText = fixedText.replace(/\u0001ESCAPEDQUOTE\u0001/g, '\\"');
+      
+      // Step 5: Fix newlines and other control characters in strings
+      fixedText = fixedText.replace(
+        /"([^"]*)"/g,
+        (match, content) => {
+          // Only fix if we find unescaped newlines or control chars
+          if (content.includes('\n') || content.includes('\r') || content.includes('\t')) {
+            const fixed = content
+              .replace(/\n/g, '\\n')
+              .replace(/\r/g, '\\r')
+              .replace(/\t/g, '\\t');
+            return `"${fixed}"`;
+          }
+          return match;
+        }
+      );
+      
+      // Step 6: Fix structural issues
+      // Remove trailing commas
+      fixedText = fixedText.replace(/,(\s*[}\]])/g, '$1');
+      
+      // Add missing commas between properties
+      fixedText = fixedText.replace(/([}\]])(\s*)("[^"]+":)/g, '$1,$2$3');
+      fixedText = fixedText.replace(/("|\d|true|false|null)(\s+)("[^"]+":)/g, '$1,$2$3');
+      
+      // Try parsing the fixed version
+      try {
+        const parsed = JSON.parse(fixedText);
+        console.log('Successfully parsed after comprehensive fixes');
+        return processEnhancedProfile(parsed);
+      } catch (e2) {
+        console.error('Parse failed even after fixes:', e2.message);
+        
+        // Log debugging info
+        const match = e2.message.match(/position (\d+)/);
+        if (match) {
+          const pos = parseInt(match[1]);
+          const start = Math.max(0, pos - 150);
+          const end = Math.min(fixedText.length, pos + 150);
+          console.error('Text around error position:', fixedText.substring(start, end));
+        }
+        
+        // Return a fallback structure
+        console.log('Returning fallback structure');
+        return getFallbackVoiceProfile();
+      }
+    }
   } catch (error) {
-    console.error('Error parsing enhanced voice analysis:', error);
-    // Return a default structure if parsing fails
-    return generateDefaultEnhancedProfile();
+    console.error('Error in parseEnhancedVoiceAnalysis:', error);
+    return getFallbackVoiceProfile();
   }
+}
+
+// Process the parsed enhanced profile
+function processEnhancedProfile(parsed) {
+  // Ensure all required deep analysis fields are present
+  const enhancedProfile = {
+    // Core voice characteristics (existing)
+    tone: parsed.tone || [],
+    style: parsed.style || [],
+    pace: parsed.pace || 'moderate',
+    energy: parsed.energy || 'medium',
+    personality: parsed.personality || [],
+    
+    // Enhanced linguistic patterns (new)
+    linguisticFingerprints: {
+      openingPatterns: parsed.linguisticFingerprints?.openingPatterns || [],
+      transitionPhrases: parsed.linguisticFingerprints?.transitionPhrases || [],
+      closingPatterns: parsed.linguisticFingerprints?.closingPatterns || [],
+      fillerWords: parsed.linguisticFingerprints?.fillerWords || {},
+      signaturePhrases: parsed.linguisticFingerprints?.signaturePhrases || [],
+      questionPatterns: parsed.linguisticFingerprints?.questionPatterns || {}
+    },
+    
+    narrativeStructure: {
+      storyArcPattern: parsed.narrativeStructure?.storyArcPattern || '',
+      informationFlow: parsed.narrativeStructure?.informationFlow || '',
+      exampleStyle: parsed.narrativeStructure?.exampleStyle || '',
+      anecdoteUsage: parsed.narrativeStructure?.anecdoteUsage || {},
+      hookPlacement: parsed.narrativeStructure?.hookPlacement || []
+    },
+    
+    emotionalDynamics: {
+      energyCurve: parsed.emotionalDynamics?.energyCurve || [],
+      emotionalBeats: parsed.emotionalDynamics?.emotionalBeats || [],
+      authenticityMarkers: parsed.emotionalDynamics?.authenticityMarkers || [],
+      passionTriggers: parsed.emotionalDynamics?.passionTriggers || [],
+      vulnerabilityPattern: parsed.emotionalDynamics?.vulnerabilityPattern || ''
+    },
+    
+    contentPositioning: {
+      selfReferenceRate: parsed.contentPositioning?.selfReferenceRate || 0,
+      audienceRelationship: parsed.contentPositioning?.audienceRelationship || '',
+      authorityStance: parsed.contentPositioning?.authorityStance || '',
+      valueProposition: parsed.contentPositioning?.valueProposition || ''
+    },
+    
+    culturalReferences: {
+      exampleCategories: parsed.culturalReferences?.exampleCategories || [],
+      metaphorTypes: parsed.culturalReferences?.metaphorTypes || [],
+      currentEventsStyle: parsed.culturalReferences?.currentEventsStyle || '',
+      internetCultureUsage: parsed.culturalReferences?.internetCultureUsage || '',
+      formalityBalance: parsed.culturalReferences?.formalityBalance || ''
+    },
+    
+    technicalPatterns: {
+      avgWordsPerSentence: parsed.technicalPatterns?.avgWordsPerSentence || 15,
+      vocabularyComplexity: parsed.technicalPatterns?.vocabularyComplexity || '',
+      jargonUsage: parsed.technicalPatterns?.jargonUsage || {},
+      dataPresentation: parsed.technicalPatterns?.dataPresentation || ''
+    },
+    
+    engagementTechniques: {
+      directAddressFrequency: parsed.engagementTechniques?.directAddressFrequency || 0,
+      pronounUsage: parsed.engagementTechniques?.pronounUsage || {},
+      ctaStyle: parsed.engagementTechniques?.ctaStyle || '',
+      questionStrategy: parsed.engagementTechniques?.questionStrategy || '',
+      communityLanguage: parsed.engagementTechniques?.communityLanguage || []
+    },
+    
+    pacingDynamics: {
+      speedVariations: parsed.pacingDynamics?.speedVariations || [],
+      pausePatterns: parsed.pacingDynamics?.pausePatterns || {},
+      emphasisTechniques: parsed.pacingDynamics?.emphasisTechniques || [],
+      rhythmPreferences: parsed.pacingDynamics?.rhythmPreferences || ''
+    },
+    
+    // Implementation guidance
+    implementationNotes: parsed.implementationNotes || {},
+    confidenceScores: parsed.confidenceScores || {},
+    
+    // Backwards compatibility
+    dos: parsed.dos || [],
+    donts: parsed.donts || [],
+    vocabulary: parsed.vocabulary || '',
+    sentenceStructure: parsed.sentenceStructure || '',
+    hooks: parsed.hooks || '',
+    transitions: parsed.transitions || '',
+    engagement: parsed.engagement || '',
+    humor: parsed.humor || '',
+    signature_phrases: parsed.signature_phrases || [],
+    summary: parsed.summary || ''
+  };
+  
+  return enhancedProfile;
+}
+
+// Get fallback voice profile
+function getFallbackVoiceProfile() {
+  return generateDefaultEnhancedProfile();
 }
 
 // Generate default enhanced profile structure

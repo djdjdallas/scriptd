@@ -12,10 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export default function WorkflowsPage() {
   const [workflows, setWorkflows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, workflow: null });
   const router = useRouter();
   const supabase = createClient();
 
@@ -50,22 +52,28 @@ export default function WorkflowsPage() {
     }
   };
 
-  const deleteWorkflow = async (id) => {
-    if (!confirm('Are you sure you want to delete this workflow?')) return;
+  const handleDeleteClick = (workflow) => {
+    setDeleteModal({ isOpen: true, workflow });
+  };
 
+  const deleteWorkflow = async () => {
+    const workflowId = deleteModal.workflow.id;
+    
     try {
       const { error } = await supabase
         .from('script_workflows')
         .delete()
-        .eq('id', id);
+        .eq('id', workflowId);
 
       if (error) throw error;
 
-      setWorkflows(workflows.filter(w => w.id !== id));
+      setWorkflows(workflows.filter(w => w.id !== workflowId));
       toast.success('Workflow deleted');
     } catch (error) {
       console.error('Error deleting workflow:', error);
       toast.error('Failed to delete workflow');
+    } finally {
+      setDeleteModal({ isOpen: false, workflow: null });
     }
   };
 
@@ -197,7 +205,7 @@ export default function WorkflowsPage() {
                       Continue
                     </Button>
                     <Button
-                      onClick={() => deleteWorkflow(workflow.id)}
+                      onClick={() => handleDeleteClick(workflow)}
                       className="glass-button hover:bg-red-500/20"
                       size="icon"
                     >
@@ -210,6 +218,16 @@ export default function WorkflowsPage() {
           </div>
         )}
       </div>
+      
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, workflow: null })}
+        onConfirm={deleteWorkflow}
+        title="Delete Workflow"
+        message={`Are you sure you want to delete "${deleteModal.workflow?.title || 'this workflow'}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

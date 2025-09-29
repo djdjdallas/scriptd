@@ -40,6 +40,29 @@ export async function POST(request) {
     let createdRemix = null;
 
     try {
+      // Ensure we have a proper voice profile
+      let voiceProfileForStorage = {};
+      if (analysisData?.voiceProfile) {
+        // Check if it's already properly structured
+        if (analysisData.voiceProfile.tone || analysisData.voiceProfile.style) {
+          voiceProfileForStorage = analysisData.voiceProfile;
+        } else if (analysisData.voiceProfile.voice) {
+          // Sometimes nested under 'voice' key
+          voiceProfileForStorage = analysisData.voiceProfile.voice;
+        } else {
+          voiceProfileForStorage = analysisData.voiceProfile;
+        }
+      } else {
+        // Create a default voice profile if none provided
+        voiceProfileForStorage = {
+          tone: ['professional', 'engaging', 'authentic'],
+          style: ['informative', 'conversational'],
+          energy: 'medium',
+          pace: 'moderate',
+          description: `Combined voice characteristics from ${selectedChannels.map(c => c.title).join(', ')}`
+        };
+      }
+
       // Create the main channel entry
       const { data: channel, error: channelError } = await supabase
         .from('channels')
@@ -55,7 +78,7 @@ export async function POST(request) {
           view_count: 0,
           video_count: 0,
           analytics_data: analysisData || {},
-          voice_profile: analysisData?.voiceProfile || {},
+          voice_profile: voiceProfileForStorage,
           voice_training_status: 'completed', // Set as completed since it's a remix with combined voice profile
           auto_train_enabled: false, // Disable auto training for remix channels
           // Add audience description from analysis data
@@ -110,14 +133,15 @@ export async function POST(request) {
                     name: sourceChannel.title || sourceChannel.name || 'Unknown Channel',
                     title: sourceChannel.title || sourceChannel.name || 'Unknown Channel',
                     description: sourceChannel.description || '',
-                    subscriber_count: parseInt(sourceChannel.subscriberCount) || 0,
-                    view_count: parseInt(sourceChannel.viewCount) || 0,
-                    video_count: parseInt(sourceChannel.videoCount) || 0,
+                    subscriber_count: parseInt(sourceChannel.subscriberCount) || parseInt(sourceChannel.subscriber_count) || 0,
+                    view_count: parseInt(sourceChannel.viewCount) || parseInt(sourceChannel.view_count) || 0,
+                    video_count: parseInt(sourceChannel.videoCount) || parseInt(sourceChannel.video_count) || 0,
                     thumbnail_url: sourceChannel.thumbnails?.high?.url || sourceChannel.thumbnails?.medium?.url || '',
-                    custom_url: sourceChannel.customUrl || '',
+                    custom_url: sourceChannel.customUrl || sourceChannel.custom_url || '',
                     is_custom: false,
                     is_remix: false,
-                    voice_training_status: 'pending'
+                    voice_training_status: 'skipped', // Use 'skipped' for external channels that don't need voice training
+                    auto_train_enabled: false // Disable auto training for external channels
                   })
                   .select('id')
                   .single();
@@ -173,7 +197,7 @@ export async function POST(request) {
             elements: config.elements
           },
           combined_analytics: analysisData || {},
-          combined_voice_profile: analysisData?.voiceProfile || {},
+          combined_voice_profile: voiceProfileForStorage, // Use the same voice profile we prepared
           status: 'active'
         })
         .select()
