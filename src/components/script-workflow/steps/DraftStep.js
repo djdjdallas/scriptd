@@ -26,35 +26,160 @@ export default function DraftStep() {
     setIsGenerating(true);
     setGenerationType(type);
     
+    // Comprehensive debug logging for script generation
+    console.log('=== DRAFT STEP: SCRIPT GENERATION DEBUG ===');
+    console.log('Generation Type:', type);
+    console.log('Workflow ID:', workflowId);
+    
+    // Log each component of the workflow data
+    console.log('1. SUMMARY DATA:', {
+      topic: workflowData.summary?.topic,
+      aiModel: workflowData.summary?.aiModel,
+      targetAudience: workflowData.summary?.targetAudience,
+      tone: workflowData.summary?.tone,
+      targetDuration: workflowData.summary?.targetDuration,
+      voiceProfile: workflowData.summary?.voiceProfile
+    });
+    
+    console.log('2. RESEARCH DATA:', {
+      hasResearch: !!workflowData.research,
+      sourcesCount: workflowData.research?.sources?.length || 0,
+      sources: workflowData.research?.sources?.map((s, i) => ({
+        index: i,
+        title: s.source_title,
+        url: s.source_url,
+        type: s.source_type,
+        verified: s.fact_check_status,
+        starred: s.is_starred
+      })),
+      keywords: workflowData.research?.keywords,
+      summary: workflowData.research?.summary?.substring(0, 200) + '...'
+    });
+    
+    console.log('3. FRAME DATA:', {
+      hasFrame: !!workflowData.frame,
+      problemStatement: workflowData.frame?.problem_statement,
+      solutionApproach: workflowData.frame?.solution_approach,
+      transformationOutcome: workflowData.frame?.transformation_outcome
+    });
+    
+    console.log('4. HOOK DATA:', {
+      selected: workflowData.hook?.selected,
+      allHooks: workflowData.hook?.hooks
+    });
+    
+    console.log('5. CONTENT POINTS:', {
+      hasContentPoints: !!workflowData.contentPoints,
+      pointsCount: workflowData.contentPoints?.points?.length || 0,
+      points: workflowData.contentPoints?.points?.map(p => ({
+        title: p.title,
+        duration: p.duration,
+        keyTakeaway: p.keyTakeaway
+      }))
+    });
+    
+    console.log('6. TITLE DATA:', {
+      selectedTitle: workflowData.title?.selected,
+      allTitles: workflowData.title?.titles
+    });
+    
+    console.log('7. THUMBNAIL DATA:', {
+      hasThumbnail: !!workflowData.thumbnail,
+      description: workflowData.thumbnail?.description
+    });
+    
+    const requestBody = {
+      type,
+      title: workflowData.title?.selected || workflowData.summary?.topic,
+      topic: workflowData.summary?.topic,
+      voiceProfile: workflowData.summary?.voiceProfile,
+      research: workflowData.research,
+      frame: workflowData.frame,
+      hook: workflowData.hook?.selected,
+      contentPoints: workflowData.contentPoints,
+      thumbnail: workflowData.thumbnail,
+      model: workflowData.summary?.aiModel || 'claude-3-5-haiku',
+      targetAudience: workflowData.summary?.targetAudience,
+      tone: workflowData.summary?.tone,
+      targetDuration: workflowData.summary?.targetDuration || 300,
+      workflowId: workflowId
+    };
+    
+    console.log('8. FINAL REQUEST BODY:', {
+      ...requestBody,
+      research: requestBody.research ? {
+        sourcesCount: requestBody.research.sources?.length,
+        hasKeywords: !!requestBody.research.keywords,
+        hasSummary: !!requestBody.research.summary
+      } : null
+    });
+    
+    console.log('=== END DEBUG ===');
+    
     try {
+      console.log('Fetching /api/workflow/generate-script...');
+      
+      // Add timeout to fetch request (60 seconds for script generation)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      
       const response = await fetch('/api/workflow/generate-script', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type,
-          title: workflowData.title?.selected || workflowData.summary?.topic,
-          topic: workflowData.summary?.topic,
-          voiceProfile: workflowData.summary?.voiceProfile,
-          research: workflowData.research,
-          frame: workflowData.frame,
-          hook: workflowData.hook?.selected,
-          contentPoints: workflowData.contentPoints,
-          thumbnail: workflowData.thumbnail,
-          model: workflowData.summary?.aiModel || 'claude-3-5-haiku',
-          targetAudience: workflowData.summary?.targetAudience,
-          tone: workflowData.summary?.tone,
-          targetDuration: workflowData.summary?.targetDuration || 300, // Add target duration
-          workflowId: workflowId // Include workflow ID
-        })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
+      }).catch(fetchError => {
+        clearTimeout(timeoutId);
+        console.error('Fetch error details:', {
+          message: fetchError.message,
+          stack: fetchError.stack,
+          type: fetchError.name,
+          isAbort: fetchError.name === 'AbortError'
+        });
+        
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Request timed out. The server is taking too long to respond.');
+        }
+        throw fetchError;
       });
+      
+      clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Script generation error:', errorData);
-        throw new Error(errorData.error || 'Failed to generate script');
+      if (!response) {
+        console.error('No response received from server');
+        throw new Error('No response from server - possible network or CORS issue');
       }
 
-      const { script, creditsUsed, scriptId } = await response.json();
+      console.log('Response status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (jsonError) {
+          console.error('Failed to parse error response:', jsonError);
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+        }
+        console.error('Script generation error:', errorData);
+        throw new Error(errorData.error || `Failed to generate script: ${response.statusText}`);
+      }
+
+      console.log('Parsing response...');
+      const responseData = await response.json().catch(jsonError => {
+        console.error('Failed to parse success response:', jsonError);
+        throw new Error('Invalid response format from server');
+      });
+      
+      console.log('Response data:', { 
+        hasScript: !!responseData.script,
+        creditsUsed: responseData.creditsUsed,
+        scriptId: responseData.scriptId 
+      });
+      
+      const { script, creditsUsed, scriptId } = responseData;
       
       setGeneratedScript(script);
       updateStepData('draft', { script, type, scriptId });
@@ -63,7 +188,29 @@ export default function DraftStep() {
       
       toast.success(`${type === 'outline' ? 'Outline' : 'Full script'} generated and saved!`);
     } catch (error) {
-      toast.error(error.message || 'Failed to generate script');
+      console.error('Generation error full details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        type: error.constructor.name
+      });
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to generate script';
+      
+      if (error.message.includes('fetch')) {
+        errorMessage = 'Network error: Unable to connect to server. Please check your connection and try again.';
+      } else if (error.message.includes('CORS')) {
+        errorMessage = 'CORS error: Server configuration issue. Please contact support.';
+      } else if (error.message.includes('Unauthorized')) {
+        errorMessage = 'Authentication error: Please sign in again.';
+      } else if (error.message.includes('credits')) {
+        errorMessage = error.message; // Credit-related errors are already user-friendly
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
       console.error('Generation error:', error);
     } finally {
       setIsGenerating(false);

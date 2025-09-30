@@ -6,8 +6,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Save, 
@@ -61,14 +59,17 @@ export default function FourCardScriptEditor({
   const [activeCard, setActiveCard] = useState('main');
   const [copied, setCopied] = useState(false);
   
-  // Parse existing content into 4 cards or initialize empty
-  const parseScriptContent = (content) => {
+  // Parse existing content into 4 cards or initialize with script content
+  const parseScriptContent = (content, scriptData) => {
     if (!content) {
+      // Initialize with default structure based on script metadata
       return {
         mainScript: '',
-        research: '',
+        research: scriptData?.metadata?.research_sources ? 
+          `## Research Sources\n${scriptData.metadata.research_sources} sources verified` : '',
         production: '',
-        metadata: ''
+        metadata: scriptData?.metadata ? 
+          `## Video Metadata\n- Target Length: ${Math.floor((scriptData.metadata.target_duration || 600) / 60)} minutes\n- Primary Keywords: ${scriptData.metadata.keywords?.join(', ') || 'Not set'}\n- Target Audience: ${scriptData.metadata.target_audience || 'General'}\n- Tone: ${scriptData.metadata.tone || 'Professional'}` : ''
       };
     }
 
@@ -99,23 +100,25 @@ export default function FourCardScriptEditor({
       });
 
       return {
-        mainScript: cards.mainScript || '',
+        mainScript: cards.mainScript || content,
         research: cards.research || '',
         production: cards.production || '',
         metadata: cards.metadata || ''
       };
     }
 
-    // If not 4-card structure, put all content in main script
+    // If not 4-card structure, put all content in main script and generate metadata
     return {
       mainScript: content,
-      research: '',
+      research: scriptData?.metadata?.research_sources ? 
+        `## Research Sources\n${scriptData.metadata.research_sources} sources verified` : '',
       production: '',
-      metadata: ''
+      metadata: scriptData?.metadata ? 
+        `## Video Metadata\n- Target Length: ${Math.floor((scriptData.metadata.target_duration || 600) / 60)} minutes\n- Primary Keywords: ${scriptData.metadata.keywords?.join(', ') || scriptData.tags?.join(', ') || 'Not set'}\n- Target Audience: ${scriptData.metadata.target_audience || 'General'}\n- Tone: ${scriptData.metadata.tone || 'Professional'}` : ''
     };
   };
 
-  const initialCards = parseScriptContent(script.content);
+  const initialCards = parseScriptContent(script.content, script);
   
   const [title, setTitle] = useState(script.title || '');
   const [cards, setCards] = useState(initialCards);
@@ -389,7 +392,7 @@ Confidence: ${results.confidence || 'Low'}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Sparkles className="h-5 w-5 text-purple-400" />
-            <div>
+            <div className="flex-1">
               <h2 className="text-lg font-semibold text-white">4-Card Script System</h2>
               <div className="flex items-center gap-4 text-sm text-gray-400">
                 {lastSaved && (
@@ -401,7 +404,7 @@ Confidence: ${results.confidence || 'Low'}
                 {stats.words > 0 && (
                   <span className="flex items-center gap-1">
                     <FileText className="h-3 w-3" />
-                    {stats.words} words • {stats.estimatedDuration} min
+                    {stats.words.toLocaleString()} words • ~{stats.estimatedDuration} min
                   </span>
                 )}
               </div>
@@ -462,36 +465,64 @@ Confidence: ${results.confidence || 'Low'}
       </div>
 
       {/* 4-Card Tabs */}
-      <Card className="glass-card border-0">
-        <Tabs value={activeCard} onValueChange={setActiveCard} className="w-full">
-          <CardHeader className="pb-3">
-            <TabsList className="grid w-full grid-cols-4 bg-gray-900/50">
-              <TabsTrigger value="main" className="flex items-center gap-2">
-                {cardIcons.main}
-                <span className="hidden sm:inline">Main Script</span>
-                <span className="sm:hidden">Main</span>
-              </TabsTrigger>
-              <TabsTrigger value="research" className="flex items-center gap-2">
-                {cardIcons.research}
-                <span className="hidden sm:inline">Research</span>
-                <span className="sm:hidden">Research</span>
-              </TabsTrigger>
-              <TabsTrigger value="production" className="flex items-center gap-2">
-                {cardIcons.production}
-                <span className="hidden sm:inline">Production</span>
-                <span className="sm:hidden">Prod</span>
-              </TabsTrigger>
-              <TabsTrigger value="metadata" className="flex items-center gap-2">
-                {cardIcons.metadata}
-                <span className="hidden sm:inline">Metadata</span>
-                <span className="sm:hidden">Meta</span>
-              </TabsTrigger>
-            </TabsList>
-          </CardHeader>
+      <div className="glass-card p-0 overflow-hidden">
+        <div className="w-full">
+          <div className="border-b border-white/5">
+            <div className="flex">
+              <button
+                onClick={() => setActiveCard('main')}
+                className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 transition-all relative ${
+                  activeCard === 'main' ? 'text-white bg-white/5' : 'text-gray-400 hover:text-gray-300'
+                }`}
+              >
+                <ScrollText className="h-4 w-4" />
+                <span className="text-sm">Main Script</span>
+                {activeCard === 'main' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400" />
+                )}
+              </button>
+              <button
+                onClick={() => setActiveCard('research')}
+                className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 transition-all relative ${
+                  activeCard === 'research' ? 'text-white bg-white/5' : 'text-gray-400 hover:text-gray-300'
+                }`}
+              >
+                <Search className="h-4 w-4" />
+                <span className="text-sm">Research</span>
+                {activeCard === 'research' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400" />
+                )}
+              </button>
+              <button
+                onClick={() => setActiveCard('production')}
+                className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 transition-all relative ${
+                  activeCard === 'production' ? 'text-white bg-white/5' : 'text-gray-400 hover:text-gray-300'
+                }`}
+              >
+                <Video className="h-4 w-4" />
+                <span className="text-sm">Production</span>
+                {activeCard === 'production' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400" />
+                )}
+              </button>
+              <button
+                onClick={() => setActiveCard('metadata')}
+                className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 transition-all relative ${
+                  activeCard === 'metadata' ? 'text-white bg-white/5' : 'text-gray-400 hover:text-gray-300'
+                }`}
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span className="text-sm">Metadata</span>
+                {activeCard === 'metadata' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400" />
+                )}
+              </button>
+            </div>
+          </div>
 
-          <CardContent className="pt-0">
+          <div className="p-6">
             {/* Main Script Card */}
-            <TabsContent value="main" className="mt-0">
+            {activeCard === 'main' && (
               <div className="space-y-4">
                 <div className="text-sm text-gray-400 mb-4 p-3 bg-purple-500/10 rounded-lg">
                   <strong>Card 1:</strong> {cardDescriptions.main}
@@ -517,10 +548,10 @@ STAKES: [Why this matters now]
                   disabled={!canEdit}
                 />
               </div>
-            </TabsContent>
+            )}
 
             {/* Research Card */}
-            <TabsContent value="research" className="mt-0">
+            {activeCard === 'research' && (
               <div className="space-y-4">
                 <div className="text-sm text-gray-400 mb-4 p-3 bg-blue-500/10 rounded-lg">
                   <strong>Card 2:</strong> {cardDescriptions.research}
@@ -575,10 +606,10 @@ STAKES: [Why this matters now]
                   disabled={!canEdit}
                 />
               </div>
-            </TabsContent>
+            )}
 
             {/* Production Card */}
-            <TabsContent value="production" className="mt-0">
+            {activeCard === 'production' && (
               <div className="space-y-4">
                 <div className="text-sm text-gray-400 mb-4 p-3 bg-green-500/10 rounded-lg">
                   <strong>Card 3:</strong> {cardDescriptions.production}
@@ -610,10 +641,10 @@ STAKES: [Why this matters now]
                   disabled={!canEdit}
                 />
               </div>
-            </TabsContent>
+            )}
 
             {/* Metadata Card */}
-            <TabsContent value="metadata" className="mt-0">
+            {activeCard === 'metadata' && (
               <div className="space-y-4">
                 <div className="text-sm text-gray-400 mb-4 p-3 bg-orange-500/10 rounded-lg">
                   <strong>Card 4:</strong> {cardDescriptions.metadata}
@@ -653,10 +684,10 @@ STAKES: [Why this matters now]
                   disabled={!canEdit}
                 />
               </div>
-            </TabsContent>
-          </CardContent>
-        </Tabs>
-      </Card>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Action Buttons */}
       <div className="glass-card p-4">

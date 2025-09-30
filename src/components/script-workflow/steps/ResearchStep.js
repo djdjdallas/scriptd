@@ -25,6 +25,54 @@ export default function ResearchStep() {
   
   const supabase = createClient();
 
+  // Load research sources from database when workflow exists
+  useEffect(() => {
+    const loadSavedResearch = async () => {
+      if (workflowId && (!sources || sources.length === 0)) {
+        try {
+          const { data, error } = await supabase
+            .from('workflow_research')
+            .select('*')
+            .eq('workflow_id', workflowId)
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            console.error('Error loading saved research:', error);
+            return;
+          }
+
+          if (data && data.length > 0) {
+            console.log(`Loading ${data.length} saved research sources from database`);
+            
+            // Convert database format to component format
+            const loadedSources = data.map(source => ({
+              id: source.id,
+              source_type: source.source_type,
+              source_url: source.source_url,
+              source_title: source.source_title,
+              source_content: source.source_content,
+              fact_check_status: source.fact_check_status,
+              is_starred: source.is_starred,
+              relevance: 0.5 // Default relevance since it's not stored
+            }));
+
+            setSources(loadedSources);
+            
+            // Auto-select sources that were previously selected
+            const selectedIds = data.filter(s => s.is_selected).map(s => s.id);
+            if (selectedIds.length > 0) {
+              setSelectedSources(new Set(selectedIds));
+            }
+          }
+        } catch (error) {
+          console.error('Error loading research:', error);
+        }
+      }
+    };
+
+    loadSavedResearch();
+  }, [workflowId]);
+
   // AI-powered search using the video topic
   const performAISearch = async () => {
     const topic = workflowData.summary?.topic;
@@ -387,17 +435,44 @@ export default function ResearchStep() {
 
     if (workflowId && selectedSourcesList.length > 0) {
       try {
-        for (const source of selectedSourcesList) {
-          await supabase
-            .from('workflow_research')
-            .upsert({
-              workflow_id: workflowId,
-              ...source,
-              is_selected: true
-            });
+        // Prepare sources for database insertion
+        const sourcesToSave = selectedSourcesList.map(source => ({
+          workflow_id: workflowId,
+          source_type: source.source_type || 'web',
+          source_url: source.source_url || '',
+          source_title: source.source_title || '',
+          source_content: source.source_content || '',
+          fact_check_status: source.fact_check_status || 'unverified',
+          is_starred: source.is_starred || false,
+          is_selected: true,
+          added_at: new Date().toISOString()
+        }));
+
+        // Delete existing research for this workflow first to avoid duplicates
+        const { error: deleteError } = await supabase
+          .from('workflow_research')
+          .delete()
+          .eq('workflow_id', workflowId);
+
+        if (deleteError) {
+          console.error('Error deleting old research:', deleteError);
+        }
+
+        // Insert new research sources
+        const { data, error } = await supabase
+          .from('workflow_research')
+          .insert(sourcesToSave)
+          .select();
+
+        if (error) {
+          console.error('Error saving research to database:', error);
+          toast.error('Failed to save research sources to database');
+        } else {
+          console.log(`Successfully saved ${data.length} research sources to database`);
         }
       } catch (error) {
         console.error('Error saving research:', error);
+        toast.error('Failed to save research sources');
       }
     }
 

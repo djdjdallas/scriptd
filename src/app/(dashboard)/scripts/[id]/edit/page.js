@@ -253,7 +253,7 @@ export default function ScriptEditPage({ params }) {
 
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="glass-card p-6 animate-reveal">
+        <div className="glass-card p-4 animate-reveal">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <Link href={`/scripts/${scriptId}`}>
@@ -264,41 +264,42 @@ export default function ScriptEditPage({ params }) {
               </Link>
               
               <div className="flex-1">
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl">
-                    <Edit3 className="h-6 w-6 text-purple-400" />
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg">
+                    <Edit3 className="h-5 w-5 text-purple-400" />
                   </div>
                   <div className="flex-1">
-                    <h1 className="text-3xl font-bold gradient-text">Edit Script</h1>
-                    <p className="text-gray-400 text-sm mt-1">
+                    <h1 className="text-2xl font-bold gradient-text">Edit Script</h1>
+                    <p className="text-gray-400 text-xs mt-1">
                       Make changes to your script and save them instantly
                     </p>
                   </div>
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-3">
-                  <Badge className="glass-button px-3 py-1 text-xs">
-                    <FileText className="h-3 w-3 mr-1.5" />
+                <div className="space-y-2">
+                  <div className="text-lg font-semibold text-white">
                     {script.title || 'Untitled Script'}
-                  </Badge>
-                  {script.updated_at && (
-                    <Badge className="glass-button px-3 py-1 text-xs">
-                      <Clock className="h-3 w-3 mr-1.5" />
-                      {formatDistanceToNow(new Date(script.updated_at), { addSuffix: true })}
-                    </Badge>
-                  )}
-                  {script.edit_count > 0 && (
-                    <Badge className="glass-button px-3 py-1 text-xs">
-                      <History className="h-3 w-3 mr-1.5" />
-                      {script.edit_count} revision{script.edit_count !== 1 ? 's' : ''}
-                    </Badge>
-                  )}
-                  {saving && (
-                    <Badge className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 border-blue-500/30 px-3 py-1 text-xs animate-pulse">
-                      <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
-                      Saving changes...
-                    </Badge>
-                  )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {script.updated_at && (
+                      <Badge className="glass-button px-2 py-1 text-xs">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Last saved {formatDistanceToNow(new Date(script.updated_at), { addSuffix: true })}
+                      </Badge>
+                    )}
+                    {script.metadata?.words && (
+                      <Badge className="glass-button px-2 py-1 text-xs">
+                        <FileText className="h-3 w-3 mr-1" />
+                        {script.metadata.words.toLocaleString()} words • {Math.ceil(script.metadata.words / 150)} min
+                      </Badge>
+                    )}
+                    {saving && (
+                      <Badge className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 border-blue-500/30 px-2 py-1 text-xs animate-pulse">
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        Saving...
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -332,7 +333,7 @@ export default function ScriptEditPage({ params }) {
         )}
 
         {/* Editor Tabs */}
-        <div className="glass-card p-0 animate-reveal overflow-hidden" style={{ animationDelay: '0.1s' }}>
+        <div className="glass-card p-0 animate-reveal overflow-hidden" style={{ animationDelay: '0.05s' }}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="border-b border-white/5">
               <TabsList className="bg-transparent w-full h-auto p-0 flex gap-0">
@@ -363,24 +364,26 @@ export default function ScriptEditPage({ params }) {
               <TabsContent value="editor" className="p-6 pt-4 mt-0 focus:outline-none">
                 <div className="animate-reveal">
                   {/* Editor Mode Toggle */}
-                  <div className="mb-4 flex items-center justify-end gap-2">
-                    <span className="text-sm text-gray-400">Editor Mode:</span>
-                    <div className="flex gap-2">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="text-sm text-gray-400">
+                      {editorMode === 'fourCard' ? '4-Card System' : 'Classic Editor'}
+                    </div>
+                    <div className="flex gap-1">
                       <Button
                         size="sm"
-                        variant={editorMode === 'fourCard' ? 'default' : 'outline'}
+                        variant={editorMode === 'fourCard' ? 'default' : 'ghost'}
                         onClick={() => setEditorMode('fourCard')}
-                        className="glass-button"
+                        className={editorMode === 'fourCard' ? 'glass-button bg-purple-500/20' : 'glass-button'}
                       >
                         4-Card System
                       </Button>
                       <Button
                         size="sm"
-                        variant={editorMode === 'classic' ? 'default' : 'outline'}
+                        variant={editorMode === 'classic' ? 'default' : 'ghost'}
                         onClick={() => setEditorMode('classic')}
-                        className="glass-button"
+                        className={editorMode === 'classic' ? 'glass-button bg-purple-500/20' : 'glass-button'}
                       >
-                        Classic Editor
+                        Classic
                       </Button>
                     </div>
                   </div>

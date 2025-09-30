@@ -4,6 +4,7 @@ import { generateOptimizedScript } from '@/lib/prompts/optimized-youtube-generat
 import { ServerCreditManager } from '@/lib/credits/server-manager';
 import { LongFormScriptHandler } from '@/lib/script-generation/long-form-handler';
 import ResearchService from '@/lib/ai/research-service';
+import crypto from 'crypto';
 
 // Helper function to calculate credits based on duration and model
 function calculateCreditsForDuration(durationInSeconds, model = 'claude-3-5-haiku') {
@@ -110,6 +111,8 @@ Thanks for watching, and I'll see you in the next one!
 }
 
 export async function POST(request) {
+  console.log('🚀 === SCRIPT GENERATION API CALLED ===');
+  
   try {
     const supabase = await createClient();
     
@@ -145,8 +148,17 @@ export async function POST(request) {
     
     const bypassCredits = userSettings?.bypass_credits || process.env.BYPASS_CREDIT_CHECKS === 'true';
 
-    const verifiedSources = research?.sources?.filter(s => s.fact_check_status === 'verified') || [];
-    const starredSources = research?.sources?.filter(s => s.is_starred) || [];
+    // Debug: Log what research data we received
+    console.log('=== FULL RESEARCH DATA RECEIVED ===');
+    console.log('Research data received:', {
+      hasResearch: !!research,
+      sourcesCount: research?.sources?.length || 0,
+      sources: research?.sources?.slice(0, 2), // Log first 2 sources for debugging
+      fullStructure: JSON.stringify(research, null, 2)
+    });
+
+    let verifiedSources = research?.sources?.filter(s => s.fact_check_status === 'verified') || [];
+    let starredSources = research?.sources?.filter(s => s.is_starred) || [];
 
     // Perform additional research if no sources provided
     let enhancedResearch = research;
@@ -206,7 +218,7 @@ export async function POST(request) {
         if (needsChunking) {
           console.log(`Using chunked generation for ${totalMinutes}-minute script (${chunkConfig.chunks} chunks)`);
           
-          // Generate chunks
+          // Generate chunks with full context
           const chunkPrompts = LongFormScriptHandler.generateChunkPrompts({
             totalMinutes,
             title,
@@ -214,7 +226,11 @@ export async function POST(request) {
             contentPoints: contentPoints?.points || [],
             type,
             hook,
-            voiceProfile
+            voiceProfile,
+            targetAudience,
+            tone,
+            research: enhancedResearch || research,
+            frame
           });
           
           const scriptChunks = [];
@@ -330,7 +346,9 @@ YOU WILL BE PENALIZED for incomplete scripts or continuation messages.`,
                     contentPoints: contentPoints,
                     research: enhancedResearch || research,
                     voiceProfile: voiceProfile,
-                    thumbnail: thumbnail
+                    thumbnail: thumbnail,
+                    targetAudience: targetAudience,
+                    tone: tone
                   });
                   
                   if (optimizedResult.error) {
@@ -547,6 +565,10 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
     }
 
     // Save the script to the database if we have a channel ID
+    console.log('=== SCRIPT SAVE DEBUG ===');
+    console.log('Has channelId:', !!channelId, channelId);
+    console.log('Has script:', !!script, script?.substring(0, 100));
+    
     if (channelId && script) {
       try {
         // Extract title from script if not provided
@@ -562,6 +584,8 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           const words = topic.toLowerCase().split(/\s+/).filter(word => word.length > 3);
           tags.push(...words.slice(0, 5));
         }
+
+        console.log('Attempting to save script with title:', scriptTitle);
 
         // Create the script record
         const { data: newScript, error: scriptError } = await supabase
@@ -593,12 +617,166 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           .single();
 
         if (scriptError) {
-          console.error('Error saving script to database:', scriptError);
+          console.error('❌ Error saving script to database:', scriptError);
+          console.error('Script save failed with data:', {
+            channel_id: channelId,
+            user_id: user.id,
+            title: scriptTitle,
+            hasContent: !!script
+          });
           // Don't fail the request if save fails, just log it
+          
+          // IMPORTANT: If script save fails, newScript will be null
+          // so research sources won't be saved either
+        } else if (!newScript || !newScript.id) {
+          console.error('❌ Script save returned no data or no ID!');
+          console.error('newScript value:', newScript);
         } else {
-          console.log('Script saved to database with ID:', newScript.id);
+          console.log('✅ Script saved to database with ID:', newScript.id);
+          
+          // Save research sources to script_research table
+          // Use enhancedResearch if available (includes auto-generated sources), otherwise use original research
+          const researchToSave = enhancedResearch || research;
+          
+          console.log('=== RESEARCH SAVE DEBUG ===');
+          console.log('Has newScript.id:', !!newScript?.id, newScript?.id);
+          console.log('Research to save:', {
+            hasResearch: !!researchToSave,
+            hasSources: !!researchToSave?.sources,
+            sourcesLength: researchToSave?.sources?.length || 0,
+            firstSource: researchToSave?.sources?.[0]
+          });
+          
+          if (newScript.id && researchToSave?.sources && researchToSave.sources.length > 0) {
+            try {
+              console.log('Attempting to save research sources for script:', newScript.id);
+              console.log('Research sources available:', researchToSave.sources.length);
+              console.log('Research is auto-generated:', !!enhancedResearch?.autoGenerated);
+              
+              // Use all sources from research (already selected by user or auto-generated)
+              const sourcesToSave = researchToSave.sources;
+              
+              console.log('Sources to save:', sourcesToSave.map(s => ({
+                title: s.source_title,
+                url: s.source_url,
+                status: s.fact_check_status
+              })));
+              
+              // Prepare research data for script_research table
+              const scriptResearchId = crypto.randomUUID();
+              const scriptResearchData = {
+                id: scriptResearchId,
+                script_id: newScript.id,
+                sources: sourcesToSave.map(source => ({
+                  title: source.source_title || '',
+                  url: source.source_url || '',
+                  content: source.source_content || '',
+                  fact_check_status: source.fact_check_status || 'unverified',
+                  is_starred: source.is_starred || false,
+                  relevance: source.relevance || 0.5
+                })),
+                fact_checks: sourcesToSave
+                  .filter(s => s.fact_check_status === 'verified')
+                  .map(s => ({
+                    source_url: s.source_url,
+                    status: s.fact_check_status,
+                    checked_at: new Date().toISOString()
+                  })).length > 0 ? sourcesToSave
+                  .filter(s => s.fact_check_status === 'verified')
+                  .map(s => ({
+                    source_url: s.source_url,
+                    status: s.fact_check_status,
+                    checked_at: new Date().toISOString()
+                  })) : null  // Use null if no fact checks
+                // Don't set created_at, let the database handle it
+              };
+              
+              console.log('Inserting script research data:', {
+                id: scriptResearchData.id,
+                script_id: scriptResearchData.script_id,
+                sources_count: scriptResearchData.sources.length,
+                fact_checks_count: scriptResearchData.fact_checks.length
+              });
+              
+              // Log full data being inserted for debugging
+              console.log('Full script_research data to insert:', JSON.stringify(scriptResearchData, null, 2));
+              
+              const { data: insertedData, error: researchError } = await supabase
+                .from('script_research')
+                .insert(scriptResearchData)
+                .select();
+              
+              if (researchError) {
+                console.error('❌ Error saving script research:', researchError);
+                console.error('Error details:', {
+                  message: researchError.message,
+                  details: researchError.details,
+                  hint: researchError.hint,
+                  code: researchError.code
+                });
+                console.error('Research data that failed:', JSON.stringify(scriptResearchData, null, 2));
+                
+                // Try alternative approach - save with minimal data to see what works
+                console.log('Attempting minimal save...');
+                const minimalData = {
+                  id: scriptResearchId,
+                  script_id: newScript.id,
+                  sources: JSON.stringify(sourcesToSave), // Try as JSON string
+                  fact_checks: null
+                };
+                
+                const { data: minimalInsert, error: minimalError } = await supabase
+                  .from('script_research')
+                  .insert(minimalData)
+                  .select();
+                  
+                if (minimalError) {
+                  console.error('❌ Minimal save also failed:', minimalError);
+                } else {
+                  console.log('✅ Minimal save succeeded:', minimalInsert);
+                }
+              } else {
+                console.log(`✅ Successfully saved ${sourcesToSave.length} research sources to script_research table`);
+                console.log('Inserted data:', insertedData);
+              }
+              
+              // Also save individual sources if they came from enhancedResearch (auto-generated)
+              if (enhancedResearch?.autoGenerated && enhancedResearch?.summary) {
+                // Save research summary as metadata
+                const { error: updateError } = await supabase
+                  .from('scripts')
+                  .update({
+                    metadata: {
+                      ...newScript.metadata,
+                      research_summary: enhancedResearch.summary,
+                      research_insights: enhancedResearch.insights
+                    }
+                  })
+                  .eq('id', newScript.id);
+                  
+                if (updateError) {
+                  console.error('Error updating script with research summary:', updateError);
+                }
+              }
+            } catch (researchSaveError) {
+              console.error('❌ Exception while saving research sources:', researchSaveError);
+              console.error('Stack trace:', researchSaveError.stack);
+              // Don't fail the main request
+            }
+          } else {
+            console.log('⚠️ Not saving research sources because:', {
+              hasScriptId: !!newScript?.id,
+              hasResearchToSave: !!researchToSave,
+              hasSources: !!researchToSave?.sources,
+              sourcesLength: researchToSave?.sources?.length || 0
+            });
+          }
         }
 
+        console.log('=== RETURNING RESPONSE ===');
+        console.log('Script ID being returned:', newScript?.id);
+        console.log('Credits used:', creditsUsed);
+        
         return NextResponse.json({ 
           script,
           creditsUsed,

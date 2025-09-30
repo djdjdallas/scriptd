@@ -98,14 +98,29 @@ export default function DashboardPage() {
           scripts = scriptsResponse.data || [];
         }
         
-        // Fetch user credits
-        const userResponse = await supabase
-          .from('users')
-          .select('credits')
-          .eq('id', user.id)
-          .single();
+        // Fetch user credits using the same method as sidebar
+        // First try RPC function for accurate balance
+        const { data: creditBalance, error: rpcError } = await supabase
+          .rpc('get_available_credit_balance', { p_user_id: user.id });
         
-        const userData = userResponse.data || { credits: 0 };
+        let credits = 0;
+        
+        if (rpcError) {
+          console.error('[Dashboard] Error fetching credits via RPC:', rpcError);
+          // Fallback to direct table query
+          const userResponse = await supabase
+            .from('users')
+            .select('credits')
+            .eq('id', user.id)
+            .single();
+          
+          const userData = userResponse.data || { credits: 0 };
+          credits = userData.credits;
+          console.log('[Dashboard] Credits from users table:', credits);
+        } else {
+          credits = creditBalance || 0;
+          console.log('[Dashboard] Credits from RPC function:', credits);
+        }
 
         // Calculate total views (use metadata if available, otherwise 0)
         const totalViews = scripts.reduce((sum, script) => {
@@ -133,7 +148,7 @@ export default function DashboardPage() {
           totalScripts: scripts.length,
           totalViews,
           totalChannels: channels.length,
-          credits: userData.credits,
+          credits: credits,
           recentScripts,
           weeklyActivity,
           popularScripts

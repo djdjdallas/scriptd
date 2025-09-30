@@ -151,11 +151,26 @@ export default function DashboardLayout({ children }) {
           .single();
         
         setCredits(userData?.credits || 0);
+        console.log('[DashboardLayout] Credits from users table (fallback):', userData?.credits || 0);
       } else {
         setCredits(balance || 0);
+        console.log('[DashboardLayout] Credits from RPC (includes subscription/transactions):', balance || 0);
+        
+        // Also fetch raw credits for comparison
+        const { data: userData } = await supabase
+          .from('users')
+          .select('credits, subscription_tier')
+          .eq('id', user.id)
+          .single();
+        
+        if (userData && userData.credits !== balance) {
+          console.log('[DashboardLayout] Credit discrepancy detected:');
+          console.log('  - Raw credits in users table:', userData.credits);
+          console.log('  - Calculated balance (RPC):', balance);
+          console.log('  - Difference:', balance - userData.credits);
+          console.log('  - Subscription tier:', userData.subscription_tier);
+        }
       }
-      
-      console.log('[DashboardLayout] Credits loaded:', balance || 0);
     } catch (error) {
       console.error('[DashboardLayout] Error fetching credits:', error);
       setCredits(0);
