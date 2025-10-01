@@ -127,36 +127,46 @@ export default function CalendarPage() {
   const handleAddContent = async (newContent) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Log the content being inserted for debugging
+      console.log('Inserting content:', newContent);
+
+      const insertData = {
+        user_id: user.id,
+        title: newContent.title,
+        description: newContent.description,
+        content_type: newContent.type,  // Changed from contentType to type
+        platform: newContent.platform,
+        status: newContent.status || 'IDEA',
+        publish_date: newContent.publishDate,
+        publish_time: newContent.publishTime,
+        tags: newContent.tags || [],
+        keywords: newContent.keywords || [],
+        target_audience: newContent.targetAudience,
+        estimated_duration_minutes: newContent.estimatedTime,  // Changed from estimatedDuration to estimatedTime
+        notes: newContent.notes
+      };
 
       const { data, error } = await supabase
         .from('content_calendar')
-        .insert([{
-          user_id: user.id,
-          title: newContent.title,
-          description: newContent.description,
-          content_type: newContent.contentType,
-          platform: newContent.platform,
-          status: newContent.status || 'IDEA',
-          publish_date: newContent.publishDate,
-          publish_time: newContent.publishTime,
-          tags: newContent.tags || [],
-          keywords: newContent.keywords || [],
-          target_audience: newContent.targetAudience,
-          estimated_duration_minutes: newContent.estimatedDuration,
-          notes: newContent.notes
-        }])
+        .insert([insertData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw error;
+      }
       
       await fetchCalendarContent();
       setIsFormOpen(false);
       toast.success('Content added successfully');
     } catch (error) {
-      console.error('Error adding content:', error);
-      toast.error('Failed to add content');
+      console.error('Error adding content:', error.message || error);
+      toast.error(error.message || 'Failed to add content');
     }
   };
 
@@ -167,7 +177,7 @@ export default function CalendarPage() {
         .update({
           title: updatedContent.title,
           description: updatedContent.description,
-          content_type: updatedContent.contentType,
+          content_type: updatedContent.type,  // Changed from contentType to type
           platform: updatedContent.platform,
           status: updatedContent.status,
           publish_date: updatedContent.publishDate,
@@ -175,7 +185,7 @@ export default function CalendarPage() {
           tags: updatedContent.tags || [],
           keywords: updatedContent.keywords || [],
           target_audience: updatedContent.targetAudience,
-          estimated_duration_minutes: updatedContent.estimatedDuration,
+          estimated_duration_minutes: updatedContent.estimatedTime,  // Changed from estimatedDuration to estimatedTime
           notes: updatedContent.notes
         })
         .eq('id', updatedContent.id);

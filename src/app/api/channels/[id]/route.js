@@ -187,7 +187,196 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Delete channel from database
+    // First verify the channel belongs to the user
+    const { data: channel, error: channelError } = await supabase
+      .from('channels')
+      .select('id')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (channelError || !channel) {
+      return NextResponse.json({ error: 'Channel not found or unauthorized' }, { status: 404 });
+    }
+
+    // Delete related data in the correct order to avoid foreign key constraints
+    // Order matters: delete child tables first
+    
+    // Track deletion progress for debugging
+    const deletions = [];
+    
+    // 1. Delete voice training jobs
+    const { error: voiceJobsError } = await supabase
+      .from('voice_training_jobs')
+      .delete()
+      .eq('channel_id', id);
+    if (voiceJobsError) deletions.push({ table: 'voice_training_jobs', error: voiceJobsError });
+    
+    // 2. Delete voice profiles
+    const { error: voiceProfilesError } = await supabase
+      .from('voice_profiles')
+      .delete()
+      .eq('channel_id', id);
+    if (voiceProfilesError) deletions.push({ table: 'voice_profiles', error: voiceProfilesError });
+    
+    // 3. Delete user preferences
+    const { error: userPrefsError } = await supabase
+      .from('user_preferences')
+      .delete()
+      .eq('channel_id', id);
+    if (userPrefsError) deletions.push({ table: 'user_preferences', error: userPrefsError });
+    
+    // 4. Delete script-related data (must be done before deleting scripts)
+    // First get all scripts for this channel
+    const { data: scripts } = await supabase
+      .from('scripts')
+      .select('id')
+      .eq('channel_id', id);
+    
+    if (scripts && scripts.length > 0) {
+      const scriptIds = scripts.map(s => s.id);
+      
+      // Delete all child tables that reference scripts
+      await supabase
+        .from('script_versions')
+        .delete()
+        .in('script_id', scriptIds);
+      
+      await supabase
+        .from('script_titles')
+        .delete()
+        .in('script_id', scriptIds);
+      
+      await supabase
+        .from('script_thumbnails')
+        .delete()
+        .in('script_id', scriptIds);
+      
+      await supabase
+        .from('script_research')
+        .delete()
+        .in('script_id', scriptIds);
+      
+      await supabase
+        .from('script_frames')
+        .delete()
+        .in('script_id', scriptIds);
+      
+      await supabase
+        .from('script_edits')
+        .delete()
+        .in('script_id', scriptIds);
+      
+      // Delete script comments (handle parent-child relationships)
+      await supabase
+        .from('script_comments')
+        .delete()
+        .in('script_id', scriptIds);
+      
+      await supabase
+        .from('content_calendar')
+        .delete()
+        .in('script_id', scriptIds);
+      
+      await supabase
+        .from('script_generations')
+        .delete()
+        .in('script_id', scriptIds);
+    }
+    
+    // Instead of deleting scripts, set channel_id to NULL to preserve them
+    // This allows users to keep their scripts even if they delete the channel
+    const { error: scriptUpdateError } = await supabase
+      .from('scripts')
+      .update({ channel_id: null })
+      .eq('channel_id', id);
+    
+    if (scriptUpdateError) {
+      console.error('Error updating scripts to remove channel reference:', scriptUpdateError);
+    }
+    
+    // 5. Delete remaining script generations not linked to scripts
+    await supabase
+      .from('script_generations')
+      .delete()
+      .eq('channel_id', id);
+    
+    // 6. Delete remix source channels (where this channel is a source)
+    await supabase
+      .from('remix_source_channels')
+      .delete()
+      .eq('source_channel_id', id);
+    
+    // 7. Delete remix channels associated with this channel
+    const { data: remixChannels } = await supabase
+      .from('remix_channels')
+      .select('id')
+      .eq('channel_id', id);
+    
+    if (remixChannels && remixChannels.length > 0) {
+      const remixIds = remixChannels.map(r => r.id);
+      
+      // Delete channel remix analyses
+      await supabase
+        .from('channel_remix_analyses')
+        .delete()
+        .in('remix_channel_id', remixIds);
+      
+      // Delete remix source channels
+      await supabase
+        .from('remix_source_channels')
+        .delete()
+        .in('remix_channel_id', remixIds);
+      
+      // Delete remix channels
+      await supabase
+        .from('remix_channels')
+        .delete()
+        .eq('channel_id', id);
+    }
+    
+    // 8. Delete notifications
+    await supabase
+      .from('notifications')
+      .delete()
+      .eq('channel_id', id);
+    
+    // 9. Delete intel videos
+    await supabase
+      .from('intel_videos')
+      .delete()
+      .eq('channel_id', id);
+    
+    // 10. Delete intel channel analytics
+    await supabase
+      .from('intel_channel_analytics')
+      .delete()
+      .eq('channel_id', id);
+    
+    // 11. Delete chat history
+    await supabase
+      .from('chat_history')
+      .delete()
+      .eq('channel_id', id);
+    
+    // 12. Delete channel metrics history
+    await supabase
+      .from('channel_metrics_history')
+      .delete()
+      .eq('channel_id', id);
+    
+    // 13. Delete channel analyses
+    await supabase
+      .from('channel_analyses')
+      .delete()
+      .eq('channel_id', id);
+
+    // Log any deletion errors for debugging
+    if (deletions.length > 0) {
+      console.error('Errors during channel deletion cleanup:', deletions);
+    }
+    
+    // Finally, delete the channel itself
     const { error } = await supabase
       .from('channels')
       .delete()
@@ -196,14 +385,19 @@ export async function DELETE(request, { params }) {
 
     if (error) {
       console.error('Error deleting channel:', error);
-      return NextResponse.json({ error: 'Failed to delete channel' }, { status: 500 });
+      console.error('Previous deletion errors:', deletions);
+      return NextResponse.json({ 
+        error: 'Failed to delete channel', 
+        details: error.message,
+        deletionErrors: deletions 
+      }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting channel:', error);
+    console.error('Error in DELETE handler:', error);
     return NextResponse.json(
-      { error: 'Failed to delete channel' },
+      { error: 'Failed to delete channel', details: error.message },
       { status: 500 }
     );
   }

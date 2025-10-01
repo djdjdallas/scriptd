@@ -48,6 +48,8 @@ export async function GET(request) {
               growthRate = null; // Will be handled in UI as "New"
             }
             
+            console.log(`Topic: ${topicName}, Records: ${records.length}, Latest: ${latestScore}, Previous: ${previousScore}, Growth: ${growthRate}`);
+            
             return {
               topic_name: topicName,
               category: records[0]?.category || 'unknown',
@@ -137,6 +139,16 @@ export async function GET(request) {
     // Process data for charts
     const growthTrends = processGrowthTrends(historicalData || []);
 
+    const avgTopicGrowth = calculateAvgGrowth(topicsWithGrowth || []);
+    const avgChannelGrowth = calculateAvgChannelGrowth(channelsWithGrowth || []);
+    
+    console.log('Growth Summary:', {
+      topicsCount: topicsWithGrowth?.length || 0,
+      channelsCount: channelsWithGrowth?.length || 0,
+      avgTopicGrowth,
+      avgChannelGrowth
+    });
+
     return NextResponse.json({
       success: true,
       data: {
@@ -144,8 +156,8 @@ export async function GET(request) {
         channelsWithGrowth: channelsWithGrowth || [],
         growthTrends,
         summary: {
-          avgTopicGrowth: calculateAvgGrowth(topicsWithGrowth || []),
-          avgChannelGrowth: calculateAvgChannelGrowth(channelsWithGrowth || []),
+          avgTopicGrowth,
+          avgChannelGrowth,
           topGrowthCategory: findTopGrowthCategory(topicsWithGrowth || [])
         }
       }
@@ -215,21 +227,29 @@ function processGrowthTrends(data) {
 }
 
 function calculateAvgGrowth(topics) {
-  if (topics.length === 0) return 0;
+  if (!topics || topics.length === 0) return "0.00";
   // Filter out new topics (null growth rate) for average calculation
-  const topicsWithGrowth = topics.filter(t => t.growth_rate !== null);
-  if (topicsWithGrowth.length === 0) return 0;
+  const topicsWithGrowth = topics.filter(t => t.growth_rate !== null && t.growth_rate !== undefined);
+  if (topicsWithGrowth.length === 0) {
+    // If all topics are new, return N/A or a placeholder
+    return "N/A";
+  }
   const total = topicsWithGrowth.reduce((sum, topic) => sum + parseFloat(topic.growth_rate || 0), 0);
-  return (total / topicsWithGrowth.length).toFixed(2);
+  const average = total / topicsWithGrowth.length;
+  return average.toFixed(2);
 }
 
 function calculateAvgChannelGrowth(channels) {
-  if (channels.length === 0) return 0;
+  if (!channels || channels.length === 0) return "0.00";
   // Filter out new channels (null growth rate) for average calculation
-  const channelsWithGrowth = channels.filter(c => c.view_growth_rate !== null);
-  if (channelsWithGrowth.length === 0) return 0;
+  const channelsWithGrowth = channels.filter(c => c.view_growth_rate !== null && c.view_growth_rate !== undefined);
+  if (channelsWithGrowth.length === 0) {
+    // If all channels are new, return N/A or a placeholder
+    return "N/A";
+  }
   const total = channelsWithGrowth.reduce((sum, channel) => sum + parseFloat(channel.view_growth_rate || 0), 0);
-  return (total / channelsWithGrowth.length).toFixed(2);
+  const average = total / channelsWithGrowth.length;
+  return average.toFixed(2);
 }
 
 function findTopGrowthCategory(topics) {

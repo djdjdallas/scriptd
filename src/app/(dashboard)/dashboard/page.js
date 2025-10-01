@@ -87,16 +87,26 @@ export default function DashboardPage() {
         const channels = channelsResponse.data || [];
         const channelIds = channels.map(c => c.id);
         
-        // Fetch scripts for all user's channels
+        // Fetch scripts for all user's channels OR directly owned by user
         let scripts = [];
+        let scriptsResponse;
+        
         if (channelIds.length > 0) {
-          const scriptsResponse = await supabase
+          // Get scripts from user's channels OR scripts directly owned by user
+          scriptsResponse = await supabase
             .from('scripts')
             .select('*, channels(name)')
-            .in('channel_id', channelIds)
+            .or(`channel_id.in.(${channelIds.map(id => `"${id}"`).join(',')}),user_id.eq.${user.id}`)
             .order('created_at', { ascending: false });
-          scripts = scriptsResponse.data || [];
+        } else {
+          // If no channels, just get scripts owned by user
+          scriptsResponse = await supabase
+            .from('scripts')
+            .select('*, channels(name)')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
         }
+        scripts = scriptsResponse.data || [];
         
         // Fetch user credits using the same method as sidebar
         // First try RPC function for accurate balance

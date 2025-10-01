@@ -61,8 +61,10 @@ export async function GET(request) {
 
     // If we have results from database, return them (even if less than 10)
     if (dbChannels && dbChannels.length > 0) {
-      return NextResponse.json({
-        channels: dbChannels.map(channel => ({
+      console.log('Found channels in database:', dbChannels.length);
+      const mappedChannels = dbChannels.map(channel => {
+        console.log(`DB Channel: ${channel.title || channel.name}, DB ID: ${channel.id}, YouTube ID: ${channel.youtube_channel_id}`);
+        return {
           id: channel.id,
           channelId: channel.youtube_channel_id,
           title: channel.title || channel.name,
@@ -75,7 +77,11 @@ export async function GET(request) {
           isFromDatabase: true,
           hasAnalysis: !!channel.analytics_data,
           hasVoiceProfile: !!channel.voice_profile
-        })),
+        };
+      });
+      
+      return NextResponse.json({
+        channels: mappedChannels,
         source: 'database'
       });
     }
@@ -116,15 +122,20 @@ export async function GET(request) {
         }
 
         // Add YouTube channels that aren't already in our list
+        console.log('YouTube API returned', youtubeChannels.length, 'channels');
         youtubeChannels.forEach(channel => {
-          if (!seenChannelIds.has(channel.id.channelId)) {
+          // YouTube channels.list API returns channel ID directly as 'id'
+          const ytChannelId = channel.id;
+          console.log(`YouTube Channel: ${channel.snippet.title}, ID: ${ytChannelId}`);
+          
+          if (ytChannelId && !seenChannelIds.has(ytChannelId)) {
             // Apply subscriber filters if provided
             const subs = parseInt(channel.statistics?.subscriberCount || 0);
             if (minSubscribers && subs < parseInt(minSubscribers)) return;
             if (maxSubscribers && subs > parseInt(maxSubscribers)) return;
 
             combinedChannels.push({
-              channelId: channel.id.channelId,
+              channelId: ytChannelId,  // Use the direct channel ID
               title: channel.snippet.title,
               description: channel.snippet.description,
               subscriberCount: channel.statistics?.subscriberCount,

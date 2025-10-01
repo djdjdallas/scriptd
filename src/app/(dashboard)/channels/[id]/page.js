@@ -96,14 +96,16 @@ export default function ChannelDetailPage({ params }) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete channel");
+        const errorData = await response.json();
+        console.error("Delete failed:", errorData);
+        throw new Error(errorData.details || errorData.error || "Failed to delete channel");
       }
 
       toast.success("Channel removed successfully");
       router.push("/channels");
     } catch (error) {
       console.error("Error deleting channel:", error);
-      toast.error("Failed to remove channel");
+      toast.error(error.message || "Failed to remove channel");
     }
   };
 

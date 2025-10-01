@@ -1,76 +1,67 @@
-// Simple in-memory rate limiter
-const requestCounts = new Map();
+export class RateLimiter {
+  constructor(maxRequests = 10, windowMs = 60000) {
+    this.maxRequests = maxRequests;
+    this.windowMs = windowMs;
+    this.requests = new Map();
+  }
 
-export async function checkRateLimit(identifier, options = {}) {
-  const {
-    windowMs = 60 * 1000, // 1 minute default
-    max = 10, // 10 requests per window default
-  } = options;
-
-  const now = Date.now();
-  const windowStart = now - windowMs;
-
-  // Get or initialize request data for this identifier
-  let requestData = requestCounts.get(identifier) || { requests: [] };
-
-  // Filter out requests outside the current window
-  requestData.requests = requestData.requests.filter((timestamp) => timestamp > windowStart);
-
-  // Check if limit is exceeded
-  if (requestData.requests.length >= max) {
+  async checkLimit(identifier) {
+    const now = Date.now();
+    const userRequests = this.requests.get(identifier) || [];
+    
+    // Filter out requests outside the current window
+    const recentRequests = userRequests.filter(
+      timestamp => now - timestamp < this.windowMs
+    );
+    
+    if (recentRequests.length >= this.maxRequests) {
+      const oldestRequest = Math.min(...recentRequests);
+      const resetTime = oldestRequest + this.windowMs;
+      const waitTime = Math.ceil((resetTime - now) / 1000);
+      
+      return {
+        allowed: false,
+        remaining: 0,
+        resetIn: waitTime,
+        message: `Rate limit exceeded. Try again in ${waitTime} seconds.`
+      };
+    }
+    
+    // Add current request
+    recentRequests.push(now);
+    this.requests.set(identifier, recentRequests);
+    
+    // Clean up old entries periodically
+    if (Math.random() < 0.1) { // 10% chance to clean
+      this.cleanup();
+    }
+    
     return {
-      success: false,
-      limit: max,
-      remaining: 0,
-      resetAt: new Date(requestData.requests[0] + windowMs),
+      allowed: true,
+      remaining: this.maxRequests - recentRequests.length,
+      resetIn: Math.ceil(this.windowMs / 1000)
     };
   }
 
-  // Add current request timestamp
-  requestData.requests.push(now);
-  requestCounts.set(identifier, requestData);
-
-  // Clean up old entries periodically
-  if (Math.random() < 0.01) {
-    for (const [key, data] of requestCounts.entries()) {
-      if (data.requests.length === 0 || data.requests[data.requests.length - 1] < windowStart) {
-        requestCounts.delete(key);
+  cleanup() {
+    const now = Date.now();
+    for (const [identifier, timestamps] of this.requests.entries()) {
+      const recent = timestamps.filter(t => now - t < this.windowMs);
+      if (recent.length === 0) {
+        this.requests.delete(identifier);
+      } else {
+        this.requests.set(identifier, recent);
       }
     }
   }
 
-  return {
-    success: true,
-    limit: max,
-    remaining: max - requestData.requests.length,
-    resetAt: new Date(now + windowMs),
-  };
+  reset(identifier) {
+    this.requests.delete(identifier);
+  }
 }
 
-// Helper to create rate limit middleware
-export function createRateLimiter(options = {}) {
-  return async (req) => {
-    // Use IP address or user ID as identifier
-    const forwarded = req.headers.get('x-forwarded-for');
-    const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
-    
-    const result = await checkRateLimit(ip, options);
-    
-    if (!result.success) {
-      return new Response(JSON.stringify({
-        error: 'Too many requests',
-        resetAt: result.resetAt,
-      }), {
-        status: 429,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-RateLimit-Limit': String(result.limit),
-          'X-RateLimit-Remaining': String(result.remaining),
-          'X-RateLimit-Reset': result.resetAt.toISOString(),
-        },
-      });
-    }
-    
-    return null; // Continue with request
-  };
-}
+// Singleton instance for fetch-content endpoint
+export const contentFetchLimiter = new RateLimiter(
+  30,     // 30 requests
+  60000   // per minute
+);

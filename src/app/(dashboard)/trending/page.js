@@ -187,6 +187,7 @@ export default function TrendingPage() {
       const data = await response.json();
 
       if (data.success) {
+        console.log('Growth data received:', data.data);
         setGrowthData(data.data);
       }
     } catch (error) {
@@ -466,9 +467,9 @@ export default function TrendingPage() {
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <TrendingUp className="h-6 w-6 text-purple-400" />
             Trending Topics
-            {growthData && (
+            {growthData && growthData.summary?.avgTopicGrowth !== undefined && (
               <span className="text-sm text-gray-400">
-                (Avg Growth: {growthData.summary?.avgTopicGrowth}%)
+                (Avg Growth: {growthData.summary.avgTopicGrowth}%)
               </span>
             )}
           </h2>
@@ -556,9 +557,9 @@ export default function TrendingPage() {
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Youtube className="h-6 w-6 text-red-400" />
             Rising Channels
-            {growthData && (
+            {growthData && growthData.summary?.avgChannelGrowth !== undefined && (
               <span className="text-sm text-gray-400">
-                (Avg Growth: {growthData.summary?.avgChannelGrowth}%)
+                (Avg Growth: {growthData.summary.avgChannelGrowth}%)
               </span>
             )}
           </h2>
@@ -626,12 +627,24 @@ export default function TrendingPage() {
                       </div>
 
                       <div className="flex gap-2">
-                        <Link href={`/trending/analyze?channelId=${channel.id}&channel=${encodeURIComponent(channel.name)}`} className="flex-1">
-                          <Button size="sm" className="glass-button w-full text-white">
+                        {channel.id && !channel.id.startsWith('demo') ? (
+                          <Link href={`/trending/analyze?channelId=${channel.id}&channel=${encodeURIComponent(channel.name)}`} className="flex-1">
+                            <Button size="sm" className="glass-button w-full text-white">
+                              <Eye className="mr-1 h-3 w-3" />
+                              Analyze
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            className="glass-button flex-1 text-white opacity-50" 
+                            disabled
+                            title="Analysis not available for demo/cached channels"
+                          >
                             <Eye className="mr-1 h-3 w-3" />
                             Analyze
                           </Button>
-                        </Link>
+                        )}
                         <Link href={`/trending/follow?channelId=${channel.id}&channel=${encodeURIComponent(channel.name)}`} className="flex-1">
                           <Button size="sm" className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 w-full text-white">
                             <Users className="mr-1 h-3 w-3" />

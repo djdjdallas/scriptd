@@ -104,7 +104,7 @@ export const GET = createApiHandler(async (req) => {
     length: script.metadata?.length || script.length || 5,
     excerpt: script.content ? script.content.substring(0, 200) + '...' : '',
     channelId: script.channel_id,
-    channelName: channelMap[script.channel_id] || 'Unknown Channel',
+    channelName: script.channel_id ? (channelMap[script.channel_id] || 'Unknown Channel') : 'No Channel',
     createdAt: script.created_at,
     updatedAt: script.updated_at
   }));
@@ -127,43 +127,29 @@ export const POST = createApiHandler(async (req) => {
     throw new ApiError('Title and content are required', 400);
   }
 
-  // Get user's default channel or create one if needed
-  let channelId = body.channelId;
+  // Channel is now optional for manual scripts
+  let channelId = body.channelId || null;
   
-  if (!channelId) {
-    // Try to get user's first channel
-    const { data: channels, error: channelError } = await supabase
+  // If a channelId is provided, verify it belongs to the user
+  if (channelId) {
+    const { data: channel, error: channelError } = await supabase
       .from('channels')
       .select('id')
+      .eq('id', channelId)
       .eq('user_id', user.id)
-      .limit(1);
+      .single();
     
-    if (channelError || !channels || channels.length === 0) {
-      // Create a default channel for the user
-      const { data: newChannel, error: createError } = await supabase
-        .from('channels')
-        .insert({
-          user_id: user.id,
-          youtube_channel_id: `default_${user.id}`,
-          name: 'My Channel'
-        })
-        .select()
-        .single();
-      
-      if (createError) {
-        throw new ApiError('Failed to create default channel', 500);
-      }
-      
-      channelId = newChannel.id;
-    } else {
-      channelId = channels[0].id;
+    if (channelError || !channel) {
+      throw new ApiError('Invalid channel ID', 400);
     }
   }
-
+  
+  // Create script with or without channel
   const { data: script, error } = await supabase
     .from('scripts')
     .insert({
-      channel_id: channelId,
+      channel_id: channelId,  // Can be null
+      user_id: user.id,  // Always set user_id
       title: body.title,
       type: body.type || 'general',
       content: body.content,

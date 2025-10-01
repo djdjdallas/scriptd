@@ -8,9 +8,33 @@ export async function GET(request) {
     const channelId = searchParams.get('channelId');
     const channelName = searchParams.get('channelName');
 
-    if (!channelId) {
+    if (!channelId || channelId === 'undefined') {
+      console.error('Invalid channel ID received:', channelId, 'for channel:', channelName);
+      
+      // If we have a channel name but no valid ID, we could try to search for it
+      if (channelName && channelName !== 'undefined') {
+        return NextResponse.json(
+          { 
+            error: 'Channel analysis requires a valid YouTube channel ID',
+            suggestion: 'This channel may be from cached/demo data. Try searching for the channel directly.'
+          },
+          { status: 400 }
+        );
+      }
+      
       return NextResponse.json(
         { error: 'Channel ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if this is a demo channel ID
+    if (channelId.startsWith('demo')) {
+      return NextResponse.json(
+        { 
+          error: 'This is a demo channel. Channel analysis is only available for real YouTube channels.',
+          isDemoChannel: true
+        },
         { status: 400 }
       );
     }

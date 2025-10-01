@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Youtube,
   Users,
@@ -34,6 +34,7 @@ import Link from 'next/link';
 
 export default function AnalyzeChannelPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const channelId = searchParams.get('channelId');
   const channelName = searchParams.get('channel') || 'Channel';
   const [channelData, setChannelData] = useState(null);
@@ -58,6 +59,15 @@ export default function AnalyzeChannelPage() {
       const result = await response.json();
       
       if (!response.ok) {
+        // Handle specific error cases
+        if (result.isDemoChannel) {
+          setError('This is a demo channel. Channel analysis is only available for real YouTube channels.');
+          return;
+        }
+        if (result.suggestion) {
+          setError(`${result.error}\n${result.suggestion}`);
+          return;
+        }
         throw new Error(result.error || 'Failed to fetch channel data');
       }
       
@@ -222,11 +232,22 @@ export default function AnalyzeChannelPage() {
             <p className="text-gray-400 mb-2">{channelData.handle} • {channelData.category}</p>
             <p className="text-gray-300 mb-4">{channelData.description}</p>
             <div className="flex gap-3">
-              <Button className="glass-button text-white">
+              <Button 
+                className="glass-button text-white"
+                onClick={() => {
+                  toast.success(`Now tracking ${channelData?.name || channelName}`);
+                  // TODO: Implement actual tracking functionality
+                }}
+              >
                 <Bell className="h-4 w-4 mr-2" />
                 Track Channel
               </Button>
-              <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
+              <Button 
+                className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+                onClick={() => {
+                  router.push(`/trending/follow?channelId=${channelId}&channel=${encodeURIComponent(channelData?.name || channelName)}&topic=${encodeURIComponent(channelData?.category || 'Content Creation')}`);
+                }}
+              >
                 <Users className="h-4 w-4 mr-2" />
                 Follow Strategy
               </Button>

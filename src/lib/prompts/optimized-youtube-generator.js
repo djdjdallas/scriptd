@@ -351,11 +351,23 @@ const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext =
   <research_to_include>
     ${verifiedSources.length > 0 ? `
     <verified_sources>
-      ${verifiedSources.map(s => `- ${s.source_title}: ${s.source_content?.substring(0, 500)}...`).join('\n      ')}
+      ${verifiedSources.map(s => {
+        const contentLength = s.source_content?.length || 0;
+        const contentToShow = contentLength > 1500 ? 
+          s.source_content.substring(0, 1500) + '... [' + (contentLength - 1500) + ' more chars]' : 
+          s.source_content || '';
+        return `- ${s.source_title} (${s.source_url}): ${contentToShow}`;
+      }).join('\n      ')}
     </verified_sources>` : ''}
     ${starredSources.length > 0 ? `
     <important_sources>
-      ${starredSources.map(s => `- ${s.source_title}: ${s.source_content?.substring(0, 500)}...`).join('\n      ')}
+      ${starredSources.map(s => {
+        const contentLength = s.source_content?.length || 0;
+        const contentToShow = contentLength > 1500 ? 
+          s.source_content.substring(0, 1500) + '... [' + (contentLength - 1500) + ' more chars]' : 
+          s.source_content || '';
+        return `- ${s.source_title} (${s.source_url}): ${contentToShow}`;
+      }).join('\n      ')}
     </important_sources>` : ''}
     ${research?.insights ? `
     <research_insights>
@@ -768,6 +780,91 @@ const testGenerator = () => {
   });
 };
 
+// Function to build script generation prompt that prioritizes synthesis
+function buildScriptGenerationPrompt(topic, duration, tone, research) {
+  const synthesisSource = research.sources.find(s => s.source_type === 'synthesis');
+  const webSources = research.sources.filter(s => s.source_type === 'web' && s.source_content?.length > 100);
+  
+  return `<role>You are an expert YouTube scriptwriter specializing in ${tone} educational content.</role>
+
+<task>
+Create a ${duration}-minute YouTube script for the topic: "${topic}"
+
+The script must be engaging, well-researched, and optimized for viewer retention.
+</task>
+
+<research_context>
+You have been provided with comprehensive research on this topic. The research consists of:
+
+1. **PRIMARY SOURCE - Research Synthesis (MOST IMPORTANT)**
+This is a comprehensive analysis combining insights from multiple verified sources:
+${synthesisSource?.source_content || 'No synthesis available'}
+
+${webSources.length > 0 ? `
+2. **SUPPLEMENTARY SOURCES - Additional Context**
+These provide extra detail and specific examples to enrich the script:
+${webSources.map((source, i) => `
+Source ${i + 1}: ${source.source_title || 'Web Source'}
+URL: ${source.source_url}
+Content Preview (first 1500 chars):
+${source.source_content.substring(0, 1500)}
+${source.source_content.length > 1500 ? `\n[${Math.floor((source.source_content.length - 1500) / 1000)}k more characters available in source]` : ''}
+`).join('\n')}
+` : ''}
+
+**CRITICAL INSTRUCTIONS:**
+- The research synthesis above contains ALL the key facts, statistics, and perspectives you need
+- Use supplementary sources ONLY to add specific examples, quotes, or granular details
+- DO NOT search for additional information - everything needed is provided above
+- If a supplementary source seems relevant but wasn't successfully scraped, the synthesis already covers its key points
+- Cite specific facts using the source numbers provided in the synthesis [1], [2], etc.
+</research_context>
+
+<script_requirements>
+**Duration:** ${duration} minutes (approximately ${Math.floor(duration * 150)} words)
+
+**Structure:**
+[0:00] - Hook (30 seconds): Grab attention immediately with the most shocking/interesting fact
+[0:30] - Introduction: Set up what the video will cover
+[Main Content] - 5-7 key points from the research, each with:
+  - Clear subheading with timestamp
+  - Supporting facts and statistics from synthesis
+  - Specific examples from supplementary sources when available
+  - Smooth transitions between points
+[Final minute] - Conclusion with key takeaway and call-to-action
+
+**Tone:** ${tone}
+
+**Content Guidelines:**
+- Lead with the most compelling information from the synthesis
+- Use specific statistics, dates, and facts provided in the research
+- Include expert quotes when provided in sources
+- Address common misconceptions mentioned in the synthesis
+- Provide historical context where relevant
+- End with actionable insights for viewers
+
+**Format Requirements:**
+- Include timestamps in [MM:SS] format
+- Mark visual suggestions with [Visual: description]
+- Keep paragraphs short (2-3 sentences max)
+- Use conversational language while maintaining accuracy
+- NO speculation beyond what's in the research provided
+</script_requirements>
+
+<quality_standards>
+✓ Every major claim must trace back to the research provided
+✓ Use specific numbers, dates, and names from the synthesis
+✓ Incorporate expert quotes when available in sources
+✓ Maintain narrative flow with clear transitions
+✓ Balance entertainment value with educational depth
+✗ DO NOT make up facts or statistics not in the research
+✗ DO NOT search for additional information - use only what's provided
+✗ DO NOT include generic filler content
+</quality_standards>
+
+Begin writing the script now:`;
+}
+
 // Export all functions for use in your app
 module.exports = {
   generateYouTubeScriptPrompt,
@@ -777,5 +874,6 @@ module.exports = {
   generateTitleVariations,
   generateOptimizedScript,
   testGenerator,
+  buildScriptGenerationPrompt,
   default: generateOptimizedScript
 };

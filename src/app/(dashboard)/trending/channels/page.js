@@ -101,11 +101,13 @@ export default function AllRisingChannelsPage() {
       return;
     }
 
+    console.log('🔍 Starting YouTube search for:', youtubeSearchQuery);
     setSearching(true);
     setSearchMode(true);
     try {
       const response = await fetch(`/api/channels/search?q=${encodeURIComponent(youtubeSearchQuery)}&limit=20`);
       const data = await response.json();
+      console.log('📦 Raw API response:', data);
 
       if (!response.ok) {
         if (response.status === 403) {
@@ -117,24 +119,60 @@ export default function AllRisingChannelsPage() {
       }
 
       if (data.channels && data.channels.length > 0) {
+        console.log(`📊 Found ${data.channels.length} channels, source: ${data.source}`);
+        
         // Transform YouTube search results to match trending channel format
-        const transformedChannels = data.channels.map(channel => ({
-          id: channel.channelId || channel.id,
-          name: channel.title,
-          handle: channel.customUrl || '',
-          description: channel.description?.substring(0, 150) || '',
-          thumbnail: channel.thumbnails?.high?.url || channel.thumbnails?.default?.url || '/youtube-default.svg',
-          category: 'Search Result',
-          subscribers: formatSubscriberCount(channel.subscriberCount),
-          growth: 'N/A',
-          avgViews: formatViewCount(channel.viewCount, channel.videoCount),
-          uploadFreq: 'N/A',
-          topVideo: '',
-          verified: false,
-          isFromDatabase: channel.isFromDatabase,
-          hasAnalysis: channel.hasAnalysis,
-          hasVoiceProfile: channel.hasVoiceProfile
-        }));
+        const transformedChannels = data.channels.map((channel, idx) => {
+          console.log(`\n🎬 Processing channel ${idx + 1}:`, channel.title);
+          console.log('  Raw channel object:', channel);
+          
+          // Use channelId for YouTube ID, but check if it's a valid YouTube ID
+          // YouTube channel IDs typically start with 'UC' and are 24 characters long
+          let youtubeChannelId = channel.channelId;
+          
+          console.log('  Initial channelId:', youtubeChannelId);
+          console.log('  Initial id:', channel.id);
+          
+          // If channelId looks like a UUID (contains dashes), it's from the database
+          // and we should check if there's a valid YouTube ID
+          if (youtubeChannelId && youtubeChannelId.includes('-')) {
+            console.log('  ❌ channelId looks like UUID (has dashes), rejecting:', youtubeChannelId);
+            youtubeChannelId = null;
+          }
+          
+          // Fallback to channel.id only if it looks like a YouTube ID
+          if (!youtubeChannelId && channel.id && !channel.id.includes('-')) {
+            console.log('  🔄 Falling back to channel.id:', channel.id);
+            youtubeChannelId = channel.id;
+          }
+          
+          const finalId = youtubeChannelId || channel.channelId || channel.id;
+          
+          console.log('  ✅ Final decision:');
+          console.log('    - youtubeChannelId:', youtubeChannelId);
+          console.log('    - finalId for component:', finalId);
+          console.log('    - Is valid YouTube ID?', !!youtubeChannelId);
+          console.log('    - Will Analyze work?', finalId && !finalId.includes('-') && !finalId.startsWith('demo') && finalId.length > 10);
+          
+          return {
+            id: finalId, // Use YouTube ID if available
+            name: channel.title,
+            handle: channel.customUrl || '',
+            description: channel.description?.substring(0, 150) || '',
+            thumbnail: channel.thumbnails?.high?.url || channel.thumbnails?.default?.url || '/youtube-default.svg',
+            category: 'Search Result',
+            subscribers: formatSubscriberCount(channel.subscriberCount),
+            growth: 'N/A',
+            avgViews: formatViewCount(channel.viewCount, channel.videoCount),
+            uploadFreq: 'N/A',
+            topVideo: '',
+            verified: false,
+            isFromDatabase: channel.isFromDatabase,
+            hasAnalysis: channel.hasAnalysis,
+            hasVoiceProfile: channel.hasVoiceProfile,
+            hasValidYouTubeId: !!youtubeChannelId
+          };
+        });
 
         setChannels(transformedChannels);
         setPagination({
@@ -389,7 +427,26 @@ export default function AllRisingChannelsPage() {
 
       {/* Channels Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredChannels.map((channel, index) => (
+        {filteredChannels.map((channel, index) => {
+          // Debug logging for button state
+          const hasId = !!channel.id;
+          const notUndefined = channel.id !== 'undefined';
+          const notDemo = !channel.id?.startsWith('demo');
+          const notUUID = !channel.id?.includes('-');
+          const longEnough = channel.id?.length > 10;
+          const isValidForAnalyze = hasId && notUndefined && notDemo && notUUID && longEnough;
+          
+          if (searchMode) {
+            console.log(`\n🎯 Rendering channel: ${channel.name}`);
+            console.log('  Button validation:');
+            console.log(`    - Has ID: ${hasId} (${channel.id})`);
+            console.log(`    - Not 'undefined': ${notUndefined}`);
+            console.log(`    - Not demo: ${notDemo}`);
+            console.log(`    - Not UUID: ${notUUID}`);
+            console.log(`    - Length > 10: ${longEnough} (length: ${channel.id?.length})`);
+            console.log(`    - ✅ Valid for Analyze: ${isValidForAnalyze}`);
+          }
+          return (
           <TiltCard key={channel.id || index}>
             <div className="glass-card p-6 animate-reveal" style={{ animationDelay: `${0.2 + (index % 9) * 0.05}s` }}>
               <div className="flex items-start gap-4">
@@ -460,17 +517,36 @@ export default function AllRisingChannelsPage() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      className="glass-button flex-1 text-white"
-                      onClick={() => {
-                        // TODO: Implement analyze functionality
-                        toast.info('Channel analysis coming soon!');
-                      }}
-                    >
-                      <Eye className="mr-1 h-3 w-3" />
-                      Analyze
-                    </Button>
+                    {channel.id && 
+                     channel.id !== 'undefined' && 
+                     !channel.id.startsWith('demo') && 
+                     !channel.id.includes('-') && // Not a UUID
+                     channel.id.length > 10 ? ( // YouTube IDs are typically 24 chars
+                      <Link 
+                        href={`/trending/analyze?channelId=${channel.id}&channel=${encodeURIComponent(channel.name)}`}
+                        className="flex-1"
+                      >
+                        <Button size="sm" className="glass-button w-full text-white">
+                          <Eye className="mr-1 h-3 w-3" />
+                          Analyze
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Button 
+                        size="sm" 
+                        className="glass-button flex-1 text-white opacity-50" 
+                        disabled
+                        title={
+                          !channel.id ? "No channel ID available" :
+                          channel.id.includes('-') ? "Database channel - YouTube ID required for analysis" :
+                          channel.id.startsWith('demo') ? "Demo channel - analysis not available" :
+                          "Invalid channel ID format"
+                        }
+                      >
+                        <Eye className="mr-1 h-3 w-3" />
+                        Analyze
+                      </Button>
+                    )}
                     <Link 
                       href={`/trending/follow?channel=${encodeURIComponent(channel.name)}&channelId=${encodeURIComponent(channel.id)}&topic=${encodeURIComponent(channel.category || 'Content Creation')}`}
                       className="flex-1"
@@ -485,7 +561,8 @@ export default function AllRisingChannelsPage() {
               </div>
             </div>
           </TiltCard>
-        ))}
+          );
+        })}
       </div>
 
       {filteredChannels.length === 0 && (

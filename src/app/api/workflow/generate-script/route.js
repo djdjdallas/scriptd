@@ -4,6 +4,7 @@ import { generateOptimizedScript } from '@/lib/prompts/optimized-youtube-generat
 import { ServerCreditManager } from '@/lib/credits/server-manager';
 import { LongFormScriptHandler } from '@/lib/script-generation/long-form-handler';
 import ResearchService from '@/lib/ai/research-service';
+import { ContentFetcher } from '@/lib/content-fetcher';
 import crypto from 'crypto';
 
 // Helper function to calculate credits based on duration and model
@@ -157,6 +158,59 @@ export async function POST(request) {
       fullStructure: JSON.stringify(research, null, 2)
     });
 
+    // Use ContentFetcher to enrich sources with content
+    if (research?.sources && research.sources.length > 0) {
+      console.log('🔍 === ENRICHING RESEARCH SOURCES ===');
+      
+      try {
+        const fetcher = new ContentFetcher(1500); // Limit to 1500 chars per source
+        
+        // Store original request headers for authentication
+        const originalFetch = global.fetch;
+        global.fetch = async (url, options) => {
+          // Add authentication headers if it's our API endpoint
+          if (url.includes('/api/fetch-content')) {
+            options = {
+              ...options,
+              headers: {
+                ...options.headers,
+                'Cookie': request.headers.get('cookie') || ''
+              }
+            };
+          }
+          return originalFetch(url, options);
+        };
+        
+        // Enrich sources with content
+        const enrichedSources = await fetcher.enrichSources(research.sources);
+        research.sources = enrichedSources;
+        
+        // Restore original fetch
+        global.fetch = originalFetch;
+        
+        // If research was saved to database, update it with enriched content
+        if (research.id) {
+          console.log('📝 Updating research in database with enriched content');
+          const { error: updateError } = await supabase
+            .from('script_research')
+            .update({ sources: enrichedSources })
+            .eq('id', research.id);
+            
+          if (updateError) {
+            console.error('Failed to update research with enriched content:', updateError);
+          } else {
+            // Verify the update
+            const verifiedSources = await fetcher.verifyDatabaseUpdate(supabase, research.id);
+            console.log('✅ Research sources verified in database');
+          }
+        }
+        
+      } catch (error) {
+        console.error('Content enrichment failed, continuing with original sources:', error);
+        // Continue with original sources rather than failing completely
+      }
+    }
+
     let verifiedSources = research?.sources?.filter(s => s.fact_check_status === 'verified') || [];
     let starredSources = research?.sources?.filter(s => s.is_starred) || [];
 
@@ -189,6 +243,31 @@ export async function POST(request) {
         // Update verified and starred sources with auto-research
         verifiedSources.push(...enhancedResearch.sources.filter(s => s.fact_check_status === 'verified'));
         starredSources.push(...enhancedResearch.sources.filter(s => s.is_starred));
+      }
+    }
+
+    // VALIDATION: Ensure we have meaningful content for script generation
+    if (research?.sources && research.sources.length > 0) {
+      const sourcesWithContent = research.sources.filter(s => 
+        s.source_content && s.source_content.length > 100
+      );
+      
+      console.log('📊 === CONTENT VALIDATION ===');
+      console.log(`Total sources: ${research.sources.length}`);
+      console.log(`Sources with meaningful content (>100 chars): ${sourcesWithContent.length}`);
+      
+      if (sourcesWithContent.length === 0) {
+        console.error('❌ CRITICAL: No sources have meaningful content!');
+        console.log('Source details:', research.sources.map(s => ({
+          title: s.source_title,
+          url: s.source_url,
+          contentLength: s.source_content?.length || 0
+        })));
+        
+        // Don't fail completely, but warn that script quality will be limited
+        console.warn('⚠️ WARNING: Script generation will proceed with limited research data');
+      } else {
+        console.log('✅ Content validation passed');
       }
     }
 
@@ -527,10 +606,10 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       console.log('Credits bypassed for user:', user.id);
     }
 
-    // Get user's channel or create one if needed (required for scripts table)
+    // Get user's channel if it exists (now optional for scripts)
     let channelId = null;
     
-    // First, try to get user's existing channel
+    // Try to get user's existing channel, but it's no longer required
     const { data: userChannel, error: channelError } = await supabase
       .from('channels')
       .select('id')
@@ -540,36 +619,18 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
     
     if (userChannel?.id) {
       channelId = userChannel.id;
+      console.log('Using existing channel with ID:', channelId);
     } else {
-      // Create a default channel for the user if they don't have one
-      console.log('No channel found for user, creating default channel...');
-      const { data: newChannel, error: createError } = await supabase
-        .from('channels')
-        .insert({
-          user_id: user.id,
-          youtube_channel_id: `default_${user.id}_${Date.now()}`, // Make it unique
-          name: 'My Channel',
-          title: 'My Channel',
-          description: 'Default channel for script generation'
-        })
-        .select()
-        .single();
-      
-      if (createError) {
-        console.error('Failed to create default channel:', createError);
-        // Don't fail the request, just log the error
-      } else {
-        channelId = newChannel.id;
-        console.log('Created default channel with ID:', channelId);
-      }
+      // No channel found - that's OK now, scripts can exist without a channel
+      console.log('No channel found for user, proceeding without channel (script will be channel-independent)');
     }
 
-    // Save the script to the database if we have a channel ID
+    // Save the script to the database (channel is now optional)
     console.log('=== SCRIPT SAVE DEBUG ===');
     console.log('Has channelId:', !!channelId, channelId);
     console.log('Has script:', !!script, script?.substring(0, 100));
     
-    if (channelId && script) {
+    if (script) {  // Only require script content, not channel
       try {
         // Extract title from script if not provided
         const scriptTitle = title || topic || 'Untitled Script';
@@ -587,11 +648,11 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
 
         console.log('Attempting to save script with title:', scriptTitle);
 
-        // Create the script record
+        // Create the script record (with optional channel_id)
         const { data: newScript, error: scriptError } = await supabase
           .from('scripts')
           .insert({
-            channel_id: channelId,
+            channel_id: channelId,  // Can be null now
             user_id: user.id,
             title: scriptTitle,
             content: script,
@@ -659,8 +720,17 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
               console.log('Sources to save:', sourcesToSave.map(s => ({
                 title: s.source_title,
                 url: s.source_url,
-                status: s.fact_check_status
+                status: s.fact_check_status,
+                contentLength: s.source_content?.length || 0
               })));
+              
+              // Log content status for debugging
+              const contentStats = {
+                total: sourcesToSave.length,
+                withContent: sourcesToSave.filter(s => s.source_content && s.source_content.length > 0).length,
+                substantialContent: sourcesToSave.filter(s => s.source_content && s.source_content.length > 100).length
+              };
+              console.log('📊 Content statistics before save:', contentStats);
               
               // Prepare research data for script_research table
               const scriptResearchId = crypto.randomUUID();
@@ -791,16 +861,15 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
         });
       }
     } else {
-      // No channel ID or no script generated
-      console.warn('Script not saved to database:', { 
-        hasChannelId: !!channelId, 
+      // No script generated
+      console.warn('Script not generated:', { 
         hasScript: !!script 
       });
       
       return NextResponse.json({ 
-        script,
+        script: script || '',
         creditsUsed,
-        warning: 'Script generated but not saved to database'
+        error: 'Script generation failed'
       });
     }
   } catch (error) {
