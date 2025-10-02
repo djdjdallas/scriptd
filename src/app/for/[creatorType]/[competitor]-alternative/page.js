@@ -1,7 +1,4 @@
-'use client';
-
-import { useState } from 'react';
-import { 
+import {
   ArrowRight, CheckCircle2, Users, Target, Zap, BarChart3,
   Award, Shield, Clock, TrendingUp, ChevronRight
 } from 'lucide-react';
@@ -149,8 +146,7 @@ function getContentForCombination(creatorType, competitor) {
 
 export default function CreatorCompetitorAlternativePage({ params }) {
   const { creatorType, competitor } = params;
-  const [expandedFaq, setExpandedFaq] = useState(null);
-  
+
   const content = getContentForCombination(creatorType, competitor);
   
   const jsonLd = {
