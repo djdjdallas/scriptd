@@ -61,7 +61,7 @@ export default function CreatorPainPoints({ type }) {
       },
       {
         title: 'Voice Optimization',
-        description: 'Scripts that don't work well with text-to-speech tools'
+        description: 'Scripts that don\'t work well with text-to-speech tools'
       },
       {
         title: 'Monetization Challenges',
