@@ -149,19 +149,34 @@ class AdminService {
     }
   }
 
-  // Revenue Metrics (placeholder - implement based on your billing system)
+  // Revenue Metrics - Now integrated with real Stripe data
   async getRevenueMetrics() {
     try {
-      // This would typically integrate with Stripe or your billing system
-      // For now, returning placeholder data
+      // Import revenue service dynamically to avoid circular dependencies
+      const { revenueService } = await import('./revenue-service');
+      const metrics = await revenueService.getRevenueMetrics();
+
       return {
-        mrr: 5420, // Monthly Recurring Revenue
-        growth: 12.5, // Percentage growth
-        totalRevenue: 45600
+        mrr: metrics.mrr,
+        growth: metrics.growth,
+        totalRevenue: metrics.totalRevenue,
+        arr: metrics.arr,
+        activeSubscriptions: metrics.activeSubscriptions,
+        churnRate: metrics.churnRate,
+        clv: metrics.clv
       };
     } catch (error) {
       console.error('Error fetching revenue metrics:', error);
-      return { mrr: 0, growth: 0, totalRevenue: 0 };
+      // Return zero metrics on error to prevent dashboard crashes
+      return {
+        mrr: 0,
+        growth: 0,
+        totalRevenue: 0,
+        arr: 0,
+        activeSubscriptions: 0,
+        churnRate: 0,
+        clv: 0
+      };
     }
   }
 
