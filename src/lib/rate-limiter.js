@@ -65,3 +65,9 @@ export const contentFetchLimiter = new RateLimiter(
   30,     // 30 requests
   60000   // per minute
 );
+
+// Convenience function for common use case
+export async function checkRateLimit(identifier, feature = 'default', maxRequests = 10, windowMs = 60000) {
+  const limiter = new RateLimiter(maxRequests, windowMs);
+  return await limiter.checkLimit(`${feature}:${identifier}`);
+}

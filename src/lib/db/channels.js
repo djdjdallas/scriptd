@@ -1,9 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+let supabaseInstance = null;
+
+function getSupabaseClient() {
+  if (!supabaseInstance) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
+    supabaseInstance = createClient(supabaseUrl, supabaseKey);
+  }
+  return supabaseInstance;
+}
 
 /**
  * Get a channel by ID with voice profile
@@ -12,6 +23,7 @@ const supabase = createClient(
  */
 export async function getChannel(channelId) {
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('channels')
       .select('*')
@@ -37,6 +49,7 @@ export async function getChannel(channelId) {
  */
 export async function getUserChannels(userId) {
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('channels')
       .select('*')
@@ -63,6 +76,7 @@ export async function getUserChannels(userId) {
  */
 export async function updateChannelVoiceProfile(channelId, voiceProfile) {
   try {
+    const supabase = getSupabaseClient();
     const { error } = await supabase
       .from('channels')
       .update({ voice_profile: voiceProfile, updated_at: new Date().toISOString() })
@@ -87,6 +101,7 @@ export async function updateChannelVoiceProfile(channelId, voiceProfile) {
  */
 export async function upsertChannel(channelData) {
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('channels')
       .upsert(channelData, { onConflict: 'youtube_channel_id' })
@@ -112,6 +127,7 @@ export async function upsertChannel(channelData) {
  */
 export async function deleteChannel(channelId) {
   try {
+    const supabase = getSupabaseClient();
     const { error } = await supabase
       .from('channels')
       .delete()
