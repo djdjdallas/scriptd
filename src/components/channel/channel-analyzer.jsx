@@ -503,11 +503,11 @@ export function ChannelAnalyzer({ channelId, isRemix = false, channelData = null
                     )}
                   </h4>
                   <p className="text-gray-300 leading-relaxed">
-                    {channelData?.audience_description || 
-                     audienceAnalysis?.persona || 
-                     channelData?.remix_analysis?.analysis_data?.audience?.audience_analysis?.demographic_profile?.age_distribution?.median_age 
-                       ? `Median age ${channelData.remix_analysis.analysis_data.audience.audience_analysis.demographic_profile.age_distribution.median_age} with interests in ${channelData?.remix_analysis?.analysis_data?.audience?.audience_analysis?.audience_overlap?.common_interests?.slice(0, 3).join(', ')}`
-                       : 'Run analysis to see your audience profile'}
+                    {channelData?.audience_description ||
+                     audienceAnalysis?.persona ||
+                     (channelData?.remix_analysis?.analysis_data?.audience?.audience_analysis?.demographic_profile?.age_distribution?.median_age
+                       ? `Median age ${channelData?.remix_analysis?.analysis_data?.audience?.audience_analysis?.demographic_profile?.age_distribution?.median_age} with interests in ${channelData?.remix_analysis?.analysis_data?.audience?.audience_analysis?.audience_overlap?.common_interests?.slice(0, 3)?.join(', ') || 'various topics'}`
+                       : 'Run analysis to see your audience profile')}
                   </p>
                 </div>
               </div>

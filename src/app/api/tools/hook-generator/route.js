@@ -69,7 +69,7 @@ Format each hook on a new line with the style name followed by a colon, then the
 
     const response = await ai.generateText({
       prompt,
-      model: AI_MODELS.GPT35_TURBO,
+      model: AI_MODELS.CLAUDE_3_HAIKU,
       temperature: 0.9,
       maxTokens: 800
     });

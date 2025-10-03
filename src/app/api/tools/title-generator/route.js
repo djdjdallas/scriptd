@@ -39,15 +39,20 @@ export const POST = createApiHandler(async (req) => {
 
   try {
     const ai = getAIService();
-    
+
+    const keywordsText = keywords?.trim() ? keywords.trim() : '';
+    const keywordLine = keywordsText
+      ? `Keywords to include: ${keywordsText}`
+      : 'Focus on the topic without requiring specific keywords';
+
     const prompt = `Generate 10 YouTube video titles for the following:
 Topic: ${topic}
-Keywords to include: ${keywords || 'none specified'}
+${keywordLine}
 Style: ${stylePrompts[style] || stylePrompts['how-to']}
 
 Requirements:
 - Each title should be under 60 characters
-- Include the main keyword naturally
+- Include the main topic naturally
 - Make them compelling and click-worthy
 - Avoid clickbait
 - Use power words when appropriate
@@ -57,7 +62,7 @@ Format each title on a new line without numbers or bullets.`;
 
     const response = await ai.generateText({
       prompt,
-      model: AI_MODELS.GPT35_TURBO, // Use cheaper model for free tools
+      model: AI_MODELS.CLAUDE_3_HAIKU, // Fast model for free tools
       temperature: 0.9,
       maxTokens: 500
     });
@@ -76,8 +81,8 @@ Format each title on a new line without numbers or bullets.`;
       if (text.length <= 60) score += 2;
       if (text.length >= 40 && text.length <= 55) score += 1;
 
-      // Keyword inclusion
-      if (keywords && text.toLowerCase().includes(keywords.toLowerCase())) {
+      // Keyword inclusion (only score if keywords were provided)
+      if (keywordsText && text.toLowerCase().includes(keywordsText.toLowerCase())) {
         score += 2;
       }
 
