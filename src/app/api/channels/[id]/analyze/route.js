@@ -158,16 +158,25 @@ export async function POST(request, { params }) {
 
       // Step 2: Generate deep audience insights (just like remix does)
       console.log('📊 Step 2: Generating audience insights...');
-      const audienceInsights = await generateAudienceInsights([channelForAnalysis], {
+      // Include video information for better audience analysis
+      const channelWithContext = {
+        ...channelForAnalysis,
+        recentVideos: videos.slice(0, 10).map(v => ({
+          title: v.snippet?.title,
+          description: v.snippet?.description?.substring(0, 200)
+        }))
+      };
+      const audienceInsights = await generateAudienceInsights([channelWithContext], {
         name: dbChannel.name,
         description: dbChannel.description || ''
       });
 
       // Step 3: Generate comprehensive channel analysis (strengths, opportunities, etc.)
       console.log('📊 Step 3: Generating comprehensive analysis...');
-      const comprehensiveAnalysis = await analyzeRemixWithClaude([channelForAnalysis], {
+      const comprehensiveAnalysis = await analyzeRemixWithClaude([channelWithContext], {
         name: dbChannel.name,
-        description: dbChannel.description || '',
+        description: dbChannel.description || channel.snippet?.description || '',
+        actualContent: videos.slice(0, 5).map(v => v.snippet?.title).join(', '),
         weights: { [channel.id]: 1.0 },
         elements: {
           voice_style: true,
@@ -176,11 +185,25 @@ export async function POST(request, { params }) {
         }
       });
 
-      // Step 4: Generate content ideas
+      // Step 4: Generate content ideas with proper context including video information
       console.log('📊 Step 4: Generating content ideas...');
+      // Add video information to the channel data for better content generation
+      const channelWithVideos = {
+        ...channelForAnalysis,
+        recentVideos: videos.slice(0, 10).map(v => ({
+          title: v.snippet?.title,
+          description: v.snippet?.description?.substring(0, 200)
+        })),
+        voiceAnalysis: voiceAnalyses[0]?.voiceAnalysis || {}
+      };
+
       const contentIdeas = await generateRemixContentIdeas(
-        [channelForAnalysis],
-        { name: dbChannel.name, description: dbChannel.description || '' },
+        [channelWithVideos],
+        {
+          name: dbChannel.name,
+          description: dbChannel.description || channel.snippet?.description || '',
+          actualChannelContent: `This channel creates content about: ${videos.slice(0, 5).map(v => v.snippet?.title).join(', ')}`
+        },
         comprehensiveAnalysis?.analysis || {}
       );
 

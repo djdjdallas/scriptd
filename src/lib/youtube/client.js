@@ -15,27 +15,57 @@ export function getYouTubeClient() {
 // Rate limiting helper
 const rateLimitMap = new Map();
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 100;
+const MAX_REQUESTS_PER_WINDOW = 50; // Reduced to be more conservative
 
 export async function withRateLimit(key, fn) {
   const now = Date.now();
   const windowKey = `${key}-${Math.floor(now / RATE_LIMIT_WINDOW)}`;
-  
+
   const current = rateLimitMap.get(windowKey) || 0;
-  if (current >= MAX_REQUESTS_PER_WINDOW) {
-    throw new Error('Rate limit exceeded. Please try again later.');
+
+  // Log when approaching limit
+  if (current > MAX_REQUESTS_PER_WINDOW * 0.8) {
+    console.warn(`[RateLimit] Approaching limit for ${key}: ${current}/${MAX_REQUESTS_PER_WINDOW}`);
   }
-  
+
+  if (current >= MAX_REQUESTS_PER_WINDOW) {
+    const resetTime = Math.ceil((Math.floor(now / RATE_LIMIT_WINDOW) + 1) * RATE_LIMIT_WINDOW - now) / 1000;
+    console.error(`[RateLimit] Exceeded for ${key}: ${current}/${MAX_REQUESTS_PER_WINDOW}. Resets in ${resetTime}s`);
+    throw new Error(`Rate limit exceeded. Please try again in ${resetTime} seconds.`);
+  }
+
   rateLimitMap.set(windowKey, current + 1);
-  
+
   // Clean up old entries
   for (const [k] of rateLimitMap) {
-    if (!k.startsWith(`${key}-${Math.floor(now / RATE_LIMIT_WINDOW)}`)) {
+    const keyWindow = parseInt(k.split('-').pop());
+    const currentWindow = Math.floor(now / RATE_LIMIT_WINDOW);
+    if (keyWindow < currentWindow - 1) {
       rateLimitMap.delete(k);
     }
   }
-  
+
   return fn();
+}
+
+// Request deduplication - prevent multiple simultaneous requests for same data
+const pendingRequests = new Map();
+
+export async function withDeduplication(key, fn) {
+  // If there's already a pending request for this key, wait for it
+  if (pendingRequests.has(key)) {
+    console.log(`[Deduplication] Waiting for existing request: ${key}`);
+    return pendingRequests.get(key);
+  }
+
+  // Create new pending request
+  const promise = fn().finally(() => {
+    // Clean up after request completes
+    pendingRequests.delete(key);
+  });
+
+  pendingRequests.set(key, promise);
+  return promise;
 }
 
 // Cache helper with context-aware TTL

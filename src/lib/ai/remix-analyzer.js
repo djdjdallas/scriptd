@@ -252,13 +252,25 @@ Format as JSON with detailed descriptions.`;
  */
 export async function generateRemixContentIdeas(channels, config, analysis) {
   try {
-    const prompt = `Based on this remixed YouTube channel combining ${channels.map(c => c.title || c.name).join(', ')}, generate 10 specific, high-potential video ideas.
+    // Extract actual content themes from recent videos
+    const recentVideoTitles = channels.flatMap(ch =>
+      (ch.recentVideos || []).map(v => v.title)
+    ).filter(Boolean);
 
-Channel Remix: ${config.name}
+    const actualContentTheme = config.actualChannelContent ||
+      (recentVideoTitles.length > 0 ? `Based on recent videos: ${recentVideoTitles.slice(0, 5).join(', ')}` : '');
+
+    const prompt = `Based on this YouTube channel${channels.length > 1 ? ' remix combining ' + channels.map(c => c.title || c.name).join(', ') : ': ' + (channels[0]?.title || channels[0]?.name)}, generate 10 specific, high-potential video ideas.
+
+Channel${channels.length > 1 ? ' Remix' : ''}: ${config.name}
 Description: ${config.description}
+${actualContentTheme ? `\nACTUAL CHANNEL CONTENT (IMPORTANT - BASE IDEAS ON THIS): ${actualContentTheme}` : ''}
+${recentVideoTitles.length > 0 ? `\nRecent Video Examples:\n${recentVideoTitles.slice(0, 10).map(t => `- ${t}`).join('\n')}` : ''}
 
 Audience Profile: ${JSON.stringify(analysis?.audience || {}, null, 2)}
 Content Strategy: ${analysis?.contentStrategy || 'Blend of source channels'}
+
+CRITICAL: Generate video ideas that match the ACTUAL CONTENT THEME shown in the recent videos above, NOT just based on the channel name. The ideas should be consistent with the types of videos this channel actually creates.
 
 Generate 10 video ideas that:
 1. Appeal to the combined audience
@@ -327,9 +339,16 @@ Format as a JSON array.`;
  */
 export async function generateAudienceInsights(channels, config) {
   try {
-    const prompt = `Analyze the combined audience for a YouTube channel remix combining these channels:
+    // Include recent videos for context
+    const channelDetails = channels.map(ch => {
+      const recentTitles = (ch.recentVideos || []).slice(0, 5).map(v => v.title).filter(Boolean);
+      return `- ${ch.title || ch.name}: ${ch.subscriber_count?.toLocaleString() || 'Unknown'} subscribers
+  ${recentTitles.length > 0 ? `Recent content: ${recentTitles.join(', ')}` : ''}`;
+    }).join('\n');
 
-${channels.map(ch => `- ${ch.title || ch.name}: ${ch.subscriber_count?.toLocaleString() || 'Unknown'} subscribers`).join('\n')}
+    const prompt = `Analyze the ${channels.length > 1 ? 'combined audience for a YouTube channel remix combining' : 'audience for'} these channels:
+
+${channelDetails}
 
 Provide deep insights about:
 

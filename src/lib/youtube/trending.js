@@ -1,4 +1,4 @@
-import { getYouTubeClient, withRateLimit, getCached, setCache, clearCache } from './client.js';
+import { getYouTubeClient, withRateLimit, withDeduplication, getCached, setCache, clearCache } from './client.js';
 
 export async function getTrendingVideos(options = {}) {
   const {
@@ -208,30 +208,33 @@ export async function getChannelStatistics(channelIds) {
 
 export async function getChannelRecentVideos(playlistId, maxResults = 10) {
   if (!playlistId) return [];
-  
+
   const cacheKey = `channel-recent-${playlistId}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
-  const youtube = getYouTubeClient();
-  
-  try {
-    const response = await withRateLimit('playlistItems', () =>
-      youtube.playlistItems.list({
-        part: ['snippet', 'contentDetails'],
-        playlistId,
-        maxResults: Math.min(maxResults, 50),
-        order: 'date'
-      })
-    );
+  // Use deduplication to prevent multiple simultaneous requests
+  return withDeduplication(cacheKey, async () => {
+    const youtube = getYouTubeClient();
 
-    const videos = response.data.items || [];
-    setCache(cacheKey, videos);
-    return videos;
-  } catch (error) {
-    console.error('Error fetching recent videos:', error);
-    return [];
-  }
+    try {
+      const response = await withRateLimit('playlistItems', () =>
+        youtube.playlistItems.list({
+          part: ['snippet', 'contentDetails'],
+          playlistId,
+          maxResults: Math.min(maxResults, 50),
+          order: 'date'
+        })
+      );
+
+      const videos = response.data.items || [];
+      setCache(cacheKey, videos);
+      return videos;
+    } catch (error) {
+      console.error('Error fetching recent videos:', error);
+      return [];
+    }
+  });
 }
 
 // Fetch videos published in the last N hours
