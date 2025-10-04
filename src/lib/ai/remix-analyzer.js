@@ -75,13 +75,21 @@ Identify potential challenges in combining these channels and how to overcome th
 8. FIRST 30 DAYS ACTION PLAN
 Provide a specific action plan for the first month of the remixed channel.
 
+CRITICAL JSON RULES:
+- Respond ONLY with valid JSON (no markdown, no code blocks)
+- Never use empty keys (all keys must be non-empty strings)
+- All property names must be descriptive and non-empty
+- Ensure all quotes are properly escaped using backslash (\\")
+- No trailing commas
+- Validate JSON structure before responding
+
 Format your response as a structured JSON object.`;
 
     const response = await anthropic.messages.create({
       model: REMIX_MODEL,
       max_tokens: 4000,
       temperature: 0.7,
-      system: "You are an expert YouTube strategist who provides detailed, actionable insights for channel growth. Always respond with valid JSON.",
+      system: "You are an expert YouTube strategist who provides detailed, actionable insights for channel growth. CRITICAL: Respond ONLY with valid JSON. Never use empty keys like \"\": \"value\". All property names must be non-empty strings. Ensure all quotes are properly escaped. No trailing commas. Validate JSON syntax before responding.",
       messages: [
         {
           role: 'user',
@@ -90,20 +98,28 @@ Format your response as a structured JSON object.`;
       ]
     });
 
-    // Parse the response
+    // Parse the response with comprehensive JSON repair
     const content = response.content[0].text;
-    
+
     // Try to extract JSON from the response
     let analysis;
     try {
       // First try direct parse
       analysis = JSON.parse(content);
     } catch (e) {
+      console.log('Initial parse failed, attempting JSON extraction and repair...');
+
       // Try to extract JSON from markdown code blocks
       const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
-      if (jsonMatch) {
-        analysis = JSON.parse(jsonMatch[1]);
-      } else {
+      let jsonText = jsonMatch ? jsonMatch[1] : content;
+
+      // Apply comprehensive JSON repairs
+      try {
+        jsonText = repairJSON(jsonText);
+        analysis = JSON.parse(jsonText);
+        console.log('✅ Successfully parsed after JSON repair');
+      } catch (e2) {
+        console.error('JSON parse failed even after repair:', e2.message);
         // Fallback: create structured data from text response
         analysis = parseTextResponse(content);
       }
@@ -397,6 +413,44 @@ Provide specific, actionable insights formatted as JSON.`;
 /**
  * Parse text response into structured data
  */
+/**
+ * Comprehensive JSON repair function
+ */
+function repairJSON(jsonText) {
+  let fixed = jsonText.trim();
+
+  // Remove empty keys (critical fix)
+  fixed = fixed.replace(/,?\s*""\s*:\s*"[^"]*"/g, '');
+  fixed = fixed.replace(/,?\s*""\s*:\s*\{[^}]*\}/g, '');
+  fixed = fixed.replace(/,?\s*""\s*:\s*\[[^\]]*\]/g, '');
+
+  // Fix unescaped quotes in string values
+  fixed = fixed.replace(
+    /"([^":\\,\[\]{}]+)":\s*"([^"]*)"/g,
+    (match, key, value) => {
+      // Don't double-escape already escaped quotes
+      if (value.includes('\\"')) return match;
+      // Escape any unescaped quotes in the value
+      let fixedValue = value.replace(/(?<!\\)"/g, '\\"');
+      return `"${key}": "${fixedValue}"`;
+    }
+  );
+
+  // Remove trailing commas
+  fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
+
+  // Add missing commas between properties
+  fixed = fixed.replace(/([}\]])(\s*)("[^"]+":)/g, '$1,$2$3');
+  fixed = fixed.replace(/("|\d|true|false|null)(\s+)("[^"]+":)/g, '$1,$2$3');
+
+  // Clean up double commas created by removing empty keys
+  fixed = fixed.replace(/,\s*,/g, ',');
+  // Remove leading commas after opening braces
+  fixed = fixed.replace(/\{\s*,/g, '{');
+
+  return fixed;
+}
+
 function parseTextResponse(text) {
   // Basic parsing to create structured data from text
   const sections = text.split(/\n\n+/);

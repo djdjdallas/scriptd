@@ -128,19 +128,48 @@ export async function GET(request, { params }) {
     const isRecent = hoursSinceAnalysis < 24;
 
     // Format the response to match what the component expects
+    // Extract the full audience profile from audience_persona (which should be JSONB)
+    const audienceProfile = typeof analysis.audience_persona === 'object' ? analysis.audience_persona : {};
+
+    // Get content ideas from either content_ideas column OR insights.contentRecommendations
+    const contentIdeas = analysis.content_ideas || analysis.insights?.contentRecommendations || [];
+
     const formattedAnalysis = {
       analytics: analysis.analytics_data,
-      persona: analysis.audience_persona,
-      insights: analysis.insights,
-      audienceAnalysis: {
-        persona: analysis.audience_description,
-        demographics: analysis.analytics_data?.demographics,
-        interests: analysis.analytics_data?.interests,
-        psychographics: analysis.analytics_data?.psychographics,
-        aiInsights: analysis.insights?.aiInsights,
-        aiRecommendations: analysis.insights?.aiRecommendations
+      persona: audienceProfile.persona || analysis.audience_description || '',
+      insights: {
+        ...analysis.insights,
+        // Ensure these are available at the top level for the component
+        strengths: analysis.insights?.strengths || [],
+        opportunities: analysis.insights?.opportunities || [],
+        recommendations: analysis.insights?.contentRecommendations || []
       },
-      contentIdeas: analysis.content_ideas
+      audienceAnalysis: {
+        ...audienceProfile,
+        persona: audienceProfile.persona || analysis.audience_description,
+        // Use the deep analysis data structure
+        demographic_profile: audienceProfile.demographic_profile || analysis.analytics_data?.audience?.demographic_profile || {},
+        psychographic_analysis: audienceProfile.psychographic_analysis || analysis.analytics_data?.audience?.psychographic_analysis || {},
+        engagement_drivers: audienceProfile.engagement_drivers || analysis.analytics_data?.audience?.engagement_drivers || {},
+        content_consumption_patterns: audienceProfile.content_consumption_patterns || analysis.analytics_data?.audience?.content_consumption_patterns || {},
+        monetization_potential: audienceProfile.monetization_potential || analysis.analytics_data?.audience?.monetization_potential || {},
+
+        // Fallback to old structure for backwards compatibility
+        demographics: audienceProfile.demographics || audienceProfile.demographic_profile || analysis.analytics_data?.audience?.demographics || {},
+        interests: audienceProfile.interests || audienceProfile.psychographics?.interests || analysis.analytics_data?.audience?.interests || [],
+        psychographics: audienceProfile.psychographics || audienceProfile.psychographic_analysis || analysis.analytics_data?.audience?.psychographics || {},
+        contentPreferences: audienceProfile.contentPreferences || [],
+        viewingHabits: audienceProfile.viewingHabits || audienceProfile.content_consumption_patterns || analysis.analytics_data?.audience?.viewingHabits || {},
+        problemsSolved: audienceProfile.problemsSolved || [],
+        subscriptionMotivation: audienceProfile.subscriptionMotivation || ''
+      },
+      contentIdeas: contentIdeas,
+      voiceProfile: {}, // This would be fetched from the channel table
+      channelIdentity: analysis.insights?.channelIdentity || {},
+      growthStrategy: analysis.insights?.growthStrategy || {},
+      competitivePositioning: analysis.insights?.competitivePositioning || {},
+      actionPlan: analysis.insights?.actionPlan || {},
+      optimizationOpportunities: analysis.insights?.optimizationOpportunities || analysis.insights?.opportunities || []
     };
 
     return NextResponse.json({
@@ -148,6 +177,7 @@ export async function GET(request, { params }) {
       isRecent,
       analysisDate: analysis.created_at,
       hoursOld: Math.round(hoursSinceAnalysis),
+      videosAnalyzed: analysis.videos_analyzed || 0,
       message: isRecent ? 'Using cached analysis' : 'Analysis is outdated'
     });
 

@@ -94,13 +94,20 @@ Create a detailed voice profile with these categories, using specific examples f
 
 IMPORTANT: When including example phrases, ensure all quotes are properly escaped. For example:
 Instead of: "She said "hello""
-Use: "She said \\"hello\\""`;
+Use: "She said \\"hello\\""
+
+CRITICAL JSON RULES:
+- Respond ONLY with valid JSON (no markdown, no code blocks)
+- Never use empty keys (all keys must be non-empty strings)
+- Ensure all quotes are properly escaped
+- No trailing commas
+- Validate the JSON structure before responding`;
 
   const response = await anthropic.messages.create({
     model: VOICE_MODEL,
     max_tokens: 4000,
     temperature: 0.3,
-    system: "You are an expert linguistic analyst specializing in YouTube content creator voice patterns. Provide detailed, actionable analysis with specific examples.",
+    system: "You are an expert linguistic analyst specializing in YouTube content creator voice patterns. Provide detailed, actionable analysis with specific examples. CRITICAL: Respond ONLY with valid JSON. Never use empty keys like \"\": \"value\". Ensure all property names are non-empty strings. Double-check JSON syntax before responding.",
     messages: [{
       role: 'user',
       content: enhancedPrompt
@@ -231,14 +238,25 @@ function parseEnhancedVoiceAnalysis(analysisText) {
         }
       );
       
-      // Step 6: Fix structural issues
+      // Step 6: Fix empty keys (critical fix for current error)
+      // Remove properties with empty keys like "": "value"
+      fixedText = fixedText.replace(/,?\s*""\s*:\s*"[^"]*"/g, '');
+      fixedText = fixedText.replace(/,?\s*""\s*:\s*\{[^}]*\}/g, '');
+      fixedText = fixedText.replace(/,?\s*""\s*:\s*\[[^\]]*\]/g, '');
+
+      // Step 7: Fix structural issues
       // Remove trailing commas
       fixedText = fixedText.replace(/,(\s*[}\]])/g, '$1');
-      
+
       // Add missing commas between properties
       fixedText = fixedText.replace(/([}\]])(\s*)("[^"]+":)/g, '$1,$2$3');
       fixedText = fixedText.replace(/("|\d|true|false|null)(\s+)("[^"]+":)/g, '$1,$2$3');
-      
+
+      // Clean up any double commas created by removing empty keys
+      fixedText = fixedText.replace(/,\s*,/g, ',');
+      // Remove leading commas after opening braces
+      fixedText = fixedText.replace(/\{\s*,/g, '{');
+
       // Try parsing the fixed version
       try {
         const parsed = JSON.parse(fixedText);
@@ -670,13 +688,19 @@ ENHANCED PROFILE:
 Create a cohesive enhanced voice profile that can generate authentic-sounding content.
 Include specific implementation instructions for each pattern.
 
-Format as JSON.`;
+CRITICAL JSON RULES:
+- Respond ONLY with valid JSON (no markdown, no code blocks)
+- Never use empty keys (all keys must be non-empty strings)
+- All property names must be descriptive and non-empty
+- Ensure all quotes are properly escaped
+- No trailing commas
+- Validate JSON structure before responding`;
 
     const response = await anthropic.messages.create({
       model: VOICE_MODEL,
       max_tokens: 4000,
       temperature: 0.7,
-      system: "You are an expert at analyzing and combining speaking styles based on real transcript data. Create authentic, data-driven voice profiles with deep linguistic patterns.",
+      system: "You are an expert at analyzing and combining speaking styles based on real transcript data. Create authentic, data-driven voice profiles with deep linguistic patterns. CRITICAL: Respond ONLY with valid JSON. Never use empty keys like \"\": \"value\". All property names must be non-empty strings. Validate JSON syntax before responding.",
       messages: [
         {
           role: 'user',

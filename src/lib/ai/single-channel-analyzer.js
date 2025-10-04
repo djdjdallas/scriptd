@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { analyzeChannelVoiceFromYouTube } from './remix-voice-analyzer';
+import { analyzeChannelVoicesFromYouTube } from './remix-voice-analyzer';
 
 // Initialize Anthropic
 const anthropic = new Anthropic({
@@ -128,7 +128,29 @@ Provide realistic targets for:
 10. ACTION PLAN (First 30 Days)
 Create a specific, day-by-day action plan for immediate implementation.
 
-Format your response as a valid JSON object with these sections as keys.`;
+IMPORTANT: Format your response as a valid JSON object with these exact camelCase keys:
+{
+  "channelIdentity": { ... },
+  "audienceProfile": {
+    "demographics": { "ageRange": "", "locations": [], "gender": "" },
+    "psychographics": { "interests": [], "values": [], "goals": [], "painPoints": [] },
+    "contentPreferences": [],
+    "viewingHabits": {},
+    "problemsSolved": [],
+    "subscriptionMotivation": "",
+    "persona": "Brief persona description"
+  },
+  "contentAnalysis": { ... },
+  "voiceAndStyle": { ... },
+  "growthStrategy": { ... },
+  "contentRecommendations": [ ... ],
+  "optimizationOpportunities": { ... },
+  "competitivePositioning": { ... },
+  "metricsAndBenchmarks": { ... },
+  "actionPlan": { ... }
+}
+
+Respond ONLY with valid JSON, no markdown code blocks or extra text.`;
 
     const response = await anthropic.messages.create({
       model: ANALYSIS_MODEL,
@@ -150,20 +172,50 @@ Format your response as a valid JSON object with these sections as keys.`;
     let analysis;
     try {
       analysis = JSON.parse(content);
+      console.log('✅ Successfully parsed JSON response from Claude');
     } catch (e) {
+      console.log('⚠️ Failed to parse direct JSON, trying markdown extraction...');
       // Try to extract JSON from markdown code blocks
       const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
       if (jsonMatch) {
-        analysis = JSON.parse(jsonMatch[1]);
+        try {
+          analysis = JSON.parse(jsonMatch[1]);
+          console.log('✅ Successfully parsed JSON from markdown');
+        } catch (e2) {
+          console.error('❌ Failed to parse JSON from markdown:', e2.message);
+          console.log('📝 Raw content preview:', content.substring(0, 500));
+          // Fallback: create structured data from text response
+          analysis = parseTextResponse(content);
+        }
       } else {
+        console.log('📝 No JSON found in markdown, using fallback parser');
+        console.log('Raw content preview:', content.substring(0, 500));
         // Fallback: create structured data from text response
         analysis = parseTextResponse(content);
       }
     }
 
+    // Normalize keys to camelCase if they came with different formatting
+    const normalizedAnalysis = {
+      channelIdentity: analysis['CHANNEL IDENTITY'] || analysis.channelIdentity || analysis['1. CHANNEL IDENTITY'] || {},
+      audienceProfile: analysis['AUDIENCE PROFILE'] || analysis.audienceProfile || analysis['2. AUDIENCE PROFILE'] || {},
+      contentAnalysis: analysis['CONTENT ANALYSIS'] || analysis.contentAnalysis || analysis['3. CONTENT ANALYSIS'] || {},
+      voiceAndStyle: analysis['VOICE & PRESENTATION STYLE'] || analysis.voiceAndStyle || analysis['4. VOICE & PRESENTATION STYLE'] || {},
+      growthStrategy: analysis['GROWTH STRATEGY'] || analysis.growthStrategy || analysis['5. GROWTH STRATEGY'] || {},
+      contentRecommendations: analysis['CONTENT RECOMMENDATIONS'] || analysis.contentRecommendations || analysis['6. CONTENT RECOMMENDATIONS'] || [],
+      optimizationOpportunities: analysis['OPTIMIZATION OPPORTUNITIES'] || analysis.optimizationOpportunities || analysis['7. OPTIMIZATION OPPORTUNITIES'] || {},
+      competitivePositioning: analysis['COMPETITIVE POSITIONING'] || analysis.competitivePositioning || analysis['8. COMPETITIVE POSITIONING'] || {},
+      metricsAndBenchmarks: analysis['METRICS & BENCHMARKS'] || analysis.metricsAndBenchmarks || analysis['9. METRICS & BENCHMARKS'] || {},
+      actionPlan: analysis['ACTION PLAN (First 30 Days)'] || analysis.actionPlan || analysis['10. ACTION PLAN (First 30 Days)'] || {}
+    };
+
+    console.log('📊 Analysis sections populated:', Object.keys(normalizedAnalysis).filter(k =>
+      normalizedAnalysis[k] && (typeof normalizedAnalysis[k] === 'object' ? Object.keys(normalizedAnalysis[k]).length > 0 : normalizedAnalysis[k].length > 0)
+    ));
+
     return {
       success: true,
-      analysis: analysis,
+      analysis: normalizedAnalysis,
       model: ANALYSIS_MODEL,
       channelSummary
     };
@@ -185,7 +237,16 @@ export async function generateChannelVoiceProfile(channel, videos) {
     console.log('🎯 Starting voice profile generation from real YouTube data...');
 
     // Analyze actual videos for voice/style
-    const voiceAnalysis = await analyzeChannelVoiceFromYouTube(channel, videos);
+    // Note: analyzeChannelVoicesFromYouTube expects an array of channels with youtube_channel_id
+    const channelWithId = {
+      ...channel,
+      youtube_channel_id: channel.id,
+      title: channel.snippet?.title,
+      name: channel.snippet?.title
+    };
+
+    const channelAnalyses = await analyzeChannelVoicesFromYouTube([channelWithId], {});
+    const voiceAnalysis = channelAnalyses[0]?.voiceAnalysis ? { success: true, voiceProfile: channelAnalyses[0].voiceAnalysis } : { success: false };
 
     if (voiceAnalysis.success) {
       console.log('✅ Successfully created voice profile from real YouTube data');

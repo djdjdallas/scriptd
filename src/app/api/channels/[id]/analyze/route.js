@@ -117,30 +117,124 @@ export async function POST(request, { params }) {
 
     // === NEW: Comprehensive Analysis for Regular Channels ===
     console.log('🚀 Starting comprehensive channel analysis for:', dbChannel.name);
+    console.log('📍 YouTube Channel ID:', dbChannel.youtube_channel_id);
 
     // Fetch fresh channel data from YouTube
     const channel = await getChannelById(dbChannel.youtube_channel_id);
+
+    console.log('✅ Found YouTube channel:', channel.snippet?.title);
+    console.log('📺 Channel ID:', channel.id);
+    console.log('👥 Subscribers:', parseInt(channel.statistics?.subscriberCount || 0).toLocaleString());
 
     // Fetch recent videos for analysis
     const videos = await getChannelVideos(dbChannel.youtube_channel_id, 50);
 
     console.log(`📊 Analyzing channel with ${videos.length} videos`);
 
-    // Run comprehensive Claude analysis
-    const claudeAnalysis = await analyzeChannelWithClaude(channel, videos, dbChannel);
+    // Use the SAME comprehensive analysis system as remix channels
+    const { analyzeChannelVoicesFromYouTube } = await import('@/lib/ai/remix-voice-analyzer');
+    const {
+      generateAudienceInsights,
+      generateRemixContentIdeas,
+      analyzeRemixWithClaude
+    } = await import('@/lib/ai/remix-analyzer');
 
-    if (!claudeAnalysis.success) {
-      throw new Error('Failed to analyze channel with AI: ' + claudeAnalysis.error);
+    console.log('🎯 Running deep analysis with transcript-based voice profiling...');
+
+    // Prepare channel data in the format expected by the remix analyzer
+    const channelForAnalysis = {
+      ...channel,
+      youtube_channel_id: channel.id,
+      title: channel.snippet?.title,
+      name: channel.snippet?.title,
+      subscriber_count: parseInt(channel.statistics?.subscriberCount || 0),
+      description: channel.snippet?.description || dbChannel.description
+    };
+
+    try {
+      // Step 1: Analyze voice from transcripts (just like remix does)
+      console.log('📊 Step 1: Analyzing voice from transcripts...');
+      const voiceAnalyses = await analyzeChannelVoicesFromYouTube([channelForAnalysis], {});
+
+      // Step 2: Generate deep audience insights (just like remix does)
+      console.log('📊 Step 2: Generating audience insights...');
+      const audienceInsights = await generateAudienceInsights([channelForAnalysis], {
+        name: dbChannel.name,
+        description: dbChannel.description || ''
+      });
+
+      // Step 3: Generate comprehensive channel analysis (strengths, opportunities, etc.)
+      console.log('📊 Step 3: Generating comprehensive analysis...');
+      const comprehensiveAnalysis = await analyzeRemixWithClaude([channelForAnalysis], {
+        name: dbChannel.name,
+        description: dbChannel.description || '',
+        weights: { [channel.id]: 1.0 },
+        elements: {
+          voice_style: true,
+          content_strategy: true,
+          audience_targeting: true
+        }
+      });
+
+      // Step 4: Generate content ideas
+      console.log('📊 Step 4: Generating content ideas...');
+      const contentIdeas = await generateRemixContentIdeas(
+        [channelForAnalysis],
+        { name: dbChannel.name, description: dbChannel.description || '' },
+        comprehensiveAnalysis?.analysis || {}
+      );
+
+      console.log('✅ Deep analysis completed successfully');
+
+      // Use the rich remix-style analysis
+      var claudeAnalysis = {
+        success: true,
+        analysis: {
+          // Audience data
+          audience_analysis: audienceInsights?.insights || {},
+          audienceProfile: audienceInsights?.insights || {},
+
+          // Comprehensive analysis data
+          growthStrategy: comprehensiveAnalysis?.analysis?.growthTactics || {},
+          optimizationOpportunities: comprehensiveAnalysis?.analysis?.challenges || [],
+          contentRecommendations: contentIdeas?.ideas || [],
+          actionPlan: comprehensiveAnalysis?.analysis?.actionPlan || {},
+
+          // Voice and style
+          voiceAndStyle: comprehensiveAnalysis?.analysis?.voiceProfile || {},
+          contentAnalysis: comprehensiveAnalysis?.analysis?.contentStrategy || {},
+          competitivePositioning: comprehensiveAnalysis?.analysis?.positioning || {}
+        },
+        model: 'claude-sonnet-4-20250514'
+      };
+
+      var voiceProfileResult = {
+        success: voiceAnalyses[0]?.voiceAnalysis ? true : false,
+        voiceProfile: voiceAnalyses[0]?.voiceAnalysis || {},
+        basedOnRealData: voiceAnalyses[0]?.source === 'youtube-transcripts'
+      };
+    } catch (deepAnalysisError) {
+      console.warn('⚠️ Deep analysis failed, falling back to basic analysis:', deepAnalysisError.message);
+      console.error('Deep analysis error details:', deepAnalysisError);
+      // Fallback to basic analysis
+      var claudeAnalysis = await analyzeChannelWithClaude(channel, videos, dbChannel);
+      var voiceProfileResult = await generateChannelVoiceProfile(channel, videos);
     }
-
-    // Generate comprehensive voice profile from real YouTube data
-    const voiceProfileResult = await generateChannelVoiceProfile(channel, videos);
 
     // Extract analysis sections
     const analysis = claudeAnalysis.analysis;
 
+    // Check if we have remix-style deep analysis with audience_analysis
+    const hasDeepAnalysis = analysis.audience_analysis;
+    const audienceData = hasDeepAnalysis || analysis.audienceProfile || {};
+
     // Format analytics data to match expected structure
     const stats = channel.statistics || {};
+
+    // Extract content keywords from video titles
+    const videoTitles = videos.map(v => v.snippet?.title || '').join(' ');
+    const topKeywords = extractTopKeywords(videoTitles, videos);
+
     const formattedAnalytics = {
       channel: {
         totalViews: parseInt(stats.viewCount || 0),
@@ -158,23 +252,129 @@ export async function POST(request, { params }) {
           : 0,
         engagementRate: calculateEngagementRate(videos),
         performanceScore: analysis.metricsAndBenchmarks?.performanceScore || 70,
-        growthPotential: analysis.metricsAndBenchmarks?.growthPotential || 75
+        growthPotential: analysis.metricsAndBenchmarks?.growthPotential || 75,
+        totalEngagements: videos.reduce((sum, v) => {
+          return sum + parseInt(v.statistics?.likeCount || 0) + parseInt(v.statistics?.commentCount || 0);
+        }, 0)
       },
-      audience: {
+      // Use deep audience analysis if available
+      audience: hasDeepAnalysis ? {
+        demographic_profile: audienceData.demographic_profile || {},
+        psychographic_analysis: audienceData.psychographic_analysis || {},
+        audience_overlap: audienceData.audience_overlap || {},
+        engagement_drivers: audienceData.engagement_drivers || {},
+        content_consumption_patterns: audienceData.content_consumption_patterns || {},
+        monetization_potential: audienceData.monetization_potential || {},
+        actionable_recommendations: audienceData.actionable_recommendations || {}
+      } : {
         demographics: analysis.audienceProfile?.demographics || {},
         interests: analysis.audienceProfile?.interests || [],
         psychographics: analysis.audienceProfile?.psychographics || {},
         viewingHabits: analysis.audienceProfile?.viewingHabits || {}
       },
+      // Add content field (what the frontend expects)
+      content: {
+        topKeywords: topKeywords,
+        contentTypes: analysis.contentAnalysis?.contentTypes || analysis.contentAnalysis?.contentPillars || {},
+        contentPillars: analysis.contentAnalysis?.contentPillars || [],
+        whatWorksWell: analysis.contentAnalysis?.whatWorksWell || [],
+        contentGaps: analysis.contentAnalysis?.contentGaps || [],
+        optimalLength: analysis.contentAnalysis?.optimalVideoLength || analysis.contentAnalysis?.videoLength || '10-15 minutes',
+        publishingFrequency: analysis.contentAnalysis?.publishingFrequency || analysis.contentAnalysis?.uploadSchedule || 'Weekly',
+        contentPatterns: analysis.contentAnalysis?.contentPatterns || {}
+      },
       contentAnalysis: analysis.contentAnalysis || {},
       voiceAndStyle: analysis.voiceAndStyle || {},
-      competitivePositioning: analysis.competitivePositioning || {}
+      competitivePositioning: analysis.competitivePositioning || {},
+      topVideos: videos.slice(0, 10).map(v => ({
+        id: v.id,
+        title: v.snippet?.title,
+        views: parseInt(v.statistics?.viewCount || 0),
+        likes: parseInt(v.statistics?.likeCount || 0),
+        comments: parseInt(v.statistics?.commentCount || 0),
+        publishedAt: v.snippet?.publishedAt
+      })).sort((a, b) => b.views - a.views),
+      analysisMetadata: {
+        videosAnalyzed: videos.length,
+        analysisDate: new Date().toISOString(),
+        hasDeepAnalysis
+      }
     };
 
     // Create comprehensive insights object
     const comprehensiveInsights = {
       strengths: extractStrengths(analysis),
-      opportunities: analysis.optimizationOpportunities || [],
+      // Handle opportunities - convert object to array if needed
+      opportunities: (() => {
+        const opps = analysis.optimizationOpportunities || [];
+        if (Array.isArray(opps)) {
+          return opps;
+        } else if (typeof opps === 'object' && Object.keys(opps).length > 0) {
+          // Convert object to array of items
+          return Object.entries(opps).map(([category, items]) => ({
+            category,
+            items: Array.isArray(items) ? items : [items]
+          }));
+        }
+        // Default opportunities if none provided
+        return [
+          {
+            category: 'Content Optimization',
+            items: [
+              'Optimize video titles and thumbnails for higher click-through rates',
+              'Experiment with different content formats to increase engagement',
+              'Create more series-based content to build viewer anticipation'
+            ]
+          },
+          {
+            category: 'Audience Growth',
+            items: [
+              'Collaborate with similar channels in your niche',
+              'Leverage trending topics while staying true to your brand',
+              'Improve call-to-action strategies to boost subscription rates'
+            ]
+          }
+        ];
+      })(),
+      // Add recommendations field mapping from contentRecommendations
+      recommendations: (() => {
+        const recs = analysis.contentRecommendations || [];
+        if (Array.isArray(recs) && recs.length > 0) {
+          // Extract actionable recommendations from content ideas
+          return recs.slice(0, 5).map(rec => {
+            if (typeof rec === 'string') return rec;
+            if (rec.title) return `Create: ${rec.title}`;
+            if (rec.recommendation) return rec.recommendation;
+            return JSON.stringify(rec);
+          });
+        }
+
+        // Extract from growth strategy
+        const growthRecs = [];
+        if (analysis.growthStrategy?.quickWins) {
+          const quickWins = Array.isArray(analysis.growthStrategy.quickWins)
+            ? analysis.growthStrategy.quickWins
+            : [analysis.growthStrategy.quickWins];
+          growthRecs.push(...quickWins);
+        }
+        if (analysis.growthStrategy?.mediumTerm) {
+          const mediumTerm = Array.isArray(analysis.growthStrategy.mediumTerm)
+            ? analysis.growthStrategy.mediumTerm
+            : [analysis.growthStrategy.mediumTerm];
+          growthRecs.push(...mediumTerm.slice(0, 3));
+        }
+
+        if (growthRecs.length > 0) return growthRecs.slice(0, 5);
+
+        // Default recommendations
+        return [
+          'Increase upload consistency to 2-3 videos per week',
+          'Focus on creating content around your top-performing topics',
+          'Improve video retention by adding hooks in the first 15 seconds',
+          'Engage with your audience through community posts and comments',
+          'Analyze competitors to identify content gaps and opportunities'
+        ];
+      })(),
       growthStrategy: analysis.growthStrategy || {},
       contentRecommendations: analysis.contentRecommendations || [],
       actionPlan: analysis.actionPlan || {},
@@ -185,31 +385,22 @@ export async function POST(request, { params }) {
       }
     };
 
-    // Save comprehensive analysis to database
+    // Save comprehensive analysis to database with DEEP audience data
     const { data: savedAnalysis, error: saveError } = await supabase
       .from('channel_analyses')
       .insert({
         channel_id: id,
         user_id: user.id,
         analytics_data: formattedAnalytics,
-        audience_persona: analysis.audienceProfile?.persona || '',
-        audience_description: formatAudienceDescription(analysis.audienceProfile),
+        // Store the DEEP audience analysis from remix-style insights
+        audience_persona: hasDeepAnalysis ? audienceData : (analysis.audienceProfile || {}),
+        audience_description: hasDeepAnalysis
+          ? formatAudienceDescription(audienceData)
+          : formatAudienceDescription(analysis.audienceProfile),
         insights: comprehensiveInsights,
         content_ideas: analysis.contentRecommendations || [],
         videos_analyzed: videos.length,
-        analysis_date: new Date().toISOString(),
-        // Store full Claude analysis
-        ai_analysis: {
-          channelIdentity: analysis.channelIdentity,
-          audienceProfile: analysis.audienceProfile,
-          contentAnalysis: analysis.contentAnalysis,
-          voiceAndStyle: analysis.voiceAndStyle,
-          growthStrategy: analysis.growthStrategy,
-          competitivePositioning: analysis.competitivePositioning,
-          metricsAndBenchmarks: analysis.metricsAndBenchmarks,
-          actionPlan: analysis.actionPlan,
-          model: claudeAnalysis.model
-        }
+        analysis_date: new Date().toISOString()
       })
       .select()
       .single();
@@ -218,19 +409,28 @@ export async function POST(request, { params }) {
       console.error('Error saving analysis:', saveError);
     }
 
-    // Update channel with latest analytics, voice profile, and audience description
+    // Update channel with latest analytics, voice profile, and audience description using DEEP data
     await supabase
       .from('channels')
       .update({
         last_analyzed_at: new Date().toISOString(),
-        audience_description: formatAudienceDescription(analysis.audienceProfile),
+        // Use deep audience data for description
+        audience_description: hasDeepAnalysis
+          ? formatAudienceDescription(audienceData)
+          : formatAudienceDescription(analysis.audienceProfile),
+        // Store the FULL voice profile from transcript analysis
         voice_profile: voiceProfileResult.success ? voiceProfileResult.voiceProfile : {},
         analytics_summary: {
           performance_score: formattedAnalytics.performance.performanceScore,
           growth_potential: formattedAnalytics.performance.growthPotential,
           audience_quality: comprehensiveInsights.metrics.audienceQuality,
-          demographics: analysis.audienceProfile?.demographics || {},
-          interests: analysis.audienceProfile?.interests || [],
+          // Use deep demographics if available
+          demographics: hasDeepAnalysis
+            ? (audienceData.demographic_profile || {})
+            : (analysis.audienceProfile?.demographics || {}),
+          interests: hasDeepAnalysis
+            ? (audienceData.psychographic_analysis?.interests || [])
+            : (analysis.audienceProfile?.interests || []),
         },
       })
       .eq('id', id)
@@ -238,12 +438,15 @@ export async function POST(request, { params }) {
 
     console.log('✅ Comprehensive analysis completed and saved');
 
-    // Return comprehensive response
+    // Return comprehensive response with DEEP data
     return NextResponse.json({
       analytics: formattedAnalytics,
-      persona: analysis.audienceProfile?.persona || '',
+      persona: hasDeepAnalysis
+        ? (audienceData.psychographic_analysis?.persona || '')
+        : (analysis.audienceProfile?.persona || ''),
       insights: comprehensiveInsights,
-      audienceAnalysis: analysis.audienceProfile || {},
+      // Return deep audience analysis if available
+      audienceAnalysis: hasDeepAnalysis ? audienceData : (analysis.audienceProfile || {}),
       contentIdeas: analysis.contentRecommendations || [],
       voiceProfile: voiceProfileResult.success ? voiceProfileResult.voiceProfile : {},
       channelIdentity: analysis.channelIdentity || {},
@@ -252,8 +455,11 @@ export async function POST(request, { params }) {
       actionPlan: analysis.actionPlan || {},
       analysisId: savedAnalysis?.id,
       isComprehensive: true,
+      hasDeepAnalysis: hasDeepAnalysis,
       basedOnRealData: voiceProfileResult.basedOnRealData || false,
-      message: 'Comprehensive AI analysis completed successfully'
+      message: hasDeepAnalysis
+        ? 'Comprehensive AI analysis with deep audience insights completed successfully'
+        : 'Comprehensive AI analysis completed successfully'
     });
 
   } catch (error) {
@@ -303,6 +509,7 @@ function calculateAudienceQuality(analytics) {
 function extractStrengths(analysis) {
   const strengths = [];
 
+  // Extract from channelIdentity
   if (analysis.channelIdentity?.uniqueElements) {
     strengths.push({
       category: 'Channel Identity',
@@ -312,6 +519,19 @@ function extractStrengths(analysis) {
     });
   }
 
+  if (analysis.channelIdentity?.coreValue || analysis.channelIdentity?.niche) {
+    const identityItems = [];
+    if (analysis.channelIdentity.coreValue) identityItems.push(analysis.channelIdentity.coreValue);
+    if (analysis.channelIdentity.niche) identityItems.push(`Focused on ${analysis.channelIdentity.niche}`);
+    if (identityItems.length > 0) {
+      strengths.push({
+        category: 'Channel Focus',
+        items: identityItems
+      });
+    }
+  }
+
+  // Extract from contentAnalysis
   if (analysis.contentAnalysis?.whatWorksWell) {
     strengths.push({
       category: 'Content Performance',
@@ -321,6 +541,16 @@ function extractStrengths(analysis) {
     });
   }
 
+  if (analysis.contentAnalysis?.contentPillars) {
+    strengths.push({
+      category: 'Content Pillars',
+      items: Array.isArray(analysis.contentAnalysis.contentPillars)
+        ? analysis.contentAnalysis.contentPillars
+        : [analysis.contentAnalysis.contentPillars]
+    });
+  }
+
+  // Extract from competitivePositioning
   if (analysis.competitivePositioning?.uniqueAdvantages) {
     strengths.push({
       category: 'Competitive Advantages',
@@ -330,7 +560,64 @@ function extractStrengths(analysis) {
     });
   }
 
+  if (analysis.competitivePositioning?.differentiators) {
+    strengths.push({
+      category: 'Key Differentiators',
+      items: Array.isArray(analysis.competitivePositioning.differentiators)
+        ? analysis.competitivePositioning.differentiators
+        : [analysis.competitivePositioning.differentiators]
+    });
+  }
+
+  // Extract from voice and style
+  if (analysis.voiceAndStyle?.uniqueElements) {
+    strengths.push({
+      category: 'Voice & Style',
+      items: Array.isArray(analysis.voiceAndStyle.uniqueElements)
+        ? analysis.voiceAndStyle.uniqueElements
+        : [analysis.voiceAndStyle.uniqueElements]
+    });
+  }
+
+  // If no strengths found, generate default ones
+  if (strengths.length === 0) {
+    strengths.push({
+      category: 'Channel Strengths',
+      items: [
+        'Established audience base',
+        'Consistent content output',
+        'Growing channel presence'
+      ]
+    });
+  }
+
   return strengths;
+}
+
+function extractTopKeywords(videoTitles, videos) {
+  // Common stop words to filter out
+  const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'been', 'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'what', 'which', 'who', 'when', 'where', 'why', 'how', 'my', 'your', 'his', 'her', 'its', 'our', 'their']);
+
+  // Extract words from titles
+  const words = videoTitles
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 3 && !stopWords.has(word));
+
+  // Count word frequency
+  const wordCounts = {};
+  words.forEach(word => {
+    wordCounts[word] = (wordCounts[word] || 0) + 1;
+  });
+
+  // Convert to array and sort by frequency
+  const sortedWords = Object.entries(wordCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+    .map(([word, count]) => [word, count]);
+
+  return sortedWords;
 }
 
 function formatAudienceDescription(audienceProfile) {

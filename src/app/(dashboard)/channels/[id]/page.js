@@ -37,6 +37,13 @@ export default function ChannelDetailPage({ params }) {
   const resolvedParams = use(params);
   const channelId = resolvedParams.id;
 
+  // Sanitize voice profile text to remove non-Latin characters (Arabic, etc.)
+  const sanitizeVoiceText = (text) => {
+    if (!text || typeof text !== 'string') return '';
+    // Remove non-Latin characters and trim
+    return text.replace(/[^\x00-\x7F\u00C0-\u024F\u1E00-\u1EFF]/g, '').trim();
+  };
+
   useEffect(() => {
     fetchChannel();
   }, [channelId]);
@@ -385,59 +392,44 @@ export default function ChannelDetailPage({ params }) {
             <CardContent>
               {(() => {
                 // Try multiple sources for voice data
-                let voiceData = {};
+                let voiceData = null;
 
-                // Debug logging
-                console.log("Voice Profile Debug:", {
-                  combined_voice_profile: channel.combined_voice_profile,
-                  remix_data_voice: channel.remix_data?.combined_voice_profile,
-                  voice_profile: channel.voice_profile,
-                  analytics_voice: channel.analytics_data?.voiceProfile
-                });
-
-                // First try combined_voice_profile from various sources
+                // Priority order: combined_voice_profile > voice_profile > remix_data > analytics_data
                 if (
                   channel.combined_voice_profile &&
                   typeof channel.combined_voice_profile === "object" &&
                   Object.keys(channel.combined_voice_profile).length > 0
                 ) {
                   voiceData = channel.combined_voice_profile;
-                  console.log("Using channel.combined_voice_profile", voiceData);
                 }
-                // Try from remix_data
-                else if (
-                  channel.remix_data?.combined_voice_profile &&
-                  typeof channel.remix_data.combined_voice_profile ===
-                    "object" &&
-                  Object.keys(channel.remix_data.combined_voice_profile)
-                    .length > 0
-                ) {
-                  voiceData = channel.remix_data.combined_voice_profile;
-                  console.log("Using channel.remix_data.combined_voice_profile", voiceData);
-                }
-                // Then try regular voice_profile
                 else if (
                   channel.voice_profile &&
                   typeof channel.voice_profile === "object" &&
                   Object.keys(channel.voice_profile).length > 0
                 ) {
                   voiceData = channel.voice_profile;
-                  console.log("Using channel.voice_profile", voiceData);
                 }
-                // Try analytics data
+                else if (
+                  channel.remix_data?.combined_voice_profile &&
+                  typeof channel.remix_data.combined_voice_profile === "object" &&
+                  Object.keys(channel.remix_data.combined_voice_profile).length > 0
+                ) {
+                  voiceData = channel.remix_data.combined_voice_profile;
+                }
                 else if (
                   channel.analytics_data?.voiceProfile &&
                   Object.keys(channel.analytics_data.voiceProfile).length > 0
                 ) {
                   voiceData = channel.analytics_data.voiceProfile;
-                  console.log("Using channel.analytics_data.voiceProfile", voiceData);
                 }
 
-                // Check if we have actual voice properties (not just an empty object)
                 // Voice data can be nested under 'basic' or at the root level
                 const basicVoice = voiceData?.basic || voiceData;
+
+                // Check if we have actual voice properties (not just an empty object)
                 const hasVoiceData =
                   basicVoice &&
+                  typeof basicVoice === "object" &&
                   Object.keys(basicVoice).length > 0 &&
                   (basicVoice.tone ||
                     basicVoice.style ||
@@ -445,7 +437,8 @@ export default function ChannelDetailPage({ params }) {
                     basicVoice.pace ||
                     basicVoice.personality ||
                     basicVoice.catchphrases ||
-                    basicVoice.signature_phrases);
+                    basicVoice.signature_phrases ||
+                    basicVoice.summary);
 
                 if (!hasVoiceData) {
                   return (
@@ -463,120 +456,269 @@ export default function ChannelDetailPage({ params }) {
                   );
                 }
 
+                // Extract data from advanced section if basic is empty
+                const advancedVoice = voiceData?.advanced || {};
+
+                // Build RICH tone array from multiple sources with contextual info
+                const toneData = [];
+                if (basicVoice.tone && Array.isArray(basicVoice.tone) && basicVoice.tone.length > 0) {
+                  toneData.push(...basicVoice.tone);
+                } else if (basicVoice.tone && typeof basicVoice.tone === 'string') {
+                  toneData.push(basicVoice.tone);
+                }
+                // Fallback to advanced data - extract meaningful insights
+                if (toneData.length === 0 && advancedVoice.personality?.formalityScore?.level) {
+                  toneData.push(advancedVoice.personality.formalityScore.level);
+                }
+                if (advancedVoice.personality?.emotionalRange?.dominant) {
+                  const emotion = advancedVoice.personality.emotionalRange.dominant;
+                  if (!toneData.includes(emotion)) toneData.push(emotion);
+                }
+                // Add formality context
+                if (basicVoice.formality && !toneData.includes(basicVoice.formality)) {
+                  toneData.push(basicVoice.formality);
+                }
+
+                // Build ENRICHED style array
+                const styleData = [];
+                if (basicVoice.style && Array.isArray(basicVoice.style) && basicVoice.style.length > 0) {
+                  styleData.push(...basicVoice.style);
+                } else if (basicVoice.style && typeof basicVoice.style === 'string') {
+                  styleData.push(basicVoice.style);
+                }
+                // Add humor style
+                if (advancedVoice.personality?.humorFrequency?.level) {
+                  const humorLevel = advancedVoice.personality.humorFrequency.level;
+                  if (humorLevel !== 'rare') {
+                    styleData.push(`${humorLevel} humor`);
+                  }
+                }
+                // Add storytelling style
+                if (advancedVoice.personality?.storytellingStyle?.primaryStyle) {
+                  const style = advancedVoice.personality.storytellingStyle.primaryStyle;
+                  if (!styleData.includes(style)) styleData.push(`${style} storytelling`);
+                }
+                // Add technical depth
+                if (advancedVoice.personality?.technicalDepth?.level) {
+                  styleData.push(`${advancedVoice.personality.technicalDepth.level} content`);
+                }
+
+                // Get energy level with MORE CONTEXT
+                const energyLevel = basicVoice.energy ||
+                                   advancedVoice.prosody?.energyLevel?.level ||
+                                   null;
+                const energyScore = advancedVoice.prosody?.energyLevel?.score;
+                const energyContext = energyScore !== undefined ? ` (score: ${energyScore.toFixed(1)})` : '';
+
+                // Get speaking pace with MORE DETAIL
+                const speakingPace = basicVoice.pace ||
+                                    advancedVoice.prosody?.speechTempo?.pace ||
+                                    null;
+                const wordsPerMinute = advancedVoice.prosody?.speechTempo?.wordsPerMinute;
+                const paceContext = wordsPerMinute ? ` (${wordsPerMinute} wpm)` : '';
+
+                // Build RICH personality array
+                const personalityData = [];
+                if (basicVoice.personality && Array.isArray(basicVoice.personality) && basicVoice.personality.length > 0) {
+                  personalityData.push(...basicVoice.personality);
+                } else if (basicVoice.personality && typeof basicVoice.personality === 'string') {
+                  personalityData.push(basicVoice.personality);
+                }
+                // Add emotional range info
+                if (advancedVoice.personality?.emotionalRange) {
+                  const emotions = advancedVoice.personality.emotionalRange.scores || {};
+                  const topEmotions = Object.entries(emotions)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 3)
+                    .map(([emotion]) => emotion);
+                  topEmotions.forEach(emotion => {
+                    if (!personalityData.includes(emotion)) personalityData.push(emotion);
+                  });
+                }
+                // Add confidence/uncertainty markers
+                if (advancedVoice.fingerprint?.uniqueIdentifiers?.personalityMarkers) {
+                  const markers = advancedVoice.fingerprint.uniqueIdentifiers.personalityMarkers;
+                  if (markers.analytical > 50) personalityData.push('analytical');
+                  if (markers.confidence > 50) personalityData.push('confident');
+                  if (markers.enthusiasm > 50) personalityData.push('enthusiastic');
+                }
+
                 return (
                   <div className="space-y-4">
-                    {basicVoice.tone && (
+                    {toneData.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-white/60 mb-2">
                           Tone
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {(Array.isArray(basicVoice.tone)
-                            ? basicVoice.tone
-                            : [basicVoice.tone]
-                          )
-                            .filter(Boolean)
-                            .map((t, i) => (
+                          {toneData.filter(Boolean).map((t, i) => {
+                            const sanitized = sanitizeVoiceText(t);
+                            return sanitized ? (
                               <span
                                 key={i}
                                 className="px-2 py-1 bg-blue-500/20 text-blue-200 text-xs rounded-full"
                               >
-                                {t}
+                                {sanitized}
                               </span>
-                            ))}
+                            ) : null;
+                          })}
                         </div>
                       </div>
                     )}
-                    {basicVoice.style && (
+                    {styleData.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-white/60 mb-2">
                           Style
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {(Array.isArray(basicVoice.style)
-                            ? basicVoice.style
-                            : [basicVoice.style]
-                          ).map((s, i) => (
-                            <span
-                              key={i}
-                              className="px-2 py-1 bg-green-500/20 text-green-200 text-xs rounded-full"
-                            >
-                              {s}
-                            </span>
-                          ))}
+                          {styleData.filter(Boolean).map((s, i) => {
+                            const sanitized = sanitizeVoiceText(s);
+                            return sanitized ? (
+                              <span
+                                key={i}
+                                className="px-2 py-1 bg-green-500/20 text-green-200 text-xs rounded-full"
+                              >
+                                {sanitized}
+                              </span>
+                            ) : null;
+                          })}
                         </div>
                       </div>
                     )}
-                    {basicVoice.energy && (
+                    {energyLevel && sanitizeVoiceText(energyLevel) && (
                       <div className="flex items-center justify-between">
                         <p className="text-xs font-medium text-white/60">
                           Energy Level
                         </p>
-                        <span className="text-white/80 text-sm capitalize">
-                          {basicVoice.energy}
+                        <span className="text-white/80 text-sm">
+                          <span className="capitalize">{sanitizeVoiceText(energyLevel)}</span>
+                          {energyContext && <span className="text-white/50 text-xs ml-1">{energyContext}</span>}
                         </span>
                       </div>
                     )}
-                    {basicVoice.pace && (
+                    {speakingPace && sanitizeVoiceText(speakingPace) && (
                       <div className="flex items-center justify-between">
                         <p className="text-xs font-medium text-white/60">
                           Speaking Pace
                         </p>
-                        <span className="text-white/80 text-sm capitalize">
-                          {basicVoice.pace}
+                        <span className="text-white/80 text-sm">
+                          <span className="capitalize">{sanitizeVoiceText(speakingPace)}</span>
+                          {paceContext && <span className="text-white/50 text-xs ml-1">{paceContext}</span>}
                         </span>
                       </div>
                     )}
-                    {basicVoice.personality && (
+                    {/* Add Vocabulary Complexity */}
+                    {advancedVoice.quality?.vocabularyDiversity && (
+                      <div className="pt-3 border-t border-white/10">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-medium text-white/60">
+                            Vocabulary
+                          </p>
+                          <span className="text-white/80 text-sm capitalize">
+                            {advancedVoice.quality.vocabularyDiversity.level}
+                          </span>
+                        </div>
+                        <p className="text-xs text-white/50">
+                          {advancedVoice.quality.vocabularyDiversity.uniqueWords?.toLocaleString()} unique words
+                          {advancedVoice.quality.vocabularyDiversity.ttr &&
+                            ` • ${(advancedVoice.quality.vocabularyDiversity.ttr * 100).toFixed(0)}% diversity`}
+                        </p>
+                      </div>
+                    )}
+                    {/* Add Filler Word Usage */}
+                    {advancedVoice.quality?.fillerWordUsage && (
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-medium text-white/60">
+                          Speech Clarity
+                        </p>
+                        <span className="text-white/80 text-sm capitalize">
+                          {advancedVoice.quality.fillerWordUsage.level} filler words
+                        </span>
+                      </div>
+                    )}
+                    {personalityData.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-white/60 mb-2">
                           Personality
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {(Array.isArray(basicVoice.personality)
-                            ? basicVoice.personality
-                            : [basicVoice.personality]
-                          ).map((p, i) => (
-                            <span
-                              key={i}
-                              className="px-2 py-1 bg-purple-500/20 text-purple-200 text-xs rounded-full"
-                            >
-                              {p}
-                            </span>
-                          ))}
+                          {personalityData.filter(Boolean).map((p, i) => {
+                            const sanitized = sanitizeVoiceText(p);
+                            return sanitized ? (
+                              <span
+                                key={i}
+                                className="px-2 py-1 bg-purple-500/20 text-purple-200 text-xs rounded-full"
+                              >
+                                {sanitized}
+                              </span>
+                            ) : null;
+                          })}
                         </div>
                       </div>
                     )}
-                    {basicVoice.summary && (
+                    {/* Top Words Used */}
+                    {(basicVoice.topWords || advancedVoice.fingerprint?.topVocabulary) && (
+                      <div className="pt-3 border-t border-white/10">
+                        <p className="text-xs font-medium text-white/60 mb-2">
+                          Most Used Words
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {(basicVoice.topWords || advancedVoice.fingerprint?.topVocabulary || [])
+                            .slice(0, 8)
+                            .map((item, i) => {
+                              const word = typeof item === 'object' ? item.word : item;
+                              const count = typeof item === 'object' ? item.count : null;
+                              return (
+                                <span
+                                  key={i}
+                                  className="px-2 py-1 bg-indigo-500/20 text-indigo-200 text-xs rounded"
+                                >
+                                  {word}
+                                  {count && <span className="text-indigo-400/60 ml-1">×{count}</span>}
+                                </span>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+                    {basicVoice.summary && sanitizeVoiceText(basicVoice.summary) && (
                       <div>
                         <p className="text-xs font-medium text-white/60 mb-2">
                           Voice Summary
                         </p>
                         <p className="text-white/70 text-xs leading-relaxed">
-                          {basicVoice.summary}
+                          {sanitizeVoiceText(basicVoice.summary)}
                         </p>
                       </div>
                     )}
-                    {(basicVoice.signature_phrases || basicVoice.catchphrases) && 
-                      (basicVoice.signature_phrases || basicVoice.catchphrases).length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium text-white/60 mb-2">
-                            Signature Phrases
-                          </p>
-                          <div className="space-y-1">
-                            {(basicVoice.signature_phrases || basicVoice.catchphrases)
-                              .slice(0, 3)
-                              .map((phrase, i) => (
-                                <p
-                                  key={i}
-                                  className="text-white/70 text-xs italic"
-                                >
-                                  "{phrase}"
-                                </p>
-                              ))}
+                    {(basicVoice.signature_phrases || basicVoice.catchphrases || advancedVoice.fingerprint?.signaturePhrases) && (
+                      (() => {
+                        const phrases = basicVoice.signature_phrases ||
+                                       basicVoice.catchphrases ||
+                                       (advancedVoice.fingerprint?.signaturePhrases?.map(p => p.phrase || p) || []);
+                        return phrases.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-white/60 mb-2">
+                              Signature Phrases
+                            </p>
+                            <div className="space-y-1">
+                              {phrases.slice(0, 3).map((phrase, i) => {
+                                const phraseText = typeof phrase === 'object' ? phrase.phrase : phrase;
+                                const sanitized = sanitizeVoiceText(phraseText);
+                                return sanitized ? (
+                                  <p
+                                    key={i}
+                                    className="text-white/70 text-xs italic"
+                                  >
+                                    "{sanitized}"
+                                  </p>
+                                ) : null;
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()
+                    )}
                   </div>
                 );
               })()}

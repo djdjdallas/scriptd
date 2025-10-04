@@ -13,10 +13,20 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get channel from database
+    // Get channel from database with latest analysis data
     const { data: channel, error } = await supabase
       .from('channels')
-      .select('*')
+      .select(`
+        *,
+        channel_analyses (
+          analytics_data,
+          audience_persona,
+          insights,
+          content_ideas,
+          analysis_date,
+          videos_analyzed
+        )
+      `)
       .eq('id', id)
       .eq('user_id', user.id)
       .single();
@@ -24,6 +34,23 @@ export async function GET(request, { params }) {
     if (error || !channel) {
       return NextResponse.json({ error: 'Channel not found' }, { status: 404 });
     }
+
+    // Get the most recent analysis - sort client-side since foreign table ordering is unreliable
+    const latestAnalysis = channel.channel_analyses
+      ?.sort((a, b) => new Date(b.analysis_date) - new Date(a.analysis_date))[0] || {};
+
+    // Merge the analysis data into the channel object for easier frontend access
+    if (latestAnalysis && Object.keys(latestAnalysis).length > 0) {
+      channel.analytics_data = latestAnalysis.analytics_data || channel.analytics_data || {};
+      channel.audience_analysis = latestAnalysis.audience_persona || {};
+      channel.insights = latestAnalysis.insights || {};
+      channel.content_ideas = latestAnalysis.content_ideas || [];
+      channel.last_analyzed_at = latestAnalysis.analysis_date;
+      channel.videos_analyzed = latestAnalysis.videos_analyzed || 0;
+    }
+
+    // Remove the nested channel_analyses array since we merged it
+    delete channel.channel_analyses;
 
     // Always check for remix data (a channel might have remix data even if is_remix is false)
     try {
