@@ -31,21 +31,50 @@ export async function POST(request) {
       );
     }
 
-    const { url } = await request.json();
-    
+    const body = await request.json();
+    const { url } = body;
+
+    // Enhanced logging for debugging
+    console.log('📥 Fetch-content API called:', {
+      url,
+      hasUrl: !!url,
+      urlType: typeof url,
+      bodyKeys: Object.keys(body)
+    });
+
     if (!url) {
-      return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+      console.error('❌ No URL provided in request body');
+      return NextResponse.json({
+        error: 'URL is required',
+        details: 'Request body must include a "url" field',
+        received: body
+      }, { status: 400 });
     }
 
     // Skip fetching for special URLs
     if (url.startsWith('#')) {
-      return NextResponse.json({ 
-        content: '', 
-        message: 'Synthetic source - no content to fetch' 
+      console.log(`⏭️ Skipping special URL: ${url}`);
+      return NextResponse.json({
+        content: '',
+        success: true,
+        skipped: true,
+        message: 'Internal reference - no content to fetch'
       });
     }
 
-    console.log(`📥 Fetching content from: ${url}`);
+    // Validate URL format
+    try {
+      new URL(url);
+    } catch (urlError) {
+      console.error(`❌ Invalid URL format: ${url}`, urlError.message);
+      return NextResponse.json({
+        error: 'Invalid URL format',
+        details: `The provided URL is not valid: ${url}`,
+        message: urlError.message
+      }, { status: 400 });
+    }
+
+    console.log(`📥 Valid URL, proceeding to fetch content from: ${url}`);
     
     try {
       // Use the WebScraper to fetch content with timeout

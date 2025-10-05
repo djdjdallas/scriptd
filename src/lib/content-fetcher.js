@@ -1,3 +1,5 @@
+import { isValidAndFetchableUrl } from './utils/url-validator.js';
+
 export class ContentFetcher {
   constructor(maxCharsPerSource = 1500) {
     this.maxChars = maxCharsPerSource;
@@ -15,35 +17,51 @@ export class ContentFetcher {
 
     console.log(`📥 Fetching content for ${sourcesToFetch.length}/${sources.length} sources`);
 
-    const contentPromises = sourcesToFetch.map(source => 
-      this.fetchWithRetry(source.url, 2)
-    );
+    const contentPromises = sourcesToFetch.map(source => {
+      // CRITICAL FIX: Use source_url instead of url
+      const url = source.source_url || source.url;
+
+      // Validate URL before attempting to fetch
+      const validation = isValidAndFetchableUrl(url);
+      if (!validation.valid) {
+        console.log(`⏭️ Skipping unfetchable URL: ${url} - ${validation.reason}`);
+        return Promise.resolve({
+          skipped: true,
+          content: '',
+          message: validation.reason
+        });
+      }
+
+      console.log(`🔍 Preparing to fetch valid URL: ${url}`);
+      return this.fetchWithRetry(url, 2);
+    });
 
     const results = await Promise.allSettled(contentPromises);
 
     let fetchedCount = 0;
     const enriched = sources.map(source => {
-      const needsFetch = !source.source_content || 
+      const needsFetch = !source.source_content ||
                         source.source_content.length < 100;
-      
+
       if (!needsFetch) return source;
 
       const result = results[fetchedCount++];
-      
+      const url = source.source_url || source.url;
+
       if (result.status === 'fulfilled' && result.value?.content) {
         const enrichedSource = {
           ...source,
           source_content: result.value.content.substring(0, this.maxChars),
           fetch_status: result.value.partial ? 'partial' : 'complete'
         };
-        console.log(`✅ Enriched: ${source.url.substring(0, 50)}... (${result.value.content.length} chars)`);
+        console.log(`✅ Enriched: ${url?.substring(0, 50)}... (${result.value.content.length} chars)`);
         return enrichedSource;
       }
 
-      console.warn(`⚠️ Failed to fetch: ${source.url}`, 
+      console.warn(`⚠️ Failed to fetch: ${url}`,
         result.status === 'rejected' ? result.reason : 'No content');
-      return { 
-        ...source, 
+      return {
+        ...source,
         fetch_status: 'failed',
         fetch_error: result.reason?.message || 'Unknown error'
       };
@@ -60,10 +78,25 @@ export class ContentFetcher {
   }
 
   async fetchWithRetry(url, retries = 2) {
+    // Early validation
+    if (!url) {
+      console.error('❌ No URL provided to fetchWithRetry');
+      throw new Error('URL is required for content fetching');
+    }
+
+    // Skip special URLs
+    if (url.startsWith('#')) {
+      console.log(`⏭️ Skipping special URL: ${url}`);
+      return { content: '', skipped: true, message: 'Internal reference - no fetch needed' };
+    }
+
+    console.log(`🔍 Starting fetch for: ${url}`);
     let lastError;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
+        console.log(`📡 Attempt ${attempt + 1}/${retries + 1} for: ${url}`);
+
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
@@ -82,32 +115,57 @@ export class ContentFetcher {
         clearTimeout(timeout);
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          // Get error details for better debugging
+          let errorBody = '';
+          try {
+            errorBody = await response.text();
+          } catch (e) {
+            errorBody = 'Unable to read error response';
+          }
+
+          console.error(`❌ HTTP ${response.status} for ${url}:`, {
+            status: response.status,
+            statusText: response.statusText,
+            errorBody: errorBody.substring(0, 500),
+            attempt: attempt + 1
+          });
+
+          throw new Error(`HTTP ${response.status}: ${errorBody.substring(0, 200)}`);
         }
-        
+
         const data = await response.json();
-        
-        if (data.success && data.content) {
+
+        if (data.success || data.content) {
+          console.log(`✅ Successfully fetched ${url}: ${data.content?.length || 0} chars`);
           return data;
         }
-        
+
+        console.warn(`⚠️ No content returned for ${url}:`, data.message);
         throw new Error(data.message || 'No content returned');
-        
+
       } catch (error) {
         lastError = error;
-        
+
         if (error.name === 'AbortError') {
-          lastError = new Error('Request timeout');
+          console.error(`⏱️ Timeout for ${url} after 10 seconds`);
+          lastError = new Error(`Request timeout for ${url}`);
+        } else {
+          console.error(`❌ Fetch error for ${url}:`, {
+            name: error.name,
+            message: error.message,
+            attempt: attempt + 1
+          });
         }
-        
+
         if (attempt < retries) {
           const delay = 1000 * Math.pow(2, attempt); // Exponential backoff
-          console.log(`🔄 Retry ${attempt + 1}/${retries} for ${url} after ${delay}ms`);
+          console.log(`⏳ Waiting ${delay}ms before retry ${attempt + 2}/${retries + 1} for ${url}`);
           await new Promise(r => setTimeout(r, delay));
         }
       }
     }
-    
+
+    console.error(`❌ All attempts failed for ${url}:`, lastError.message);
     throw lastError;
   }
 

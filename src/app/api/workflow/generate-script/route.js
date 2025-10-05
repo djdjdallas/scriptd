@@ -252,29 +252,95 @@ export async function POST(request) {
       }
     }
 
-    // VALIDATION: Ensure we have meaningful content for script generation
-    if (research?.sources && research.sources.length > 0) {
-      const sourcesWithContent = research.sources.filter(s => 
+    // ENHANCED CONTENT QUALITY VALIDATION
+    const validateContentQuality = (sources) => {
+      const sourcesWithContent = sources.filter(s =>
         s.source_content && s.source_content.length > 100
       );
-      
-      console.log('📊 === CONTENT VALIDATION ===');
-      console.log(`Total sources: ${research.sources.length}`);
-      console.log(`Sources with meaningful content (>100 chars): ${sourcesWithContent.length}`);
-      
-      if (sourcesWithContent.length === 0) {
-        console.error('❌ CRITICAL: No sources have meaningful content!');
+
+      const totalContentLength = sourcesWithContent.reduce((sum, s) =>
+        sum + (s.source_content?.length || 0), 0
+      );
+
+      const stats = {
+        total: sources.length,
+        withContent: sourcesWithContent.length,
+        successRate: sources.length > 0 ? (sourcesWithContent.length / sources.length) * 100 : 0,
+        totalContentLength,
+        averageContentLength: sourcesWithContent.length > 0
+          ? Math.round(totalContentLength / sourcesWithContent.length)
+          : 0
+      };
+
+      console.log('📊 === CONTENT QUALITY VALIDATION ===');
+      console.log('Stats:', stats);
+
+      // Quality thresholds
+      const MIN_SOURCES_WITH_CONTENT = 2;
+      const MIN_SUCCESS_RATE = 40; // 40% minimum
+      const MIN_TOTAL_CONTENT_LENGTH = 2000; // 2000 chars minimum
+
+      const errors = [];
+
+      if (sourcesWithContent.length < MIN_SOURCES_WITH_CONTENT) {
+        errors.push(
+          `Insufficient sources: Only ${sourcesWithContent.length}/${sources.length} sources have content. ` +
+          `Need at least ${MIN_SOURCES_WITH_CONTENT} sources for quality script generation.`
+        );
+      }
+
+      if (stats.successRate < MIN_SUCCESS_RATE) {
+        errors.push(
+          `Low fetch success rate: Only ${stats.successRate.toFixed(1)}% of sources fetched successfully. ` +
+          `Need at least ${MIN_SUCCESS_RATE}% for reliable generation.`
+        );
+      }
+
+      if (stats.totalContentLength < MIN_TOTAL_CONTENT_LENGTH) {
+        errors.push(
+          `Insufficient content: Only ${stats.totalContentLength} characters fetched. ` +
+          `Need at least ${MIN_TOTAL_CONTENT_LENGTH} characters for comprehensive scripts.`
+        );
+      }
+
+      return {
+        isValid: errors.length === 0,
+        errors,
+        stats,
+        sourcesWithContent
+      };
+    };
+
+    // Validate content quality
+    if (research?.sources && research.sources.length > 0) {
+      const validation = validateContentQuality(research.sources);
+
+      if (!validation.isValid) {
+        console.error('❌ Content quality validation failed:', validation.errors);
         console.log('Source details:', research.sources.map(s => ({
           title: s.source_title,
           url: s.source_url,
-          contentLength: s.source_content?.length || 0
+          contentLength: s.source_content?.length || 0,
+          fetchStatus: s.fetch_status
         })));
-        
-        // Don't fail completely, but warn that script quality will be limited
-        console.warn('⚠️ WARNING: Script generation will proceed with limited research data');
-      } else {
-        console.log('✅ Content validation passed');
+
+        // Return error WITHOUT charging credits
+        return NextResponse.json({
+          error: 'Insufficient content for script generation',
+          details: validation.errors,
+          stats: validation.stats,
+          suggestion: 'Please try adding more sources or using different URLs that are accessible.',
+          sources: research.sources.map(s => ({
+            url: s.source_url,
+            success: !!s.source_content && s.source_content.length > 100,
+            contentLength: s.source_content?.length || 0
+          }))
+        }, { status: 422 }); // 422 Unprocessable Entity
       }
+
+      console.log('✅ Content quality validation passed');
+    } else {
+      console.warn('⚠️ No research sources provided, relying on auto-generation');
     }
 
     // Use targetDuration from summary if available, otherwise calculate from content points
