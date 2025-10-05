@@ -119,9 +119,9 @@ export default function DraftStep() {
     try {
       console.log('Fetching /api/workflow/generate-script...');
       
-      // Add timeout to fetch request (60 seconds for script generation)
+      // Add timeout to fetch request (120 seconds for script generation - increased for longer scripts)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
       
       const response = await fetch('/api/workflow/generate-script', {
         method: 'POST',
@@ -141,7 +141,7 @@ export default function DraftStep() {
         });
         
         if (fetchError.name === 'AbortError') {
-          throw new Error('Request timed out. The server is taking too long to respond.');
+          throw new Error('Request timed out after 2 minutes. For longer scripts, please try a shorter duration or simpler topic.');
         }
         throw fetchError;
       });

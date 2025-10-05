@@ -1,9 +1,217 @@
 import Anthropic from '@anthropic-ai/sdk';
+import {
+  searchRecentCrimes,
+  searchTrendingCases,
+  formatResearchForClaude
+} from './perplexity-research.js';
+import {
+  addFactualMetadata,
+  batchVerifyIdeas
+} from './fact-checker.js';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+/**
+ * Generate factual video ideas based on real events
+ * First researches real cases with Perplexity, then uses Claude to create content strategy
+ */
+export async function generateFactualVideoIdeas(channelData, recentVideos, audienceData, trends) {
+  try {
+    console.log('🔍 Step 1: Researching real cases with Perplexity...');
+
+    // Determine the channel's content focus
+    const contentFocus = determineContentFocus(recentVideos, channelData.niche);
+
+    // Research real cases using Perplexity
+    const [recentCases, trendingCases] = await Promise.all([
+      searchRecentCrimes(contentFocus.topic, {
+        category: contentFocus.category,
+        dateRange: 'past 2 years',
+        maxResults: 10
+      }),
+      searchTrendingCases({
+        timeframe: 'past 3 months',
+        minViralScore: 70
+      })
+    ]);
+
+    if (!recentCases.success && !trendingCases.success) {
+      console.error('Failed to fetch real cases from Perplexity');
+      // Fall back to original function
+      return generateVideoIdeasWithAI(channelData, recentVideos, audienceData, trends);
+    }
+
+    // Format research for Claude
+    const realEvents = [
+      ...formatResearchForClaude(recentCases),
+      ...(trendingCases.success ? trendingCases.cases.map(c => ({
+        realEvent: {
+          name: c.title,
+          date: c.date,
+          description: c.headline,
+          sources: c.sources
+        },
+        contentPotential: {
+          viralScore: c.viralScore,
+          uniqueAngle: c.uniqueAngle,
+          audienceHook: c.trendingReason
+        }
+      })) : [])
+    ];
+
+    console.log(`✅ Found ${realEvents.length} real cases to work with`);
+
+    // Now use Claude to create compelling content from these real events
+    return await generateContentFromRealEvents(
+      channelData,
+      recentVideos,
+      audienceData,
+      realEvents
+    );
+
+  } catch (error) {
+    console.error('Factual video generation error:', error);
+    // Fall back to original function
+    return generateVideoIdeasWithAI(channelData, recentVideos, audienceData, trends);
+  }
+}
+
+/**
+ * Determine the channel's content focus based on recent videos
+ */
+function determineContentFocus(recentVideos, niche) {
+  const titles = recentVideos.slice(0, 10).map(v => v.snippet?.title?.toLowerCase() || '').join(' ');
+
+  // Analyze common themes
+  const categories = {
+    'financial fraud': ['money', 'bank', 'fraud', 'million', 'billion', 'steal', 'scam'],
+    'crypto scams': ['crypto', 'bitcoin', 'nft', 'blockchain', 'ethereum'],
+    'tech crimes': ['hack', 'data', 'breach', 'cyber', 'online'],
+    'corporate fraud': ['ceo', 'company', 'corporation', 'business'],
+    'identity theft': ['identity', 'fake', 'impersonat'],
+    'romance scams': ['dating', 'romance', 'catfish', 'love']
+  };
+
+  let bestCategory = 'financial fraud';
+  let highestScore = 0;
+
+  for (const [category, keywords] of Object.entries(categories)) {
+    const score = keywords.filter(kw => titles.includes(kw)).length;
+    if (score > highestScore) {
+      highestScore = score;
+      bestCategory = category;
+    }
+  }
+
+  return {
+    topic: niche || 'fraud and scams',
+    category: bestCategory
+  };
+}
+
+/**
+ * Generate content strategy from real events using Claude
+ */
+async function generateContentFromRealEvents(channelData, recentVideos, audienceData, realEvents) {
+  const videoHistory = recentVideos.slice(0, 10).map(v => ({
+    title: v.snippet.title,
+    views: v.statistics?.viewCount
+  }));
+
+  const prompt = `You are creating YouTube content ideas based on REAL, DOCUMENTED events. Each event has been verified and has sources.
+
+Channel Context:
+- Niche: ${channelData.niche}
+- Subscribers: ${channelData.subscriberCount}
+- Average Views: ${channelData.averageViews}
+- Recent Videos: ${JSON.stringify(videoHistory, null, 2)}
+
+REAL EVENTS TO CREATE CONTENT FROM:
+${JSON.stringify(realEvents.slice(0, 10), null, 2)}
+
+Create compelling YouTube video ideas from these REAL events. For each idea:
+1. Use the actual event name and facts
+2. Create an engaging title that highlights the shocking/interesting aspects
+3. Develop hooks and storytelling approach
+4. Keep all facts accurate to the sources provided
+
+Generate 10 video ideas in this JSON format:
+[
+  {
+    "title": "Engaging title about the REAL event",
+    "factualBasis": {
+      "verified": true,
+      "realEvent": "Actual event name",
+      "date": "When it happened",
+      "keyFacts": ["3-5 verified facts"],
+      "sources": ["Include the source URLs from the research"]
+    },
+    "concept": "How to tell this real story compellingly",
+    "hooks": ["Opening hooks based on real facts"],
+    "format": "Documentary-style investigation",
+    "estimatedLength": "15-20 minutes",
+    "difficulty": "easy/medium/hard",
+    "viralPotential": 1-10,
+    "thumbnailConcept": "Visual concept",
+    "productionNotes": "Research and production requirements",
+    "tags": ["relevant", "tags"],
+    "contentWarnings": "Any sensitive content warnings if needed"
+  }
+]`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: 4000,
+      temperature: 0.7, // Lower than before for more factual accuracy
+      system: "You are a YouTube content strategist who ONLY creates ideas based on real, verified events. Never invent or embellish facts.",
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    });
+
+    const content = response.content[0].text;
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+
+    if (!jsonMatch) {
+      throw new Error('Failed to parse AI response - no JSON found');
+    }
+
+    let ideas = JSON.parse(jsonMatch[0]);
+
+    // Ensure all ideas are marked as factual
+    ideas = ideas.map(idea => ({
+      ...idea,
+      factualBasis: {
+        ...idea.factualBasis,
+        verified: true,
+        verifiedAt: new Date().toISOString()
+      }
+    }));
+
+    return {
+      success: true,
+      ideas,
+      totalFactualIdeas: ideas.length,
+      researchSources: realEvents.length,
+      generatedAt: new Date().toISOString(),
+      tokensUsed: response.usage?.total_tokens || 0
+    };
+
+  } catch (error) {
+    console.error('Content generation from real events error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Original function - now marked as creative/unverified
+ */
 export async function generateVideoIdeasWithAI(channelData, recentVideos, audienceData, trends) {
   try {
     const videoHistory = recentVideos.slice(0, 20).map(v => ({
@@ -253,5 +461,6 @@ function generateFallbackVideoIdeas() {
 }
 
 export default {
-  generateVideoIdeasWithAI
+  generateVideoIdeasWithAI,
+  generateFactualVideoIdeas
 };

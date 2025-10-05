@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { generateVideoIdeasWithAI } from '@/lib/ai/video-ideas';
+import { generateVideoIdeasWithAI, generateFactualVideoIdeas } from '@/lib/ai/video-ideas';
 import { getChannelVideos } from '@/lib/youtube/channel';
 
 export async function POST(request) {
@@ -44,17 +44,32 @@ export async function POST(request) {
       .order('score', { ascending: false })
       .limit(5);
     
-    // Generate ideas
-    const ideas = await generateVideoIdeasWithAI(
-      {
-        niche: channel.niche || 'general',
-        subscriberCount: channel.subscriber_count,
-        averageViews: channel.average_views || 0
-      },
-      recentVideos || [],
-      audienceData,
-      trends || []
-    );
+    // Generate ideas - use factual generation if Perplexity API key is available
+    const useFactualGeneration = !!process.env.PERPLEXITY_API_KEY;
+
+    const ideas = useFactualGeneration
+      ? await generateFactualVideoIdeas(
+          {
+            niche: channel.category || 'general',
+            subscriberCount: channel.subscriber_count,
+            averageViews: Math.round(channel.view_count / Math.max(channel.video_count, 1)) || 0
+          },
+          recentVideos || [],
+          audienceData,
+          trends || []
+        )
+      : await generateVideoIdeasWithAI(
+          {
+            niche: channel.category || 'general',
+            subscriberCount: channel.subscriber_count,
+            averageViews: Math.round(channel.view_count / Math.max(channel.video_count, 1)) || 0
+          },
+          recentVideos || [],
+          audienceData,
+          trends || []
+        );
+
+    console.log(`Generated ${useFactualGeneration ? 'factual' : 'creative'} video ideas`);
     
     // Track usage if successful
     if (ideas.success) {

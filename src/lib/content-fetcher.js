@@ -61,13 +61,18 @@ export class ContentFetcher {
 
   async fetchWithRetry(url, retries = 2) {
     let lastError;
-    
+
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-        const response = await fetch('/api/fetch-content', {
+        // Use absolute URL in server context, relative in client
+        const fetchUrl = typeof window === 'undefined'
+          ? `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/fetch-content`
+          : '/api/fetch-content';
+
+        const response = await fetch(fetchUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url }),

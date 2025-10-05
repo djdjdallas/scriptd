@@ -250,7 +250,9 @@ Format as JSON with detailed descriptions.`;
 /**
  * Generate content ideas using Claude
  */
-export async function generateRemixContentIdeas(channels, config, analysis) {
+import { searchRecentCrimes, searchTrendingCases, formatResearchForClaude } from './perplexity-research.js';
+
+export async function generateRemixContentIdeas(channels, config, analysis, useFactualContent = true) {
   try {
     // Extract actual content themes from recent videos
     const recentVideoTitles = channels.flatMap(ch =>
@@ -260,6 +262,48 @@ export async function generateRemixContentIdeas(channels, config, analysis) {
     const actualContentTheme = config.actualChannelContent ||
       (recentVideoTitles.length > 0 ? `Based on recent videos: ${recentVideoTitles.slice(0, 5).join(', ')}` : '');
 
+    // If factual content is requested, research real events first
+    let realEvents = [];
+    if (useFactualContent && process.env.PERPLEXITY_API_KEY) {
+      console.log('🔍 Researching real events for content ideas...');
+
+      try {
+        const [recentCases, trendingCases] = await Promise.all([
+          searchRecentCrimes('fraud scams', {
+            category: 'financial fraud',
+            dateRange: 'past 2 years',
+            maxResults: 10
+          }),
+          searchTrendingCases({
+            timeframe: 'past 3 months',
+            minViralScore: 70
+          })
+        ]);
+
+        if (recentCases.success || trendingCases.success) {
+          realEvents = [
+            ...formatResearchForClaude(recentCases),
+            ...(trendingCases.success ? trendingCases.cases.map(c => ({
+              realEvent: {
+                name: c.title,
+                date: c.date,
+                description: c.headline,
+                sources: c.sources
+              },
+              contentPotential: {
+                viralScore: c.viralScore,
+                uniqueAngle: c.uniqueAngle
+              }
+            })) : [])
+          ];
+          console.log(`✅ Found ${realEvents.length} real cases for content ideas`);
+        }
+      } catch (error) {
+        console.error('Perplexity research error:', error);
+        // Continue without real events
+      }
+    }
+
     const prompt = `Based on this YouTube channel${channels.length > 1 ? ' remix combining ' + channels.map(c => c.title || c.name).join(', ') : ': ' + (channels[0]?.title || channels[0]?.name)}, generate 10 specific, high-potential video ideas.
 
 Channel${channels.length > 1 ? ' Remix' : ''}: ${config.name}
@@ -267,10 +311,17 @@ Description: ${config.description}
 ${actualContentTheme ? `\nACTUAL CHANNEL CONTENT (IMPORTANT - BASE IDEAS ON THIS): ${actualContentTheme}` : ''}
 ${recentVideoTitles.length > 0 ? `\nRecent Video Examples:\n${recentVideoTitles.slice(0, 10).map(t => `- ${t}`).join('\n')}` : ''}
 
+${realEvents.length > 0 ? `\nREAL EVENTS TO BASE CONTENT ON (VERIFIED & DOCUMENTED):\n${JSON.stringify(realEvents.slice(0, 10), null, 2)}\n` : ''}
+
 Audience Profile: ${JSON.stringify(analysis?.audience || {}, null, 2)}
 Content Strategy: ${analysis?.contentStrategy || 'Blend of source channels'}
 
-CRITICAL: Generate video ideas that match the ACTUAL CONTENT THEME shown in the recent videos above, NOT just based on the channel name. The ideas should be consistent with the types of videos this channel actually creates.
+${realEvents.length > 0 ?
+`CRITICAL: Create content ideas based on the REAL EVENTS provided above. Each idea must:
+- Be based on an actual documented case with sources
+- Include factual information (dates, amounts, names)
+- Mark as verified with source links` :
+`CRITICAL: Generate video ideas that match the ACTUAL CONTENT THEME shown in the recent videos above, NOT just based on the channel name.`}
 
 Generate 10 video ideas that:
 1. Appeal to the combined audience
@@ -282,6 +333,7 @@ Generate 10 video ideas that:
 For each video provide:
 - Title (catchy, SEO-optimized)
 - Description (2-3 sentences)
+${realEvents.length > 0 ? `- factualBasis: { verified: true, realEvent: "name", date: "when", sources: ["urls"], keyFacts: ["facts"] }` : ''}
 - Format (tutorial, reaction, etc.)
 - Length (estimated)
 - Key hooks

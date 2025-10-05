@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Lightbulb, Star, Clock, Users, TrendingUp, Copy } from 'lucide-react';
+import { Lightbulb, Star, Clock, Users, TrendingUp, Copy, CheckCircle, ExternalLink, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function VideoIdeasGenerator({ channelId }) {
@@ -108,9 +108,22 @@ export function VideoIdeasGenerator({ channelId }) {
             <Card key={i} className="bg-gray-900 border-gray-800 hover:border-purple-700 transition-colors">
               <CardHeader>
                 <div className="flex items-start justify-between">
-                  <CardTitle className="text-lg text-white flex-1">
-                    {idea.title || idea.seriesName}
-                  </CardTitle>
+                  <div className="flex-1">
+                    <CardTitle className="text-lg text-white flex items-start gap-2">
+                      {idea.factualBasis?.verified && (
+                        <Badge variant="success" className="bg-green-900/30 text-green-400 border-green-800">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Verified
+                        </Badge>
+                      )}
+                      {idea.title || idea.seriesName}
+                    </CardTitle>
+                    {idea.factualBasis?.realEvent && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Based on: {idea.factualBasis.realEvent} ({idea.factualBasis.date})
+                      </p>
+                    )}
+                  </div>
                   <Button
                     size="icon"
                     variant="ghost"
@@ -168,6 +181,45 @@ export function VideoIdeasGenerator({ channelId }) {
                 {idea.thumbnailConcept && (
                   <div className="text-xs text-gray-400">
                     <span className="font-semibold">Thumbnail:</span> {idea.thumbnailConcept}
+                  </div>
+                )}
+
+                {/* Factual Basis Section */}
+                {idea.factualBasis && (
+                  <div className="mt-4 space-y-3">
+                    {idea.factualBasis.keyFacts && idea.factualBasis.keyFacts.length > 0 && (
+                      <div className="bg-blue-900/20 border border-blue-800 rounded p-3">
+                        <p className="text-xs text-blue-400 mb-2 font-semibold">Key Facts:</p>
+                        <ul className="space-y-1">
+                          {idea.factualBasis.keyFacts.slice(0, 3).map((fact, idx) => (
+                            <li key={idx} className="text-xs text-gray-300 flex items-start gap-1">
+                              <span className="text-blue-400 mt-0.5">•</span>
+                              <span>{fact}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {idea.factualBasis.sources && idea.factualBasis.sources.length > 0 && (
+                      <div className="bg-gray-800/50 rounded p-2">
+                        <p className="text-xs text-gray-400 mb-1 font-semibold">Sources:</p>
+                        <div className="space-y-1">
+                          {idea.factualBasis.sources.slice(0, 2).map((source, idx) => (
+                            <a
+                              key={idx}
+                              href={source}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 truncate"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              <span className="truncate">{new URL(source).hostname}</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 

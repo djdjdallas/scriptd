@@ -169,7 +169,12 @@ export async function POST(request) {
         const originalFetch = global.fetch;
         global.fetch = async (url, options) => {
           // Add authentication headers if it's our API endpoint
-          if (url.includes('/api/fetch-content')) {
+          if (typeof url === 'string' && url.includes('/api/fetch-content')) {
+            // Ensure we have a valid absolute URL
+            const absoluteUrl = url.startsWith('http')
+              ? url
+              : `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}${url.startsWith('/') ? url : '/' + url}`;
+
             options = {
               ...options,
               headers: {
@@ -177,6 +182,7 @@ export async function POST(request) {
                 'Cookie': request.headers.get('cookie') || ''
               }
             };
+            return originalFetch(absoluteUrl, options);
           }
           return originalFetch(url, options);
         };
