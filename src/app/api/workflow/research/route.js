@@ -1,110 +1,54 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import ResearchService from '@/lib/ai/research-service';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request) {
   try {
     const supabase = await createClient();
-    
+
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { query, topic, workflowId, context } = await request.json();
+    const { query, topic, context, workflowId } = await request.json();
 
     if (!query) {
-      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Query is required' },
+        { status: 400 }
+      );
     }
 
-    // Use the new ResearchService with Perplexity primary and Claude fallback
+    console.log('🔍 Research request:', { query, topic, workflowId });
+
+    // Perform research using Claude with web search
     const researchResult = await ResearchService.performResearch({
       query,
       topic,
       context,
-      includeSources: true
+      minSources: 5,
+      minContentLength: 1000
     });
 
-    if (researchResult.success) {
-      // Charge 1 credit for research
-      const creditsUsed = researchResult.creditsUsed || 1;
-      
-      // Update user credits
-      const { data: currentCredits } = await supabase
-        .from('user_credits')
-        .select('credits_used')
-        .eq('user_id', user.id)
-        .single();
-
-      // Update with incremented value
-      await supabase
-        .from('user_credits')
-        .update({ 
-          credits_used: (currentCredits?.credits_used || 0) + creditsUsed
-        })
-        .eq('user_id', user.id);
-      
-      return NextResponse.json({
-        results: researchResult.results,
-        relatedQuestions: researchResult.relatedQuestions,
-        creditsUsed,
-        researchSummary: researchResult.summary,
-        insights: researchResult.insights,
-        searchProvider: researchResult.provider,
-        citations: researchResult.citations
-      });
+    if (!researchResult.success) {
+      console.error('❌ Research failed:', researchResult.error);
+      return NextResponse.json(
+        { error: researchResult.error || 'Research failed' },
+        { status: 500 }
+      );
     }
 
-    // If research service fails, try educational fallback
+    console.log('✅ Research successful:', {
+      sourcesCount: researchResult.sources?.length || 0,
+      provider: researchResult.provider,
+      totalContent: researchResult.sources?.reduce((sum, s) => sum + (s.source_content?.length || 0), 0)
+    });
 
-    // If no search APIs are configured, return educational results
-    // These are real, useful resources for content creators
-    const educationalResults = [
-      {
-        url: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
-        title: `Google Search: ${query}`,
-        snippet: `Search Google for comprehensive information about "${query}" from across the web.`
-      },
-      {
-        url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`,
-        title: `YouTube Search: ${query}`,
-        snippet: `Search YouTube for videos related to "${query}" to see what content already exists and identify gaps in coverage.`
-      },
-      {
-        url: `https://trends.google.com/trends/explore?q=${encodeURIComponent(query)}`,
-        title: `Google Trends: ${query}`,
-        snippet: `Explore search interest over time for "${query}" and discover related topics and queries that are trending.`
-      },
-      {
-        url: `https://www.reddit.com/search/?q=${encodeURIComponent(query)}`,
-        title: `Reddit Discussions: ${query}`,
-        snippet: `Find community discussions and real user questions about "${query}" on Reddit.`
-      },
-      {
-        url: `https://scholar.google.com/scholar?q=${encodeURIComponent(query)}`,
-        title: `Academic Research: ${query}`,
-        snippet: `Access scholarly articles and academic research papers about "${query}" for authoritative information.`
-      },
-      {
-        url: `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`,
-        title: `Wikipedia: ${query}`,
-        snippet: `Find encyclopedia articles about "${query}" for factual background information and references.`
-      }
-    ];
-
-    // Add topic-specific resources if we have a topic
-    if (topic) {
-      educationalResults.push({
-        url: `https://answerthepublic.com/reports/${encodeURIComponent(topic.toLowerCase().replace(/\s+/g, '-'))}`,
-        title: `Common Questions About ${topic}`,
-        snippet: `Discover what people are asking about "${topic}" to create content that answers real questions.`
-      });
-    }
-
-    // Charge 1 credit for research (even for educational links)
+    // Calculate credits (1 credit per research call)
     const creditsUsed = 1;
-    
+
     // Update user credits
     const { data: currentCredits } = await supabase
       .from('user_credits')
@@ -112,24 +56,70 @@ export async function POST(request) {
       .eq('user_id', user.id)
       .single();
 
-    // Update with incremented value
-    await supabase
-      .from('user_credits')
-      .update({ 
-        credits_used: (currentCredits?.credits_used || 0) + creditsUsed
-      })
-      .eq('user_id', user.id);
-    
+    if (currentCredits) {
+      await supabase
+        .from('user_credits')
+        .update({
+          credits_used: (currentCredits.credits_used || 0) + creditsUsed
+        })
+        .eq('user_id', user.id);
+    }
+
+    // Save research to workflow if workflowId provided
+    if (workflowId && researchResult.sources?.length > 0) {
+      console.log('💾 Saving research to workflow:', workflowId);
+
+      // Clear existing research for this workflow
+      await supabase
+        .from('workflow_research')
+        .delete()
+        .eq('workflow_id', workflowId);
+
+      // Insert new research sources
+      const sourcesToSave = researchResult.sources.map((source, index) => ({
+        workflow_id: workflowId,
+        source_type: source.source_type || 'web',
+        source_url: source.source_url,
+        source_title: source.source_title,
+        source_content: source.source_content, // Already has full content!
+        fact_check_status: source.fact_check_status || 'verified',
+        is_starred: source.is_starred || false,
+        is_selected: true, // Auto-select since Claude verified them
+        relevance: source.relevance || 0.8,
+        added_at: new Date().toISOString()
+      }));
+
+      const { error: insertError } = await supabase
+        .from('workflow_research')
+        .insert(sourcesToSave);
+
+      if (insertError) {
+        console.error('Failed to save research:', insertError);
+      } else {
+        console.log(`✅ Saved ${sourcesToSave.length} sources to workflow`);
+      }
+    }
+
+    // Return results in format expected by frontend
     return NextResponse.json({
-      results: educationalResults,
+      success: true,
+      results: researchResult.sources || [],
+      summary: researchResult.summary,
+      researchSummary: researchResult.summary, // Backward compatibility
+      relatedQuestions: researchResult.relatedQuestions || [],
+      insights: researchResult.insights,
       creditsUsed,
-      message: 'Using educational resources. Configure search API for web results.'
+      searchProvider: researchResult.provider,
+      citations: researchResult.citations || []
     });
 
   } catch (error) {
-    console.error('Research API error:', error);
+    console.error('❌ Research API error:', error);
     return NextResponse.json(
-      { error: 'Failed to perform research' },
+      {
+        error: 'Failed to perform research',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
       { status: 500 }
     );
   }

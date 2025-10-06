@@ -1,440 +1,250 @@
 /**
  * Research Service
- * Handles AI-powered research with Perplexity (primary) and Claude (fallback)
+ * Handles AI-powered research using Claude's native web search
  */
+
+import Anthropic from '@anthropic-ai/sdk';
 
 class ResearchService {
   /**
-   * Perform research using Perplexity API with Claude fallback
+   * Perform research using Claude with web_search and web_fetch
    * @param {Object} options - Research options
    * @param {string} options.query - The research query
    * @param {string} options.topic - The main topic (optional)
    * @param {string} options.context - Additional context (optional)
-   * @param {boolean} options.includeSources - Whether to include sources (default: true)
+   * @param {number} options.minSources - Minimum number of sources (default: 5)
+   * @param {number} options.minContentLength - Minimum content length per source (default: 1000)
    * @returns {Object} Research results
    */
   static async performResearch(options) {
-    const { 
-      query, 
-      topic = '', 
+    const {
+      query,
+      topic = '',
       context = '',
-      includeSources = true 
+      minSources = 5,
+      minContentLength = 1000
     } = options;
 
-    // Try Perplexity first
-    if (process.env.PERPLEXITY_API_KEY) {
-      const perplexityResult = await this.perplexityResearch({
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error('❌ ANTHROPIC_API_KEY not configured');
+      return {
+        success: false,
+        error: 'Claude API key not configured',
+        sources: [],
+        summary: '',
+        provider: 'none'
+      };
+    }
+
+    try {
+      console.log('🔍 Starting Claude web research for:', query);
+
+      const anthropic = new Anthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY,
+      });
+
+      // Create the research prompt
+      const researchPrompt = this.buildResearchPrompt({
         query,
         topic,
         context,
-        includeSources
-      });
-      
-      if (perplexityResult.success) {
-        return {
-          ...perplexityResult,
-          provider: 'perplexity'
-        };
-      }
-      
-      console.warn('Perplexity research failed, falling back to Claude:', perplexityResult.error);
-    }
-
-    // Fallback to Claude
-    if (process.env.ANTHROPIC_API_KEY) {
-      const claudeResult = await this.claudeResearch({
-        query,
-        topic,
-        context
-      });
-      
-      if (claudeResult.success) {
-        return {
-          ...claudeResult,
-          provider: 'claude'
-        };
-      }
-      
-      console.error('Claude research also failed:', claudeResult.error);
-    }
-
-    // Return error if both fail
-    return {
-      success: false,
-      error: 'Both Perplexity and Claude research failed',
-      results: [],
-      summary: '',
-      provider: 'none'
-    };
-  }
-
-  /**
-   * Research using Perplexity API
-   */
-  static async perplexityResearch({ query, topic, context, includeSources }) {
-    try {
-      const systemPrompt = `You are a research assistant helping to gather comprehensive information for YouTube video scripts. 
-Provide factual, well-researched information with sources.
-Focus on: current trends, statistics, expert opinions, case studies, and actionable insights.
-${context ? `Additional context: ${context}` : ''}`;
-
-      const userPrompt = `Research the following for a YouTube video script:
-Query: "${query}"
-${topic ? `Main Topic: ${topic}` : ''}
-
-Please provide:
-1. Key facts and statistics (with dates)
-2. Recent developments and trends
-3. Expert opinions and quotes
-4. Interesting angles and perspectives
-5. Common misconceptions to address
-6. Related topics to explore
-7. Actionable takeaways for viewers
-
-Include credible sources and be specific with data.`;
-
-      const response = await fetch('https://api.perplexity.ai/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'sonar', // Perplexity's standard model with online search
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt
-            },
-            {
-              role: 'user',
-              content: userPrompt
-            }
-          ],
-          stream: false,
-          return_citations: includeSources,
-          return_related_questions: true,
-          // search_domain_filter: [], // No domain filtering for comprehensive results
-          search_recency_filter: 'month', // Focus on recent information
-          top_p: 0.9,
-          temperature: 0.2, // Lower temperature for factual accuracy
-          max_tokens: 2000
-        })
+        minSources,
+        minContentLength
       });
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Perplexity API error response:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorData
-        });
-        throw new Error(`Perplexity API error: ${response.status} - ${errorData}`);
-      }
+      // Call Claude with web search enabled
+      const response = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 8000,
+        temperature: 0.3, // Lower temperature for factual research
+        messages: [
+          {
+            role: 'user',
+            content: researchPrompt
+          }
+        ],
+        tools: [
+          {
+            type: 'computer_20241022',
+            name: 'web_search',
+            display_name: 'Web Search',
+            description: 'Search the web for current information'
+          },
+          {
+            type: 'computer_20241022',
+            name: 'web_fetch',
+            display_name: 'Web Fetch',
+            description: 'Fetch and extract content from specific URLs'
+          }
+        ],
+        tool_choice: 'auto'
+      });
 
-      const data = await response.json();
-      
-      // Extract main content
-      const mainContent = data.choices?.[0]?.message?.content || '';
-      
-      // Extract and format citations
-      const citations = data.citations || [];
-      const results = citations.map((citation, index) => ({
-        url: citation.url || citation,
-        title: citation.title || `Source ${index + 1}`,
-        snippet: citation.snippet || citation.text || '',
-        relevance: citation.score || 0.8,
-        isVerified: true,
-        domain: citation.url ? new URL(citation.url).hostname : ''
-      }));
+      console.log('📊 Claude research completed');
+      console.log('Message content blocks:', response.content.length);
 
-      // Add synthesized summary as primary source
-      if (mainContent) {
-        results.unshift({
-          url: '#ai-synthesis',
-          title: '🔬 Research Synthesis',
-          snippet: mainContent.substring(0, 500) + (mainContent.length > 500 ? '...' : ''),
-          fullContent: mainContent,
-          relevance: 1.0,
-          isVerified: true,
-          isSynthesized: true
-        });
-      }
+      // Extract the research results from Claude's response
+      const result = this.parseClaudeResponse(response);
 
-      // Extract related questions for further research
-      const relatedQuestions = data.related_questions || [];
-
-      // Parse key insights from the content
-      const insights = this.extractKeyInsights(mainContent);
+      console.log('✅ Research successful:', {
+        sourcesFound: result.sources.length,
+        totalContentLength: result.sources.reduce((sum, s) => sum + (s.source_content?.length || 0), 0),
+        hasSummary: !!result.summary
+      });
 
       return {
         success: true,
-        results,
-        summary: mainContent,
-        relatedQuestions,
-        insights,
-        citations: citations.length,
-        creditsUsed: 1
+        ...result,
+        provider: 'claude'
       };
 
     } catch (error) {
-      console.error('Perplexity research error:', error);
+      console.error('❌ Claude research failed:', error);
       return {
         success: false,
         error: error.message,
-        results: [],
-        summary: ''
-      };
-    }
-  }
-
-  /**
-   * Research using Claude API (fallback)
-   */
-  static async claudeResearch({ query, topic, context }) {
-    try {
-      const systemPrompt = `You are a research assistant specializing in YouTube content creation.
-Generate comprehensive research based on your knowledge up to January 2025.
-Focus on providing factual, engaging information suitable for video scripts.
-${context ? `Context: ${context}` : ''}`;
-
-      const userPrompt = `Research the following for a YouTube video:
-Query: "${query}"
-${topic ? `Topic: ${topic}` : ''}
-
-Provide a comprehensive research summary including:
-1. Key facts and statistics
-2. Important concepts and definitions
-3. Current trends and developments
-4. Common questions and answers
-5. Interesting angles for content creation
-6. Expert perspectives
-7. Practical applications and examples
-
-Format your response as structured JSON with these sections:
-{
-  "summary": "Overall research summary",
-  "keyFacts": ["fact1", "fact2", ...],
-  "trends": ["trend1", "trend2", ...],
-  "angles": ["angle1", "angle2", ...],
-  "questions": ["question1", "question2", ...],
-  "examples": ["example1", "example2", ...]
-}`;
-
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 2000,
-          temperature: 0.3,
-          system: systemPrompt,
-          messages: [
-            {
-              role: 'user',
-              content: userPrompt
-            }
-          ]
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Claude API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const content = data.content?.[0]?.text || '';
-      
-      // Try to parse JSON response
-      let parsedContent;
-      try {
-        parsedContent = JSON.parse(content);
-      } catch {
-        // If not JSON, create structured data from text
-        parsedContent = {
-          summary: content,
-          keyFacts: this.extractBulletPoints(content, 'facts'),
-          trends: this.extractBulletPoints(content, 'trends'),
-          angles: this.extractBulletPoints(content, 'angles'),
-          questions: this.extractBulletPoints(content, 'questions'),
-          examples: this.extractBulletPoints(content, 'examples')
-        };
-      }
-
-      // Format as research results
-      const results = [
-        {
-          url: '#claude-research',
-          title: '🤖 AI Research Analysis',
-          snippet: parsedContent.summary?.substring(0, 500) || content.substring(0, 500),
-          fullContent: parsedContent.summary || content,
-          relevance: 1.0,
-          isVerified: true,
-          isSynthesized: true
-        }
-      ];
-
-      // Add structured insights as separate "sources"
-      if (parsedContent.keyFacts?.length > 0) {
-        results.push({
-          url: '#key-facts',
-          title: '📊 Key Facts & Statistics',
-          snippet: parsedContent.keyFacts.slice(0, 3).join(' • '),
-          fullContent: parsedContent.keyFacts.join('\n'),
-          relevance: 0.95,
-          isVerified: true
-        });
-      }
-
-      if (parsedContent.trends?.length > 0) {
-        results.push({
-          url: '#current-trends',
-          title: '📈 Current Trends',
-          snippet: parsedContent.trends.slice(0, 2).join(' • '),
-          fullContent: parsedContent.trends.join('\n'),
-          relevance: 0.9,
-          isVerified: true
-        });
-      }
-
-      // Generate related questions
-      const relatedQuestions = parsedContent.questions || [
-        `What are the latest developments in ${query}?`,
-        `How to get started with ${query}?`,
-        `Common mistakes to avoid with ${query}`,
-        `Best practices for ${query}`,
-        `Future of ${query}`
-      ];
-
-      return {
-        success: true,
-        results,
-        summary: parsedContent.summary || content,
-        relatedQuestions,
-        insights: {
-          facts: parsedContent.keyFacts || [],
-          trends: parsedContent.trends || [],
-          angles: parsedContent.angles || [],
-          examples: parsedContent.examples || []
-        },
-        creditsUsed: 1
-      };
-
-    } catch (error) {
-      console.error('Claude research error:', error);
-      return {
-        success: false,
-        error: error.message,
-        results: [],
-        summary: ''
-      };
-    }
-  }
-
-  /**
-   * Extract key insights from research content
-   */
-  static extractKeyInsights(content) {
-    const insights = {
-      statistics: [],
-      quotes: [],
-      trends: [],
-      facts: []
-    };
-
-    // Extract statistics (numbers with context)
-    const statMatches = content.match(/\d+%[^.]*\.|[\d,]+\s+\w+[^.]*statistics|survey[^.]*\d+/gi) || [];
-    insights.statistics = statMatches.slice(0, 5);
-
-    // Extract potential quotes
-    const quoteMatches = content.match(/"[^"]{20,200}"/g) || [];
-    insights.quotes = quoteMatches.slice(0, 3);
-
-    // Extract trends
-    const trendKeywords = ['trending', 'growing', 'increasing', 'popular', 'emerging'];
-    const trendMatches = content.split('.').filter(sentence => 
-      trendKeywords.some(keyword => sentence.toLowerCase().includes(keyword))
-    );
-    insights.trends = trendMatches.slice(0, 3).map(s => s.trim());
-
-    // Extract key facts
-    const factKeywords = ['research shows', 'studies indicate', 'according to', 'data reveals'];
-    const factMatches = content.split('.').filter(sentence => 
-      factKeywords.some(keyword => sentence.toLowerCase().includes(keyword))
-    );
-    insights.facts = factMatches.slice(0, 5).map(s => s.trim());
-
-    return insights;
-  }
-
-  /**
-   * Extract bullet points from content
-   */
-  static extractBulletPoints(content, type) {
-    const lines = content.split('\n');
-    const bullets = [];
-    
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') || /^\d+\./.test(trimmed)) {
-        bullets.push(trimmed.replace(/^[•\-\*\d+\.]\s*/, ''));
-      }
-    }
-
-    return bullets.slice(0, 5); // Limit to 5 items
-  }
-
-  /**
-   * Format research for script generation
-   */
-  static formatForScriptGeneration(researchResult) {
-    if (!researchResult.success) {
-      return {
         sources: [],
         summary: '',
-        keyPoints: []
+        provider: 'claude'
       };
     }
+  }
 
-    const sources = researchResult.results
-      .filter(r => !r.url.startsWith('#'))
-      .map(r => ({
-        url: r.url,
-        title: r.title,
-        content: r.snippet,
-        verified: r.isVerified
-      }));
+  /**
+   * Build the research prompt for Claude
+   */
+  static buildResearchPrompt({ query, topic, context, minSources, minContentLength }) {
+    return `You are a research assistant gathering comprehensive information for a YouTube video script.
 
-    const keyPoints = [];
-    
-    // Add insights as key points
-    if (researchResult.insights) {
-      if (researchResult.insights.facts?.length > 0) {
-        keyPoints.push(...researchResult.insights.facts);
-      }
-      if (researchResult.insights.statistics?.length > 0) {
-        keyPoints.push(...researchResult.insights.statistics);
-      }
+Research Query: "${query}"
+${topic ? `Main Topic: ${topic}` : ''}
+${context ? `Additional Context: ${context}` : ''}
+
+INSTRUCTIONS:
+1. Search for at least ${minSources} credible sources about this topic
+2. Extract at least ${minContentLength} characters of substantive content from each source
+3. Prioritize recent sources (last 2 years) and authoritative domains
+4. Verify information across multiple sources
+
+REQUIRED OUTPUT FORMAT (return as valid JSON):
+{
+  "summary": "A comprehensive 3-4 paragraph synthesis covering key facts, trends, expert perspectives, and insights",
+  "sources": [
+    {
+      "source_url": "URL here",
+      "source_title": "Title here",
+      "source_content": "Full extracted text (min ${minContentLength} chars)",
+      "source_type": "web",
+      "is_starred": false,
+      "fact_check_status": "verified",
+      "relevance": 0.95
     }
-
-    return {
-      sources,
-      summary: researchResult.summary,
-      keyPoints,
-      relatedTopics: researchResult.relatedQuestions || []
-    };
+  ],
+  "relatedQuestions": ["Question 1", "Question 2", "Question 3"],
+  "insights": {
+    "keyStatistics": ["Stat 1", "Stat 2"],
+    "expertQuotes": ["Quote 1", "Quote 2"],
+    "commonMisconceptions": ["Misconception 1"],
+    "actionableTakeaways": ["Takeaway 1", "Takeaway 2"]
   }
 }
 
-// Support both ES modules and CommonJS
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = ResearchService;
-  module.exports.ResearchService = ResearchService;
+Begin research now using web search and content extraction.`;
+  }
+
+  /**
+   * Parse Claude's response and extract research data
+   */
+  static parseClaudeResponse(response) {
+    try {
+      // Find the last text content block (usually contains the final JSON)
+      const textBlocks = response.content.filter(c => c.type === 'text');
+      const lastTextBlock = textBlocks[textBlocks.length - 1];
+
+      if (!lastTextBlock) {
+        throw new Error('No text content in Claude response');
+      }
+
+      let jsonText = lastTextBlock.text;
+
+      // Try to extract JSON from the response
+      // Look for JSON between curly braces
+      const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[0];
+      }
+
+      // Remove markdown code blocks if present
+      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+      const parsed = JSON.parse(jsonText);
+
+      // Add AI synthesis as first source
+      const sources = [
+        {
+          source_url: '#ai-synthesis',
+          source_title: '🔬 Research Synthesis',
+          source_content: parsed.summary || '',
+          source_type: 'synthesis',
+          is_starred: true,
+          fact_check_status: 'verified',
+          relevance: 1.0
+        },
+        ...(parsed.sources || [])
+      ];
+
+      return {
+        summary: parsed.summary || '',
+        sources: sources,
+        results: sources, // For backward compatibility
+        relatedQuestions: parsed.relatedQuestions || [],
+        insights: parsed.insights || {},
+        citations: sources.filter(s => s.source_type === 'web')
+      };
+
+    } catch (error) {
+      console.error('❌ Failed to parse Claude JSON response:', error);
+
+      // Fallback: extract any content we can find
+      const allText = response.content
+        .filter(c => c.type === 'text')
+        .map(c => c.text)
+        .join('\n\n');
+
+      // Try to find sources mentioned in the text
+      const urlRegex = /https?:\/\/[^\s]+/g;
+      const urls = allText.match(urlRegex) || [];
+
+      return {
+        summary: allText.substring(0, 2000), // First 2000 chars as summary
+        sources: [{
+          source_url: '#ai-synthesis',
+          source_title: '🔬 Research Synthesis',
+          source_content: allText,
+          source_type: 'synthesis',
+          is_starred: true,
+          fact_check_status: 'verified',
+          relevance: 1.0
+        }],
+        results: [], // For backward compatibility
+        relatedQuestions: [],
+        insights: {},
+        citations: urls.map(url => ({
+          source_url: url,
+          source_title: 'Web Source',
+          source_type: 'web'
+        }))
+      };
+    }
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   */
+  static async performAdvancedResearch(options) {
+    console.log('🔄 Redirecting to new performResearch method');
+    return this.performResearch(options);
+  }
 }
 
 export default ResearchService;

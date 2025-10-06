@@ -1,5 +1,11 @@
 import { isValidAndFetchableUrl } from './utils/url-validator.js';
 
+/**
+ * ContentFetcher - ONLY for uploaded documents, NOT for web sources
+ * Web sources are now fetched directly by Claude during research
+ *
+ * @deprecated for web sources - Use Claude ResearchService instead
+ */
 export class ContentFetcher {
   constructor(maxCharsPerSource = 1500) {
     this.maxChars = maxCharsPerSource;
@@ -206,7 +212,32 @@ export class ContentFetcher {
 
     const stats = this.getEnrichmentStats(verification.sources);
     console.log('✅ Database update verified:', stats);
-    
+
     return verification.sources;
+  }
+
+  /**
+   * Process uploaded documents (PDFs, DOCX, TXT, etc.)
+   * This is the primary use case for ContentFetcher now
+   * @param {Array} documents - Array of document objects with file paths
+   * @returns {Array} Documents with extracted content
+   */
+  async processUploadedDocuments(documents) {
+    console.log(`📄 Processing ${documents.length} uploaded documents...`);
+    console.warn('⚠️ processUploadedDocuments is not fully implemented yet');
+
+    // For now, just pass through to enrichSources
+    // In the future, this would handle PDF extraction, DOCX parsing, etc.
+    return this.enrichSources(documents);
+  }
+
+  /**
+   * @deprecated Use Claude ResearchService for web sources
+   * This method should only be used for document processing
+   */
+  async enrichWebSources(sources) {
+    console.error('❌ DEPRECATED: enrichWebSources should not be used');
+    console.error('Use Claude ResearchService for web content fetching instead');
+    return sources;
   }
 }

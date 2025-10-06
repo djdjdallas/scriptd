@@ -136,24 +136,31 @@ export default function ResearchStep() {
       }
       
       // Handle research summary if available
-      if (data.researchSummary) {
-        setResearchSummary(data.researchSummary);
+      if (data.summary || data.researchSummary) {
+        setResearchSummary(data.summary || data.researchSummary);
       }
-      
+
       // Handle related questions if available
       if (data.relatedQuestions && data.relatedQuestions.length > 0) {
         setRelatedQuestions(data.relatedQuestions);
       }
-      
-      const newSources = data.results.map(result => ({
-        id: crypto.randomUUID(),
-        source_type: result.isSynthesized ? 'synthesis' : 'web',
-        source_url: result.url,
-        source_title: result.title,
-        source_content: result.fullContent || result.snippet,
-        fact_check_status: result.isVerified ? 'verified' : 'unverified',
-        is_starred: result.isSynthesized || false,
-        relevance: result.relevance || 0.5,
+
+      // Handle insights if available
+      if (data.insights) {
+        console.log('Research insights:', data.insights);
+        // You could store these in state if needed for display
+      }
+
+      // Map results to source format - Claude already provides full content!
+      const newSources = (data.results || []).map(result => ({
+        id: result.id || crypto.randomUUID(),
+        source_type: result.source_type || 'web',
+        source_url: result.source_url,
+        source_title: result.source_title,
+        source_content: result.source_content, // Already has full content from Claude!
+        fact_check_status: result.fact_check_status || 'verified',
+        is_starred: result.is_starred || false,
+        relevance: result.relevance || 0.8,
         isNew: true // Mark as new for animation
       }));
 
@@ -191,14 +198,24 @@ export default function ResearchStep() {
       }
       
       // Show provider-specific success message with animation feedback
-      const providerName = data.searchProvider === 'claude' ? 'Claude AI' : 
-                          data.searchProvider === 'google' ? 'Google Search' : 
+      const providerName = data.searchProvider === 'claude' ? 'Claude AI' :
+                          data.searchProvider === 'google' ? 'Google Search' :
                           'Search';
-      
+
+      // Calculate total content fetched
+      const totalContent = newSources.reduce((sum, s) => sum + (s.source_content?.length || 0), 0);
+
       toast.success(
-        <div className="flex items-center gap-2">
-          <CheckCircle className="h-4 w-4" />
-          <span>Successfully added {data.results.length} sources from {providerName}</span>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            <span>Successfully added {data.results.length} sources from {providerName}</span>
+          </div>
+          {data.searchProvider === 'claude' && totalContent > 0 && (
+            <span className="text-xs opacity-80">
+              ✨ Full content already fetched ({(totalContent / 1000).toFixed(1)}k chars total)
+            </span>
+          )}
         </div>
       );
     } catch (error) {

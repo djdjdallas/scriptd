@@ -158,41 +158,45 @@ export async function POST(request) {
       fullStructure: JSON.stringify(research, null, 2)
     });
 
-    // Use ContentFetcher to enrich sources with content
+    // SKIP ContentFetcher for web sources - Claude already fetched everything!
     if (research?.sources && research.sources.length > 0) {
-      console.log('🔍 === ENRICHING RESEARCH SOURCES ===');
-      
-      try {
-        const fetcher = new ContentFetcher(1500); // Limit to 1500 chars per source
-        
-        // Store original request headers for authentication
-        const originalFetch = global.fetch;
-        global.fetch = async (url, options) => {
-          // Add authentication headers if it's our API endpoint
-          if (typeof url === 'string' && url.includes('/api/fetch-content')) {
-            // Ensure we have a valid absolute URL
-            const absoluteUrl = url.startsWith('http')
-              ? url
-              : `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}${url.startsWith('/') ? url : '/' + url}`;
+      console.log('📊 === VALIDATING RESEARCH CONTENT ===');
+      console.log('Research provider:', research.provider || 'unknown');
 
-            options = {
-              ...options,
-              headers: {
-                ...options.headers,
-                'Cookie': request.headers.get('cookie') || ''
-              }
-            };
-            return originalFetch(absoluteUrl, options);
-          }
-          return originalFetch(url, options);
-        };
-        
-        // Enrich sources with content
-        const enrichedSources = await fetcher.enrichSources(research.sources);
-        research.sources = enrichedSources;
-        
-        // Restore original fetch
-        global.fetch = originalFetch;
+      // Only use ContentFetcher for uploaded documents (not web sources)
+      const uploadedDocs = research.sources.filter(s =>
+        s.source_type === 'document' || s.source_type === 'upload'
+      );
+
+      const webSources = research.sources.filter(s =>
+        s.source_type === 'web' || s.source_type === 'synthesis'
+      );
+
+      console.log(`Web sources (already fetched by Claude): ${webSources.length}`);
+      console.log(`Uploaded documents (need processing): ${uploadedDocs.length}`);
+
+      if (uploadedDocs.length > 0) {
+        console.log(`📄 Processing ${uploadedDocs.length} uploaded documents with ContentFetcher`);
+        try {
+          const fetcher = new ContentFetcher(1500);
+          // Note: processUploadedDocuments method would need to be implemented
+          // For now, just use enrichSources for documents only
+          const processedDocs = await fetcher.enrichSources(uploadedDocs);
+
+          // Update only the uploaded documents
+          research.sources = research.sources.map(source => {
+            if (source.source_type === 'document' || source.source_type === 'upload') {
+              const processed = processedDocs.find(d => d.source_url === source.source_url);
+              return processed || source;
+            }
+            return source; // Keep web sources as-is (Claude already fetched them)
+          });
+        } catch (error) {
+          console.error('Document processing failed, continuing:', error);
+        }
+      } else {
+        console.log('✅ No document processing needed - all content already fetched by Claude');
+      }
         
         // If research was saved to database, update it with enriched content
         if (research.id) {
