@@ -53,7 +53,7 @@ export default function ResearchStep() {
               source_content: source.source_content,
               fact_check_status: source.fact_check_status,
               is_starred: source.is_starred,
-              relevance: 0.5 // Default relevance since it's not stored
+              relevance: source.relevance || 0.5 // Default to 0.5 if not set
             }));
 
             setSources(loadedSources);
@@ -462,6 +462,7 @@ export default function ResearchStep() {
           fact_check_status: source.fact_check_status || 'unverified',
           is_starred: source.is_starred || false,
           is_selected: true,
+          relevance: source.relevance || 0.5,
           added_at: new Date().toISOString()
         }));
 

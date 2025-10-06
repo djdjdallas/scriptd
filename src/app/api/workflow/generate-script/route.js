@@ -191,33 +191,28 @@ export async function POST(request) {
             }
             return source; // Keep web sources as-is (Claude already fetched them)
           });
+
+          // If research was saved to database, update it with processed documents
+          if (research.id && processedDocs.length > 0) {
+            console.log('📝 Updating research in database with processed documents');
+            const { error: updateError } = await supabase
+              .from('script_research')
+              .update({ sources: research.sources })
+              .eq('id', research.id);
+
+            if (updateError) {
+              console.error('Failed to update research with processed documents:', updateError);
+            } else {
+              // Verify the update
+              const verifiedSources = await fetcher.verifyDatabaseUpdate(supabase, research.id);
+              console.log('✅ Research sources verified in database');
+            }
+          }
         } catch (error) {
           console.error('Document processing failed, continuing:', error);
         }
       } else {
         console.log('✅ No document processing needed - all content already fetched by Claude');
-      }
-        
-        // If research was saved to database, update it with enriched content
-        if (research.id) {
-          console.log('📝 Updating research in database with enriched content');
-          const { error: updateError } = await supabase
-            .from('script_research')
-            .update({ sources: enrichedSources })
-            .eq('id', research.id);
-            
-          if (updateError) {
-            console.error('Failed to update research with enriched content:', updateError);
-          } else {
-            // Verify the update
-            const verifiedSources = await fetcher.verifyDatabaseUpdate(supabase, research.id);
-            console.log('✅ Research sources verified in database');
-          }
-        }
-        
-      } catch (error) {
-        console.error('Content enrichment failed, continuing with original sources:', error);
-        // Continue with original sources rather than failing completely
       }
     }
 
