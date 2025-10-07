@@ -10,13 +10,13 @@ import crypto from 'crypto';
 // Helper function to calculate credits based on duration and model
 function calculateCreditsForDuration(durationInSeconds, model = 'claude-3-5-haiku') {
   const minutes = Math.ceil(durationInSeconds / 60);
-  
+
   // Base rate: 0.33 credits per minute (so 10 min Professional = 5 credits)
   const baseRate = 0.33;
-  
+
   // Model multipliers based on new model names:
   // claude-3-5-haiku (Fast): 1x
-  // claude-3-5-sonnet (Professional): 1.5x  
+  // claude-3-5-sonnet (Professional): 1.5x
   // claude-opus-4-1 (Hollywood): 3.5x
   let modelMultiplier = 1;
   if (model === 'claude-3-5-sonnet') {
@@ -24,92 +24,12 @@ function calculateCreditsForDuration(durationInSeconds, model = 'claude-3-5-haik
   } else if (model === 'claude-opus-4-1') {
     modelMultiplier = 3.5;
   }
-  
+
   // Calculate final credits (minimum 1 credit)
   return Math.max(1, Math.round(minutes * baseRate * modelMultiplier));
 }
 
-// Helper function to generate fallback script
-function generateFallbackScript(type, title, topic, contentPoints) {
-  const totalDuration = contentPoints?.points?.reduce((acc, p) => acc + p.duration, 0) || 600;
-  const minutes = Math.ceil(totalDuration / 60);
-  
-  if (type === 'outline') {
-    return `# ${title} - Video Outline
-
-## Introduction (0:00-0:30)
-- Hook: Start with a compelling question about ${topic}
-- Set expectations for what viewers will learn
-- [Visual: Title card with animated text]
-
-## Main Content (0:30-${minutes-1}:00)
-${contentPoints?.points?.map((point, index) => `
-### ${point.title} (${Math.floor(index * point.duration / 60)}:${(index * point.duration % 60).toString().padStart(2, '0')})
-- ${point.description}
-- Key Point: ${point.keyTakeaway}
-- [Visual: Supporting graphics or b-roll]
-`).join('') || `
-### Core Concepts
-- Explain the fundamentals of ${topic}
-- Provide clear examples
-- [Visual: Diagrams or demonstrations]
-`}
-
-## Conclusion (${minutes-1}:00-${minutes}:00)
-- Recap key points
-- Call to action
-- [Visual: End screen with subscribe button]
-
-## Production Notes
-- Keep energy high throughout
-- Use b-roll to maintain visual interest
-- Include captions for accessibility`;
-  } else {
-    return `# ${title} - Full Script
-
-[INTRO - 0:00]
-[Visual: Exciting opening montage]
-
-Hey everyone! Today we're diving into ${topic}, and I promise you're going to learn something that could completely change your perspective.
-
-[Visual: Title card appears]
-
-${contentPoints?.points?.map((point, index) => `
-[${point.title.toUpperCase()} - ${Math.floor(index * point.duration / 60)}:${(index * point.duration % 60).toString().padStart(2, '0')}]
-[Visual: Section title animation]
-
-${point.description}
-
-Now, here's what's really important to understand: ${point.keyTakeaway}
-
-[Visual: Supporting graphics]
-
-Let me break this down for you...
-
-[Add specific examples and explanations based on the topic]
-
-`).join('\n[TRANSITION]\n') || `
-[MAIN CONTENT]
-
-Let's start with the basics of ${topic}...
-
-[Develop the content based on the specific topic]
-`}
-
-[CONCLUSION - ${minutes-1}:00]
-[Visual: Summary graphics]
-
-So there you have it! We've covered everything you need to know about ${topic}.
-
-If you found this helpful, make sure to like and subscribe for more content like this. And let me know in the comments what you'd like to see next!
-
-[Visual: End screen with subscribe button and suggested videos]
-
-Thanks for watching, and I'll see you in the next one!
-
-[END]`;
-  }
-}
+// Removed fallback script generator - now we return errors instead of generating bad templates
 
 export async function POST(request) {
   console.log('🚀 === SCRIPT GENERATION API CALLED ===');
@@ -387,8 +307,15 @@ export async function POST(request) {
           
           for (let i = 0; i < chunkPrompts.length; i++) {
             console.log(`Generating chunk ${i + 1}/${chunkPrompts.length}...`);
-            
-            const chunkResponse = await fetch('https://api.anthropic.com/v1/messages', {
+
+            let chunkScript = '';
+            let retryCount = 0;
+            const maxRetries = 2;
+            const minWordsPerChunk = Math.ceil((totalMinutes / chunkConfig.chunks) * 150);
+
+            // Retry loop for short chunks
+            while (retryCount <= maxRetries) {
+              const chunkResponse = await fetch('https://api.anthropic.com/v1/messages', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -399,14 +326,25 @@ export async function POST(request) {
                 model: actualModel,
                 max_tokens: 4096,
                 temperature: 0.7,
-                system: `You are an expert YouTube scriptwriter who ALWAYS completes your assigned section FULLY.
+                system: `You are an expert YouTube scriptwriter who MUST write LONG, DETAILED scripts.
 
-ABSOLUTE REQUIREMENTS:
-1. Write your ENTIRE assigned section - no exceptions
-2. NEVER say "I'll continue", "due to length", or similar
-3. NEVER use [...] or promise to continue later
-4. Complete EVERYTHING for your time range
-5. NO placeholders or shortcuts anywhere`,
+ABSOLUTE WORD COUNT REQUIREMENT:
+Your section MUST be AT LEAST ${Math.ceil((totalMinutes / chunkConfig.chunks) * 150)} words.
+This is NON-NEGOTIABLE. Shorter responses will be REJECTED.
+
+CRITICAL RULES:
+1. Count your words as you write - ensure you meet the ${Math.ceil((totalMinutes / chunkConfig.chunks) * 150)} word MINIMUM
+2. Write DETAILED, EXPANDED content - don't summarize or rush
+3. Include rich descriptions, examples, and explanations
+4. NEVER say "I'll continue", "due to length", or use [...]
+5. NO placeholders or shortcuts - write EVERYTHING in full
+6. Each paragraph should be substantial (50+ words)
+7. Expand on every point thoroughly
+8. ${i === chunkConfig.chunks - 1 ? `This is the LAST section - MUST include:
+   - Complete ## Description section with timestamps for ENTIRE video
+   - Complete ## Tags section with 20+ real tags (no placeholders)` : 'Continue from previous section seamlessly'}
+
+YOU WILL BE PENALIZED for responses under ${Math.ceil((totalMinutes / chunkConfig.chunks) * 150)} words.`,
                 messages: [{
                   role: 'user',
                   content: chunkPrompts[i]
@@ -414,21 +352,59 @@ ABSOLUTE REQUIREMENTS:
               })
             });
             
-            if (chunkResponse.ok) {
-              const chunkData = await chunkResponse.json();
-              const chunkScript = chunkData.content?.[0]?.text || '';
-              
-              if (chunkScript) {
-                scriptChunks.push(chunkScript);
+              if (chunkResponse.ok) {
+                const chunkData = await chunkResponse.json();
+                chunkScript = chunkData.content?.[0]?.text || '';
+
+                if (chunkScript) {
+                  // Check word count
+                  const wordCount = chunkScript.split(/\s+/).length;
+                  console.log(`Chunk ${i + 1} word count: ${wordCount} (min: ${minWordsPerChunk})`);
+
+                  if (wordCount < minWordsPerChunk && retryCount < maxRetries) {
+                    console.warn(`Chunk ${i + 1} too short (${wordCount}/${minWordsPerChunk} words), retrying...`);
+                    retryCount++;
+                    continue; // Retry the chunk
+                  }
+
+                  // Chunk is good, add it
+                  scriptChunks.push(chunkScript);
+                  break; // Exit retry loop
+                } else {
+                  console.error(`Empty response for chunk ${i + 1}`);
+                  if (retryCount < maxRetries) {
+                    retryCount++;
+                    console.log(`Retrying chunk ${i + 1} (attempt ${retryCount + 1})...`);
+                    continue;
+                  }
+                  return NextResponse.json(
+                    {
+                      error: 'Script generation failed',
+                      details: `Failed to generate section ${i + 1} of the script after ${maxRetries + 1} attempts. Please try again.`,
+                      retry: true
+                    },
+                    { status: 500 }
+                  );
+                }
               } else {
-                console.error(`Empty response for chunk ${i + 1}`);
-                throw new Error(`Failed to generate chunk ${i + 1}`);
+                const errorText = await chunkResponse.text();
+                console.error(`Failed to generate chunk ${i + 1}:`, errorText);
+                if (retryCount < maxRetries) {
+                  retryCount++;
+                  console.log(`Retrying chunk ${i + 1} due to API error (attempt ${retryCount + 1})...`);
+                  continue;
+                }
+                return NextResponse.json(
+                  {
+                    error: 'Script generation failed',
+                    details: `Failed to generate section ${i + 1} of the script. Please try again.`,
+                    retry: true
+                  },
+                  { status: 500 }
+                );
               }
-            } else {
-              console.error(`Failed to generate chunk ${i + 1}:`, await chunkResponse.text());
-              throw new Error(`Failed to generate chunk ${i + 1}`);
-            }
-          }
+            } // End while loop
+          } // End for loop
           
           // Stitch chunks together
           script = LongFormScriptHandler.stitchChunks(scriptChunks);
@@ -468,18 +444,48 @@ ABSOLUTE REQUIREMENTS:
               return Math.min(estimatedTokens + 500, 4096); // Add buffer, cap at model limit
             })(),
             temperature: 0.7,
-            system: `You are an expert YouTube scriptwriter who ALWAYS completes scripts in ONE response.
+            system: `You are an expert YouTube scriptwriter who MUST write LONG, DETAILED, COMPLETE scripts.
 
-ABSOLUTE REQUIREMENTS:
-1. COMPLETE the ENTIRE script in THIS response - no exceptions
-2. NEVER say "I'll continue", "due to length", "in the next response", or similar
-3. NEVER use [...], "Continue with", or "Note: This is just the first portion"
-4. Write ALL content from [0:00] to [${Math.ceil(totalDuration / 60)}:00] NOW
-5. If the title says "7 secrets", write ALL 7 secrets COMPLETELY
-6. Include COMPLETE description with timestamps and tags - not placeholders
-7. Approximately ${Math.ceil(totalDuration / 60) * 150} words for ${Math.ceil(totalDuration / 60)} minutes
+ABSOLUTE WORD COUNT REQUIREMENT:
+You MUST write AT LEAST ${Math.ceil(totalDuration / 60) * 150} words for the script content.
+This is MANDATORY. Shorter scripts will be REJECTED.
 
-YOU WILL BE PENALIZED for incomplete scripts or continuation messages.`,
+CRITICAL REQUIREMENTS:
+1. Write AT LEAST ${Math.ceil(totalDuration / 60) * 150} words of script content (not counting Description/Tags)
+2. Count your words as you write - ensure you meet the minimum
+3. Write DETAILED, EXPANDED content with rich descriptions
+4. NEVER say "I'll continue", "due to length", or use [...]
+5. If the title says "7 secrets", write ALL 7 secrets in FULL DETAIL
+6. Each section should be thoroughly developed (200+ words per main point)
+7. Include specific examples, stories, and explanations
+
+MANDATORY SECTIONS (MUST INCLUDE ALL):
+1. Main Script Content (MINIMUM ${Math.ceil(totalDuration / 60) * 150} words - write MORE not less)
+2. ## Description (with TIMESTAMPS: section listing ALL timestamps for the video)
+3. ## Tags (20+ actual relevant tags, NO placeholders)
+
+Example Description Format:
+## Description
+[Engaging description of the video]
+
+TIMESTAMPS:
+0:00 Introduction
+1:30 First main point
+3:45 Second main point
+[etc...]
+
+Links:
+[Any relevant links]
+
+Example Tags Format:
+## Tags
+keyword1, keyword2, keyword3, keyword4, keyword5, keyword6, keyword7, keyword8, keyword9, keyword10, keyword11, keyword12, keyword13, keyword14, keyword15
+
+YOU WILL BE PENALIZED for:
+- Scripts under ${Math.ceil(totalDuration / 60) * 150} words
+- Missing or incomplete Description section
+- Missing or placeholder Tags section
+- Any continuation messages or placeholders`,
             messages: [
               {
                 role: 'user',
@@ -597,8 +603,15 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
             script = claudeData.content?.[0]?.text || '';
             
             if (!script) {
-              console.log('Empty Claude response, using fallback');
-              script = generateFallbackScript(type, title, topic, contentPoints);
+              console.error('Empty Claude response - no script generated');
+              return NextResponse.json(
+                {
+                  error: 'Script generation failed',
+                  details: 'AI returned empty response. Please try again.',
+                  retry: true
+                },
+                { status: 500 }
+              );
             }
             
             // Validate for placeholders and continuation messages
@@ -621,24 +634,132 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
               // Could potentially trigger a regeneration here
             }
           } else {
-            console.error('Claude API error response:', await claudeResponse.text());
-            script = generateFallbackScript(type, title, topic, contentPoints);
+            const errorText = await claudeResponse.text();
+            console.error('Claude API error response:', errorText);
+            return NextResponse.json(
+              {
+                error: 'Script generation failed',
+                details: 'AI service error. Please try again.',
+                retry: true
+              },
+              { status: 500 }
+            );
           }
         } // End of else block for single generation
       } catch (claudeError) {
         console.error('Claude API error:', claudeError);
-        script = generateFallbackScript(type, title, topic, contentPoints);
+        return NextResponse.json(
+          {
+            error: 'Script generation failed',
+            details: claudeError.message || 'An error occurred during script generation. Please try again.',
+            retry: true
+          },
+          { status: 500 }
+        );
       }
     } else {
-      // No Claude API key, use fallback
-      script = generateFallbackScript(type, title, topic, contentPoints);
-      // Still charge credits based on duration and model even for fallback
-      creditsUsed = calculateCreditsForDuration(totalDuration, model);
+      // No Claude API key
+      console.error('No Claude API key configured');
+      return NextResponse.json(
+        {
+          error: 'Configuration error',
+          details: 'AI service not configured. Please contact support.',
+          retry: false
+        },
+        { status: 500 }
+      );
     }
-    
-    // Handle credit deduction
+
+    // Validate script before charging credits
+    console.log('=== VALIDATING GENERATED SCRIPT ===');
+
+    // Basic validation
+    if (!script || script.length < 100) {
+      console.error('Script validation failed: Too short or empty');
+      return NextResponse.json(
+        {
+          error: 'Script generation failed',
+          details: 'Generated script is too short or empty. Please try again.',
+          retry: true
+        },
+        { status: 500 }
+      );
+    }
+
+    // Check for required sections
+    const hasDescription = script.includes('## Description') && script.includes('TIMESTAMPS:');
+    const hasTags = script.includes('## Tags') && !script.includes('[') && !script.includes('...');
+    const wordCount = script.split(/\s+/).length;
+    const expectedWords = Math.ceil(totalDuration / 60) * 150;
+
+    // More detailed validation logging
+    console.log('Script validation details:', {
+      wordCount,
+      expectedWords,
+      percentComplete: Math.round((wordCount / expectedWords) * 100),
+      hasDescription,
+      hasTags,
+      scriptLength: script.length
+    });
+
+    // Check for placeholder patterns
+    const placeholderPatterns = [
+      /\[Add specific examples.*\]/i,
+      /\[Continue.*\]/i,
+      /\[Rest of.*\]/i,
+      /Let me break this down for you\.\.\./,
+      /\[Add more.*\]/i
+    ];
+
+    const hasPlaceholders = placeholderPatterns.some(pattern => pattern.test(script));
+
+    if (hasPlaceholders) {
+      console.error('Script validation failed: Contains placeholder text');
+      return NextResponse.json(
+        {
+          error: 'Script generation incomplete',
+          details: 'Generated script contains placeholder text. Please try again.',
+          retry: true
+        },
+        { status: 500 }
+      );
+    }
+
+    if (wordCount < expectedWords * 0.5) { // Allow some flexibility but not too much
+      console.error(`Script validation failed: Too short (${wordCount}/${expectedWords} words)`);
+      return NextResponse.json(
+        {
+          error: 'Script generation incomplete',
+          details: `Script is too short (${wordCount} words, expected at least ${Math.floor(expectedWords * 0.5)}). Please try again.`,
+          retry: true
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!hasDescription || !hasTags) {
+      console.error('Script validation failed: Missing required sections');
+      return NextResponse.json(
+        {
+          error: 'Script generation incomplete',
+          details: 'Script is missing Description or Tags section. Please try again.',
+          retry: true
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ Script validation passed:', {
+      wordCount,
+      expectedWords,
+      hasDescription,
+      hasTags,
+      hasPlaceholders: false
+    });
+
+    // Handle credit deduction AFTER validation
     let deductResult = { success: true, cost: 0 };
-    
+
     if (!bypassCredits) {
       // Log credit calculation details
       console.log('Credit calculation:', {
@@ -647,13 +768,13 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
         creditsUsed,
         userId: user.id
       });
-      
+
       // Deduct credits using ServerCreditManager
       deductResult = await ServerCreditManager.deductCredits(
         supabase,
         user.id,
         'SCRIPT_GENERATION',
-        { 
+        {
           model: model.includes('haiku') ? 'GPT35' : model.includes('sonnet') ? 'GPT4' : 'GPT4',
           duration: totalDuration,
           calculatedCost: creditsUsed // Override with our calculated cost
@@ -665,7 +786,7 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       if (!deductResult.success) {
         console.error('Credit deduction failed:', deductResult);
         return NextResponse.json(
-          { 
+          {
             error: deductResult.error || 'Insufficient credits',
             required: creditsUsed,
             balance: deductResult.balance 

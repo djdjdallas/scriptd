@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useWorkflow } from '../ScriptWorkflow';
-import { Sparkles, RefreshCw, Copy, Check, Type } from 'lucide-react';
+import { Sparkles, RefreshCw, Copy, Check, Type, Edit3, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function TitleStep() {
@@ -11,6 +11,8 @@ export default function TitleStep() {
   const [selectedTitle, setSelectedTitle] = useState(workflowData.title?.selected || '');
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualTitle, setManualTitle] = useState('');
 
   const generateTitles = async () => {
     setIsGenerating(true);
@@ -62,6 +64,31 @@ export default function TitleStep() {
     toast.success('Copied to clipboard');
   };
 
+  const addManualTitle = () => {
+    if (!manualTitle.trim()) {
+      toast.error('Please enter a title');
+      return;
+    }
+
+    const newTitle = {
+      text: manualTitle.trim(),
+      emotion: 'custom',
+      ctrEstimate: 'Custom',
+      isManual: true
+    };
+
+    const updatedTitles = [...titles, newTitle];
+    setTitles(updatedTitles);
+    updateStepData('title', {
+      variations: updatedTitles,
+      selected: selectedTitle
+    });
+
+    setManualTitle('');
+    setShowManualInput(false);
+    toast.success('Custom title added!');
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-8">
       <div className="mb-8">
@@ -74,31 +101,75 @@ export default function TitleStep() {
       </div>
 
       {titles.length === 0 ? (
-        <div className="glass-card p-8 text-center">
-          <Type className="h-12 w-12 text-purple-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">
-            Ready to Generate Titles?
-          </h3>
-          <p className="text-gray-400 mb-6">
-            We'll create 10 optimized variations using AI (1 credit)
-          </p>
-          <button
-            onClick={generateTitles}
-            disabled={isGenerating}
-            className="glass-button bg-purple-600 hover:bg-purple-700 px-6 py-3"
-          >
-            {isGenerating ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Generating Titles...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate Title Variations (1 credit)
-              </>
+        <div className="space-y-6">
+          {/* Generate with AI Card */}
+          <div className="glass-card p-8 text-center">
+            <Type className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">
+              Generate Titles with AI
+            </h3>
+            <p className="text-gray-400 mb-6">
+              We'll create 10 optimized variations using AI (1 credit)
+            </p>
+            <button
+              onClick={generateTitles}
+              disabled={isGenerating}
+              className="glass-button bg-purple-600 hover:bg-purple-700 px-6 py-3"
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Generating Titles...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Title Variations (1 credit)
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Manual Input Card */}
+          <div className="glass-card p-8">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  Or Enter Your Own Title
+                </h3>
+                <p className="text-gray-400">
+                  Have a title in mind? Add it manually
+                </p>
+              </div>
+              <Edit3 className="h-8 w-8 text-blue-400" />
+            </div>
+
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={manualTitle}
+                onChange={(e) => setManualTitle(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addManualTitle()}
+                placeholder="Enter your video title..."
+                className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white
+                         placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                maxLength={100}
+              />
+              <button
+                onClick={addManualTitle}
+                className="glass-button bg-blue-600 hover:bg-blue-700 px-6"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Title
+              </button>
+            </div>
+
+            {manualTitle.length > 0 && (
+              <p className="text-xs text-gray-500 mt-2">
+                {manualTitle.length}/100 characters
+              </p>
             )}
-          </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -106,15 +177,54 @@ export default function TitleStep() {
             <h3 className="text-lg font-semibold text-white">
               Generated Titles ({titles.length})
             </h3>
-            <button
-              onClick={generateTitles}
-              disabled={isGenerating}
-              className="glass-button text-sm"
-            >
-              <RefreshCw className="h-3 w-3 mr-1" />
-              Regenerate (1 credit)
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowManualInput(!showManualInput)}
+                className="glass-button text-sm"
+              >
+                <Edit3 className="h-3 w-3 mr-1" />
+                Add Custom
+              </button>
+              <button
+                onClick={generateTitles}
+                disabled={isGenerating}
+                className="glass-button text-sm"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Regenerate (1 credit)
+              </button>
+            </div>
           </div>
+
+          {/* Manual Input Section (toggleable) */}
+          {showManualInput && (
+            <div className="glass-card p-4 bg-blue-500/5 border-blue-500/20">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={manualTitle}
+                  onChange={(e) => setManualTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addManualTitle()}
+                  placeholder="Enter your custom title..."
+                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white
+                           placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  maxLength={100}
+                />
+                <button
+                  onClick={addManualTitle}
+                  className="glass-button bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add
+                </button>
+              </div>
+              {manualTitle.length > 0 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {manualTitle.length}/100 characters
+                </p>
+              )}
+            </div>
+          )}
 
           {titles.map((title, index) => (
             <div
@@ -133,18 +243,27 @@ export default function TitleStep() {
                     <span className="text-xs text-gray-400">
                       {title.text.length} chars
                     </span>
-                    <span className="text-xs text-purple-400">
-                      {title.emotion}
-                    </span>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      title.ctrEstimate === 'High' 
-                        ? 'bg-green-500/20 text-green-400'
-                        : title.ctrEstimate === 'Medium'
-                        ? 'bg-yellow-500/20 text-yellow-400'
-                        : 'bg-gray-500/20 text-gray-400'
-                    }`}>
-                      {title.ctrEstimate} CTR
-                    </span>
+                    {title.isManual ? (
+                      <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">
+                        <Edit3 className="inline h-3 w-3 mr-1" />
+                        Custom Title
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-xs text-purple-400">
+                          {title.emotion}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          title.ctrEstimate === 'High'
+                            ? 'bg-green-500/20 text-green-400'
+                            : title.ctrEstimate === 'Medium'
+                            ? 'bg-yellow-500/20 text-yellow-400'
+                            : 'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {title.ctrEstimate} CTR
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <button

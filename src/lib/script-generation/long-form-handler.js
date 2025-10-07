@@ -136,12 +136,15 @@ export class LongFormScriptHandler {
     } = chunk;
 
     let prompt = `Generate PART ${chunkNumber} of ${totalChunks} for a YouTube script.
-    
+
+CRITICAL: You MUST write AT LEAST ${duration * 150} words for this section. Be VERBOSE and DETAILED.
+
 VIDEO CONTEXT:
 - Title: ${context.title}
 - Topic: ${context.topic}
 - This section: Minutes ${startTime}-${endTime} (${duration} minutes)
-- Type: ${context.type === 'outline' ? 'Detailed outline' : 'Full script'}
+- Script type: FULL DETAILED SCRIPT with complete narration
+- Required length: MINIMUM ${duration * 150} words (write MORE not less)
 ${context.voiceProfile ? `- Voice Style: ${context.voiceProfile.name}` : ''}
 
 `;
@@ -164,6 +167,21 @@ SECTION REQUIREMENTS:
 - Include next video teaser
 - End on a high note to encourage engagement
 - Include timestamps from [${startTime}:00] to [${endTime}:00]
+
+ALSO INCLUDE AT THE END:
+## Description
+Write an engaging description of the entire video (2-3 paragraphs)
+
+TIMESTAMPS:
+0:00 Introduction
+[Add all major timestamps for the ENTIRE video, not just this section]
+${endTime}:00 Conclusion
+
+Links:
+[Any relevant links]
+
+## Tags
+[Generate 15-20 relevant tags for the video, separated by commas. Example: youtube, video essay, documentary, ${context.topic}, etc.]
 `;
     } else {
       prompt += `
@@ -190,13 +208,20 @@ ${context.contentPoints.map((point, idx) =>
 
     prompt += `
 CRITICAL RULES:
-- Write EXACTLY ${duration} minutes of content (approximately ${duration * 150} words)
-- Include specific timestamps throughout
-- NO placeholders or shortcuts - write everything in full
-- Maintain engaging, conversational tone
+- Write AT LEAST ${duration * 150} words (MINIMUM - this is ${duration} minutes of content)
+- You MUST reach the minimum word count - shorter responses will be rejected
+- Count your words as you write and ensure you meet the ${duration * 150} word minimum
+- Include specific timestamps throughout from [${startTime}:00] to [${endTime}:00]
+- NO placeholders or shortcuts - write everything in full detail
+- Maintain engaging, conversational tone with rich descriptions
 - Include [Visual: ...] cues for production
-- ${isFirst ? 'Start strong with the hook' : ''}
-- ${isLast ? 'End with a powerful conclusion and CTA' : ''}
+- Expand on each point thoroughly - don't rush through topics
+- ${isFirst ? 'Start strong with the hook and set up the entire video' : ''}
+- ${isLast ? `End with a powerful conclusion and CTA
+- MUST include ## Description section with full timestamps for ENTIRE video
+- MUST include ## Tags section with 20+ real tags (no placeholders)` : ''}
+
+WORD COUNT REQUIREMENT: Write AT LEAST ${duration * 150} words. This is mandatory.
 
 Write the complete section now:`;
 
