@@ -101,6 +101,15 @@ Suggest 8-10 specific video ideas that would perform well based on:
 - Videos that could go viral
 - Series or playlist opportunities
 
+CRITICAL REQUIREMENTS FOR VIDEO IDEAS:
+- ONLY suggest video topics based on REAL, VERIFIABLE events
+- If suggesting a specific incident (heist, hack, scandal, etc), it MUST have actually happened
+- Include the year and verifiable details if mentioning specific events
+- For true crime/documentary style content, only use documented cases
+- If you're unsure whether an event is real, DO NOT suggest it
+- Focus on well-documented stories that can be fact-checked
+- Hypothetical scenarios should be clearly labeled as "What If" or "Hypothetical"
+
 7. OPTIMIZATION OPPORTUNITIES
 Identify areas for improvement:
 - Thumbnail and title optimization
@@ -143,7 +152,18 @@ IMPORTANT: Format your response as a valid JSON object with these exact camelCas
   "contentAnalysis": { ... },
   "voiceAndStyle": { ... },
   "growthStrategy": { ... },
-  "contentRecommendations": [ ... ],
+  "contentRecommendations": [
+    {
+      "title": "Video title",
+      "description": "What the video is about",
+      "format": "documentary/explainer/etc",
+      "duration": "15-20 minutes",
+      "growth_potential": 8,
+      "isVerified": true,
+      "verificationDetails": "Event occurred in [year], documented by [sources]",
+      "tags": ["tag1", "tag2"]
+    }
+  ],
   "optimizationOpportunities": { ... },
   "competitivePositioning": { ... },
   "metricsAndBenchmarks": { ... },

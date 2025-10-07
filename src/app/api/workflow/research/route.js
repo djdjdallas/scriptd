@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import ResearchService from '@/lib/ai/research-service';
+import ResearchServiceWithSearch from '@/lib/ai/research-service-with-search';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request) {
@@ -23,19 +24,37 @@ export async function POST(request) {
 
     console.log('🔍 Research request:', { query, topic, workflowId });
 
-    // Perform research using Claude with web search
-    const researchResult = await ResearchService.performResearch({
-      query,
-      topic,
-      context,
-      minSources: 5,
-      minContentLength: 1000
-    });
+    // Try the enhanced service first, fall back to regular if needed
+    let researchResult;
+
+    try {
+      // First attempt with enhanced search service
+      researchResult = await ResearchServiceWithSearch.performResearch({
+        query,
+        topic,
+        context,
+        minSources: 5,
+        minContentLength: 1000
+      });
+    } catch (error) {
+      console.warn('Enhanced search failed, falling back to regular service:', error.message);
+      // Fallback to regular service
+      researchResult = await ResearchService.performResearch({
+        query,
+        topic,
+        context,
+        minSources: 5,
+        minContentLength: 1000
+      });
+    }
 
     if (!researchResult.success) {
       console.error('❌ Research failed:', researchResult.error);
       return NextResponse.json(
-        { error: researchResult.error || 'Research failed' },
+        {
+          error: researchResult.error || 'Research failed',
+          suggestion: researchResult.suggestion
+        },
         { status: 500 }
       );
     }
@@ -45,25 +64,6 @@ export async function POST(request) {
       provider: researchResult.provider,
       totalContent: researchResult.sources?.reduce((sum, s) => sum + (s.source_content?.length || 0), 0)
     });
-
-    // Calculate credits (1 credit per research call)
-    const creditsUsed = 1;
-
-    // Update user credits
-    const { data: currentCredits } = await supabase
-      .from('user_credits')
-      .select('credits_used')
-      .eq('user_id', user.id)
-      .single();
-
-    if (currentCredits) {
-      await supabase
-        .from('user_credits')
-        .update({
-          credits_used: (currentCredits.credits_used || 0) + creditsUsed
-        })
-        .eq('user_id', user.id);
-    }
 
     // Save research to workflow if workflowId provided
     if (workflowId && researchResult.sources?.length > 0) {
@@ -81,43 +81,85 @@ export async function POST(request) {
         source_type: source.source_type || 'web',
         source_url: source.source_url,
         source_title: source.source_title,
-        source_content: source.source_content, // Already has full content!
+        source_content: source.source_content, // Full content from Claude!
         fact_check_status: source.fact_check_status || 'verified',
         is_starred: source.is_starred || false,
         is_selected: true, // Auto-select since Claude verified them
-        relevance: source.relevance || 0.8,
+        relevance: source.relevance || (1 - index * 0.1),
         added_at: new Date().toISOString()
       }));
 
-      const { error: insertError } = await supabase
+      const { data: savedSources, error: saveError } = await supabase
         .from('workflow_research')
-        .insert(sourcesToSave);
+        .insert(sourcesToSave)
+        .select();
 
-      if (insertError) {
-        console.error('Failed to save research:', insertError);
+      if (saveError) {
+        console.error('Error saving research:', saveError);
+        // Log specific error details to help with debugging
+        if (saveError.code === 'PGRST204' && saveError.message.includes('relevance')) {
+          console.error('❌ Database schema issue: relevance column missing');
+          console.error('Please run the migration to add the relevance column');
+        }
       } else {
-        console.log(`✅ Saved ${sourcesToSave.length} sources to workflow`);
+        console.log(`✅ Saved ${savedSources?.length || sourcesToSave.length} sources to workflow`);
       }
+    }
+
+    // Track credit usage
+    const creditsUsed = 1;
+
+    // Update user credits
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('credits')
+      .eq('id', user.id)
+      .single();
+
+    if (currentUser && currentUser.credits > 0) {
+      await supabase
+        .from('users')
+        .update({
+          credits: currentUser.credits - creditsUsed
+        })
+        .eq('id', user.id);
+
+      // Log transaction
+      await supabase
+        .from('credits_transactions')
+        .insert({
+          user_id: user.id,
+          amount: -creditsUsed,
+          type: 'usage',
+          description: `Research: ${query}`,
+          metadata: {
+            workflowId,
+            provider: researchResult.provider,
+            sourcesCount: researchResult.sources?.length
+          }
+        });
     }
 
     // Return results in format expected by frontend
     return NextResponse.json({
       success: true,
       results: researchResult.sources || [],
+      sources: researchResult.sources || [], // Include sources directly
       summary: researchResult.summary,
       researchSummary: researchResult.summary, // Backward compatibility
       relatedQuestions: researchResult.relatedQuestions || [],
       insights: researchResult.insights,
       creditsUsed,
       searchProvider: researchResult.provider,
-      citations: researchResult.citations || []
+      citations: researchResult.citations || [],
+      toolsUsed: researchResult.toolsUsed // Include tool usage stats
     });
 
   } catch (error) {
     console.error('❌ Research API error:', error);
     return NextResponse.json(
       {
-        error: 'Failed to perform research',
+        error: 'Internal server error',
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       },
       { status: 500 }

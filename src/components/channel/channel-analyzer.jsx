@@ -977,12 +977,24 @@ export function ChannelAnalyzer({
                                   key={i}
                                   className="p-3 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg"
                                 >
-                                  <h5 className="text-white font-medium mb-1">
-                                    {idea.title}
-                                  </h5>
+                                  <div className="flex items-start justify-between mb-1">
+                                    <h5 className="text-white font-medium flex-1">
+                                      {idea.title}
+                                    </h5>
+                                    {idea.isVerified && (
+                                      <span className="text-xs bg-green-900/30 text-green-400 px-2 py-0.5 rounded flex-shrink-0 ml-2">
+                                        ✓ Verified
+                                      </span>
+                                    )}
+                                  </div>
                                   <p className="text-gray-300 text-sm mb-2">
                                     {idea.description}
                                   </p>
+                                  {idea.verificationDetails && (
+                                    <p className="text-xs text-blue-300 mb-2 italic">
+                                      {idea.verificationDetails}
+                                    </p>
+                                  )}
                                   <div className="flex items-center justify-between">
                                     <span className="text-xs text-gray-400">
                                       Format: {idea.format}

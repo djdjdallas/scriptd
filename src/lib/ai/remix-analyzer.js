@@ -323,26 +323,27 @@ ${realEvents.length > 0 ?
 - Mark as verified with source links` :
 `CRITICAL: Generate video ideas that match the ACTUAL CONTENT THEME shown in the recent videos above, NOT just based on the channel name.`}
 
-Generate 10 video ideas that:
-1. Appeal to the combined audience
-2. Leverage strengths from all source channels
-3. Are unique and haven't been overdone
-4. Have high viral/growth potential
-5. Are actionable and specific
+Generate exactly 10 video ideas based on the channel's actual content style.
 
-For each video provide:
-- Title (catchy, SEO-optimized)
-- Description (2-3 sentences)
-${realEvents.length > 0 ? `- factualBasis: { verified: true, realEvent: "name", date: "when", sources: ["urls"], keyFacts: ["facts"] }` : ''}
-- Format (tutorial, reaction, etc.)
-- Length (estimated)
-- Key hooks
-- Thumbnail concept
-- SEO tags
-- Estimated difficulty (easy/medium/hard)
-- Growth potential (1-10)
+IMPORTANT: Return ONLY a JSON array, no other text. Each object should have these exact fields:
+[
+  {
+    "title": "Compelling video title under 70 characters",
+    "description": "2-3 sentence description of the video content",
+    ${realEvents.length > 0 ? `"isVerified": true,
+    "verificationDetails": "When and where this happened with specific details",` : ''}
+    "format": "documentary|investigation|deep-dive|analysis",
+    "duration": "20-25 minutes",
+    "keyHooks": ["hook1", "hook2", "hook3"],
+    "thumbnailConcept": "Visual description for thumbnail",
+    "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+    "difficulty": "easy|medium|hard",
+    "growth_potential": 8
+  }
+]
 
-Format as a JSON array.`;
+Generate 10 ideas that match the channel's proven successful format.
+Return ONLY the JSON array, nothing else.`;
 
     const response = await anthropic.messages.create({
       model: REMIX_MODEL,
@@ -358,22 +359,51 @@ Format as a JSON array.`;
     });
 
     const content = response.content[0].text;
-    
+
+    // Debug log the response
+    console.log('📝 Claude response preview (first 500 chars):', content.substring(0, 500));
+
     let ideas;
     try {
       ideas = JSON.parse(content);
     } catch (e) {
+      console.log('Failed direct JSON parse, trying to extract from markdown...');
       const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
       if (jsonMatch) {
-        ideas = JSON.parse(jsonMatch[1]);
+        try {
+          ideas = JSON.parse(jsonMatch[1]);
+        } catch (e2) {
+          console.error('Failed to parse JSON from markdown:', e2);
+          ideas = [];
+        }
       } else {
-        ideas = [];
+        // Try to find array pattern
+        const arrayMatch = content.match(/\[[\s\S]*\]/);
+        if (arrayMatch) {
+          try {
+            ideas = JSON.parse(arrayMatch[0]);
+          } catch (e3) {
+            console.error('Failed to parse array:', e3);
+            ideas = [];
+          }
+        } else {
+          console.error('No valid JSON found in response');
+          ideas = [];
+        }
       }
+    }
+
+    // Ensure we have valid ideas
+    const validIdeas = Array.isArray(ideas) ? ideas : [ideas];
+
+    console.log(`📊 Parsed ${validIdeas.length} content ideas`);
+    if (validIdeas.length > 0) {
+      console.log('First idea title:', validIdeas[0]?.title || 'No title');
     }
 
     return {
       success: true,
-      ideas: Array.isArray(ideas) ? ideas : [ideas]
+      ideas: validIdeas
     };
 
   } catch (error) {
