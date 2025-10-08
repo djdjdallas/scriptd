@@ -7,21 +7,22 @@ export class LongFormScriptHandler {
   /**
    * Determines if a script needs chunked generation
    * Based on token limits: ~150 words/minute * 1.33 tokens/word = ~200 tokens/minute
-   * Claude's limit is 4096 tokens, so scripts over ~20 minutes need chunking
-   * We'll use 20 minutes as the threshold to ensure quality
+   * With 8192 token limit, we can handle up to ~40 minutes in one go
+   * But we still chunk at 20+ minutes for better quality and control
    * @param {number} durationInSeconds - Total script duration
    * @returns {boolean}
    */
   static needsChunking(durationInSeconds) {
     const minutes = Math.ceil(durationInSeconds / 60);
-    // Use chunking for scripts 20 minutes or longer to stay within token limits
+    // Use chunking for scripts 20 minutes or longer for better quality
+    // Even though we could technically handle up to 40 minutes with 8192 tokens
     return minutes >= 20;
   }
 
   /**
    * Calculates optimal chunk size for generation
-   * Each chunk should stay under ~3000 tokens to leave room for system prompts
-   * This means ~15 minutes per chunk maximum
+   * With 8192 tokens, each chunk can handle ~30-35 minutes of content
+   * But we keep chunks at 15-20 minutes for better quality and control
    * @param {number} totalMinutes - Total script duration in minutes
    * @returns {Object} Chunk configuration
    */

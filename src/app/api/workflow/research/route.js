@@ -13,7 +13,14 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { query, topic, context, workflowId } = await request.json();
+    const {
+      query,
+      topic,
+      context,
+      workflowId,
+      targetDuration,
+      enableExpansion = false // New option for enhanced research with gap analysis
+    } = await request.json();
 
     if (!query) {
       return NextResponse.json(
@@ -22,20 +29,41 @@ export async function POST(request) {
       );
     }
 
-    console.log('🔍 Research request:', { query, topic, workflowId });
+    console.log('🔍 Research request:', {
+      query,
+      topic,
+      workflowId,
+      targetDuration,
+      enableExpansion
+    });
 
     // Try the enhanced service first, fall back to regular if needed
     let researchResult;
 
     try {
-      // First attempt with enhanced search service
-      researchResult = await ResearchServiceWithSearch.performResearch({
-        query,
-        topic,
-        context,
-        minSources: 5,
-        minContentLength: 1000
-      });
+      // Use enhanced research with gap analysis if enabled
+      if (enableExpansion) {
+        console.log('🔬 Using enhanced research with gap analysis and expansion');
+        researchResult = await ResearchService.performEnhancedResearch({
+          query,
+          topic,
+          context,
+          targetDuration: targetDuration || 600,
+          enableExpansion: true,
+          maxExpansionSearches: 6,
+          minSources: 10,
+          minContentLength: 1000
+        });
+      } else {
+        // First attempt with enhanced search service
+        researchResult = await ResearchServiceWithSearch.performResearch({
+          query,
+          topic,
+          context,
+          minSources: 10, // Increased from 5 for better content depth
+          minContentLength: 1000
+        });
+      }
     } catch (error) {
       console.warn('Enhanced search failed, falling back to regular service:', error.message);
       // Fallback to regular service
@@ -43,7 +71,7 @@ export async function POST(request) {
         query,
         topic,
         context,
-        minSources: 5,
+        minSources: 10, // Increased from 5 for better content depth
         minContentLength: 1000
       });
     }
@@ -149,6 +177,8 @@ export async function POST(request) {
       researchSummary: researchResult.summary, // Backward compatibility
       relatedQuestions: researchResult.relatedQuestions || [],
       insights: researchResult.insights,
+      expansionPlan: researchResult.expansionPlan, // Include expansion plan if available
+      metrics: researchResult.metrics, // Include metrics if available
       creditsUsed,
       searchProvider: researchResult.provider,
       citations: researchResult.citations || [],

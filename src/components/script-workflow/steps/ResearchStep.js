@@ -103,7 +103,9 @@ export default function ResearchStep() {
         body: JSON.stringify({
           query: query,
           topic: workflowData.summary?.topic,
-          workflowId
+          workflowId,
+          targetDuration: workflowData.summary?.targetDuration || 1800, // Default to 30 minutes
+          enableExpansion: true // ← ENABLE ENHANCED RESEARCH WITH GAP ANALYSIS!
         })
       });
 

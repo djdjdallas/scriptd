@@ -51,7 +51,7 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
    * @param {string} options.query - The research query
    * @param {string} options.topic - The main topic (optional)
    * @param {string} options.context - Additional context (optional)
-   * @param {number} options.minSources - Minimum number of sources (default: 5)
+   * @param {number} options.minSources - Minimum number of sources (default: 10)
    * @param {number} options.minContentLength - Minimum content length per source (default: 1000)
    * @returns {Object} Research results
    */
@@ -60,7 +60,7 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
       query,
       topic = '',
       context = '',
-      minSources = 5,
+      minSources = 10, // Increased from 5 for better script generation depth
       minContentLength = 1000
     } = options;
 
@@ -585,6 +585,118 @@ Include specific URLs and sources for all information. Focus on events from 2023
   static async performAdvancedResearch(options) {
     console.log('🔄 Redirecting to new performResearch method');
     return this.performResearch(options);
+  }
+
+  /**
+   * Perform enhanced research with gap analysis and expansion
+   * @param {Object} options - Research options
+   * @param {string} options.query - The research query
+   * @param {string} options.topic - The main topic (optional)
+   * @param {string} options.context - Additional context (optional)
+   * @param {number} options.targetDuration - Target video duration (auto-detected: seconds or minutes)
+   * @param {boolean} options.enableExpansion - Enable gap analysis and expansion (default: true)
+   * @param {boolean} options.useIntelligentResearch - Use intelligent entity-based research (default: true)
+   * @returns {Object} Enhanced research results with metrics
+   */
+  static async performEnhancedResearch(options) {
+    const {
+      query,
+      topic = '',
+      context = '',
+      targetDuration = 600,
+      enableExpansion = true,
+      useIntelligentResearch = true,
+      minSources = 10,
+      minContentLength = 1000
+    } = options;
+
+    console.log('🚀 Starting enhanced research for:', query);
+
+    // Fix duration: auto-detect if it's in seconds or minutes
+    // If > 100, assume it's seconds and convert to minutes
+    const targetMinutes = targetDuration > 100
+      ? Math.ceil(targetDuration / 60)
+      : targetDuration;
+
+    console.log(`   Target duration: ${targetMinutes} minutes (from ${targetDuration})`);
+
+    // PHASE 1: Initial research function
+    const initialResearchFn = async (searchTopic) => {
+      const result = await this.performResearch({
+        query: searchTopic,
+        topic: searchTopic,
+        context,
+        minSources,
+        minContentLength
+      });
+
+      return {
+        sources: result.sources || [],
+        summary: result.summary,
+        insights: result.insights
+      };
+    };
+
+    // Choose research method
+    if (useIntelligentResearch && enableExpansion) {
+      // Use intelligent entity-based research
+      console.log('🧠 Using intelligent entity-based research');
+      const { performIntelligentResearch } = await import('./intelligent-research.js');
+
+      const result = await performIntelligentResearch(
+        query,
+        targetMinutes,
+        initialResearchFn
+      );
+
+      return {
+        success: true,
+        sources: result.sources,
+        summary: result.summary,
+        insights: result.insights,
+        metrics: result.metrics,
+        provider: 'intelligent-enhanced'
+      };
+    } else if (enableExpansion) {
+      // Use original gap-based expansion
+      console.log('🔬 Using gap-based research expansion');
+      const { performComprehensiveResearch } = await import('./research-expander.js');
+
+      const result = await performComprehensiveResearch(
+        query,
+        initialResearchFn,
+        targetMinutes,
+        enableExpansion
+      );
+
+      return {
+        success: true,
+        sources: result.sources,
+        summary: result.summary,
+        insights: result.insights,
+        expansionPlan: result.expansionPlan,
+        metrics: result.metrics,
+        provider: 'gap-enhanced'
+      };
+    } else {
+      // Simple research without expansion
+      console.log('📰 Using simple research (no expansion)');
+      const result = await initialResearchFn(query);
+
+      return {
+        success: true,
+        sources: result.sources,
+        summary: result.summary,
+        insights: result.insights,
+        metrics: {
+          primarySources: result.sources?.length || 0,
+          expandedSources: 0,
+          totalWords: result.sources?.reduce((sum, s) =>
+            sum + (s.source_content?.split(/\s+/).length || 0), 0) || 0
+        },
+        provider: 'simple'
+      };
+    }
   }
 }
 

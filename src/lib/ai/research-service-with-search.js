@@ -7,14 +7,113 @@ import Anthropic from '@anthropic-ai/sdk';
 
 class ResearchServiceWithSearch {
   /**
-   * Perform research using Claude with optional web search
+   * Perform research using Claude with iterative search for better source gathering
    */
   static async performResearch(options) {
     const {
       query,
       topic = '',
       context = '',
-      minSources = 5,
+      minSources = 10,
+      minContentLength = 1000
+    } = options;
+
+    console.log(`🔍 Starting iterative research for: "${query}"`);
+    console.log(`📊 Target: ${minSources} sources with ${minContentLength}+ chars each`);
+
+    let allSources = [];
+    let attempt = 0;
+    const maxAttempts = 3;
+    const excludedUrls = new Set();
+
+    while (allSources.length < minSources && attempt < maxAttempts) {
+      attempt++;
+      console.log(`\n🔄 Research attempt ${attempt}/${maxAttempts} (currently have ${allSources.length} sources)`);
+
+      // Build query for this iteration
+      let iterationQuery = query;
+      if (attempt > 1) {
+        iterationQuery = `Find additional unique sources about "${query}" that provide different perspectives or information.
+Focus on sources not yet covered. Already found ${allSources.length} sources.`;
+      }
+
+      // Perform single research call
+      const result = await this.performSingleResearch({
+        query: iterationQuery,
+        topic,
+        context,
+        minSources: minSources - allSources.length, // Request remaining needed
+        minContentLength,
+        excludeUrls: Array.from(excludedUrls)
+      });
+
+      if (!result.success) {
+        console.warn(`⚠️ Attempt ${attempt} failed:`, result.error);
+        continue;
+      }
+
+      // Merge new sources (excluding synthesis/AI-generated sources from dedup)
+      const newSources = result.sources.filter(source => {
+        // Always keep AI synthesis sources
+        if (source.source_type === 'synthesis' || source.source_type === 'ai-generated') {
+          return true;
+        }
+
+        // Check for duplicate URLs
+        if (excludedUrls.has(source.source_url)) {
+          return false;
+        }
+
+        excludedUrls.add(source.source_url);
+        return true;
+      });
+
+      console.log(`✅ Found ${newSources.length} new unique sources this iteration`);
+      allSources = allSources.concat(newSources);
+
+      // If we've reached our goal, stop early
+      if (allSources.length >= minSources) {
+        console.log(`🎯 Target reached! Found ${allSources.length} sources`);
+        break;
+      }
+    }
+
+    // Calculate total content
+    const totalContent = allSources.reduce((sum, s) => sum + (s.source_content?.length || 0), 0);
+    console.log(`\n📚 Research complete: ${allSources.length} sources, ${totalContent} total characters`);
+
+    // Use summary from last successful result or create one
+    const summary = allSources.find(s => s.source_type === 'synthesis')?.source_content ||
+                   'Research completed across multiple sources';
+
+    return {
+      success: true,
+      summary,
+      sources: allSources,
+      results: allSources,
+      relatedQuestions: [],
+      insights: {
+        keyStatistics: [],
+        expertQuotes: [],
+        commonMisconceptions: [],
+        actionableTakeaways: []
+      },
+      citations: allSources.filter(s => s.source_type === 'web'),
+      provider: 'claude-enhanced-iterative',
+      iterations: attempt,
+      totalContent
+    };
+  }
+
+  /**
+   * Perform a single research call using Claude with web search
+   */
+  static async performSingleResearch(options) {
+    const {
+      query,
+      topic = '',
+      context = '',
+      minSources = 10,
       minContentLength = 1000
     } = options;
 
@@ -47,6 +146,8 @@ Instructions:
 2. Focus on events from 2023-2025
 3. Include specific dates, names, and facts
 4. Provide real URLs for sources when possible
+5. Find and include AT LEAST ${minSources} different sources with substantial content
+6. Each source must have at least ${minContentLength} characters of content
 
 Return your findings as a JSON object with this structure:
 {
@@ -55,7 +156,7 @@ Return your findings as a JSON object with this structure:
     {
       "source_url": "URL or description",
       "source_title": "Title",
-      "source_content": "Key information (at least 500 characters)",
+      "source_content": "Key information (at least ${minContentLength} characters)",
       "source_type": "web",
       "is_starred": false,
       "fact_check_status": "verified",
@@ -70,6 +171,8 @@ Return your findings as a JSON object with this structure:
     "actionableTakeaways": ["Takeaway 1"]
   }
 }
+
+CRITICAL: You MUST include AT LEAST ${minSources} sources in the sources array. Each source must have substantial content (${minContentLength}+ characters).
 
 IMPORTANT: Return ONLY the JSON, no other text.`;
 

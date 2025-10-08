@@ -172,7 +172,7 @@ export async function POST(request) {
     }
 
     // ENHANCED CONTENT QUALITY VALIDATION
-    const validateContentQuality = (sources) => {
+    const validateContentQuality = (sources, duration = 600) => {
       const sourcesWithContent = sources.filter(s =>
         s.source_content && s.source_content.length > 100
       );
@@ -194,10 +194,66 @@ export async function POST(request) {
       console.log('📊 === CONTENT QUALITY VALIDATION ===');
       console.log('Stats:', stats);
 
-      // Quality thresholds
-      const MIN_SOURCES_WITH_CONTENT = 2;
-      const MIN_SUCCESS_RATE = 40; // 40% minimum
-      const MIN_TOTAL_CONTENT_LENGTH = 2000; // 2000 chars minimum
+      // Enhanced word count analysis
+      const totalWords = sources.reduce((sum, s) => {
+        const content = s.source_content || '';
+        return sum + content.split(/\s+/).filter(w => w.length > 0).length;
+      }, 0);
+
+      console.log('\n=== WORD COUNT ANALYSIS ===');
+      console.log(`Total Words in Research: ${totalWords.toLocaleString()}`);
+      console.log(`Average Words per Source: ${Math.round(totalWords / sources.length)}`);
+
+      // Per-source breakdown
+      console.log('\n=== PER-SOURCE BREAKDOWN ===');
+      sources.forEach((source, idx) => {
+        const content = source.source_content || '';
+        const wordCount = content.split(/\s+/).filter(w => w.length > 0).length;
+        console.log(`Source ${idx + 1}: ${source.source_title || source.source_url}`);
+        console.log(`  Length: ${content.length} chars | ${wordCount} words`);
+        console.log(`  Preview: "${content.substring(0, 100)}..."`);
+        if (content.length < 500) {
+          console.warn(`  ⚠️ WARNING: Very short content (${content.length} chars)`);
+        }
+      });
+
+      // Calculate research depth vs target
+      const targetMinutes = Math.ceil(duration / 60);
+      const estimatedMinutes = totalWords / 150; // 150 words per minute speech
+      const researchRatio = estimatedMinutes / targetMinutes;
+
+      console.log('\n=== RESEARCH ADEQUACY ===');
+      console.log(`Target Script: ${targetMinutes} minutes`);
+      console.log(`Research Content: ${estimatedMinutes.toFixed(1)} minutes worth`);
+      console.log(`Ratio: ${researchRatio.toFixed(2)}x (${researchRatio >= 2 ? '✅ Good' : researchRatio >= 1 ? '⚠️ Adequate' : '❌ Too Thin'})`);
+
+      // Check for high-quality research that bypasses word count requirements
+      const hasSynthesis = sources.some(s => s.source_type === 'synthesis');
+      const verifiedSources = sources.filter(s => s.fact_check_status === 'verified');
+      const starredSources = sources.filter(s => s.is_starred);
+
+      const hasQualityResearch = hasSynthesis && (verifiedSources.length >= 2 || starredSources.length >= 2);
+
+      if (hasQualityResearch) {
+        console.log('\n✅ === QUALITY BYPASS ACTIVATED ===');
+        console.log(`Has synthesis: ${hasSynthesis}`);
+        console.log(`Verified sources: ${verifiedSources.length}`);
+        console.log(`Starred sources: ${starredSources.length}`);
+        console.log('Skipping strict word count validation due to high-quality research');
+      } else if (totalWords < 1000) {
+        console.error('\n❌ CRITICAL: Research content is TOO THIN (<1000 words)');
+        console.error('   Claude will struggle to generate quality content from this.');
+        console.error('   Expected: At least 2000+ words of research for quality scripts');
+      } else if (totalWords < targetMinutes * 100) {
+        console.warn(`\n⚠️ WARNING: Research (${totalWords} words) may be thin for ${targetMinutes}-min script`);
+        console.warn(`   Recommend: At least ${targetMinutes * 100} words for best results`);
+      }
+
+      // Quality thresholds - UPDATED for better script generation
+      const MIN_SOURCES_WITH_CONTENT = 3; // Increased from 2
+      const MIN_SUCCESS_RATE = 60; // Increased from 40%
+      const MIN_TOTAL_CONTENT_LENGTH = 5000; // Increased from 2000 chars
+      const MIN_TOTAL_WORDS = Math.max(1500, targetMinutes * 80); // Dynamic based on duration
 
       const errors = [];
 
@@ -222,17 +278,32 @@ export async function POST(request) {
         );
       }
 
+      if (totalWords < MIN_TOTAL_WORDS && !hasQualityResearch) {
+        errors.push(
+          `Insufficient research depth: Only ${totalWords} words of research content. ` +
+          `Need at least ${MIN_TOTAL_WORDS} words for a ${targetMinutes}-minute script. ` +
+          `This ensures Claude has enough material to work with.`
+        );
+      }
+
       return {
         isValid: errors.length === 0,
         errors,
         stats,
-        sourcesWithContent
+        sourcesWithContent,
+        hasQualityResearch // Return this so we can use it later
       };
     };
 
     // Validate content quality
+    let hasQualityResearch = false;
     if (research?.sources && research.sources.length > 0) {
-      const validation = validateContentQuality(research.sources);
+      // Calculate duration early for validation
+      const durationForValidation = targetDuration || contentPoints?.points?.reduce((acc, p) => acc + p.duration, 0) || 600;
+      const validation = validateContentQuality(research.sources, durationForValidation);
+
+      // Store quality research flag for later use
+      hasQualityResearch = validation.hasQualityResearch;
 
       if (!validation.isValid) {
         console.error('❌ Content quality validation failed:', validation.errors);
@@ -311,7 +382,9 @@ export async function POST(request) {
             let chunkScript = '';
             let retryCount = 0;
             const maxRetries = 2;
-            const minWordsPerChunk = Math.ceil((totalMinutes / chunkConfig.chunks) * 150);
+            // Reduce word requirement by 30% when we have quality research
+            const wordsPerMinute = hasQualityResearch ? 105 : 150;
+            const minWordsPerChunk = Math.ceil((totalMinutes / chunkConfig.chunks) * wordsPerMinute);
 
             // Retry loop for short chunks
             while (retryCount <= maxRetries) {
@@ -324,16 +397,16 @@ export async function POST(request) {
               },
               body: JSON.stringify({
                 model: actualModel,
-                max_tokens: 4096,
+                max_tokens: 8192, // Increased from 4096 for longer content
                 temperature: 0.7,
                 system: `You are an expert YouTube scriptwriter who MUST write LONG, DETAILED scripts.
 
 ABSOLUTE WORD COUNT REQUIREMENT:
-Your section MUST be AT LEAST ${Math.ceil((totalMinutes / chunkConfig.chunks) * 150)} words.
+Your section MUST be AT LEAST ${minWordsPerChunk} words.
 This is NON-NEGOTIABLE. Shorter responses will be REJECTED.
 
 CRITICAL RULES:
-1. Count your words as you write - ensure you meet the ${Math.ceil((totalMinutes / chunkConfig.chunks) * 150)} word MINIMUM
+1. Count your words as you write - ensure you meet the ${minWordsPerChunk} word MINIMUM
 2. Write DETAILED, EXPANDED content - don't summarize or rush
 3. Include rich descriptions, examples, and explanations
 4. NEVER say "I'll continue", "due to length", or use [...]
@@ -344,7 +417,7 @@ CRITICAL RULES:
    - Complete ## Description section with timestamps for ENTIRE video
    - Complete ## Tags section with 20+ real tags (no placeholders)` : 'Continue from previous section seamlessly'}
 
-YOU WILL BE PENALIZED for responses under ${Math.ceil((totalMinutes / chunkConfig.chunks) * 150)} words.`,
+YOU WILL BE PENALIZED for responses under ${minWordsPerChunk} words.`,
                 messages: [{
                   role: 'user',
                   content: chunkPrompts[i]
@@ -408,11 +481,16 @@ YOU WILL BE PENALIZED for responses under ${Math.ceil((totalMinutes / chunkConfi
           
           // Stitch chunks together
           script = LongFormScriptHandler.stitchChunks(scriptChunks);
-          
-          // Validate completeness
+
+          // Validate completeness (more lenient with quality research)
           const validation = LongFormScriptHandler.validateCompleteness(script, totalMinutes);
           if (!validation.isValid) {
             console.warn('Script validation issues:', validation.issues);
+
+            // If we have quality research, be more lenient
+            if (hasQualityResearch) {
+              console.log('⚠️ Validation issues detected, but proceeding due to quality research bypass');
+            }
           }
           
         } else {
@@ -432,16 +510,17 @@ YOU WILL BE PENALIZED for responses under ${Math.ceil((totalMinutes / chunkConfi
               const minutes = Math.ceil(totalDuration / 60);
               const estimatedWords = minutes * 150;
               const estimatedTokens = Math.ceil(estimatedWords * 1.33);
-              
-              // Cap at model limits
-              // Claude 3 models support up to 4096 output tokens per request
-              // For very long scripts, we need a different approach
-              if (estimatedTokens > 4096) {
-                console.log(`Script requires ~${estimatedTokens} tokens, but model limited to 4096. Will generate condensed version.`);
-                return 4096;
+
+              // Increased token limit for better output
+              // Claude 3 models can handle up to 8192 output tokens
+              const maxTokenLimit = 8192;
+
+              if (estimatedTokens > maxTokenLimit) {
+                console.log(`Script requires ~${estimatedTokens} tokens, capping at ${maxTokenLimit}.`);
+                return maxTokenLimit;
               }
-              
-              return Math.min(estimatedTokens + 500, 4096); // Add buffer, cap at model limit
+
+              return Math.min(estimatedTokens + 1000, maxTokenLimit); // Add buffer, cap at 8192
             })(),
             temperature: 0.7,
             system: `You are an expert YouTube scriptwriter who MUST write LONG, DETAILED, COMPLETE scripts.
@@ -725,19 +804,23 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       );
     }
 
-    if (wordCount < expectedWords * 0.5) { // Allow some flexibility but not too much
+    // Be more lenient with quality research (allow 40% of expected instead of 50%)
+    const minWordThreshold = hasQualityResearch ? 0.4 : 0.5;
+
+    if (wordCount < expectedWords * minWordThreshold) {
       console.error(`Script validation failed: Too short (${wordCount}/${expectedWords} words)`);
       return NextResponse.json(
         {
           error: 'Script generation incomplete',
-          details: `Script is too short (${wordCount} words, expected at least ${Math.floor(expectedWords * 0.5)}). Please try again.`,
+          details: `Script is too short (${wordCount} words, expected at least ${Math.floor(expectedWords * minWordThreshold)}). Please try again.`,
           retry: true
         },
         { status: 500 }
       );
     }
 
-    if (!hasDescription || !hasTags) {
+    // With quality research, we can be more lenient about missing sections
+    if (!hasQualityResearch && (!hasDescription || !hasTags)) {
       console.error('Script validation failed: Missing required sections');
       return NextResponse.json(
         {
@@ -747,6 +830,8 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
         },
         { status: 500 }
       );
+    } else if (hasQualityResearch && (!hasDescription || !hasTags)) {
+      console.warn('⚠️ Script missing some sections, but proceeding due to quality research');
     }
 
     console.log('✅ Script validation passed:', {

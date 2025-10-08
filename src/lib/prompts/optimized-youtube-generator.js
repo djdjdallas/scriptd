@@ -352,21 +352,17 @@ const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext =
     ${verifiedSources.length > 0 ? `
     <verified_sources>
       ${verifiedSources.map(s => {
-        const contentLength = s.source_content?.length || 0;
-        const contentToShow = contentLength > 1500 ? 
-          s.source_content.substring(0, 1500) + '... [' + (contentLength - 1500) + ' more chars]' : 
-          s.source_content || '';
-        return `- ${s.source_title} (${s.source_url}): ${contentToShow}`;
+        // Include full content - no truncation!
+        // Claude needs all the research to write comprehensive scripts
+        return `- ${s.source_title} (${s.source_url}): ${s.source_content || ''}`;
       }).join('\n      ')}
     </verified_sources>` : ''}
     ${starredSources.length > 0 ? `
     <important_sources>
       ${starredSources.map(s => {
-        const contentLength = s.source_content?.length || 0;
-        const contentToShow = contentLength > 1500 ? 
-          s.source_content.substring(0, 1500) + '... [' + (contentLength - 1500) + ' more chars]' : 
-          s.source_content || '';
-        return `- ${s.source_title} (${s.source_url}): ${contentToShow}`;
+        // Include full content - no truncation!
+        // Claude needs all the research to write comprehensive scripts
+        return `- ${s.source_title} (${s.source_url}): ${s.source_content || ''}`;
       }).join('\n      ')}
     </important_sources>` : ''}
     ${research?.insights ? `
