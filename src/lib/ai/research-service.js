@@ -68,11 +68,15 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
     if (process.env.PERPLEXITY_API_KEY) {
       console.log('🔍 Attempting Perplexity web search');
       try {
+        // Detect if topic is about recent events (past year)
+        const isRecentEvent = query.match(/\b(2024|2025|recent|latest|current)\b/i);
+
         const perplexityResult = await this.performPerplexitySearch({
           query,
           topic,
           context,
-          minSources
+          minSources,
+          recencyFilter: isRecentEvent ? 'year' : null // ✅ Only filter recent topics
         });
 
         if (perplexityResult.success) {
@@ -324,9 +328,19 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
 
   /**
    * Perform web search using Perplexity API
-   * IMPORTANT: We use Perplexity's content directly without fetching URLs
+   * @param {string} query - Search query
+   * @param {string} topic - Main topic
+   * @param {string} context - Additional context
+   * @param {number} minSources - Minimum sources needed
+   * @param {string} recencyFilter - 'day' | 'week' | 'month' | 'year' | null
    */
-  static async performPerplexitySearch({ query, topic, context, minSources }) {
+  static async performPerplexitySearch({
+    query,
+    topic,
+    context,
+    minSources,
+    recencyFilter = null // ✅ Now optional!
+  }) {
     if (!process.env.PERPLEXITY_API_KEY) {
       return { success: false, error: 'Perplexity API key not configured' };
     }
@@ -334,7 +348,17 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
     try {
       console.log('🔍 Starting Perplexity web search for:', query);
 
-      const searchPrompt = `Research this topic comprehensively: "${query}"
+      // ✅ Dynamically set recency filter
+      const searchConfig = {
+        model: 'sonar',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a thorough research assistant. Provide comprehensive, well-sourced information with specific URLs and citations. Focus on the most recent and relevant information.'
+          },
+          {
+            role: 'user',
+            content: `Research this topic comprehensively: "${query}"
 ${topic ? `Main Topic: ${topic}` : ''}
 ${context ? `Context: ${context}` : ''}
 
@@ -346,7 +370,22 @@ Provide:
 5. Common misconceptions
 6. Actionable insights
 
-Include specific URLs and sources for all information. Focus on events from 2023-2025.`;
+Include specific URLs and sources for all information.${!recencyFilter ? ' Search ALL available sources, including historical information.' : ' Focus on recent events.'}`
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 4000,
+        return_citations: true,
+        return_related_questions: true
+      };
+
+      // ✅ Only add recency filter if specified
+      if (recencyFilter) {
+        searchConfig.search_recency_filter = recencyFilter;
+        console.log(`🗓️ Using recency filter: ${recencyFilter}`);
+      } else {
+        console.log('🗓️ No recency filter - searching all available sources');
+      }
 
       const response = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
@@ -354,24 +393,7 @@ Include specific URLs and sources for all information. Focus on events from 2023
           'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: 'sonar', // or 'sonar-pro' for better quality
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a thorough research assistant. Provide comprehensive, well-sourced information with specific URLs and citations. Focus on the most recent and relevant information.'
-            },
-            {
-              role: 'user',
-              content: searchPrompt
-            }
-          ],
-          temperature: 0.2,
-          max_tokens: 4000,
-          return_citations: true,
-          return_related_questions: true,
-          search_recency_filter: 'year' // Focus on recent content
-        })
+        body: JSON.stringify(searchConfig)
       });
 
       if (!response.ok) {

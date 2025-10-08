@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useWorkflow } from '../ScriptWorkflow';
-import { Search, Globe, FileText, Link, CheckCircle, XCircle, AlertCircle, Star, Trash2, Plus, Loader2, Info, HelpCircle, Brain, Sparkles, Upload, File, Check, X } from 'lucide-react';
+import { Search, Globe, FileText, Link, CheckCircle, XCircle, AlertCircle, Star, Trash2, Plus, Loader2, Info, HelpCircle, Brain, Sparkles, Upload, File, Check, X, Video, ExternalLink, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
@@ -22,7 +22,10 @@ export default function ResearchStep() {
   const [uploadedDocuments, setUploadedDocuments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
-  
+  const [relatedVideos, setRelatedVideos] = useState([]);
+  const [isSearchingVideos, setIsSearchingVideos] = useState(false);
+  const [selectedVideos, setSelectedVideos] = useState(new Set());
+
   const supabase = createClient();
 
   // Load research sources from database when workflow exists
@@ -433,6 +436,94 @@ export default function ResearchStep() {
     }
   };
 
+  // Search for related YouTube videos
+  const searchRelatedVideos = async () => {
+    const topic = workflowData.summary?.topic;
+    if (!topic) {
+      toast.error('Please complete the summary step first to get your video topic');
+      return;
+    }
+
+    setIsSearchingVideos(true);
+    try {
+      const response = await fetch('/api/workflow/video-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: topic,
+          workflowId: workflowId,
+          options: {
+            maxResults: 12,
+            order: 'relevance'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to search videos');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.videos) {
+        setRelatedVideos(data.videos);
+        toast.success(`Found ${data.videos.length} related videos for reference`);
+      } else {
+        throw new Error('No videos found');
+      }
+    } catch (error) {
+      console.error('Video search error:', error);
+      toast.error(error.message || 'Failed to search videos');
+    } finally {
+      setIsSearchingVideos(false);
+    }
+  };
+
+  const toggleVideoSelection = (videoId) => {
+    setSelectedVideos(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(videoId)) {
+        newSet.delete(videoId);
+      } else {
+        newSet.add(videoId);
+      }
+      return newSet;
+    });
+  };
+
+  const addVideoAsReference = (video) => {
+    // Create a source entry for the selected video
+    const videoSource = {
+      id: crypto.randomUUID(),
+      source_type: 'video',
+      source_url: video.url,
+      source_title: `[VIDEO] ${video.title}`,
+      source_content: `YouTube video by ${video.channelTitle}\nDuration: ${video.duration}\nViews: ${video.viewCount.toLocaleString()}\n\n${video.description.slice(0, 300)}...\n\n⚠️ Reference only - Provide attribution when using`,
+      fact_check_status: 'verified',
+      is_starred: false,
+      relevance: video.relevanceScore || 0.8,
+      video_metadata: {
+        videoId: video.videoId,
+        channelTitle: video.channelTitle,
+        duration: video.duration,
+        viewCount: video.viewCount,
+        likeCount: video.likeCount,
+        license: video.license,
+        chapters: video.chapters
+      }
+    };
+
+    setSources(prev => [...prev, videoSource]);
+    setSelectedSources(prev => {
+      const newSet = new Set(prev);
+      newSet.add(videoSource.id);
+      return newSet;
+    });
+
+    toast.success(`Added "${video.title}" as reference`);
+  };
+
   const handleSave = async () => {
     // Filter only selected sources
     const selectedSourcesList = sources.filter(s => selectedSources.has(s.id));
@@ -668,6 +759,166 @@ export default function ResearchStep() {
                 Supported: PDF, Word, Text, Markdown, Excel (Max 50MB per file)
               </p>
             </div>
+
+            {/* Video Search Section */}
+            <div className="glass-card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Video className="h-4 w-4 text-red-400" />
+                  Find Related Videos
+                </h4>
+                {isSearchingVideos && (
+                  <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mb-3">
+                Search YouTube for videos to reference in your commentary
+              </p>
+
+              {/* Copyright Warning Banner */}
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs text-yellow-200">
+                    <p className="font-semibold mb-1">⚠️ Copyright Notice</p>
+                    <p>Videos are for REFERENCE ONLY. Always provide attribution and follow fair use guidelines (commentary, criticism, education).</p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={searchRelatedVideos}
+                disabled={isSearchingVideos || !workflowData.summary?.topic}
+                className="flex items-center justify-center gap-2 w-full glass-button py-3 hover:bg-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSearchingVideos ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Searching YouTube...
+                  </>
+                ) : (
+                  <>
+                    <Video className="h-5 w-5" />
+                    Find Related Videos
+                  </>
+                )}
+              </button>
+
+              {!workflowData.summary?.topic && (
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Complete the summary step first
+                </p>
+              )}
+            </div>
+
+            {/* Video Results */}
+            {relatedVideos.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Video className="h-4 w-4 text-red-400" />
+                    Related Videos ({relatedVideos.length})
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {relatedVideos.map((video) => (
+                    <div key={video.videoId} className="glass-card p-4 hover:bg-gray-800/50 transition-all">
+                      <div className="flex gap-3">
+                        {/* Thumbnail */}
+                        <div className="relative flex-shrink-0 w-32 h-20 rounded overflow-hidden">
+                          <img
+                            src={video.thumbnails?.medium?.url || video.thumbnails?.default?.url}
+                            alt={video.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 rounded">
+                            {video.duration}
+                          </div>
+                        </div>
+
+                        {/* Video Info */}
+                        <div className="flex-1 min-w-0">
+                          <h5 className="text-sm font-medium text-white line-clamp-2 mb-1">
+                            {video.title}
+                          </h5>
+                          <p className="text-xs text-gray-400 mb-1">{video.channelTitle}</p>
+
+                          <div className="flex items-center gap-3 text-xs text-gray-500 mb-2">
+                            <span>{(video.viewCount || 0).toLocaleString()} views</span>
+                            {video.likeCount > 0 && (
+                              <span>{(video.likeCount || 0).toLocaleString()} likes</span>
+                            )}
+                          </div>
+
+                          {/* License Badge */}
+                          <div className="flex items-center gap-2 mb-2">
+                            {video.isCreativeCommons ? (
+                              <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">
+                                Creative Commons
+                              </span>
+                            ) : (
+                              <span className="text-xs px-2 py-0.5 bg-gray-500/20 text-gray-400 rounded-full">
+                                Standard License
+                              </span>
+                            )}
+                            {video.relevanceScore >= 0.7 && (
+                              <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">
+                                High Relevance
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Chapters Preview */}
+                          {video.chapters && video.chapters.length > 0 && (
+                            <div className="text-xs text-gray-400 mb-2">
+                              <span className="font-medium">Chapters:</span> {video.chapters.slice(0, 3).map(ch => ch.title).join(', ')}
+                              {video.chapters.length > 3 && ` +${video.chapters.length - 3} more`}
+                            </div>
+                          )}
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={video.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs glass-button px-3 py-1 flex items-center gap-1 hover:bg-blue-600/20"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Watch
+                            </a>
+                            <button
+                              onClick={() => addVideoAsReference(video)}
+                              className="text-xs glass-button px-3 py-1 flex items-center gap-1 hover:bg-purple-600/20"
+                            >
+                              <Plus className="h-3 w-3" />
+                              Add Reference
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Relevance Score Bar */}
+                      <div className="mt-3 pt-3 border-t border-gray-700/50">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400">Relevance:</span>
+                          <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"
+                              style={{ width: `${(video.relevanceScore || 0.5) * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-400">
+                            {Math.round((video.relevanceScore || 0.5) * 100)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             
             {sources.length === 0 && !isAddingSources ? (
               <div className="glass-card p-8 text-center">
