@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  GraduationCap, 
-  TrendingUp, 
-  Users, 
-  DollarSign, 
-  CheckCircle, 
-  ArrowRight, 
+import {
+  GraduationCap,
+  TrendingUp,
+  Users,
+  DollarSign,
+  CheckCircle,
+  ArrowRight,
   Briefcase,
   Target,
   BarChart3,
@@ -22,7 +22,8 @@ import {
   Star,
   MessageSquare,
   Play,
-  Award
+  Award,
+  Video
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Link from 'next/link';
@@ -44,6 +45,12 @@ export default function BusinessEducatorSuite() {
   }, []);
 
   const features = [
+    {
+      icon: Video,
+      title: 'Competitive Research & Analysis',
+      description: 'Extract and analyze transcripts from industry leaders. Study what works and apply proven patterns.',
+      benefit: '10x faster market research'
+    },
     {
       icon: Target,
       title: 'Business-Focused Script Templates',

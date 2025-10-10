@@ -6,10 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { 
-  Lightbulb, 
-  FileText, 
-  TrendingUp, 
+import {
+  Lightbulb,
+  FileText,
+  TrendingUp,
   Hash,
   Image,
   Clock,
@@ -20,11 +20,24 @@ import {
   Star,
   Users,
   ChevronRight,
-  Filter
+  Filter,
+  Video
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const tools = [
+  {
+    id: 'transcript-extraction',
+    title: 'YouTube Transcript Extraction',
+    description: 'Extract and analyze video transcripts in seconds. AI-powered competitive research made easy.',
+    icon: Video,
+    badge: 'New',
+    badgeVariant: 'secondary',
+    features: ['Hook analysis', 'Topic extraction', 'Keyword detection', 'Timestamp identification'],
+    href: '/signup',
+    category: 'research',
+    popularity: 5
+  },
   {
     id: 'title-generator',
     title: 'YouTube Title Generator',
@@ -95,6 +108,7 @@ const tools = [
 
 const categories = [
   { id: 'all', label: 'All Tools', icon: Sparkles },
+  { id: 'research', label: 'Research & Analysis', icon: Video },
   { id: 'content', label: 'Content Creation', icon: FileText },
   { id: 'planning', label: 'Planning', icon: Lightbulb },
   { id: 'seo', label: 'SEO & Discovery', icon: TrendingUp },

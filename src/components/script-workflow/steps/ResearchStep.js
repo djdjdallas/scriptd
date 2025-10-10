@@ -25,30 +25,33 @@ export default function ResearchStep() {
   const [relatedVideos, setRelatedVideos] = useState([]);
   const [isSearchingVideos, setIsSearchingVideos] = useState(false);
   const [selectedVideos, setSelectedVideos] = useState(new Set());
+  const [videoTranscripts, setVideoTranscripts] = useState({});
+  const [isExtractingTranscript, setIsExtractingTranscript] = useState({});
+  const [expandedTranscripts, setExpandedTranscripts] = useState(new Set());
 
   const supabase = createClient();
 
-  // Load research sources from database when workflow exists
+  // Load research sources and video transcripts from database when workflow exists
   useEffect(() => {
-    const loadSavedResearch = async () => {
-      if (workflowId && (!sources || sources.length === 0)) {
-        try {
-          const { data, error } = await supabase
+    const loadSavedData = async () => {
+      if (!workflowId) return;
+
+      try {
+        // Load research sources
+        if (!sources || sources.length === 0) {
+          const { data: researchData, error: researchError } = await supabase
             .from('workflow_research')
             .select('*')
             .eq('workflow_id', workflowId)
             .order('created_at', { ascending: false });
 
-          if (error) {
-            console.error('Error loading saved research:', error);
-            return;
-          }
+          if (researchError) {
+            console.error('Error loading saved research:', researchError);
+          } else if (researchData && researchData.length > 0) {
+            console.log(`Loading ${researchData.length} saved research sources from database`);
 
-          if (data && data.length > 0) {
-            console.log(`Loading ${data.length} saved research sources from database`);
-            
             // Convert database format to component format
-            const loadedSources = data.map(source => ({
+            const loadedSources = researchData.map(source => ({
               id: source.id,
               source_type: source.source_type,
               source_url: source.source_url,
@@ -56,24 +59,68 @@ export default function ResearchStep() {
               source_content: source.source_content,
               fact_check_status: source.fact_check_status,
               is_starred: source.is_starred,
-              relevance: source.relevance || 0.5 // Default to 0.5 if not set
+              relevance: source.relevance || 0.5
             }));
 
             setSources(loadedSources);
-            
+
             // Auto-select sources that were previously selected
-            const selectedIds = data.filter(s => s.is_selected).map(s => s.id);
+            const selectedIds = researchData.filter(s => s.is_selected).map(s => s.id);
             if (selectedIds.length > 0) {
               setSelectedSources(new Set(selectedIds));
             }
           }
-        } catch (error) {
-          console.error('Error loading research:', error);
         }
+
+        // Load saved video transcripts
+        const { data: transcriptsData, error: transcriptsError } = await supabase
+          .from('workflow_video_transcripts')
+          .select('*')
+          .eq('workflow_id', workflowId)
+          .order('created_at', { ascending: false });
+
+        if (transcriptsError) {
+          console.error('Error loading saved transcripts:', transcriptsError);
+        } else if (transcriptsData && transcriptsData.length > 0) {
+          console.log(`Loading ${transcriptsData.length} saved video transcripts from database`);
+
+          // Convert database format to component format
+          const loadedTranscripts = {};
+          transcriptsData.forEach(record => {
+            loadedTranscripts[record.video_id] = {
+              dbId: record.id,
+              language: record.transcript_language,
+              type: record.transcript_type,
+              fullText: record.transcript_data.fullText,
+              segments: record.transcript_data.segments,
+              metadata: record.transcript_data.metadata,
+              analysis: record.analysis_data,
+              videoTitle: record.video_title,
+              channelTitle: record.channel_name,
+              videoUrl: record.video_url,
+              isStarred: record.is_starred,
+              researchId: record.research_id,
+              userNotes: record.user_notes,
+              userTags: record.user_tags || []
+            };
+          });
+
+          setVideoTranscripts(loadedTranscripts);
+
+          // Auto-expand transcripts that are starred
+          const starredVideoIds = transcriptsData
+            .filter(t => t.is_starred)
+            .map(t => t.video_id);
+          if (starredVideoIds.length > 0) {
+            setExpandedTranscripts(new Set(starredVideoIds));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading saved data:', error);
       }
     };
 
-    loadSavedResearch();
+    loadSavedData();
   }, [workflowId]);
 
   // AI-powered search using the video topic
@@ -492,6 +539,183 @@ export default function ResearchStep() {
     });
   };
 
+  // Extract transcript from a video
+  const extractTranscript = async (video) => {
+    const videoId = video.videoId;
+
+    setIsExtractingTranscript(prev => ({ ...prev, [videoId]: true }));
+
+    try {
+      console.log(`Extracting transcript for video: ${video.title}`);
+
+      const response = await fetch('/api/workflow/transcript-extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoId: videoId,
+          videoTitle: video.title,
+          channelTitle: video.channelTitle,
+          videoUrl: video.url,
+          workflowId: workflowId, // Save to database if workflow exists
+          includeAnalysis: true
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to extract transcript');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.transcript) {
+        // Store the transcript data
+        setVideoTranscripts(prev => ({
+          ...prev,
+          [videoId]: {
+            ...data.transcript,
+            dbId: data.metadata?.transcriptDbId, // Store database ID for linking to research
+            videoTitle: video.title,
+            channelTitle: video.channelTitle,
+            videoUrl: video.url,
+            copyrightNotice: data.copyrightNotice,
+            isStarred: false,
+            researchId: null,
+            userNotes: null,
+            userTags: []
+          }
+        }));
+
+        // Auto-expand the transcript
+        setExpandedTranscripts(prev => {
+          const newSet = new Set(prev);
+          newSet.add(videoId);
+          return newSet;
+        });
+
+        toast.success(`Extracted transcript from "${video.title}"`);
+
+        // Track credits if provided
+        if (data.metadata?.creditsUsed) {
+          trackCredits(data.metadata.creditsUsed);
+        }
+      } else {
+        throw new Error('No transcript data returned');
+      }
+    } catch (error) {
+      console.error('Transcript extraction error:', error);
+      toast.error(error.message || 'Failed to extract transcript. Video may have captions disabled.');
+    } finally {
+      setIsExtractingTranscript(prev => ({ ...prev, [videoId]: false }));
+    }
+  };
+
+  // Toggle transcript expansion
+  const toggleTranscriptExpansion = (videoId) => {
+    setExpandedTranscripts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(videoId)) {
+        newSet.delete(videoId);
+      } else {
+        newSet.add(videoId);
+      }
+      return newSet;
+    });
+  };
+
+  // Add transcript to research sources
+  const addTranscriptToResearch = async (videoId) => {
+    const transcript = videoTranscripts[videoId];
+    if (!transcript) return;
+
+    // Check if already added to research
+    if (transcript.researchId) {
+      toast.info('This transcript is already in your research sources');
+      return;
+    }
+
+    try {
+      // Create a research entry linked to the transcript
+      const transcriptSource = {
+        workflow_id: workflowId,
+        source_type: 'youtube_transcript',
+        source_url: transcript.videoUrl,
+        source_title: `Transcript: ${transcript.videoTitle}`,
+        source_content: JSON.stringify({
+          videoId: videoId,
+          fullText: transcript.fullText,
+          segments: transcript.segments,
+          analysis: transcript.analysis,
+          metadata: transcript.metadata,
+          channelTitle: transcript.channelTitle
+        }),
+        fact_check_status: 'verified',
+        is_starred: true, // Auto-star transcripts
+        relevance: 0.9, // Transcripts are highly relevant
+        is_selected: true
+      };
+
+      const { data: researchData, error: researchError } = await supabase
+        .from('workflow_research')
+        .insert(transcriptSource)
+        .select()
+        .single();
+
+      if (researchError) {
+        console.error('Error adding transcript to research:', researchError);
+        toast.error('Failed to add transcript to research');
+        return;
+      }
+
+      // Update the workflow_video_transcripts table with the research_id link
+      if (transcript.dbId) {
+        const { error: updateError } = await supabase
+          .from('workflow_video_transcripts')
+          .update({ research_id: researchData.id })
+          .eq('id', transcript.dbId);
+
+        if (updateError) {
+          console.error('Error linking transcript to research:', updateError);
+        }
+      }
+
+      // Update local state with the new research source
+      const newSource = {
+        id: researchData.id,
+        source_type: 'youtube_transcript',
+        source_url: transcript.videoUrl,
+        source_title: `Transcript: ${transcript.videoTitle}`,
+        source_content: researchData.source_content,
+        fact_check_status: 'verified',
+        is_starred: true,
+        relevance: 0.9
+      };
+
+      setSources(prev => [...prev, newSource]);
+
+      // Auto-select the transcript
+      setSelectedSources(prev => {
+        const newSet = new Set(prev);
+        newSet.add(researchData.id);
+        return newSet;
+      });
+
+      // Update transcript state with research link
+      setVideoTranscripts(prev => ({
+        ...prev,
+        [videoId]: {
+          ...prev[videoId],
+          researchId: researchData.id
+        }
+      }));
+
+      toast.success('Transcript added to research sources');
+    } catch (error) {
+      console.error('Error adding transcript to research:', error);
+      toast.error('Failed to add transcript to research');
+    }
+  };
+
   const addVideoAsReference = (video) => {
     // Create a source entry for the selected video
     const videoSource = {
@@ -878,7 +1102,7 @@ export default function ResearchStep() {
                           )}
 
                           {/* Action Buttons */}
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <a
                               href={video.url}
                               target="_blank"
@@ -888,6 +1112,28 @@ export default function ResearchStep() {
                               <ExternalLink className="h-3 w-3" />
                               Watch
                             </a>
+                            <button
+                              onClick={() => extractTranscript(video)}
+                              disabled={isExtractingTranscript[video.videoId] || !!videoTranscripts[video.videoId]}
+                              className="text-xs glass-button px-3 py-1 flex items-center gap-1 hover:bg-green-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isExtractingTranscript[video.videoId] ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  Extracting...
+                                </>
+                              ) : videoTranscripts[video.videoId] ? (
+                                <>
+                                  <Check className="h-3 w-3" />
+                                  Transcript
+                                </>
+                              ) : (
+                                <>
+                                  <FileText className="h-3 w-3" />
+                                  Get Transcript
+                                </>
+                              )}
+                            </button>
                             <button
                               onClick={() => addVideoAsReference(video)}
                               className="text-xs glass-button px-3 py-1 flex items-center gap-1 hover:bg-purple-600/20"
@@ -914,6 +1160,162 @@ export default function ResearchStep() {
                           </span>
                         </div>
                       </div>
+
+                      {/* Transcript Viewer */}
+                      {videoTranscripts[video.videoId] && (
+                        <div className="mt-3 pt-3 border-t border-gray-700/50">
+                          {/* Copyright Notice */}
+                          <div className="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                            <div className="flex items-start gap-2">
+                              <AlertTriangle className="h-3 w-3 text-yellow-400 flex-shrink-0 mt-0.5" />
+                              <div className="text-xs text-yellow-100">
+                                <p className="font-semibold mb-0.5">Transcript Usage Guidelines</p>
+                                <p className="text-yellow-200/80">
+                                  For <strong>research and analysis only</strong>. Use to understand structure and identify topics.
+                                  <strong> Never copy verbatim.</strong> Always attribute to{' '}
+                                  <a href={video.url} className="underline" target="_blank" rel="noopener noreferrer">
+                                    {video.channelTitle}
+                                  </a>
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Transcript Header */}
+                          <div className="flex items-center justify-between mb-2">
+                            <button
+                              onClick={() => toggleTranscriptExpansion(video.videoId)}
+                              className="flex items-center gap-2 text-sm font-semibold text-white hover:text-purple-400 transition-colors"
+                            >
+                              <FileText className="h-4 w-4 text-green-400" />
+                              <span>
+                                Transcript ({videoTranscripts[video.videoId].metadata.wordCount.toLocaleString()} words)
+                              </span>
+                              {expandedTranscripts.has(video.videoId) ? (
+                                <X className="h-3 w-3" />
+                              ) : (
+                                <Plus className="h-3 w-3" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => addTranscriptToResearch(video.videoId)}
+                              disabled={!!videoTranscripts[video.videoId]?.researchId}
+                              className="text-xs glass-button px-2 py-1 flex items-center gap-1 hover:bg-purple-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {videoTranscripts[video.videoId]?.researchId ? (
+                                <>
+                                  <Check className="h-3 w-3" />
+                                  In Research
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="h-3 w-3" />
+                                  Add to Research
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          {/* Metadata Pills */}
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span className="text-xs px-2 py-0.5 bg-gray-700/50 text-gray-300 rounded-full">
+                              {Math.floor(videoTranscripts[video.videoId].metadata.duration / 60)}:{String(videoTranscripts[video.videoId].metadata.duration % 60).padStart(2, '0')} duration
+                            </span>
+                            <span className="text-xs px-2 py-0.5 bg-gray-700/50 text-gray-300 rounded-full">
+                              {videoTranscripts[video.videoId].metadata.wordsPerMinute} wpm
+                            </span>
+                            <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">
+                              {videoTranscripts[video.videoId].language.toUpperCase()}
+                            </span>
+                          </div>
+
+                          {/* Expanded Transcript View */}
+                          {expandedTranscripts.has(video.videoId) && (
+                            <div className="space-y-3 animate-fadeIn">
+                              {/* Main Topics */}
+                              {videoTranscripts[video.videoId].analysis.mainTopics.length > 0 && (
+                                <div>
+                                  <p className="text-xs text-gray-400 mb-1.5">Main Topics:</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {videoTranscripts[video.videoId].analysis.mainTopics.map((topic, idx) => (
+                                      <span key={idx} className="px-2 py-0.5 bg-purple-900/30 text-purple-300 rounded text-xs">
+                                        {topic}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Hook Analysis */}
+                              {videoTranscripts[video.videoId].analysis.hookAnalysis && (
+                                <div className="p-2 bg-blue-900/20 border border-blue-500/30 rounded">
+                                  <p className="text-xs font-semibold text-blue-300 mb-1">
+                                    Hook Analysis ({videoTranscripts[video.videoId].analysis.hookAnalysis.pattern})
+                                  </p>
+                                  <p className="text-xs text-gray-300 line-clamp-2">
+                                    "{videoTranscripts[video.videoId].analysis.hookAnalysis.firstThirtySeconds}"
+                                  </p>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                      videoTranscripts[video.videoId].analysis.hookAnalysis.effectiveness === 'high'
+                                        ? 'bg-green-500/20 text-green-400'
+                                        : videoTranscripts[video.videoId].analysis.hookAnalysis.effectiveness === 'medium'
+                                        ? 'bg-yellow-500/20 text-yellow-400'
+                                        : 'bg-gray-500/20 text-gray-400'
+                                    }`}>
+                                      {videoTranscripts[video.videoId].analysis.hookAnalysis.effectiveness} effectiveness
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Transcript Segments Preview */}
+                              <div>
+                                <p className="text-xs text-gray-400 mb-1.5">Transcript Preview:</p>
+                                <div className="max-h-48 overflow-y-auto space-y-1.5 bg-gray-900/50 rounded p-2 text-xs">
+                                  {videoTranscripts[video.videoId].segments.slice(0, 15).map((segment, idx) => (
+                                    <div key={idx} className="flex gap-2">
+                                      <span className="text-purple-400 font-mono flex-shrink-0 text-xs">
+                                        [{segment.timestamp}]
+                                      </span>
+                                      <span className="text-gray-300">{segment.text}</span>
+                                    </div>
+                                  ))}
+                                  {videoTranscripts[video.videoId].segments.length > 15 && (
+                                    <p className="text-xs text-gray-500 italic pt-1">
+                                      ... and {videoTranscripts[video.videoId].segments.length - 15} more segments
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Key Timestamps */}
+                              {videoTranscripts[video.videoId].analysis.timestamps.length > 0 && (
+                                <div>
+                                  <p className="text-xs text-gray-400 mb-1.5">Key Moments:</p>
+                                  <div className="space-y-1">
+                                    {videoTranscripts[video.videoId].analysis.timestamps.slice(0, 5).map((ts, idx) => (
+                                      <div key={idx} className="flex items-start gap-2 text-xs">
+                                        <span className="text-purple-400 font-mono flex-shrink-0">
+                                          {Math.floor(ts.time / 60)}:{String(ts.time % 60).padStart(2, '0')}
+                                        </span>
+                                        <span className={`px-1.5 py-0.5 rounded flex-shrink-0 ${
+                                          ts.type === 'call_to_action'
+                                            ? 'bg-red-500/20 text-red-400'
+                                            : 'bg-blue-500/20 text-blue-400'
+                                        }`}>
+                                          {ts.type.replace('_', ' ')}
+                                        </span>
+                                        <span className="text-gray-400 line-clamp-1">{ts.description}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

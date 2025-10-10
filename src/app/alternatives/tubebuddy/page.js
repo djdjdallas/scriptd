@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import Script from 'next/script';
-import { 
-  Check, X, ArrowRight, Star, TrendingUp, Shield, Zap, 
+import {
+  Check, X, ArrowRight, Star, TrendingUp, Shield, Zap,
   Brain, Target, BarChart3, Users, Youtube, Sparkles, Award,
-  CheckCircle2
+  CheckCircle2, FileText
 } from 'lucide-react';
 import {
   MarketingHero,
@@ -38,24 +38,29 @@ export default function TubeBuddyAlternativePage() {
   const migration = migrationOffers.tubebuddy;
 
   const comparisonFeatures = [
-    { 
-      feature: 'Script Generation', 
-      competitor: '✗ No script tools', 
+    {
+      feature: 'Script Generation',
+      competitor: '✗ No script tools',
       genscript: 'Full AI generation'
     },
-    { 
-      feature: 'Retention Optimization', 
-      competitor: '✗ SEO focus only', 
+    {
+      feature: 'Transcript Extraction',
+      competitor: '✗ Not available',
+      genscript: 'AI-powered analysis'
+    },
+    {
+      feature: 'Retention Optimization',
+      competitor: '✗ SEO focus only',
       genscript: '68%+ AVD targeting'
     },
-    { 
-      feature: 'Voice Matching', 
-      competitor: '✗ Not available', 
+    {
+      feature: 'Voice Matching',
+      competitor: '✗ Not available',
       genscript: 'Authentic creator voice'
     },
-    { 
-      feature: 'Fact Checking', 
-      competitor: '✗ Not available', 
+    {
+      feature: 'Fact Checking',
+      competitor: '✗ Not available',
       genscript: 'Built-in verification'
     },
     { 

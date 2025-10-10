@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  BookOpen, 
-  Target, 
-  Zap, 
-  Clock, 
-  TrendingUp, 
-  Download, 
+import {
+  BookOpen,
+  Target,
+  Zap,
+  Clock,
+  TrendingUp,
+  Download,
   ChevronRight,
   Play,
   CheckCircle,
@@ -19,7 +19,8 @@ import {
   Users,
   BarChart3,
   Brain,
-  Shield
+  Shield,
+  Video
 } from 'lucide-react';
 import {
   MarketingHero,
@@ -97,6 +98,18 @@ export default function YouTubeScriptWritingGuide() {
   ];
 
   const frameworks = [
+    {
+      name: 'Competitive Research',
+      description: 'Extract & Analyze YouTube Transcripts',
+      retention: '10x faster research',
+      icon: Video,
+      steps: [
+        'Extract transcripts from any YouTube video',
+        'AI analyzes hooks, topics, and patterns',
+        'Identify what works in your niche',
+        'Apply insights to your own scripts'
+      ]
+    },
     {
       name: 'PVSS Framework',
       description: 'Pattern → Value → Story → Surprise',

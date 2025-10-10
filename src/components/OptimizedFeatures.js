@@ -9,7 +9,8 @@ import {
   Brain,
   Play,
   BarChart3,
-  Users
+  Users,
+  FileText
 } from "lucide-react";
 
 const InteractiveFeatureDetail = dynamic(
@@ -52,12 +53,22 @@ export function OptimizedFeatures() {
       stats: { improvement: "5x faster", sources: "1000+ sources" }
     },
     {
+      id: "transcript",
+      icon: FileText,
+      title: "Transcript Extraction",
+      description: "Extract and analyze YouTube transcripts. AI-powered hook analysis, topic detection, and competitive research—10x faster.",
+      color: "green",
+      gradient: "from-green-500/20",
+      stats: { speed: "10x faster", success: "90% rate" },
+      badge: "New"
+    },
+    {
       id: "hook",
       icon: Play,
       title: "Hook Generator",
       description: "Create attention-grabbing intros that keep viewers watching.",
-      color: "green",
-      gradient: "from-green-500/20",
+      color: "emerald",
+      gradient: "from-emerald-500/20",
       stats: { improvement: "60% retention", templates: "500+" }
     },
     {
@@ -112,9 +123,16 @@ export function OptimizedFeatures() {
                   <div className="w-16 h-16 glass rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <feature.icon className={`w-8 h-8 text-${feature.color}-400`} />
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">
-                    {feature.title}
-                  </h3>
+                  <div className="flex items-center gap-2 mb-3">
+                    <h3 className="text-2xl font-bold text-white">
+                      {feature.title}
+                    </h3>
+                    {feature.badge && (
+                      <span className="px-2 py-0.5 text-xs font-semibold bg-green-500/20 text-green-400 rounded-full border border-green-500/30">
+                        {feature.badge}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-gray-300">{feature.description}</p>
                   
                   {feature.stats && (
