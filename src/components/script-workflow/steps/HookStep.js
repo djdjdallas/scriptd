@@ -20,7 +20,8 @@ export default function HookStep() {
 
   const generateHooks = async () => {
     setIsGenerating(true);
-    
+    toast.loading('Generating hooks from research...');
+
     try {
       const response = await fetch('/api/workflow/generate-hooks', {
         method: 'POST',
@@ -30,20 +31,24 @@ export default function HookStep() {
           topic: workflowData.summary?.topic,
           frame: workflowData.frame,
           audience: workflowData.summary?.targetAudience,
-          tone: workflowData.summary?.tone
+          tone: workflowData.summary?.tone,
+          workflowId: workflowData.id,
+          researchSources: workflowData.research?.sources
         })
       });
 
       if (!response.ok) throw new Error('Failed to generate hooks');
 
-      const { hooks: generatedHooks, creditsUsed } = await response.json();
-      
+      const { hooks: generatedHooks, creditsUsed, sourcesUsed } = await response.json();
+
       setHooks(generatedHooks);
       updateStepData('hook', { variations: generatedHooks });
       trackCredits(creditsUsed);
-      
-      toast.success(`Generated ${generatedHooks.length} hook variations!`);
+
+      toast.dismiss();
+      toast.success(`Generated ${generatedHooks.length} hooks using ${sourcesUsed || 0} research sources!`);
     } catch (error) {
+      toast.dismiss();
       toast.error('Failed to generate hooks');
       console.error(error);
     } finally {

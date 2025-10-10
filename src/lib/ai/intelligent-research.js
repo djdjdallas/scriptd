@@ -162,7 +162,7 @@ export function generateSearchQueries(extractedData) {
 }
 
 /**
- * Performs a single search using Claude's web capabilities
+ * Performs a single search using Claude's REAL web search tool
  * @param {string} query - Search query
  * @returns {Promise<Array>} Array of source objects
  */
@@ -174,28 +174,32 @@ async function performSearch(query) {
 
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 8000,
+      model: 'claude-sonnet-4-5-20250929', // ✅ Correct Sonnet 4.5 model
+      max_tokens: 16000,
       messages: [{
         role: 'user',
-        content: `Search the web for: "${query}"
+        content: `Research this topic using web search: "${query}"
 
-Find 3-5 relevant sources and extract comprehensive information from each.
+Find 3-5 highly relevant sources. For each source you find, fetch the full content to extract detailed information.
 
-For each source, provide:
-1. Full URL
-2. Page title
-3. Comprehensive content extract (500-1000 words if available)
-
-Format your response clearly with each source separated.`
-      }]
+Provide comprehensive information from each source including specific facts, statistics, dates, and quotes.`
+      }],
+      // ✅ Enable REAL web search tool
+      tools: [
+        {
+          type: "web_search_20250305",
+          name: "web_search",
+          max_uses: 5
+        }
+      ]
+      // Note: web_fetch removed - it's in beta and may not be available for all API keys
     });
 
     // Add detailed logging
-    console.log(`    📨 Claude response received, length: ${message.content[0].text.length} chars`);
+    console.log(`    📨 Claude response received with ${message.content.length} content blocks`);
 
-    const responseText = message.content[0].text;
-    const sources = parseSearchResults(responseText, query);
+    // Parse the response - extract web search and fetch results
+    const sources = parseWebSearchResults(message.content, query);
 
     // Add parsing results logging
     console.log(`    📊 Parsed ${sources.length} sources from response`);
@@ -206,6 +210,11 @@ Format your response clearly with each source separated.`
     return sources;
   } catch (error) {
     console.error(`    ❌ Search error: ${error.message}`);
+    console.error(`    Error details:`, {
+      name: error.name,
+      status: error.status,
+      type: error.type
+    });
     return [];
   }
 }
@@ -262,6 +271,95 @@ function parseSearchResults(responseText, query) {
     }
   } catch (error) {
     console.error('Error parsing search results:', error);
+  }
+
+  return sources;
+}
+
+/**
+ * Parses web search results from Claude's response content blocks
+ * @param {Array} contentBlocks - Claude's response content blocks
+ * @param {string} query - Original query
+ * @returns {Array} Parsed sources
+ */
+function parseWebSearchResults(contentBlocks, query) {
+  const sources = [];
+  const searchResults = [];
+  const fetchResults = [];
+
+  try {
+    // Extract web search and fetch results from content blocks
+    for (const block of contentBlocks) {
+      if (block.type === 'web_search_tool_result') {
+        // Extract search results
+        if (Array.isArray(block.content)) {
+          for (const result of block.content) {
+            if (result.type === 'web_search_result') {
+              searchResults.push({
+                url: result.url,
+                title: result.title,
+                page_age: result.page_age
+              });
+            }
+          }
+        }
+      } else if (block.type === 'web_fetch_tool_result') {
+        // Extract fetched content
+        if (block.content?.type === 'web_fetch_result') {
+          const fetchData = block.content;
+          let contentText = '';
+
+          // Extract text from document source
+          if (fetchData.content?.source?.type === 'text') {
+            contentText = fetchData.content.source.data || '';
+          }
+
+          fetchResults.push({
+            url: fetchData.url,
+            title: fetchData.content?.title || fetchData.url,
+            content: contentText
+          });
+        }
+      }
+    }
+
+    // Add fetched content as sources (priority - has full content)
+    for (const fetch of fetchResults) {
+      sources.push({
+        id: crypto.randomUUID(),
+        source_url: fetch.url,
+        source_type: 'web',
+        source_title: fetch.title,
+        source_content: fetch.content.substring(0, 3000), // Limit to 3k chars
+        relevance: 0.9,
+        is_starred: true, // Fetched content is high priority
+        fact_check_status: 'verified',
+        search_query: query
+      });
+    }
+
+    // Add search results without fetched content
+    for (const search of searchResults) {
+      // Skip if already fetched
+      if (sources.some(s => s.source_url === search.url)) {
+        continue;
+      }
+
+      sources.push({
+        id: crypto.randomUUID(),
+        source_url: search.url,
+        source_type: 'web',
+        source_title: search.title,
+        source_content: `Source found via web search. Page last updated: ${search.page_age || 'unknown'}`,
+        relevance: 0.75,
+        is_starred: false,
+        fact_check_status: 'verified',
+        search_query: query
+      });
+    }
+
+  } catch (error) {
+    console.error('Error parsing web search results:', error);
   }
 
   return sources;

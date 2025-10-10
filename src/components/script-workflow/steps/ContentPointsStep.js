@@ -14,7 +14,8 @@ export default function ContentPointsStep() {
 
   const generateContentPoints = async () => {
     setIsGenerating(true);
-    
+    toast.loading('Generating content points from research...');
+
     try {
       const response = await fetch('/api/workflow/generate-content-points', {
         method: 'POST',
@@ -24,19 +25,23 @@ export default function ContentPointsStep() {
           frame: workflowData.frame,
           research: workflowData.research,
           targetAudience: workflowData.summary?.targetAudience,
-          targetDuration: workflowData.summary?.targetDuration || 300
+          targetDuration: workflowData.summary?.targetDuration || 300,
+          workflowId: workflowData.id,
+          researchSources: workflowData.research?.sources
         })
       });
 
       if (!response.ok) throw new Error('Failed to generate content points');
 
-      const { points, creditsUsed } = await response.json();
-      
+      const { points, creditsUsed, sourcesUsed } = await response.json();
+
       setContentPoints(points);
       trackCredits(creditsUsed);
-      
-      toast.success(`Generated ${points.length} content points!`);
+
+      toast.dismiss();
+      toast.success(`Generated ${points.length} content points using ${sourcesUsed || 0} research sources!`);
     } catch (error) {
+      toast.dismiss();
       toast.error('Failed to generate content points');
       console.error(error);
     } finally {
@@ -245,15 +250,16 @@ export default function ContentPointsStep() {
                       value={point.description}
                       onChange={(e) => updateContentPoint(point.id, 'description', e.target.value)}
                       placeholder="Describe this content point..."
-                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none resize-none text-sm h-16"
+                      rows={3}
+                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none resize-y text-sm min-h-[4rem]"
                     />
 
-                    <input
-                      type="text"
+                    <textarea
                       value={point.keyTakeaway}
                       onChange={(e) => updateContentPoint(point.id, 'keyTakeaway', e.target.value)}
                       placeholder="Key takeaway for viewers..."
-                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none text-sm"
+                      rows={2}
+                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none resize-y text-sm min-h-[3rem]"
                     />
                   </div>
 

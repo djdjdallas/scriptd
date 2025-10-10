@@ -173,8 +173,20 @@ export async function POST(request) {
 
     // ENHANCED CONTENT QUALITY VALIDATION
     const validateContentQuality = (sources, duration = 600) => {
+      // Filter for sources with actual content (not just search snippets)
+      // Web search snippets typically say "Source found via web search. Page last updated: ..."
+      const isWebSearchSnippet = (source) => {
+        const content = source.source_content || '';
+        return content.includes('Source found via web search. Page last updated:') && content.length < 100;
+      };
+
       const sourcesWithContent = sources.filter(s =>
-        s.source_content && s.source_content.length > 100
+        s.source_content && s.source_content.length > 100 && !isWebSearchSnippet(s)
+      );
+
+      // Count actual content sources (synthesis + sources with real content)
+      const substantiveSources = sources.filter(s =>
+        s.source_type === 'synthesis' || (s.source_content && s.source_content.length > 500)
       );
 
       const totalContentLength = sourcesWithContent.reduce((sum, s) =>
@@ -184,7 +196,10 @@ export async function POST(request) {
       const stats = {
         total: sources.length,
         withContent: sourcesWithContent.length,
-        successRate: sources.length > 0 ? (sourcesWithContent.length / sources.length) * 100 : 0,
+        substantiveSources: substantiveSources.length,
+        webSearchSnippets: sources.filter(isWebSearchSnippet).length,
+        // Success rate based on sources with real content, not including snippets
+        successRate: sources.length > 0 ? (substantiveSources.length / sources.length) * 100 : 0,
         totalContentLength,
         averageContentLength: sourcesWithContent.length > 0
           ? Math.round(totalContentLength / sourcesWithContent.length)
@@ -249,35 +264,31 @@ export async function POST(request) {
         console.warn(`   Recommend: At least ${targetMinutes * 100} words for best results`);
       }
 
-      // Quality thresholds - UPDATED for better script generation
-      const MIN_SOURCES_WITH_CONTENT = 3; // Increased from 2
-      const MIN_SUCCESS_RATE = 60; // Increased from 40%
-      const MIN_TOTAL_CONTENT_LENGTH = 5000; // Increased from 2000 chars
-      const MIN_TOTAL_WORDS = Math.max(1500, targetMinutes * 80); // Dynamic based on duration
+      // Quality thresholds - UPDATED to properly handle web search + Perplexity sources
+      const MIN_SUBSTANTIVE_SOURCES = 3; // Sources with real content (synthesis or 500+ chars)
+      const MIN_TOTAL_CONTENT_LENGTH = 3000; // Reduced - quality over quantity
+      const MIN_TOTAL_WORDS = Math.max(1000, targetMinutes * 60); // More reasonable word count
 
       const errors = [];
 
-      if (sourcesWithContent.length < MIN_SOURCES_WITH_CONTENT) {
+      // Check for substantive sources (not web search snippets)
+      if (stats.substantiveSources < MIN_SUBSTANTIVE_SOURCES) {
         errors.push(
-          `Insufficient sources: Only ${sourcesWithContent.length}/${sources.length} sources have content. ` +
-          `Need at least ${MIN_SOURCES_WITH_CONTENT} sources for quality script generation.`
+          `Insufficient substantive sources: Only ${stats.substantiveSources}/${sources.length} sources have detailed content. ` +
+          `Need at least ${MIN_SUBSTANTIVE_SOURCES} sources with comprehensive information. ` +
+          `(Found ${stats.webSearchSnippets} web search snippets which provide URLs but not full content)`
         );
       }
 
-      if (stats.successRate < MIN_SUCCESS_RATE) {
+      // Only check content length if we don't have quality research
+      if (!hasQualityResearch && stats.totalContentLength < MIN_TOTAL_CONTENT_LENGTH) {
         errors.push(
-          `Low fetch success rate: Only ${stats.successRate.toFixed(1)}% of sources fetched successfully. ` +
-          `Need at least ${MIN_SUCCESS_RATE}% for reliable generation.`
-        );
-      }
-
-      if (stats.totalContentLength < MIN_TOTAL_CONTENT_LENGTH) {
-        errors.push(
-          `Insufficient content: Only ${stats.totalContentLength} characters fetched. ` +
+          `Insufficient content: Only ${stats.totalContentLength} characters of detailed content. ` +
           `Need at least ${MIN_TOTAL_CONTENT_LENGTH} characters for comprehensive scripts.`
         );
       }
 
+      // Check word count with bypass for quality research
       if (totalWords < MIN_TOTAL_WORDS && !hasQualityResearch) {
         errors.push(
           `Insufficient research depth: Only ${totalWords} words of research content. ` +

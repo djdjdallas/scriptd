@@ -77,17 +77,75 @@ function generateFallbackPoints(topic, targetAudience, targetDuration = 300) {
 export async function POST(request) {
   try {
     const supabase = await createClient();
-    
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { topic, frame, research, targetAudience, targetDuration } = await request.json();
+    const { topic, frame, research, targetAudience, targetDuration, workflowId, researchSources } = await request.json();
+
+    // Load research sources if workflowId provided
+    let sources = researchSources || research?.sources || [];
+    if (workflowId && sources.length === 0) {
+      try {
+        const { data: workflowResearch } = await supabase
+          .from('workflow_research')
+          .select('*')
+          .eq('workflow_id', workflowId);
+
+        if (workflowResearch && workflowResearch.length > 0) {
+          sources = workflowResearch;
+          console.log(`✅ Loaded ${sources.length} research sources for content points generation`);
+        }
+      } catch (error) {
+        console.warn('Could not load research sources:', error);
+      }
+    }
 
     let points = [];
     // Charge 1 credit for content points generation
     let creditsUsed = 1;
+
+    // Extract research context
+    let researchContext = '';
+    let storyBeats = '';
+
+    if (sources.length > 0) {
+      // Get substantive sources
+      const substantiveSources = sources.filter(s =>
+        s.source_type === 'synthesis' || (s.source_content && s.source_content.length > 500)
+      );
+
+      // Extract top facts with longer previews for narrative structure
+      const factSummaries = substantiveSources.slice(0, 6).map(s => {
+        const preview = s.source_content.substring(0, 600);
+        return `- ${s.source_title}:\n  ${preview}...`;
+      }).join('\n\n');
+
+      researchContext = `\n\nRESEARCH SOURCES (${sources.length} available):\n${factSummaries}\n`;
+
+      // Try to identify story beats from research
+      const allContent = substantiveSources.map(s => s.source_content).join(' ');
+
+      // Extract timeline indicators
+      const dates = allContent.match(/\b(20\d{2}|January|February|March|April|May|June|July|August|September|October|November|December)\b/g);
+      const amounts = allContent.match(/\$[\d,.]+(?: million| billion| M| B)?/gi);
+      const outcomes = allContent.match(/\b(fine|settlement|resignation|investigation|arrest|convicted|sentenced|fired|lawsuit|charged)\b/gi);
+
+      if (dates || amounts || outcomes) {
+        storyBeats = `\nKEY STORY ELEMENTS FOUND:\n`;
+        if (amounts && amounts.length > 0) {
+          storyBeats += `- Dollar amounts: ${[...new Set(amounts.slice(0, 5))].join(', ')}\n`;
+        }
+        if (outcomes && outcomes.length > 0) {
+          storyBeats += `- Key outcomes: ${[...new Set(outcomes.slice(0, 8))].join(', ')}\n`;
+        }
+        if (dates && dates.length > 0) {
+          storyBeats += `- Timeline markers: ${[...new Set(dates.slice(0, 5))].join(', ')}\n`;
+        }
+      }
+    }
 
     // Use Claude API to generate content points
     if (process.env.ANTHROPIC_API_KEY) {
@@ -100,50 +158,87 @@ export async function POST(request) {
             'anthropic-version': '2023-06-01'
           },
           body: JSON.stringify({
-            model: 'claude-3-haiku-20240307',
-            max_tokens: 2048,
+            model: 'claude-sonnet-4-5-20250929', // Upgraded to Sonnet 4.5
+            max_tokens: 3000, // Increased for detailed content points
             temperature: 0.7,
-            system: 'You are a YouTube content strategist expert. Create structured, engaging content outlines that maximize viewer retention.',
+            system: `You are a YouTube content strategist and storytelling expert. Your content points must:
+- Be SPECIFIC: Use exact numbers, names, dates, events from research
+- Tell a STORY: Follow the chronological or dramatic arc of actual events
+- Create CURIOSITY: Each point should build anticipation for the next
+- Deliver VALUE: Clear, concrete takeaways based on research findings
+
+Never create generic section titles - every point should reference specific discoveries from the research.`,
             messages: [
               {
                 role: 'user',
-                content: `Create key content points for a YouTube video with target duration of ${targetDuration} seconds (${Math.floor(targetDuration/60)}:${(targetDuration%60).toString().padStart(2,'0')}).
+                content: `Create research-based content points for a YouTube video about: "${topic}"
 
-VIDEO CONTEXT:
-Topic: ${topic}
-Target Audience: ${targetAudience || 'General audience'}
-Target Duration: ${targetDuration} seconds
-${frame ? `
-Narrative Structure:
-- Problem: ${frame.problem_statement}
-- Solution: ${frame.solution_approach}
-- Transformation: ${frame.transformation_outcome}
-` : ''}
+TARGET SPECS:
+- Duration: ${targetDuration} seconds (${Math.floor(targetDuration/60)}:${(targetDuration%60).toString().padStart(2,'0')})
+- Audience: ${targetAudience || 'General audience'}
+- Points needed: ${targetDuration <= 120 ? '3-4' : targetDuration <= 300 ? '5-6' : targetDuration <= 1800 ? '6-8' : '8-10'}
 
-${research?.keywords?.length > 0 ? `Keywords to cover: ${research.keywords.join(', ')}` : ''}
+${frame ? `NARRATIVE FRAMEWORK:
+- Problem/Challenge: ${frame.problem_statement}
+- Solution/Action: ${frame.solution_approach}
+- Outcome/Impact: ${frame.transformation_outcome}
+` : ''}${researchContext}${storyBeats}
 
-Generate ${targetDuration <= 120 ? '3-4' : targetDuration <= 300 ? '5-6' : '6-8'} content points that:
-- Fit within the ${targetDuration} second target duration
-- Build logically from hook to conclusion
-- Deliver clear value to viewers
-- Maintain engagement throughout
+CRITICAL INSTRUCTIONS:
+Create content points that tell the ACTUAL STORY from the research:
 
-Return ONLY a JSON array of content point objects with this exact structure:
+1. **USE CHRONOLOGY OR DRAMA ARC**
+   - Follow the timeline of events (discovery → action → consequences)
+   - OR build dramatic tension (setup → conflict → climax → resolution)
+   - Each point should advance the narrative
+
+2. **INCLUDE SPECIFIC DETAILS IN TITLES**
+   - NOT "Introduction" → "The $459 Billion Lie: DWS's ESG Scandal Exposed"
+   - NOT "The Problem" → "When Whistleblowing Means Career Suicide: The 73% Nobody Talks About"
+   - NOT "Consequences" → "From $44M in Fines to a CEO's Resignation: The Aftermath"
+
+3. **DESCRIPTIONS MUST REFERENCE RESEARCH**
+   - Include specific amounts, dates, names, locations
+   - Explain the "what" and "why" with facts
+   - Connect to viewer value (why they should care)
+
+4. **KEY TAKEAWAYS FROM RESEARCH**
+   - NOT "Understanding the issue" → "ESG greenwashing operates at $459B scale in major institutions"
+   - NOT "Learning the solution" → "73% retaliation rate makes Wall Street whistleblowing extraordinarily risky"
+   - Must be concrete, memorable insights viewers can quote
+
+5. **DURATION DISTRIBUTION**
+   - Hook/Setup: 10-15% of total time
+   - Story Development: 60-70% (divided into 2-4 acts)
+   - Climax/Revelation: 10-15%
+   - Conclusion/Takeaway: 5-10%
+
+STORY STRUCTURE OPTIONS:
+Choose the structure that best fits the research:
+
+**Chronological**: Discovery → Investigation → Exposure → Consequences → Impact
+**Problem-Solution**: Crisis → Breaking Point → Action Taken → Battle → Resolution
+**Mystery**: Strange Discovery → Digging Deeper → Shocking Truth → Unraveling → Justice
+**Hero's Journey**: Call to Action → Obstacles → Decision → Sacrifice → Triumph
+
+Return ONLY valid JSON array (no markdown, no code blocks):
 [
   {
-    "id": "unique-uuid-here",
-    "title": "Short, descriptive title",
-    "description": "What this section covers (1-2 sentences)",
-    "duration": [seconds for this point],
-    "keyTakeaway": "What viewers will learn/gain"
+    "id": "uuid-here",
+    "title": "Specific, research-based title with numbers/names",
+    "description": "2-3 sentences with concrete details from research explaining what this section covers and why it matters",
+    "duration": [seconds],
+    "keyTakeaway": "Specific, quotable insight from research"
   }
 ]
 
-Requirements:
-- Total duration MUST be approximately ${targetDuration} seconds (±10%)
-- Distribute time appropriately (hook: 10-15%, main content: 70-80%, conclusion: 5-10%)
-- Adjust depth based on duration (shorter = more focused, longer = more comprehensive)
-- Each point duration should be realistic for the content`
+VALIDATION CHECKLIST:
+✓ Total duration = ${targetDuration}s ±10%
+✓ Every title includes specific fact (number, name, or event)
+✓ Every description references research discoveries
+✓ Points follow logical narrative progression
+✓ Each point builds on previous and sets up next
+✓ Key takeaways are concrete and memorable`
               }
             ]
           })
@@ -151,20 +246,32 @@ Requirements:
 
         if (claudeResponse.ok) {
           const claudeData = await claudeResponse.json();
-          
+
           try {
-            const content = claudeData.content?.[0]?.text || '';
+            let content = claudeData.content?.[0]?.text || '';
+
+            // Remove markdown code blocks if present
+            content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
             points = JSON.parse(content);
-            
+
             // Validate and ensure IDs
             if (!Array.isArray(points) || points.length === 0) {
               throw new Error('Invalid response format');
             }
-            
+
             points = points.map(point => ({
               ...point,
               id: point.id || crypto.randomUUID()
             }));
+
+            console.log('✅ Content points generated with research context:', {
+              pointsCount: points.length,
+              sourcesUsed: sources.length,
+              totalDuration: points.reduce((sum, p) => sum + (p.duration || 0), 0),
+              targetDuration
+            });
+
           } catch (parseError) {
             console.log('Claude response parsing failed, using fallback');
             points = generateFallbackPoints(topic, targetAudience, targetDuration);
@@ -195,9 +302,10 @@ Requirements:
       })
       .eq('user_id', user.id);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       points,
-      creditsUsed
+      creditsUsed,
+      sourcesUsed: sources.length
     });
   } catch (error) {
     console.error('Content points generation error:', error);

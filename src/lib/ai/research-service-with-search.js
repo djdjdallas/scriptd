@@ -166,25 +166,15 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
           role: 'user',
           content: searchPrompt
         }],
-        // ✅ Enable REAL web search and fetch tools
+        // ✅ Enable REAL web search tool
         tools: [
           {
             type: "web_search_20250305",
             name: "web_search",
             max_uses: 15 // Allow multiple searches to gather enough sources
-          },
-          {
-            type: "web_fetch_20250910",
-            name: "web_fetch",
-            max_uses: 15, // Allow fetching full content from found URLs
-            citations: { enabled: true },
-            max_content_tokens: 10000 // Limit per-fetch to control costs
           }
-        ],
-        // ✅ Required for web_fetch beta
-        extra_headers: {
-          "anthropic-beta": "web-fetch-2025-09-10"
-        }
+        ]
+        // Note: web_fetch removed - it's in beta and may not be available for all API keys
       });
 
       // Parse the response - now includes actual web search results!

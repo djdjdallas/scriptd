@@ -15,20 +15,20 @@ export default function FrameStep() {
   const frameworks = [
     {
       id: 'problem-solution',
-      name: 'Problem → Solution',
-      description: 'Classic framework for educational content',
+      name: 'Problem → Solution → Impact',
+      description: 'Show the obstacle, the action taken, and the measurable results',
       icon: Lightbulb
     },
     {
       id: 'before-after',
-      name: 'Before → After',
-      description: 'Transformation and results focused',
+      name: 'Before → After → Bridge',
+      description: 'Contrast the past state with the current reality and explain the journey',
       icon: TrendingUp
     },
     {
       id: 'myth-truth',
-      name: 'Myth → Truth',
-      description: 'Debunking and revealing insights',
+      name: 'Myth → Truth → Awakening',
+      description: 'Expose the misconception, reveal the facts, and show the transformation',
       icon: Target
     }
   ];
@@ -51,26 +51,33 @@ export default function FrameStep() {
 
   const generateFrameSuggestions = async () => {
     try {
+      toast.loading('Generating frame from research...');
+
       const response = await fetch('/api/workflow/suggest-frame', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           topic: workflowData.summary?.topic,
-          framework: selectedFramework
+          framework: selectedFramework,
+          workflowId: workflowData.id,
+          researchSources: workflowData.research?.sources,
+          targetAudience: workflowData.summary?.targetAudience
         })
       });
 
       if (!response.ok) throw new Error('Failed to generate suggestions');
 
-      const { suggestions } = await response.json();
-      
+      const { suggestions, sourcesUsed } = await response.json();
+
       setProblemStatement(suggestions.problem);
       setSolutionApproach(suggestions.solution);
       setTransformationOutcome(suggestions.transformation);
-      
-      toast.success('Frame suggestions generated!');
+
+      toast.dismiss();
+      toast.success(`Frame generated using ${sourcesUsed || 0} research sources!`);
     } catch (error) {
       console.error('Frame suggestion error:', error);
+      toast.dismiss();
       toast.error('Failed to generate suggestions');
     }
   };
@@ -137,7 +144,7 @@ export default function FrameStep() {
               value={problemStatement}
               onChange={(e) => setProblemStatement(e.target.value)}
               placeholder="Describe the problem or current situation your audience faces..."
-              className="w-full h-24 px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none resize-none"
+              className="w-full h-24 px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none resize-y"
             />
           </div>
 
@@ -155,7 +162,7 @@ export default function FrameStep() {
               value={solutionApproach}
               onChange={(e) => setSolutionApproach(e.target.value)}
               placeholder="Explain the solution or method that bridges the gap..."
-              className="w-full h-24 px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none resize-none"
+              className="w-full h-24 px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none resize-y"
             />
           </div>
 
@@ -173,7 +180,7 @@ export default function FrameStep() {
               value={transformationOutcome}
               onChange={(e) => setTransformationOutcome(e.target.value)}
               placeholder="Describe the transformation or desired outcome..."
-              className="w-full h-24 px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none resize-none"
+              className="w-full h-24 px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none resize-y"
             />
           </div>
         </div>

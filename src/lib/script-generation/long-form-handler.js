@@ -217,10 +217,20 @@ ${context.contentPoints.map((point, idx) =>
 
     // Add research sources if available
     if (context.research?.sources && context.research.sources.length > 0) {
-      console.log(`📚 Adding ${context.research.sources.length} research sources to chunk ${chunkNumber} prompt`);
-      const verifiedSources = context.research.sources.filter(s => s.fact_check_status === 'verified' || s.fact_check_status === 'perplexity-verified');
-      const starredSources = context.research.sources.filter(s => s.is_starred);
-      const synthesisSources = context.research.sources.filter(s => s.source_type === 'synthesis');
+      // Filter out web search snippets - only include sources with substantial content
+      const isWebSearchSnippet = (source) => {
+        const content = source.source_content || '';
+        return content.includes('Source found via web search. Page last updated:') && content.length < 100;
+      };
+
+      const substantiveSources = context.research.sources.filter(s =>
+        s.source_type === 'synthesis' || (s.source_content && s.source_content.length > 500 && !isWebSearchSnippet(s))
+      );
+
+      console.log(`📚 Adding ${substantiveSources.length} research sources to chunk ${chunkNumber} prompt (filtered ${context.research.sources.length - substantiveSources.length} web search snippets)`);
+      const verifiedSources = substantiveSources.filter(s => s.fact_check_status === 'verified' || s.fact_check_status === 'perplexity-verified');
+      const starredSources = substantiveSources.filter(s => s.is_starred);
+      const synthesisSources = substantiveSources.filter(s => s.source_type === 'synthesis');
       console.log(`  - Synthesis: ${synthesisSources.length}, Starred: ${starredSources.length}, Verified: ${verifiedSources.length}`);
 
       prompt += `
@@ -260,7 +270,7 @@ ${verifiedSources.slice(0, 5).map(s =>
       }
 
       prompt += `
-Total research sources available: ${context.research.sources.length}
+Total substantive sources available: ${substantiveSources.length} (excluded ${context.research.sources.length - substantiveSources.length} web search snippets)
 Use these sources to provide specific facts, statistics, quotes, and examples in your script.
 `;
     }
