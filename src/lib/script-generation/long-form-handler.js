@@ -52,14 +52,18 @@ export class LongFormScriptHandler {
    * @returns {Array} Array of chunk prompts
    */
   static generateChunkPrompts(config) {
-    const { 
-      totalMinutes, 
-      title, 
+    const {
+      totalMinutes,
+      title,
       topic,
       contentPoints = [],
       type,
       hook,
-      voiceProfile
+      voiceProfile,
+      targetAudience,
+      tone,
+      research,
+      frame
     } = config;
 
     const chunkConfig = this.getChunkConfig(totalMinutes);
@@ -89,7 +93,11 @@ export class LongFormScriptHandler {
           topic,
           type,
           voiceProfile,
-          contentPoints: chunkPoints
+          contentPoints: chunkPoints,
+          targetAudience,
+          tone,
+          research,
+          frame
         }
       };
 
@@ -199,11 +207,61 @@ ${previousChunkSummary ? `- Previous section context: ${previousChunkSummary}` :
     if (context.contentPoints && context.contentPoints.length > 0) {
       prompt += `
 CONTENT TO COVER IN THIS SECTION:
-${context.contentPoints.map((point, idx) => 
+${context.contentPoints.map((point, idx) =>
   `${idx + 1}. ${point.title} (${Math.ceil(point.duration / 60)} min)
    - ${point.description}
    - Key takeaway: ${point.keyTakeaway}`
 ).join('\n')}
+`;
+    }
+
+    // Add research sources if available
+    if (context.research?.sources && context.research.sources.length > 0) {
+      console.log(`📚 Adding ${context.research.sources.length} research sources to chunk ${chunkNumber} prompt`);
+      const verifiedSources = context.research.sources.filter(s => s.fact_check_status === 'verified' || s.fact_check_status === 'perplexity-verified');
+      const starredSources = context.research.sources.filter(s => s.is_starred);
+      const synthesisSources = context.research.sources.filter(s => s.source_type === 'synthesis');
+      console.log(`  - Synthesis: ${synthesisSources.length}, Starred: ${starredSources.length}, Verified: ${verifiedSources.length}`);
+
+      prompt += `
+RESEARCH SOURCES (USE THESE FOR FACTUAL ACCURACY):
+`;
+
+      // Add synthesis sources first (comprehensive overviews)
+      if (synthesisSources.length > 0) {
+        prompt += `
+📚 COMPREHENSIVE RESEARCH SUMMARIES:
+${synthesisSources.map(s =>
+  `- ${s.source_title}
+  ${s.source_content.substring(0, 1000)}...
+`).join('\n')}
+`;
+      }
+
+      // Add starred sources (high priority)
+      if (starredSources.length > 0) {
+        prompt += `
+⭐ HIGH-PRIORITY SOURCES:
+${starredSources.slice(0, 5).map(s =>
+  `- ${s.source_title}
+  ${s.source_content.substring(0, 500)}...
+`).join('\n')}
+`;
+      }
+
+      // Add verified sources
+      if (verifiedSources.length > 0) {
+        prompt += `
+✅ VERIFIED FACTS & CITATIONS:
+${verifiedSources.slice(0, 5).map(s =>
+  `- ${s.source_title}: ${s.source_content.substring(0, 400)}...`
+).join('\n')}
+`;
+      }
+
+      prompt += `
+Total research sources available: ${context.research.sources.length}
+Use these sources to provide specific facts, statistics, quotes, and examples in your script.
 `;
     }
 

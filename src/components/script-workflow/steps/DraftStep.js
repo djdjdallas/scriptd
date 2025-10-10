@@ -1,24 +1,85 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWorkflow } from '../ScriptWorkflow';
 import { FileText, Sparkles, ScrollText, Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { createClient } from '@/lib/supabase/client';
 
 export default function DraftStep() {
-  const { 
-    workflowData, 
-    generatedScript, 
+  const {
+    workflowData,
+    generatedScript,
     setGeneratedScript,
     updateStepData,
     markStepComplete,
     trackCredits,
-    workflowId 
+    workflowId
   } = useWorkflow();
-  
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationType, setGenerationType] = useState('');
-  
+  const [researchSources, setResearchSources] = useState(workflowData.research?.sources || []);
+
+  const supabase = createClient();
+
+  // Load research sources directly from database to ensure we have all sources
+  useEffect(() => {
+    const loadResearchSources = async () => {
+      if (!workflowId) return;
+
+      try {
+        console.log('📚 Loading research sources from database for workflow:', workflowId);
+
+        const { data, error } = await supabase
+          .from('workflow_research')
+          .select('*')
+          .eq('workflow_id', workflowId)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error loading research sources:', error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          console.log(`✅ Loaded ${data.length} research sources from database`);
+          console.log('Source types:', data.map(s => s.source_type));
+          console.log('Synthesis sources:', data.filter(s => s.source_type === 'synthesis').length);
+
+          // Convert to format expected by script generation
+          const sources = data.map(source => ({
+            id: source.id,
+            source_type: source.source_type,
+            source_url: source.source_url,
+            source_title: source.source_title,
+            source_content: source.source_content,
+            fact_check_status: source.fact_check_status,
+            is_starred: source.is_starred,
+            relevance: source.relevance || 0.5
+          }));
+
+          setResearchSources(sources);
+
+          // Update workflowData if needed (this ensures the research is saved to workflow_data)
+          if (!workflowData.research?.sources || workflowData.research.sources.length < sources.length) {
+            console.log(`📝 Updating workflowData.research with ${sources.length} sources (was ${workflowData.research?.sources?.length || 0})`);
+            updateStepData('research', {
+              ...workflowData.research,
+              sources
+            });
+          }
+        } else {
+          console.log('No research sources found in database');
+        }
+      } catch (error) {
+        console.error('Error loading research:', error);
+      }
+    };
+
+    loadResearchSources();
+  }, [workflowId]);
+
   // Debug: Log workflow data
   console.log('DraftStep - workflowData.summary:', workflowData.summary);
 
@@ -41,10 +102,18 @@ export default function DraftStep() {
       voiceProfile: workflowData.summary?.voiceProfile
     });
     
-    console.log('2. RESEARCH DATA:', {
-      hasResearch: !!workflowData.research,
-      sourcesCount: workflowData.research?.sources?.length || 0,
-      sources: workflowData.research?.sources?.map((s, i) => ({
+    // Use loaded research sources (from database) instead of workflowData
+    const researchData = {
+      ...workflowData.research,
+      sources: researchSources // ✅ Use directly loaded sources from database
+    };
+
+    console.log('2. RESEARCH DATA (from database):', {
+      hasResearch: !!researchData,
+      sourcesCount: researchData?.sources?.length || 0,
+      fromDatabase: researchSources.length,
+      fromWorkflowData: workflowData.research?.sources?.length || 0,
+      sources: researchData?.sources?.map((s, i) => ({
         index: i,
         title: s.source_title,
         url: s.source_url,
@@ -53,21 +122,21 @@ export default function DraftStep() {
         starred: s.is_starred
       })),
       keywords: workflowData.research?.keywords,
-      summary: workflowData.research?.summary?.substring(0, 200) + '...'
+      summary: workflowData.research?.summary?.substring(0, 200)
     });
-    
+
     console.log('3. FRAME DATA:', {
       hasFrame: !!workflowData.frame,
       problemStatement: workflowData.frame?.problem_statement,
       solutionApproach: workflowData.frame?.solution_approach,
       transformationOutcome: workflowData.frame?.transformation_outcome
     });
-    
+
     console.log('4. HOOK DATA:', {
       selected: workflowData.hook?.selected,
       allHooks: workflowData.hook?.hooks
     });
-    
+
     console.log('5. CONTENT POINTS:', {
       hasContentPoints: !!workflowData.contentPoints,
       pointsCount: workflowData.contentPoints?.points?.length || 0,
@@ -77,23 +146,23 @@ export default function DraftStep() {
         keyTakeaway: p.keyTakeaway
       }))
     });
-    
+
     console.log('6. TITLE DATA:', {
       selectedTitle: workflowData.title?.selected,
       allTitles: workflowData.title?.titles
     });
-    
+
     console.log('7. THUMBNAIL DATA:', {
       hasThumbnail: !!workflowData.thumbnail,
       description: workflowData.thumbnail?.description
     });
-    
+
     const requestBody = {
       type,
       title: workflowData.title?.selected || workflowData.summary?.topic,
       topic: workflowData.summary?.topic,
       voiceProfile: workflowData.summary?.voiceProfile,
-      research: workflowData.research,
+      research: researchData, // ✅ Use research with sources from database
       frame: workflowData.frame,
       hook: workflowData.hook?.selected,
       contentPoints: workflowData.contentPoints,

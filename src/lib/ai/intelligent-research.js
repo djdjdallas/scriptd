@@ -93,14 +93,14 @@ export function generateSearchQueries(extractedData) {
 
   console.log('📝 Generating search queries...');
 
-  // Strategy 1: Combine all specific entities for exact match
+  // Strategy 1: Combine all specific entities for exact match (no quotes for less restrictive search)
   if (entities.people?.length > 0 && entities.organizations?.length > 0) {
     const person = entities.people[0];
     const org = entities.organizations[0];
     const amount = entities.amounts?.[0] || '';
 
     queries.push({
-      query: `"${person}" "${org}" ${amount}`.trim(),
+      query: `${person} ${org} ${amount}`.trim(),
       type: 'exact',
       target: 'Find the specific case/story'
     });
@@ -167,6 +167,7 @@ export function generateSearchQueries(extractedData) {
  * @returns {Promise<Array>} Array of source objects
  */
 async function performSearch(query) {
+  console.log(`    🔎 Attempting search for: "${query}"`);
   const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY
   });
@@ -190,10 +191,21 @@ Format your response clearly with each source separated.`
       }]
     });
 
+    // Add detailed logging
+    console.log(`    📨 Claude response received, length: ${message.content[0].text.length} chars`);
+
     const responseText = message.content[0].text;
-    return parseSearchResults(responseText, query);
+    const sources = parseSearchResults(responseText, query);
+
+    // Add parsing results logging
+    console.log(`    📊 Parsed ${sources.length} sources from response`);
+    if (sources.length > 0) {
+      console.log(`    ✅ Source URLs: ${sources.map(s => s.source_url).join(', ')}`);
+    }
+
+    return sources;
   } catch (error) {
-    console.error(`Search failed for "${query}":`, error.message);
+    console.error(`    ❌ Search error: ${error.message}`);
     return [];
   }
 }
@@ -317,13 +329,39 @@ IMPORTANT: Each query should find DIFFERENT types of information, not more artic
     const expansionQueries = JSON.parse(jsonMatch[0]);
     const expandedSources = [];
 
-    for (const query of expansionQueries.slice(0, 6)) {
+    // Import ResearchService for Perplexity searches
+    const { default: ResearchService } = await import('./research-service.js');
+
+    for (let i = 0; i < expansionQueries.slice(0, 6).length; i++) {
+      const query = expansionQueries[i];
       console.log(`  🔎 Expansion [${query.category}]: "${query.query}"`);
       try {
-        const results = await performSearch(query.query);
-        if (results && results.length > 0) {
-          expandedSources.push(...results.slice(0, 2));
-          console.log(`    ✅ Found ${results.length} sources`);
+        // Use Perplexity instead of Claude's performSearch
+        const result = await ResearchService.performPerplexitySearch({
+          query: query.query,
+          topic: query.target,
+          context: '',
+          minSources: 2,
+          recencyFilter: null
+        });
+
+        if (result.success && result.sources?.length > 0) {
+          // Make synthesis URLs unique to prevent deduplication
+          const sourcesToAdd = result.sources.slice(0, 2).map(source => {
+            if (source.source_url === '#perplexity-synthesis') {
+              return {
+                ...source,
+                source_url: `#perplexity-synthesis-${query.category}-${i}`,
+                source_title: `🔬 ${query.category} Research: ${query.target}`
+              };
+            }
+            return source;
+          });
+
+          expandedSources.push(...sourcesToAdd);
+          console.log(`    ✅ Found ${result.sources.length} sources, adding ${sourcesToAdd.length} (total expanded: ${expandedSources.length})`);
+        } else {
+          console.log(`    ⚠️ No results from Perplexity`);
         }
         await sleep(1500);
       } catch (error) {
@@ -331,6 +369,7 @@ IMPORTANT: Each query should find DIFFERENT types of information, not more artic
       }
     }
 
+    console.log(`📚 Expansion complete: ${expandedSources.length} total expanded sources collected`);
     return expandedSources;
   } catch (error) {
     console.error('❌ Expansion failed:', error.message);
@@ -420,7 +459,14 @@ export async function performIntelligentResearch(topic, targetDuration, initialR
     console.log('📚 Expanding research with contextual information...');
     const expandedSources = await expandResearch(entities, uniqueSources, targetDuration);
 
+    console.log(`📊 Expansion results: ${expandedSources.length} sources before deduplication`);
+    console.log(`📊 Primary sources: ${uniqueSources.length}`);
+    console.log(`📊 Total before dedup: ${uniqueSources.length + expandedSources.length}`);
+
     const allUniqueSources = deduplicateSources([...uniqueSources, ...expandedSources]);
+
+    console.log(`📊 Final after deduplication: ${allUniqueSources.length} sources`);
+    console.log(`📊 Breakdown: ${uniqueSources.length} primary + ${expandedSources.length} expanded → ${allUniqueSources.length} unique`);
 
     return {
       sources: allUniqueSources,
