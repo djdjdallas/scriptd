@@ -42,6 +42,26 @@ const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext =
   console.log('- Target Audience:', targetAudience || 'None specified');
   console.log('- Tone:', tone);
 
+  // NEW: Detailed target audience logging
+  console.log('\n');
+  console.log('═════════════════════════════════════════════════════════════');
+  console.log('👥 TARGET AUDIENCE DETAILS:');
+  console.log('═════════════════════════════════════════════════════════════');
+  if (targetAudience) {
+    console.log('Full audience description being sent to Claude:');
+    console.log('"' + targetAudience + '"');
+    console.log('Character count:', targetAudience.length);
+    console.log('Will appear in prompt as: <audience>' + targetAudience + '</audience>');
+  } else {
+    console.log('No target audience specified - will use default: "General audience interested in the topic"');
+  }
+  console.log('═════════════════════════════════════════════════════════════');
+
+  // Force flush to ensure logs appear
+  if (process.stdout && typeof process.stdout.write === 'function') {
+    process.stdout.write('');
+  }
+
   // Process research sources
   console.log('\n🔬 PROCESSING RESEARCH SOURCES:');
   console.log('Total sources received:', research?.sources?.length || 0);
@@ -76,32 +96,120 @@ const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext =
   }
 
   // Extract comprehensive voice profile details
-  console.log('\n🎤 PROCESSING VOICE PROFILE:');
-  
+  console.log('\n');
+  console.log('═════════════════════════════════════════════════════════════');
+  console.log('🎤 PROCESSING VOICE PROFILE:');
+  console.log('═════════════════════════════════════════════════════════════');
+
   if (voiceProfile) {
     console.log('Voice profile structure keys:', Object.keys(voiceProfile));
     console.log('Voice profile name:', voiceProfile.profile_name || voiceProfile.name);
-    
-    // Log basic characteristics
+
+    // Log basic characteristics in detail
     if (voiceProfile.basic || voiceProfile.training_data?.basic) {
       const basic = voiceProfile.basic || voiceProfile.training_data?.basic;
-      console.log('Basic characteristics:', {
-        pace: basic?.pace,
-        energy: basic?.energy,
-        humor: basic?.humor,
-        vocabulary: basic?.vocabulary
-      });
-      console.log('Dos:', basic?.dos?.length || 0, 'items');
-      console.log('Donts:', basic?.donts?.length || 0, 'items');
+      console.log('\n📝 BASIC CHARACTERISTICS BEING SENT TO CLAUDE:');
+      console.log('  Pace:', basic?.pace || 'not set');
+      console.log('  Energy:', basic?.energy || 'not set');
+      console.log('  Tone:', Array.isArray(basic?.tone) ? basic.tone.join(', ') : (basic?.tone || 'not set'));
+      console.log('  Style:', Array.isArray(basic?.style) ? basic.style.join(', ') : (basic?.style || 'not set'));
+      console.log('  Personality:', Array.isArray(basic?.personality) ? basic.personality.join(', ') : (basic?.personality || 'not set'));
+      console.log('  Vocabulary:', basic?.vocabulary || 'not set');
+      console.log('  Transitions:', basic?.transitions || 'not set');
+      console.log('  Humor:', basic?.humor || 'not set');
+      console.log('  Hooks:', basic?.hooks || 'not set');
+
+      console.log('\n✅ DOS (Must Do):');
+      if (basic?.dos && basic.dos.length > 0) {
+        basic.dos.forEach((item, i) => console.log(`  ${i + 1}. ${item}`));
+      } else {
+        console.log('  (None specified - will use default)');
+      }
+
+      console.log('\n❌ DONTS (Must Avoid):');
+      if (basic?.donts && basic.donts.length > 0) {
+        basic.donts.forEach((item, i) => console.log(`  ${i + 1}. ${item}`));
+      } else {
+        console.log('  (None specified - will use default)');
+      }
+
+      console.log('\n💬 SIGNATURE PHRASES:');
+      if (basic?.signature_phrases && basic.signature_phrases.length > 0) {
+        basic.signature_phrases.forEach((phrase, i) => console.log(`  ${i + 1}. "${phrase}"`));
+      } else {
+        console.log('  (None specified)');
+      }
     }
-    
-    // Log enhanced characteristics
+
+    // Log enhanced characteristics in detail
     if (voiceProfile.enhanced || voiceProfile.training_data?.enhanced) {
       const enhanced = voiceProfile.enhanced || voiceProfile.training_data?.enhanced;
-      console.log('Enhanced characteristics available:', !!enhanced);
-      if (enhanced?.engagementTechniques) {
-        console.log('Engagement techniques:', Object.keys(enhanced.engagementTechniques));
+      console.log('\n🎯 ENHANCED CHARACTERISTICS BEING SENT TO CLAUDE:');
+
+      // Pacing Dynamics
+      if (enhanced?.pacingDynamics) {
+        console.log('\n  📊 Pacing Dynamics:');
+        console.log('    Pause Patterns:', enhanced.pacingDynamics.pausePatterns?.frequency || 'not set');
+        console.log('    Speed Variations:', Array.isArray(enhanced.pacingDynamics.speedVariations)
+          ? enhanced.pacingDynamics.speedVariations.join(', ')
+          : 'not set');
+        console.log('    Emphasis Techniques:', Array.isArray(enhanced.pacingDynamics.emphasisTechniques)
+          ? enhanced.pacingDynamics.emphasisTechniques.join(', ')
+          : 'not set');
       }
+
+      // Engagement Techniques
+      if (enhanced?.engagementTechniques) {
+        console.log('\n  🎪 Engagement Techniques:');
+        console.log('    CTA Style:', enhanced.engagementTechniques.ctaStyle || 'not set');
+        console.log('    Question Strategy:', enhanced.engagementTechniques.questionStrategy || 'not set');
+        console.log('    Direct Address Frequency:', enhanced.engagementTechniques.directAddressFrequency || 'not set');
+        if (enhanced.engagementTechniques.pronounUsage) {
+          console.log('    Pronoun Balance:');
+          console.log('      - "I" statements:', enhanced.engagementTechniques.pronounUsage.i + '%');
+          console.log('      - "We" inclusive:', enhanced.engagementTechniques.pronounUsage.we + '%');
+          console.log('      - "You" direct:', enhanced.engagementTechniques.pronounUsage.you + '%');
+        }
+      }
+
+      // Linguistic Fingerprints
+      if (enhanced?.linguisticFingerprints) {
+        console.log('\n  🔤 Linguistic Fingerprints:');
+        if (enhanced.linguisticFingerprints.fillerWords) {
+          console.log('    Filler Words:');
+          Object.entries(enhanced.linguisticFingerprints.fillerWords).forEach(([word, freq]) => {
+            console.log(`      - "${word}": ${(freq * 100).toFixed(1)}% frequency`);
+          });
+        }
+        if (enhanced.linguisticFingerprints.transitionPhrases) {
+          console.log('    Transition Phrases:');
+          enhanced.linguisticFingerprints.transitionPhrases.forEach((phrase, i) => {
+            console.log(`      ${i + 1}. "${phrase}"`);
+          });
+        }
+      }
+
+      // Implementation Notes
+      if (enhanced?.implementationNotes) {
+        console.log('\n  📋 Implementation Notes:');
+        if (enhanced.implementationNotes.pacingControl) {
+          console.log('    Pacing Control:', enhanced.implementationNotes.pacingControl);
+        }
+        if (enhanced.implementationNotes.questionTiming) {
+          console.log('    Question Timing:', enhanced.implementationNotes.questionTiming);
+        }
+        if (enhanced.implementationNotes.humorIntegration) {
+          console.log('    Humor Integration:', enhanced.implementationNotes.humorIntegration);
+        }
+        if (enhanced.implementationNotes.transitionStrategy) {
+          console.log('    Transition Strategy:', enhanced.implementationNotes.transitionStrategy);
+        }
+        if (enhanced.implementationNotes.fillerWordPlacement) {
+          console.log('    Filler Word Placement:', enhanced.implementationNotes.fillerWordPlacement);
+        }
+      }
+    } else {
+      console.log('No enhanced characteristics available');
     }
   } else {
     console.log('No voice profile provided');
@@ -174,8 +282,34 @@ const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext =
     console.log('Description provided:', !!thumbnail.description);
   }
   
+  console.log('\n');
+  console.log('═════════════════════════════════════════════════════════════');
+  console.log('📤 FINAL SUMMARY OF DATA BEING SENT TO CLAUDE:');
+  console.log('═════════════════════════════════════════════════════════════');
+  console.log('Target Audience:', targetAudience || 'General audience (default)');
+  console.log('Voice Profile:', voiceProfile ? (voiceProfile.profile_name || voiceProfile.name) : 'None (default style)');
+  if (voiceProfile) {
+    const basic = voiceProfile.basic || voiceProfile.training_data?.basic;
+    const enhanced = voiceProfile.enhanced || voiceProfile.training_data?.enhanced;
+    console.log('  - Basic guidelines:', basic?.dos?.length || 0, 'dos,', basic?.donts?.length || 0, 'donts');
+    console.log('  - Signature phrases:', basic?.signature_phrases?.length || 0);
+    console.log('  - Enhanced features:', enhanced ? 'YES' : 'NO');
+    if (enhanced) {
+      console.log('    • Pacing dynamics:', !!enhanced.pacingDynamics);
+      console.log('    • Engagement techniques:', !!enhanced.engagementTechniques);
+      console.log('    • Linguistic fingerprints:', !!enhanced.linguisticFingerprints);
+      console.log('    • Implementation notes:', !!enhanced.implementationNotes);
+    }
+  }
+  console.log('Tone:', tone);
+  console.log('Research sources:', (research?.sources?.length || 0), 'total');
+  console.log('Content structure:', contentPoints?.points?.length || 0, 'sections');
+  console.log('Narrative frame:', frame?.problem_statement ? 'PROVIDED' : 'Not provided');
+  console.log('Hook:', hook ? hook.length + ' chars' : 'Auto-generate');
+  console.log('═════════════════════════════════════════════════════════════');
+
   console.log('\n✅ PROMPT GENERATION COMPLETE');
-  console.log('=== END YOUTUBE SCRIPT GENERATOR DEBUG ===\n');
+  console.log('═════════════════════════════════════════════════════════════\n');
   
   return `
 <role>You are an expert YouTube scriptwriter specializing in engaging, factual content</role>

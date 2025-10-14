@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Eye, EyeOff, DollarSign, Clock, Zap, TrendingUp, 
-  Youtube, Shield, CheckCircle2, ArrowRight, Users, Award
+import {
+  Eye, EyeOff, DollarSign, Clock, Zap, TrendingUp,
+  Youtube, Shield, CheckCircle2, ArrowRight, Users, Award, Video
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -188,13 +188,32 @@ export default function FacelessChannelScriptGeneratorPage() {
             Every feature designed to maximize profits without showing your face
           </p>
 
-          <Tabs defaultValue="automation" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="automation">Full Automation</TabsTrigger>
-              <TabsTrigger value="niches">Proven Niches</TabsTrigger>
+          <Tabs defaultValue="research" className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="research">Research</TabsTrigger>
+              <TabsTrigger value="automation">Automation</TabsTrigger>
+              <TabsTrigger value="niches">Niches</TabsTrigger>
               <TabsTrigger value="voice">Voice Ready</TabsTrigger>
-              <TabsTrigger value="scale">Scale Fast</TabsTrigger>
+              <TabsTrigger value="scale">Scale</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="research" className="mt-8">
+              <Card>
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Video className="w-8 h-8 text-green-600" />
+                    <h3 className="text-2xl font-bold">Competitive Research & Analysis</h3>
+                  </div>
+                  <p className="mb-6">Extract and analyze transcripts from successful faceless channels in your niche:</p>
+                  <ul className="space-y-3">
+                    <li>• Extract transcripts from any YouTube video in seconds</li>
+                    <li>• AI analyzes viral hooks, topics, and patterns</li>
+                    <li>• Study what works in your niche without guessing</li>
+                    <li>• 10x faster competitive research for faceless channels</li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="automation" className="mt-8">
               <Card>

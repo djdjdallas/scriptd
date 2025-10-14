@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Code, 
-  Terminal, 
-  GitBranch, 
-  Cpu, 
-  CheckCircle, 
-  ArrowRight, 
+import {
+  Code,
+  Terminal,
+  GitBranch,
+  Cpu,
+  CheckCircle,
+  ArrowRight,
   Briefcase,
   Target,
   BarChart3,
@@ -28,7 +28,8 @@ import {
   Smartphone,
   Globe,
   Settings,
-  Users
+  Users,
+  Video
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Link from 'next/link';
@@ -50,6 +51,12 @@ export default function DeveloperContentTools() {
   }, []);
 
   const features = [
+    {
+      icon: Video,
+      title: 'Competitive Research & Analysis',
+      description: 'Extract and analyze transcripts from tech leaders. Study successful patterns, API documentation styles, and teaching approaches that work.',
+      benefit: '10x faster technical research'
+    },
     {
       icon: Code,
       title: 'Code Tutorial Scripts',

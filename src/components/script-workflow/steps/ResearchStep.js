@@ -769,41 +769,52 @@ export default function ResearchStep() {
 
     if (workflowId && selectedSourcesList.length > 0) {
       try {
-        // Prepare sources for database insertion
-        const sourcesToSave = selectedSourcesList.map(source => ({
-          workflow_id: workflowId,
-          source_type: source.source_type || 'web',
-          source_url: source.source_url || '',
-          source_title: source.source_title || '',
-          source_content: source.source_content || '',
-          fact_check_status: source.fact_check_status || 'unverified',
-          is_starred: source.is_starred || false,
-          is_selected: true,
-          relevance: source.relevance || 0.5,
-          added_at: new Date().toISOString()
-        }));
-
-        // Delete existing research for this workflow first to avoid duplicates
-        const { error: deleteError } = await supabase
+        // Fetch existing sources to avoid duplicates
+        const { data: existingSources, error: fetchError } = await supabase
           .from('workflow_research')
-          .delete()
+          .select('source_url')
           .eq('workflow_id', workflowId);
 
-        if (deleteError) {
-          console.error('Error deleting old research:', deleteError);
+        if (fetchError) {
+          console.error('Error fetching existing sources:', fetchError);
         }
 
-        // Insert new research sources
-        const { data, error } = await supabase
-          .from('workflow_research')
-          .insert(sourcesToSave)
-          .select();
+        const existingUrls = new Set(existingSources?.map(s => s.source_url) || []);
 
-        if (error) {
-          console.error('Error saving research to database:', error);
-          toast.error('Failed to save research sources to database');
+        // Prepare sources for database insertion, filtering out duplicates
+        const sourcesToSave = selectedSourcesList
+          .filter(source => !existingUrls.has(source.source_url || ''))
+          .map(source => ({
+            workflow_id: workflowId,
+            source_type: source.source_type || 'web',
+            source_url: source.source_url || '',
+            source_title: source.source_title || '',
+            source_content: source.source_content || '',
+            fact_check_status: source.fact_check_status || 'unverified',
+            is_starred: source.is_starred || false,
+            is_selected: true,
+            relevance: source.relevance || 0.5,
+            added_at: new Date().toISOString()
+          }));
+
+        if (sourcesToSave.length === 0) {
+          console.log('No new sources to save (all sources already exist)');
+          toast.info('All sources already saved');
         } else {
-          console.log(`Successfully saved ${data.length} research sources to database`);
+          // Insert only new research sources
+          const { data, error } = await supabase
+            .from('workflow_research')
+            .insert(sourcesToSave)
+            .select();
+
+          if (error) {
+            console.error('Error saving research to database:', error);
+            toast.error('Failed to save research sources to database');
+          } else {
+            console.log(`Successfully saved ${data.length} research sources to database`);
+            const totalSources = (existingSources?.length || 0) + data.length;
+            toast.success(`Saved ${data.length} new source(s)! Total: ${totalSources}`);
+          }
         }
       } catch (error) {
         console.error('Error saving research:', error);
@@ -812,7 +823,6 @@ export default function ResearchStep() {
     }
 
     markStepComplete(2);
-    toast.success(`Saved ${selectedSourcesList.length} selected source(s)!`);
     // Navigate to next step (Frame)
     goToStep(3);
   };

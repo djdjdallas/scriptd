@@ -24,14 +24,19 @@ export default function PictoryAlternativePage() {
   const genscript = competitorData.ourPlatform;
 
   const comparisonFeatures = [
-    { 
-      feature: 'Script Writing', 
-      competitor: '✗ No script generation', 
+    {
+      feature: 'Transcript Extraction',
+      competitor: '✗ Not available',
+      genscript: 'AI-powered competitive research'
+    },
+    {
+      feature: 'Script Writing',
+      competitor: '✗ No script generation',
       genscript: 'AI-powered generation'
     },
-    { 
-      feature: 'Retention Optimization', 
-      competitor: '✗ No retention focus', 
+    {
+      feature: 'Retention Optimization',
+      competitor: '✗ No retention focus',
       genscript: '70%+ AVD targeting'
     },
     { 

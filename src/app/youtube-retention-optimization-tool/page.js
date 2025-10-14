@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { 
+import {
   TrendingUp, BarChart3, Clock, AlertCircle, PlayCircle,
-  ChevronRight, ArrowRight, Target, Zap, Award, Users
+  ChevronRight, ArrowRight, Target, Zap, Award, Users, Video
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -380,6 +380,18 @@ export default function RetentionOptimizationToolPage() {
           </h2>
           
           <div className="grid md:grid-cols-3 gap-8 mt-12">
+            <Card>
+              <CardHeader>
+                <Video className="w-8 h-8 text-green-600 mb-2" />
+                <CardTitle>Transcript Extraction</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Extract and analyze transcripts from high-retention videos. Study what keeps viewers watching.
+                </p>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <Target className="w-8 h-8 text-blue-600 mb-2" />

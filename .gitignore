@@ -50,3 +50,4 @@ supabase/migrations
 *.sql
 # Sentry Config File
 .env.sentry-build-plugin
+voice-profile-log.txt

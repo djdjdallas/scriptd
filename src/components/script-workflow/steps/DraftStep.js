@@ -173,7 +173,20 @@ export default function DraftStep() {
       targetDuration: workflowData.summary?.targetDuration || 300,
       workflowId: workflowId
     };
-    
+
+    // Debug voice profile structure being sent
+    if (requestBody.voiceProfile) {
+      console.log('8A. VOICE PROFILE DEBUG:', {
+        profile_name: requestBody.voiceProfile.profile_name,
+        hasBasic: !!requestBody.voiceProfile.basic,
+        hasAdvanced: !!requestBody.voiceProfile.advanced,
+        hasParameters: !!requestBody.voiceProfile.parameters,
+        hasTrainingData: !!requestBody.voiceProfile.training_data,
+        basicKeys: requestBody.voiceProfile.basic ? Object.keys(requestBody.voiceProfile.basic) : [],
+        advancedKeys: requestBody.voiceProfile.advanced ? Object.keys(requestBody.voiceProfile.advanced) : []
+      });
+    }
+
     console.log('8. FINAL REQUEST BODY:', {
       ...requestBody,
       research: requestBody.research ? {

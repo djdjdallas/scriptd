@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Check, X, ArrowRight, Star, TrendingUp, Shield, Zap, 
-  Brain, Target, Mic, Video, FileText, Eye, Users 
+import {
+  Check, X, ArrowRight, Star, TrendingUp, Shield, Zap,
+  Brain, Target, Mic, Video, FileText, Eye, Users
 } from 'lucide-react';
 import {
   MarketingHero,
@@ -24,14 +24,19 @@ export default function InVideoAIAlternativePage() {
   const genscript = competitorData.ourPlatform;
 
   const comparisonFeatures = [
-    { 
-      feature: 'Script Quality', 
-      competitor: 'Basic templates', 
+    {
+      feature: 'Transcript Extraction',
+      competitor: '✗ Not available',
+      genscript: 'AI-powered competitive research'
+    },
+    {
+      feature: 'Script Quality',
+      competitor: 'Basic templates',
       genscript: 'Advanced AI generation'
     },
-    { 
-      feature: 'Retention Optimization', 
-      competitor: '✗ No focus on watch time', 
+    {
+      feature: 'Retention Optimization',
+      competitor: '✗ No focus on watch time',
       genscript: '70%+ AVD targeting'
     },
     { 

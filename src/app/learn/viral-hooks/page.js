@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Zap, 
-  Target, 
-  Brain, 
-  Clock, 
-  TrendingUp, 
-  Download, 
+import {
+  Zap,
+  Target,
+  Brain,
+  Clock,
+  TrendingUp,
+  Download,
   ChevronRight,
   Play,
   CheckCircle,
@@ -20,7 +20,8 @@ import {
   Users,
   BarChart3,
   Shield,
-  Copy
+  Copy,
+  FileText
 } from 'lucide-react';
 import {
   MarketingHero,
@@ -38,6 +39,12 @@ export default function ViralHooksGuide() {
   const [copiedHook, setCopiedHook] = useState(null);
 
   const hookCategories = [
+    {
+      icon: FileText,
+      title: 'Competitive Hook Analysis',
+      description: 'Extract and analyze hooks from viral videos. Study patterns that actually work in your niche.',
+      gradient: 'from-green-500/20 to-emerald-500/20'
+    },
     {
       icon: Brain,
       title: 'Psychological Hooks',

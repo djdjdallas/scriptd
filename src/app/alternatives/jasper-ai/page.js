@@ -5,7 +5,7 @@ import Script from 'next/script';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Star, ArrowRight, Youtube, TrendingUp, DollarSign, Clock } from 'lucide-react';
+import { Check, X, Star, ArrowRight, Youtube, TrendingUp, DollarSign, Clock, FileText } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Link from 'next/link';
 
@@ -25,6 +25,7 @@ export default function JasperAIAlternativePage() {
   }, []);
 
   const comparisonData = [
+    { feature: 'Transcript Extraction', jasper: false, genscript: 'AI-powered competitive research' },
     { feature: 'YouTube Specialization', jasper: 'Generic content', genscript: 'YouTube-optimized' },
     { feature: 'Retention Analytics', jasper: false, genscript: '70%+ AVD targeting' },
     { feature: 'Hook Library', jasper: '50+ templates', genscript: '1000+ viral hooks' },

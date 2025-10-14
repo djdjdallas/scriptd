@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { 
+import {
   Shield, CheckCircle2, AlertTriangle, BookOpen, Search,
-  Award, Lock, Users, ArrowRight, BadgeCheck, Info
+  Award, Lock, Users, ArrowRight, BadgeCheck, Info, Video
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -268,13 +268,48 @@ export default function FactCheckingScriptWriterPage() {
             Every tool you need to create accurate, trustworthy content
           </p>
 
-          <Tabs defaultValue="verification" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs defaultValue="research" className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="research">Research</TabsTrigger>
               <TabsTrigger value="verification">Verification</TabsTrigger>
               <TabsTrigger value="sources">Sources</TabsTrigger>
               <TabsTrigger value="compliance">Compliance</TabsTrigger>
               <TabsTrigger value="protection">Protection</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="research" className="mt-8">
+              <Card>
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Video className="w-8 h-8 text-green-600" />
+                    <h3 className="text-2xl font-bold">Transcript Extraction & Analysis</h3>
+                  </div>
+                  <p className="mb-6 text-gray-600">
+                    Extract and verify facts from existing YouTube videos for research:
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold mb-3">Extract Transcripts</h4>
+                      <ul className="space-y-2 text-gray-600">
+                        <li>• Pull transcripts from any YouTube video</li>
+                        <li>• AI identifies key claims and statistics</li>
+                        <li>• Auto-extracts source attributions</li>
+                        <li>• 10x faster competitive research</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-3">Fact Verification</h4>
+                      <ul className="space-y-2 text-gray-600">
+                        <li>• Cross-check claims from transcripts</li>
+                        <li>• Verify statistics and data points</li>
+                        <li>• Identify outdated information</li>
+                        <li>• Build accurate scripts from research</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="verification" className="mt-8">
               <Card>

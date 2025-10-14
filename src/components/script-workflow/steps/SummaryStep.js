@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useWorkflow } from "../ScriptWorkflow";
-import { FileText, Users, Mic, Brain, Youtube, Sparkles, Clock } from "lucide-react";
+import { FileText, Users, Mic, Brain, Youtube, Sparkles, Clock, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { CustomDropdown } from "@/components/ui/custom-dropdown";
+import { SCRIPT_CONFIG } from "@/lib/scriptGenerationConfig";
 
 export default function SummaryStep() {
   const {
@@ -43,13 +44,48 @@ export default function SummaryStep() {
     workflowData.summary?.targetDuration || 300 // Default 5 minutes
   );
   const [customDuration, setCustomDuration] = useState("");
+  const [userTier, setUserTier] = useState("free"); // NEW: Track user tier
+  const [loading, setLoading] = useState(true); // NEW: Track loading state
 
   const supabase = createClient();
 
   useEffect(() => {
+    loadUserTier(); // NEW: Load user tier first
     loadVoiceProfiles();
     loadChannels();
   }, []);
+
+  // NEW: Load user subscription tier
+  const loadUserTier = async () => {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        console.log("[SummaryStep] No user for tier check");
+        setLoading(false);
+        return;
+      }
+
+      const { data: userProfile, error } = await supabase
+        .from("users")
+        .select("subscription_tier, subscription_plan")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+
+      const tier = userProfile?.subscription_tier || userProfile?.subscription_plan || "free";
+      // Normalize tier to 'free' or 'paid'
+      const normalizedTier = ["free", "inactive"].includes(tier) ? "free" : "paid";
+      setUserTier(normalizedTier);
+      console.log("[SummaryStep] User tier:", normalizedTier);
+    } catch (error) {
+      console.error("Error loading user tier:", error);
+      setUserTier("free"); // Default to free on error
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadVoiceProfiles = async () => {
     try {
@@ -63,31 +99,59 @@ export default function SummaryStep() {
         return;
       }
 
-      // First get user's channels
+      // Get user's channels with their voice_profile data
       const { data: userChannels, error: channelError } = await supabase
         .from("channels")
-        .select("id")
-        .eq("user_id", user.id);
-      
+        .select("id, name, title, voice_profile, voice_training_status")
+        .eq("user_id", user.id)
+        .eq("voice_training_status", "completed"); // Only channels with completed voice training
+
       if (channelError) throw channelError;
-      
+
       if (!userChannels || userChannels.length === 0) {
-        console.log("[SummaryStep] No channels found for user");
+        console.log("[SummaryStep] No channels with voice profiles found for user");
         setVoiceProfiles([]);
         return;
       }
 
-      // Get voice profiles for user's channels
-      const channelIds = userChannels.map(c => c.id);
-      const { data, error } = await supabase
-        .from("voice_profiles")
-        .select("*, channels(name, title)")
-        .in("channel_id", channelIds)
-        .eq("is_active", true) // Only show active voice profiles
-        .order("created_at", { ascending: false });
+      // Transform channels into voice profile objects
+      const profiles = userChannels.map(channel => {
+        // Parse voice_profile if it's a string
+        let voiceProfileData = channel.voice_profile;
+        if (typeof voiceProfileData === 'string') {
+          try {
+            voiceProfileData = JSON.parse(voiceProfileData);
+          } catch (e) {
+            console.error(`Failed to parse voice_profile for channel ${channel.id}:`, e);
+            voiceProfileData = {};
+          }
+        }
 
-      if (error) throw error;
-      setVoiceProfiles(data || []);
+        const profile = {
+          id: channel.id,
+          profile_name: channel.title || channel.name,
+          channel_id: channel.id,
+          channel_title: channel.title,
+          channel_name: channel.name,
+          // Include the full voice profile data (basic, advanced, etc.)
+          ...voiceProfileData
+        };
+
+        // Debug logging
+        console.log(`[SummaryStep] Voice profile for ${channel.title}:`, {
+          hasBasic: !!profile.basic,
+          hasAdvanced: !!profile.advanced,
+          hasParameters: !!profile.parameters,
+          hasTrainingData: !!profile.training_data,
+          basicKeys: profile.basic ? Object.keys(profile.basic) : [],
+          advancedKeys: profile.advanced ? Object.keys(profile.advanced) : []
+        });
+
+        return profile;
+      });
+
+      console.log(`[SummaryStep] Loaded ${profiles.length} voice profiles from channels`);
+      setVoiceProfiles(profiles);
     } catch (error) {
       console.error("Error loading voice profiles:", error);
     }
@@ -127,13 +191,74 @@ export default function SummaryStep() {
     }
   };
 
-  const handleChannelSelect = (channelId) => {
+  const handleChannelSelect = async (channelId) => {
     setSelectedChannel(channelId);
     const channel = channels.find((c) => c.id === channelId);
-    if (channel && channel.audience_description) {
-      setTargetAudience(channel.audience_description);
-      setAudienceType("channel");
-      toast.success("Audience loaded from your YouTube channel");
+
+    console.log('[SummaryStep] Channel selected:', channelId);
+
+    if (channel) {
+      // Try to load rich audience analysis from channel_analyses table
+      try {
+        console.log('[SummaryStep] Querying channel_analyses for channel_id:', channelId);
+
+        const { data: analysisData, error } = await supabase
+          .from("channel_analyses")
+          .select("audience_persona")
+          .eq("channel_id", channelId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        console.log('[SummaryStep] Query result:', {
+          hasData: !!analysisData,
+          hasError: !!error,
+          errorMessage: error?.message,
+          hasAudiencePersona: !!analysisData?.audience_persona,
+          audiencePersonaType: typeof analysisData?.audience_persona
+        });
+
+        if (!error && analysisData?.audience_persona) {
+          // Parse audience_persona if it's a string
+          let audiencePersona = analysisData.audience_persona;
+          if (typeof audiencePersona === 'string') {
+            try {
+              audiencePersona = JSON.parse(audiencePersona);
+              console.log('[SummaryStep] Parsed audience_persona, keys:', Object.keys(audiencePersona));
+            } catch (e) {
+              console.error('[SummaryStep] Failed to parse audience_persona:', e);
+            }
+          } else {
+            console.log('[SummaryStep] audience_persona is already an object, keys:', Object.keys(audiencePersona));
+          }
+
+          // If we have the audience_analysis object, use it
+          if (audiencePersona?.audience_analysis) {
+            console.log('[SummaryStep] ✅ Loaded rich audience analysis for channel');
+            console.log('[SummaryStep] audience_analysis keys:', Object.keys(audiencePersona.audience_analysis));
+            setTargetAudience(JSON.stringify(audiencePersona.audience_analysis));
+            setAudienceType("channel");
+            toast.success("Rich audience analysis loaded from your channel");
+            return;
+          } else {
+            console.log('[SummaryStep] ❌ No audience_analysis found in audiencePersona');
+          }
+        } else if (error) {
+          console.error('[SummaryStep] Error querying channel_analyses:', error);
+        } else {
+          console.log('[SummaryStep] No analysis data found for channel');
+        }
+      } catch (error) {
+        console.error("[SummaryStep] Error loading audience analysis:", error);
+      }
+
+      // Fallback to simple audience_description
+      console.log('[SummaryStep] Falling back to simple audience_description');
+      if (channel.audience_description) {
+        setTargetAudience(channel.audience_description);
+        setAudienceType("channel");
+        toast.success("Audience loaded from your YouTube channel");
+      }
     }
   };
 
@@ -153,7 +278,7 @@ export default function SummaryStep() {
         isValid = false;
         toast.error("Please select a YouTube channel");
       } else {
-        // Use the channel's audience description if available, 
+        // Use the channel's audience description if available,
         // otherwise use the channel itself as the audience indicator
         const channel = channels.find((c) => c.id === selectedChannel);
         finalAudience = targetAudience || (channel ? `Audience of ${channel.title}` : "Channel audience");
@@ -172,6 +297,28 @@ export default function SummaryStep() {
       return;
     }
 
+    // NEW: Validate user access to selected duration and model
+    const durationMinutes = Math.ceil(targetDuration / 60);
+    if (!isDurationAllowed(targetDuration)) {
+      isValid = false;
+      toast.error(`Free users are limited to ${limits.maxDurationMinutes} minute videos. Please upgrade or select a shorter duration.`, {
+        action: {
+          label: 'Upgrade',
+          onClick: () => window.location.href = '/pricing'
+        }
+      });
+    }
+
+    if (!isModelAllowed(aiModel)) {
+      isValid = false;
+      toast.error(`Free users can only use the Fast model. Please upgrade or select the Fast model.`, {
+        action: {
+          label: 'Upgrade',
+          onClick: () => window.location.href = '/pricing'
+        }
+      });
+    }
+
     if (!isValid) {
       return;
     }
@@ -187,6 +334,19 @@ export default function SummaryStep() {
       aiModel,
       targetDuration,
     };
+
+    // Debug logging for voice profile
+    if (voiceProfile) {
+      console.log('[SummaryStep] Saving voice profile to workflow:', {
+        profile_name: voiceProfile.profile_name,
+        hasBasic: !!voiceProfile.basic,
+        hasAdvanced: !!voiceProfile.advanced,
+        hasParameters: !!voiceProfile.parameters,
+        hasTrainingData: !!voiceProfile.training_data,
+        basicKeys: voiceProfile.basic ? Object.keys(voiceProfile.basic) : [],
+        advancedKeys: voiceProfile.advanced ? Object.keys(voiceProfile.advanced) : []
+      });
+    }
 
     updateStepData("summary", summaryData);
     updateWorkflowTitle(topic || "Untitled Script");
@@ -223,6 +383,22 @@ export default function SummaryStep() {
     return parseInt(durationString) || 0;
   };
 
+  // NEW: Get limits based on user tier
+  const limits = userTier === "free"
+    ? SCRIPT_CONFIG.freeUserLimits
+    : SCRIPT_CONFIG.paidUserLimits;
+
+  // NEW: Helper to check if duration is allowed
+  const isDurationAllowed = (seconds) => {
+    const minutes = Math.ceil(seconds / 60);
+    return minutes <= limits.maxDurationMinutes;
+  };
+
+  // NEW: Helper to check if model is allowed
+  const isModelAllowed = (model) => {
+    return limits.allowedModels.includes(model);
+  };
+
   const durationPresets = [
     { value: 30, label: "30 sec", description: "Quick tip or teaser" },
     { value: 60, label: "1 min", description: "Short-form content" },
@@ -231,6 +407,7 @@ export default function SummaryStep() {
     { value: 600, label: "10 min", description: "In-depth guide" },
     { value: 900, label: "15 min", description: "Comprehensive lesson" },
     { value: 1200, label: "20 min", description: "Full course module" },
+    { value: 1260, label: "21 min", description: "Extended content" }, // NEW: 21 min option (free limit)
     { value: 1800, label: "30 min", description: "Deep dive content" },
     { value: 2100, label: "35 min", description: "Extended tutorial" },
     { value: 2400, label: "40 min", description: "Documentary style" },
@@ -274,24 +451,63 @@ export default function SummaryStep() {
           </label>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4 max-h-96 overflow-y-auto pr-2">
-            {durationPresets.map((preset) => (
-              <button
-                key={preset.value}
-                onClick={() => {
-                  setTargetDuration(preset.value);
-                  setCustomDuration('');
-                }}
-                className={`p-3 rounded-lg border transition-all ${
-                  targetDuration === preset.value && !customDuration
-                    ? 'border-purple-500 bg-purple-500/20 text-white'
-                    : 'border-purple-500/30 hover:border-purple-500/50 text-gray-400 hover:text-white bg-black/30'
-                }`}
-              >
-                <div className="font-medium">{preset.label}</div>
-                <div className="text-xs mt-1 opacity-70">{preset.description}</div>
-              </button>
-            ))}
+            {durationPresets.map((preset) => {
+              const isAllowed = isDurationAllowed(preset.value);
+              const isLocked = !isAllowed && userTier === "free";
+
+              return (
+                <button
+                  key={preset.value}
+                  onClick={() => {
+                    if (isAllowed) {
+                      setTargetDuration(preset.value);
+                      setCustomDuration('');
+                    } else {
+                      toast.error(`Upgrade to generate ${preset.label} scripts`, {
+                        action: {
+                          label: 'Upgrade',
+                          onClick: () => window.location.href = '/pricing'
+                        }
+                      });
+                    }
+                  }}
+                  disabled={isLocked}
+                  className={`p-3 rounded-lg border transition-all relative ${
+                    targetDuration === preset.value && !customDuration
+                      ? 'border-purple-500 bg-purple-500/20 text-white'
+                      : isLocked
+                      ? 'border-purple-500/20 bg-black/20 text-gray-600 cursor-not-allowed opacity-60'
+                      : 'border-purple-500/30 hover:border-purple-500/50 text-gray-400 hover:text-white bg-black/30'
+                  }`}
+                >
+                  {isLocked && (
+                    <div className="absolute top-1 right-1">
+                      <Lock className="h-3 w-3 text-orange-400" />
+                    </div>
+                  )}
+                  <div className={`font-medium ${isLocked ? 'line-through' : ''}`}>
+                    {preset.label}
+                  </div>
+                  <div className="text-xs mt-1 opacity-70">
+                    {isLocked ? 'Pro Only' : preset.description}
+                  </div>
+                </button>
+              );
+            })}
           </div>
+
+          {/* NEW: Show upgrade message for free users */}
+          {userTier === "free" && (
+            <div className="mb-4 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+              <p className="text-sm text-orange-300 flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                Free users can generate up to {limits.maxDurationMinutes} minute videos.
+                <a href="/pricing" className="text-orange-400 hover:text-orange-300 underline ml-1">
+                  Upgrade for longer videos →
+                </a>
+              </p>
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-400">Custom:</span>
@@ -316,12 +532,15 @@ export default function SummaryStep() {
 
         {/* Target Audience Section */}
         <div className="glass-card-no-overflow p-6">
-          <label className="block mb-4">
+          <label className="block mb-2">
             <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
               <Users className="h-4 w-4" />
               Target Audience
             </span>
           </label>
+          <p className="text-xs text-gray-400 mb-4">
+            Select a source below, then click the dropdown to choose your audience
+          </p>
 
           {/* Audience Type Selector */}
           <div className="flex gap-2 mb-4">
@@ -390,7 +609,48 @@ export default function SummaryStep() {
                         <Sparkles className="h-4 w-4" />
                         Channel Audience Analysis
                       </p>
-                      <p className="text-sm text-gray-300">{targetAudience}</p>
+                      {(() => {
+                        // Check if targetAudience is rich JSON data
+                        let audienceData;
+                        try {
+                          audienceData = JSON.parse(targetAudience);
+                        } catch (e) {
+                          // Not JSON, display as simple text
+                          return <p className="text-sm text-gray-300">{targetAudience}</p>;
+                        }
+
+                        // Display rich audience data summary
+                        if (audienceData?.demographic_profile) {
+                          return (
+                            <div className="text-sm text-gray-300 space-y-2">
+                              {audienceData.demographic_profile.age_distribution && (
+                                <div>
+                                  <span className="text-purple-300 font-medium">Demographics: </span>
+                                  Primary age {Object.entries(audienceData.demographic_profile.age_distribution)
+                                    .sort((a, b) => parseInt(b[1]) - parseInt(a[1]))[0]?.[0] || 'N/A'}
+                                  , {audienceData.demographic_profile.gender_distribution?.male}% male
+                                </div>
+                              )}
+                              {audienceData.psychographic_analysis?.core_values && (
+                                <div>
+                                  <span className="text-purple-300 font-medium">Values: </span>
+                                  {audienceData.psychographic_analysis.core_values.slice(0, 3).join(', ')}
+                                </div>
+                              )}
+                              {audienceData.content_consumption_patterns?.preferred_video_length?.optimal_range && (
+                                <div>
+                                  <span className="text-purple-300 font-medium">Preferred length: </span>
+                                  {audienceData.content_consumption_patterns.preferred_video_length.optimal_range}
+                                </div>
+                              )}
+                              <p className="text-xs text-gray-400 mt-2">✨ Full demographic & psychographic analysis will be used</p>
+                            </div>
+                          );
+                        }
+
+                        // Fallback
+                        return <p className="text-sm text-gray-300">{targetAudience}</p>;
+                      })()}
                     </div>
                   )}
                 </>
@@ -453,21 +713,74 @@ export default function SummaryStep() {
                 Script Quality
               </span>
             </label>
-            <CustomDropdown
-              value={aiModel}
-              onChange={(e) => setAiModel(e.target.value)}
-              options={[
-                {
-                  value: "claude-opus-4-1",
-                  label: "Hollywood (3.5x credits)",
-                },
-                {
-                  value: "claude-3-5-sonnet",
-                  label: "Professional (1.5x credits)",
-                },
-                { value: "claude-3-5-haiku", label: "Fast (1x credits)" },
-              ]}
-            />
+
+            {/* NEW: Show model selection buttons with locked state */}
+            <div className="space-y-2 mb-3">
+              {[
+                { value: "claude-3-5-haiku", label: "Fast (1x credits)", description: "Quick generation with good quality" },
+                { value: "claude-3-5-sonnet", label: "Professional (1.5x credits)", description: "Better storytelling and flow" },
+                { value: "claude-opus-4-1", label: "Hollywood (3.5x credits)", description: "Premium quality with advanced AI" },
+              ].map((model) => {
+                const isAllowed = isModelAllowed(model.value);
+                const isLocked = !isAllowed && userTier === "free";
+
+                return (
+                  <button
+                    key={model.value}
+                    onClick={() => {
+                      if (isAllowed) {
+                        setAiModel(model.value);
+                      } else {
+                        toast.error(`Upgrade to use ${model.label}`, {
+                          action: {
+                            label: 'Upgrade',
+                            onClick: () => window.location.href = '/pricing'
+                          }
+                        });
+                      }
+                    }}
+                    disabled={isLocked}
+                    className={`w-full p-3 rounded-lg border transition-all text-left relative ${
+                      aiModel === model.value
+                        ? 'border-purple-500 bg-purple-500/20 text-white'
+                        : isLocked
+                        ? 'border-purple-500/20 bg-black/20 text-gray-600 cursor-not-allowed opacity-60'
+                        : 'border-purple-500/30 hover:border-purple-500/50 text-gray-400 hover:text-white bg-black/30'
+                    }`}
+                  >
+                    {isLocked && (
+                      <div className="absolute top-2 right-2">
+                        <Lock className="h-4 w-4 text-orange-400" />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className={`font-medium ${isLocked ? 'line-through' : ''}`}>
+                          {model.label}
+                        </div>
+                        <div className="text-xs mt-1 opacity-70">
+                          {isLocked ? 'Pro Only' : model.description}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* NEW: Show upgrade message for free users */}
+            {userTier === "free" && (
+              <div className="mb-3 p-2 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                <p className="text-xs text-orange-300 flex items-center gap-2">
+                  <Lock className="h-3 w-3" />
+                  Free users are limited to Fast model.
+                  <a href="/pricing" className="text-orange-400 hover:text-orange-300 underline ml-1">
+                    Upgrade →
+                  </a>
+                </p>
+              </div>
+            )}
+
             <p className="text-xs text-gray-500 mt-2">
               Higher quality uses more advanced AI for better storytelling
             </p>
@@ -512,7 +825,7 @@ export default function SummaryStep() {
               ...(voiceProfiles.length > 0
                 ? voiceProfiles.map((profile) => ({
                     value: profile.id,
-                    label: `${profile.profile_name || "Voice Profile"} ${profile.channels?.title ? `(${profile.channels.title})` : ""}`,
+                    label: profile.profile_name || profile.channel_title || "Voice Profile",
                   }))
                 : [
                     {
@@ -525,8 +838,7 @@ export default function SummaryStep() {
           />
           {voiceProfiles.length === 0 && (
             <p className="text-xs text-gray-500 mt-2">
-              Train a voice profile in the Voice section to maintain consistent
-              tone
+              Train a voice profile for your channel to maintain consistent tone
             </p>
           )}
         </div>

@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  TrendingUp, 
-  BarChart3, 
-  Clock, 
-  Users, 
-  Eye, 
-  ThumbsUp, 
+import {
+  TrendingUp,
+  BarChart3,
+  Clock,
+  Users,
+  Eye,
+  ThumbsUp,
   MessageSquare,
   Share2,
   PlayCircle,
@@ -19,7 +19,8 @@ import {
   Award,
   ArrowRight,
   ChevronRight,
-  CheckCircle
+  CheckCircle,
+  FileText
 } from 'lucide-react';
 import {
   MarketingHero,
@@ -35,6 +36,12 @@ import { MarketingButton } from '@/components/marketing/MarketingButton';
 
 export default function YouTubeAlgorithm2025Guide() {
   const algorithmFactors = [
+    {
+      icon: FileText,
+      title: 'Competitive Research',
+      description: 'Extract and analyze transcripts from top-performing videos. Study what works and apply proven patterns to your content.',
+      gradient: 'from-green-500/20 to-emerald-500/20'
+    },
     {
       icon: Clock,
       title: 'Watch Time (Most Important)',

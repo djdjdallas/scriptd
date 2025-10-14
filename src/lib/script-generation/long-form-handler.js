@@ -3,6 +3,9 @@
  * Handles scripts over 30 minutes by splitting generation into chunks
  */
 
+import fs from 'fs';
+import path from 'path';
+
 export class LongFormScriptHandler {
   /**
    * Determines if a script needs chunked generation
@@ -129,10 +132,10 @@ export class LongFormScriptHandler {
    * @returns {string} Formatted prompt
    */
   static formatChunkPrompt(chunk) {
-    const { 
-      chunkNumber, 
-      totalChunks, 
-      startTime, 
+    const {
+      chunkNumber,
+      totalChunks,
+      startTime,
       endTime,
       duration,
       isFirst,
@@ -143,6 +146,446 @@ export class LongFormScriptHandler {
       hook,
       previousChunkSummary
     } = chunk;
+
+    // Log voice profile and target audience details (only for first chunk to avoid spam)
+    if (isFirst) {
+      const logFile = path.join(process.cwd(), 'voice-profile-log.txt');
+
+      let logContent = '\n\n';
+      logContent += '═══════════════════════════════════════════════════════════\n';
+      logContent += '📝 VOICE PROFILE & TARGET AUDIENCE LOG\n';
+      logContent += `Generated: ${new Date().toISOString()}\n`;
+      logContent += '═══════════════════════════════════════════════════════════\n\n';
+
+      console.log('\n');
+      console.log('═════════════════════════════════════════════════════════════');
+      console.log('👥 TARGET AUDIENCE DETAILS (CHUNK GENERATION):');
+      console.log('═════════════════════════════════════════════════════════════');
+
+      logContent += '👥 TARGET AUDIENCE DETAILS:\n';
+      logContent += '═════════════════════════════════════════════════════════════\n';
+
+      // Check if we have targetAudience
+      if (context.targetAudience) {
+        // Check if it's a simple string or rich JSON
+        let audienceData = context.targetAudience;
+        let isRichData = false;
+
+        // Try to parse if it looks like JSON
+        if (typeof audienceData === 'string' && (audienceData.startsWith('{') || audienceData.startsWith('['))) {
+          try {
+            audienceData = JSON.parse(audienceData);
+            isRichData = true;
+          } catch (e) {
+            // Not JSON, use as-is
+            isRichData = false;
+          }
+        } else if (typeof audienceData === 'object') {
+          isRichData = true;
+        }
+
+        if (isRichData && audienceData.demographic_profile) {
+          // Log rich audience analysis data
+          console.log('🎯 RICH AUDIENCE ANALYSIS DATA FOUND:');
+          logContent += '🎯 RICH AUDIENCE ANALYSIS DATA:\n\n';
+
+          if (audienceData.demographic_profile) {
+            console.log('\n📊 DEMOGRAPHIC PROFILE:');
+            logContent += '📊 DEMOGRAPHIC PROFILE:\n';
+
+            const demo = audienceData.demographic_profile;
+            if (demo.age_distribution) {
+              console.log('  Age Distribution:');
+              logContent += '  Age Distribution:\n';
+              Object.entries(demo.age_distribution).forEach(([range, percent]) => {
+                console.log(`    ${range}: ${percent}`);
+                logContent += `    ${range}: ${percent}\n`;
+              });
+            }
+            if (demo.gender_distribution) {
+              console.log('  Gender Distribution:');
+              logContent += '  Gender Distribution:\n';
+              Object.entries(demo.gender_distribution).forEach(([g, percent]) => {
+                console.log(`    ${g}: ${percent}`);
+                logContent += `    ${g}: ${percent}\n`;
+              });
+            }
+            if (demo.education_income) {
+              if (demo.education_income.education_level) {
+                console.log('  Education Level:');
+                logContent += '  Education Level:\n';
+                Object.entries(demo.education_income.education_level).forEach(([level, percent]) => {
+                  console.log(`    ${level}: ${percent}`);
+                  logContent += `    ${level}: ${percent}\n`;
+                });
+              }
+              if (demo.education_income.income_brackets) {
+                console.log('  Income Brackets:');
+                logContent += '  Income Brackets:\n';
+                Object.entries(demo.education_income.income_brackets).forEach(([bracket, percent]) => {
+                  console.log(`    ${bracket}: ${percent}`);
+                  logContent += `    ${bracket}: ${percent}\n`;
+                });
+              }
+            }
+            if (demo.geographic_distribution) {
+              console.log('  Geographic Distribution:');
+              logContent += '  Geographic Distribution:\n';
+              Object.entries(demo.geographic_distribution).forEach(([country, percent]) => {
+                console.log(`    ${country}: ${percent}`);
+                logContent += `    ${country}: ${percent}\n`;
+              });
+            }
+          }
+
+          if (audienceData.psychographic_analysis) {
+            console.log('\n🧠 PSYCHOGRAPHIC ANALYSIS:');
+            logContent += '\n🧠 PSYCHOGRAPHIC ANALYSIS:\n';
+
+            const psycho = audienceData.psychographic_analysis;
+            if (psycho.values && psycho.values.length > 0) {
+              console.log('  Values:');
+              logContent += '  Values:\n';
+              psycho.values.forEach((v, i) => {
+                console.log(`    ${i + 1}. ${v}`);
+                logContent += `    ${i + 1}. ${v}\n`;
+              });
+            }
+            if (psycho.aspirations && psycho.aspirations.length > 0) {
+              console.log('  Aspirations:');
+              logContent += '  Aspirations:\n';
+              psycho.aspirations.forEach((a, i) => {
+                console.log(`    ${i + 1}. ${a}`);
+                logContent += `    ${i + 1}. ${a}\n`;
+              });
+            }
+            if (psycho.pain_points && psycho.pain_points.length > 0) {
+              console.log('  Pain Points:');
+              logContent += '  Pain Points:\n';
+              psycho.pain_points.forEach((p, i) => {
+                console.log(`    ${i + 1}. ${p}`);
+                logContent += `    ${i + 1}. ${p}\n`;
+              });
+            }
+          }
+
+          if (audienceData.engagement_drivers) {
+            console.log('\n🎯 ENGAGEMENT DRIVERS:');
+            logContent += '\n🎯 ENGAGEMENT DRIVERS:\n';
+
+            const drivers = audienceData.engagement_drivers;
+            if (drivers.comment_triggers && drivers.comment_triggers.length > 0) {
+              console.log('  Comment Triggers:');
+              logContent += '  Comment Triggers:\n';
+              drivers.comment_triggers.forEach((t, i) => {
+                console.log(`    ${i + 1}. ${t}`);
+                logContent += `    ${i + 1}. ${t}\n`;
+              });
+            }
+            if (drivers.loyalty_builders && drivers.loyalty_builders.length > 0) {
+              console.log('  Loyalty Builders:');
+              logContent += '  Loyalty Builders:\n';
+              drivers.loyalty_builders.forEach((l, i) => {
+                console.log(`    ${i + 1}. ${l}`);
+                logContent += `    ${i + 1}. ${l}\n`;
+              });
+            }
+            if (drivers.sharing_motivations && drivers.sharing_motivations.length > 0) {
+              console.log('  Sharing Motivations:');
+              logContent += '  Sharing Motivations:\n';
+              drivers.sharing_motivations.forEach((s, i) => {
+                console.log(`    ${i + 1}. ${s}`);
+                logContent += `    ${i + 1}. ${s}\n`;
+              });
+            }
+          }
+
+          if (audienceData.content_consumption_patterns) {
+            console.log('\n📺 CONTENT CONSUMPTION PATTERNS:');
+            logContent += '\n📺 CONTENT CONSUMPTION PATTERNS:\n';
+
+            const patterns = audienceData.content_consumption_patterns;
+            if (patterns.preferred_video_length) {
+              // Handle preferred_video_length as an object
+              if (typeof patterns.preferred_video_length === 'object') {
+                if (patterns.preferred_video_length.optimal_range) {
+                  console.log(`  Preferred Video Length: ${patterns.preferred_video_length.optimal_range}`);
+                  logContent += `  Preferred Video Length: ${patterns.preferred_video_length.optimal_range}\n`;
+                }
+                if (patterns.preferred_video_length.tolerance) {
+                  console.log(`  Tolerance: ${patterns.preferred_video_length.tolerance}`);
+                  logContent += `  Tolerance: ${patterns.preferred_video_length.tolerance}\n`;
+                }
+                if (patterns.preferred_video_length.minimum_threshold) {
+                  console.log(`  Minimum Threshold: ${patterns.preferred_video_length.minimum_threshold}`);
+                  logContent += `  Minimum Threshold: ${patterns.preferred_video_length.minimum_threshold}\n`;
+                }
+              } else {
+                // If it's a string, log it directly
+                console.log(`  Preferred Video Length: ${patterns.preferred_video_length}`);
+                logContent += `  Preferred Video Length: ${patterns.preferred_video_length}\n`;
+              }
+            }
+            if (patterns.watch_time_preference) {
+              console.log(`  Watch Time Preference: ${patterns.watch_time_preference}`);
+              logContent += `  Watch Time Preference: ${patterns.watch_time_preference}\n`;
+            }
+            if (patterns.device_usage && patterns.device_usage.length > 0) {
+              console.log('  Device Usage:');
+              logContent += '  Device Usage:\n';
+              patterns.device_usage.forEach((d, i) => {
+                console.log(`    ${i + 1}. ${d}`);
+                logContent += `    ${i + 1}. ${d}\n`;
+              });
+            }
+          }
+        } else {
+          // Simple string audience description
+          console.log('Full audience description being sent to Claude:');
+          console.log('"' + context.targetAudience + '"');
+          console.log('Character count:', context.targetAudience.length);
+          console.log('Will appear in prompt as: <audience>' + context.targetAudience + '</audience>');
+
+          logContent += `Full audience description: "${context.targetAudience}"\n`;
+          logContent += `Character count: ${context.targetAudience.length}\n`;
+        }
+      } else {
+        console.log('No target audience specified - will use default: "General audience interested in the topic"');
+        logContent += 'No target audience specified\n';
+      }
+      console.log('═════════════════════════════════════════════════════════════');
+      logContent += '═════════════════════════════════════════════════════════════\n\n';
+
+      console.log('\n');
+      console.log('═════════════════════════════════════════════════════════════');
+      console.log('🎤 VOICE PROFILE DETAILS (CHUNK GENERATION):');
+      console.log('═════════════════════════════════════════════════════════════');
+
+      logContent += '🎤 VOICE PROFILE DETAILS:\n';
+      logContent += '═════════════════════════════════════════════════════════════\n';
+
+      if (context.voiceProfile) {
+        const voiceProfile = context.voiceProfile;
+        const profileName = voiceProfile.profile_name || voiceProfile.name || 'Unknown';
+        console.log('Voice profile name:', profileName);
+        logContent += `Voice profile name: ${profileName}\n`;
+
+        // Log raw structure for debugging
+        console.log('\n🔍 DEBUG - Voice Profile Structure:');
+        logContent += '\n🔍 DEBUG - Voice Profile Structure:\n';
+        console.log('Has parameters:', !!voiceProfile.parameters);
+        console.log('Has training_data:', !!voiceProfile.training_data);
+        console.log('Has basic:', !!voiceProfile.basic);
+        console.log('Has advanced:', !!voiceProfile.advanced);
+        logContent += `Has parameters: ${!!voiceProfile.parameters}\n`;
+        logContent += `Has training_data: ${!!voiceProfile.training_data}\n`;
+        logContent += `Has basic: ${!!voiceProfile.basic}\n`;
+        logContent += `Has advanced: ${!!voiceProfile.advanced}\n`;
+
+        // Support both structures: voice_profiles table (parameters) and channels table (basic)
+        const params = voiceProfile.parameters || voiceProfile.basic;
+        const trainingData = voiceProfile.training_data;
+        const advanced = voiceProfile.advanced;
+
+        if (params) {
+          console.log('\n📝 VOICE CHARACTERISTICS:');
+          logContent += '\n📝 VOICE CHARACTERISTICS:\n';
+
+          console.log('  Formality:', params.formality || 'not set');
+          console.log('  Enthusiasm:', params.enthusiasm || 'not set');
+          console.log('  Humor:', params.humor || 'not set');
+          console.log('  Technical Level:', params.technicalLevel || 'not set');
+          console.log('  Pacing Style:', params.pacingStyle || 'not set');
+          console.log('  Avg Words/Sentence:', params.avgWordsPerSentence || 'not set');
+
+          logContent += `  Formality: ${params.formality || 'not set'}\n`;
+          logContent += `  Enthusiasm: ${params.enthusiasm || 'not set'}\n`;
+          logContent += `  Humor: ${params.humor || 'not set'}\n`;
+          logContent += `  Technical Level: ${params.technicalLevel || 'not set'}\n`;
+          logContent += `  Pacing Style: ${params.pacingStyle || 'not set'}\n`;
+          logContent += `  Avg Words/Sentence: ${params.avgWordsPerSentence || 'not set'}\n`;
+
+          console.log('\n👋 GREETINGS:');
+          logContent += '\n👋 GREETINGS:\n';
+          if (params.greetings && params.greetings.length > 0) {
+            params.greetings.forEach((item, i) => {
+              console.log(`  ${i + 1}. "${item}"`);
+              logContent += `  ${i + 1}. "${item}"\n`;
+            });
+          } else {
+            console.log('  (None specified)');
+            logContent += '  (None specified)\n';
+          }
+
+          console.log('\n💬 CATCHPHRASES:');
+          logContent += '\n💬 CATCHPHRASES:\n';
+          if (params.catchphrases && params.catchphrases.length > 0) {
+            params.catchphrases.forEach((phrase, i) => {
+              console.log(`  ${i + 1}. "${phrase}"`);
+              logContent += `  ${i + 1}. "${phrase}"\n`;
+            });
+          } else {
+            console.log('  (None specified)');
+            logContent += '  (None specified)\n';
+          }
+
+          console.log('\n👋 SIGNOFFS:');
+          logContent += '\n👋 SIGNOFFS:\n';
+          if (params.signoffs && params.signoffs.length > 0) {
+            params.signoffs.forEach((item, i) => {
+              console.log(`  ${i + 1}. "${item}"`);
+              logContent += `  ${i + 1}. "${item}"\n`;
+            });
+          } else {
+            console.log('  (None specified)');
+            logContent += '  (None specified)\n';
+          }
+
+          console.log('\n🔄 TRANSITION PHRASES:');
+          logContent += '\n🔄 TRANSITION PHRASES:\n';
+          if (params.transitionPhrases && params.transitionPhrases.length > 0) {
+            params.transitionPhrases.forEach((item, i) => {
+              console.log(`  ${i + 1}. "${item}"`);
+              logContent += `  ${i + 1}. "${item}"\n`;
+            });
+          } else {
+            console.log('  (None specified)');
+            logContent += '  (None specified)\n';
+          }
+
+          console.log('\n🎨 INTRO STYLE:');
+          logContent += '\n🎨 INTRO STYLE:\n';
+          console.log(`  ${params.introStyle || 'not specified'}`);
+          logContent += `  ${params.introStyle || 'not specified'}\n`;
+
+          console.log('\n📊 TOP VOCABULARY:');
+          logContent += '\n📊 TOP VOCABULARY:\n';
+          if (params.topWords && params.topWords.length > 0) {
+            params.topWords.slice(0, 10).forEach((word, i) => {
+              const line = `  ${i + 1}. "${word.word}": ${word.count} uses`;
+              console.log(line);
+              logContent += line + '\n';
+            });
+          } else {
+            console.log('  (None specified)');
+            logContent += '  (None specified)\n';
+          }
+
+          // Advanced features
+          if (params.prosody && Object.keys(params.prosody).length > 0) {
+            console.log('\n🎯 PROSODY (Advanced):');
+            logContent += '\n🎯 PROSODY (Advanced):\n';
+            Object.entries(params.prosody).forEach(([key, value]) => {
+              console.log(`  ${key}: ${JSON.stringify(value)}`);
+              logContent += `  ${key}: ${JSON.stringify(value)}\n`;
+            });
+          }
+        }
+
+        if (trainingData) {
+          console.log('\n📊 TRAINING METADATA:');
+          logContent += '\n📊 TRAINING METADATA:\n';
+          console.log('  Sample Count:', trainingData.sampleCount || 'not set');
+          console.log('  Total Words:', trainingData.totalWords || 'not set');
+          console.log('  Source:', trainingData.source || 'not set');
+          console.log('  Processed At:', trainingData.processed_at || 'not set');
+
+          logContent += `  Sample Count: ${trainingData.sampleCount || 'not set'}\n`;
+          logContent += `  Total Words: ${trainingData.totalWords || 'not set'}\n`;
+          logContent += `  Source: ${trainingData.source || 'not set'}\n`;
+          logContent += `  Processed At: ${trainingData.processed_at || 'not set'}\n`;
+        }
+
+        // Log advanced analysis if available (from channels.voice_profile.advanced)
+        if (advanced && Object.keys(advanced).length > 0) {
+          console.log('\n🎯 ADVANCED ANALYSIS:');
+          logContent += '\n🎯 ADVANCED ANALYSIS:\n';
+
+          if (advanced.prosody) {
+            console.log('  Prosody:');
+            logContent += '  Prosody:\n';
+            if (advanced.prosody.energyLevel) {
+              console.log(`    Energy Level: ${advanced.prosody.energyLevel.level} (score: ${advanced.prosody.energyLevel.score})`);
+              logContent += `    Energy Level: ${advanced.prosody.energyLevel.level} (score: ${advanced.prosody.energyLevel.score})\n`;
+            }
+            if (advanced.prosody.speechTempo) {
+              console.log(`    Speech Tempo: ${advanced.prosody.speechTempo.pace} (${advanced.prosody.speechTempo.wordsPerMinute} WPM)`);
+              logContent += `    Speech Tempo: ${advanced.prosody.speechTempo.pace} (${advanced.prosody.speechTempo.wordsPerMinute} WPM)\n`;
+            }
+          }
+
+          if (advanced.personality) {
+            console.log('  Personality:');
+            logContent += '  Personality:\n';
+            if (advanced.personality.formalityScore) {
+              console.log(`    Formality: ${advanced.personality.formalityScore.level}`);
+              logContent += `    Formality: ${advanced.personality.formalityScore.level}\n`;
+            }
+            if (advanced.personality.humorFrequency) {
+              console.log(`    Humor: ${advanced.personality.humorFrequency.level}`);
+              logContent += `    Humor: ${advanced.personality.humorFrequency.level}\n`;
+            }
+            if (advanced.personality.storytellingStyle) {
+              console.log(`    Storytelling: ${advanced.personality.storytellingStyle.primaryStyle}`);
+              logContent += `    Storytelling: ${advanced.personality.storytellingStyle.primaryStyle}\n`;
+            }
+          }
+
+          if (advanced.quality) {
+            console.log('  Quality Metrics:');
+            logContent += '  Quality Metrics:\n';
+            if (advanced.quality.fillerWordUsage) {
+              console.log(`    Filler Words: ${advanced.quality.fillerWordUsage.level} (${advanced.quality.fillerWordUsage.density}% density)`);
+              logContent += `    Filler Words: ${advanced.quality.fillerWordUsage.level} (${advanced.quality.fillerWordUsage.density}% density)\n`;
+              if (advanced.quality.fillerWordUsage.fillers) {
+                console.log('    Top Fillers:');
+                logContent += '    Top Fillers:\n';
+                Object.entries(advanced.quality.fillerWordUsage.fillers).slice(0, 5).forEach(([word, count]) => {
+                  console.log(`      "${word}": ${count} uses`);
+                  logContent += `      "${word}": ${count} uses\n`;
+                });
+              }
+            }
+            if (advanced.quality.vocabularyDiversity) {
+              console.log(`    Vocabulary Diversity: ${advanced.quality.vocabularyDiversity.level} (${advanced.quality.vocabularyDiversity.uniqueWords} unique words)`);
+              logContent += `    Vocabulary Diversity: ${advanced.quality.vocabularyDiversity.level} (${advanced.quality.vocabularyDiversity.uniqueWords} unique words)\n`;
+            }
+          }
+
+          if (advanced.creatorPatterns) {
+            console.log('  Creator Patterns:');
+            logContent += '  Creator Patterns:\n';
+            if (advanced.creatorPatterns.introStyle) {
+              console.log(`    Intro Style: ${advanced.creatorPatterns.introStyle.style}`);
+              logContent += `    Intro Style: ${advanced.creatorPatterns.introStyle.style}\n`;
+            }
+            if (advanced.creatorPatterns.ctaPatterns) {
+              const ctas = [];
+              if (advanced.creatorPatterns.ctaPatterns.subscribe?.present) ctas.push('subscribe');
+              if (advanced.creatorPatterns.ctaPatterns.like?.present) ctas.push('like');
+              if (advanced.creatorPatterns.ctaPatterns.comment?.present) ctas.push('comment');
+              if (ctas.length > 0) {
+                console.log(`    CTAs Used: ${ctas.join(', ')}`);
+                logContent += `    CTAs Used: ${ctas.join(', ')}\n`;
+              }
+            }
+          }
+        }
+      } else {
+        console.log('No voice profile provided');
+        logContent += 'No voice profile provided\n';
+      }
+      console.log('═════════════════════════════════════════════════════════════\n');
+      logContent += '═════════════════════════════════════════════════════════════\n';
+
+      // Write to file
+      try {
+        fs.appendFileSync(logFile, logContent, 'utf8');
+        console.log(`\n✅ Voice profile details saved to: ${logFile}\n`);
+      } catch (error) {
+        console.error('❌ Failed to write voice profile log:', error.message);
+      }
+    }
 
     let prompt = `Generate PART ${chunkNumber} of ${totalChunks} for a YouTube script.
 
@@ -292,6 +735,8 @@ CRITICAL RULES:
 
 WORD COUNT REQUIREMENT: Write AT LEAST ${duration * 150} words. This is mandatory.
 
+⚠️ IMPORTANT: Write ONLY the script content. DO NOT include any meta-commentary, explanations about word counts, notes about expansions, or any text that isn't part of the actual script. Just write the script itself.
+
 Write the complete section now:`;
 
     return prompt;
@@ -306,26 +751,60 @@ Write the complete section now:`;
     // Remove duplicate headers/footers between chunks
     const processedChunks = chunks.map((chunk, index) => {
       if (index === 0) return chunk; // Keep first chunk as-is
-      
+
       // Remove any duplicate title or metadata from subsequent chunks
       let processed = chunk;
-      
-      // Remove lines that look like headers (start with #)
+
+      // Remove lines that look like headers (start with #) or meta-commentary
       if (index > 0) {
         const lines = processed.split('\n');
         const filteredLines = lines.filter((line, idx) => {
           // Skip the first few lines if they're headers
           if (idx < 5 && line.startsWith('#')) return false;
+
+          // Remove meta-commentary patterns
+          const metaPatterns = [
+            /here's.*word.*expansion/i,
+            /this.*\d+.*word.*expansion/i,
+            /maintains.*style.*tone/i,
+            /filling in.*details/i,
+            /note:/i,
+            /^###.*expansion/i,
+            /to meet.*word.*count/i,
+            /word count.*requirement/i
+          ];
+
+          if (metaPatterns.some(pattern => pattern.test(line))) {
+            console.log(`🧹 Removing meta-commentary: "${line}"`);
+            return false;
+          }
+
           return true;
         });
         processed = filteredLines.join('\n');
       }
-      
+
       return processed;
     });
 
     // Join with smooth transitions
-    return processedChunks.join('\n\n---\n\n');
+    let stitched = processedChunks.join('\n\n---\n\n');
+
+    // Final cleanup: Remove any remaining meta-commentary blocks
+    const metaBlockPatterns = [
+      /###\s*Here's.*?(?=\n\[|\n##|\n$)/gis,
+      /###\s*Note:.*?(?=\n\[|\n##|\n$)/gis,
+      /###\s*\d+.*word.*expansion.*?(?=\n\[|\n##|\n$)/gis
+    ];
+
+    metaBlockPatterns.forEach(pattern => {
+      if (pattern.test(stitched)) {
+        console.log('🧹 Removing meta-commentary block');
+        stitched = stitched.replace(pattern, '');
+      }
+    });
+
+    return stitched;
   }
 
   /**

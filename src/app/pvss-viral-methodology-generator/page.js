@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { 
+import {
   Zap, TrendingUp, Sparkles, Target, Rocket, BarChart3,
-  ArrowRight, CheckCircle2, PlayCircle, Award, Users, Flame
+  ArrowRight, CheckCircle2, PlayCircle, Award, Users, Flame, Video
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -209,13 +209,48 @@ export default function PVSSMethodologyPage() {
             Deep dive into each component of the viral framework
           </p>
 
-          <Tabs defaultValue="problem" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs defaultValue="research" className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="research">Research</TabsTrigger>
               <TabsTrigger value="problem">Problem</TabsTrigger>
               <TabsTrigger value="value">Value</TabsTrigger>
               <TabsTrigger value="solution">Solution</TabsTrigger>
               <TabsTrigger value="success">Success</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="research" className="mt-8">
+              <Card>
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Video className="w-8 h-8 text-green-600" />
+                    <h3 className="text-2xl font-bold">Viral Video Analysis</h3>
+                  </div>
+                  <p className="mb-6">
+                    Extract and analyze transcripts from viral videos to reverse-engineer their PVSS structure:
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold mb-3">Transcript Extraction</h4>
+                      <ul className="space-y-2 text-gray-600">
+                        <li>• Pull transcripts from any viral YouTube video</li>
+                        <li>• AI identifies PVSS framework elements</li>
+                        <li>• Study viral hooks and patterns</li>
+                        <li>• 10x faster competitive research</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-3">PVSS Pattern Recognition</h4>
+                      <ul className="space-y-2 text-gray-600">
+                        <li>• Auto-detect Problem hooks in transcripts</li>
+                        <li>• Extract Value propositions used</li>
+                        <li>• Identify Solution delivery methods</li>
+                        <li>• Analyze Success story structures</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="problem" className="mt-8">
               <Card>

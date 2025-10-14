@@ -6,6 +6,13 @@ import { LongFormScriptHandler } from '@/lib/script-generation/long-form-handler
 import ResearchService from '@/lib/ai/research-service';
 import { ContentFetcher } from '@/lib/content-fetcher';
 import crypto from 'crypto';
+import {
+  SCRIPT_CONFIG,
+  calculateChunkStrategy,
+  validateScriptQuality,
+  validateUserAccess
+} from '@/lib/scriptGenerationConfig';
+import { expandShortScript } from '@/lib/script-generation/expansion-handler';
 
 // Helper function to calculate credits based on duration and model
 function calculateCreditsForDuration(durationInSeconds, model = 'claude-3-5-haiku') {
@@ -43,7 +50,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized', details: authError?.message }, { status: 401 });
     }
 
-    const { 
+    const {
       type,
       title,
       topic,
@@ -60,14 +67,37 @@ export async function POST(request) {
       workflowId // Add workflow ID to link the script
     } = await request.json();
 
-    // Check if user has bypass_credits enabled
-    const { data: userSettings } = await supabase
+    // Get user tier from database
+    const { data: userProfile } = await supabase
       .from('users')
-      .select('bypass_credits')
+      .select('subscription_tier, subscription_plan, bypass_credits')
       .eq('id', user.id)
       .single();
-    
-    const bypassCredits = userSettings?.bypass_credits || process.env.BYPASS_CREDIT_CHECKS === 'true';
+
+    const userTier = userProfile?.subscription_tier || userProfile?.subscription_plan || 'free';
+
+    // ===== NEW: VALIDATE USER ACCESS =====
+    // Calculate duration early for validation
+    const durationForValidation = targetDuration || contentPoints?.points?.reduce((acc, p) => acc + p.duration, 0) || 600;
+    const durationMinutes = Math.ceil(durationForValidation / 60);
+
+    const accessCheck = validateUserAccess(user.id, userTier, durationMinutes, model);
+
+    if (!accessCheck.allowed) {
+      console.log(`❌ Access denied for user ${user.id} (tier: ${accessCheck.normalizedTier}):`, accessCheck.errors);
+      return NextResponse.json({
+        error: 'Access denied',
+        details: accessCheck.errors,
+        userTier: accessCheck.normalizedTier,
+        limits: accessCheck.limits,
+      }, { status: 403 });
+    }
+
+    console.log(`✅ Access granted for user ${user.id} (tier: ${accessCheck.normalizedTier})`);
+    // ===== END NEW CODE =====
+
+    // Check if user has bypass_credits enabled (already fetched with userProfile)
+    const bypassCredits = userProfile?.bypass_credits || process.env.BYPASS_CREDIT_CHECKS === 'true';
 
     // Debug: Log what research data we received
     console.log('=== FULL RESEARCH DATA RECEIVED ===');
@@ -392,9 +422,11 @@ export async function POST(request) {
 
             let chunkScript = '';
             let retryCount = 0;
-            const maxRetries = 2;
-            // Reduce word requirement by 30% when we have quality research
-            const wordsPerMinute = hasQualityResearch ? 105 : 150;
+            const maxRetries = SCRIPT_CONFIG.maxRetries; // UPDATED: Use config (1 instead of 2)
+            // UPDATED: Use new WPM with quality bypass
+            const wordsPerMinute = hasQualityResearch
+              ? Math.ceil(SCRIPT_CONFIG.wordsPerMinute * SCRIPT_CONFIG.qualityBypassThreshold)
+              : SCRIPT_CONFIG.wordsPerMinute;
             const minWordsPerChunk = Math.ceil((totalMinutes / chunkConfig.chunks) * wordsPerMinute);
 
             // Retry loop for short chunks
@@ -412,23 +444,47 @@ export async function POST(request) {
                 temperature: 0.7,
                 system: `You are an expert YouTube scriptwriter who MUST write LONG, DETAILED scripts.
 
-ABSOLUTE WORD COUNT REQUIREMENT:
-Your section MUST be AT LEAST ${minWordsPerChunk} words.
-This is NON-NEGOTIABLE. Shorter responses will be REJECTED.
+🎯 ABSOLUTE WORD COUNT REQUIREMENT:
+Your section MUST be EXACTLY ${minWordsPerChunk} words or MORE.
+This is NON-NEGOTIABLE. Shorter responses will be REJECTED and you'll have to start over.
 
-CRITICAL RULES:
-1. Count your words as you write - ensure you meet the ${minWordsPerChunk} word MINIMUM
-2. Write DETAILED, EXPANDED content - don't summarize or rush
-3. Include rich descriptions, examples, and explanations
-4. NEVER say "I'll continue", "due to length", or use [...]
-5. NO placeholders or shortcuts - write EVERYTHING in full
-6. Each paragraph should be substantial (50+ words)
-7. Expand on every point thoroughly
-8. ${i === chunkConfig.chunks - 1 ? `This is the LAST section - MUST include:
-   - Complete ## Description section with timestamps for ENTIRE video
-   - Complete ## Tags section with 20+ real tags (no placeholders)` : 'Continue from previous section seamlessly'}
+📊 PROGRESSIVE WORD COUNT CHECKPOINTS:
+Track your progress as you write:
+- ${Math.floor(minWordsPerChunk * 0.25)} words = 25% complete (keep going!)
+- ${Math.floor(minWordsPerChunk * 0.50)} words = 50% complete (halfway there!)
+- ${Math.floor(minWordsPerChunk * 0.75)} words = 75% complete (almost done!)
+- ${minWordsPerChunk} words = 100% MINIMUM TARGET (you can write more!)
 
-YOU WILL BE PENALIZED for responses under ${minWordsPerChunk} words.`,
+🚨 CRITICAL RULES:
+1. **COUNT YOUR WORDS CONSTANTLY** - After every paragraph, estimate your word count
+2. **WRITE COMPREHENSIVE CONTENT** - Each topic needs 200-300 words minimum
+3. **USE SPECIFIC EXAMPLES** - Don't just explain, give real-world examples with details
+4. **TELL STORIES** - Include anecdotes, case studies, real incidents (${minWordsPerChunk} words requires stories!)
+5. **NEVER SUMMARIZE** - If you feel like rushing, that means you need to expand more
+6. **NO SHORTCUTS** - No "I'll continue", no [...], no placeholders, no meta-commentary
+7. **EXPAND EVERY POINT** - Each content point should have: introduction, explanation, example, impact, conclusion
+8. **ADD TRANSITIONS** - Smooth, natural transitions between topics add valuable words
+
+💡 WHAT ${minWordsPerChunk} WORDS LOOKS LIKE:
+- That's about ${Math.floor(minWordsPerChunk / 150)} minutes of spoken content
+- That's roughly ${Math.floor(minWordsPerChunk / 100)} substantial paragraphs
+- Each major point needs 250+ words of development
+
+${i === chunkConfig.chunks - 1 ? `
+🎬 FINAL SECTION REQUIREMENTS:
+This is the LAST section - MUST include:
+- Complete ## Description section with timestamps for ENTIRE video (100+ words)
+- Complete ## Tags section with 20+ actual relevant tags (no placeholders)
+- Proper conclusion that wraps up all previous sections
+` : `
+🔗 CONTINUATION REQUIREMENTS:
+- Build naturally from previous section
+- Reference what was already covered
+- Maintain narrative flow
+`}
+
+⚠️ YOU WILL BE PENALIZED if you write less than ${minWordsPerChunk} words.
+✅ YOU WILL BE REWARDED for comprehensive, detailed content that exceeds ${minWordsPerChunk} words.`,
                 messages: [{
                   role: 'user',
                   content: chunkPrompts[i]
@@ -442,17 +498,46 @@ YOU WILL BE PENALIZED for responses under ${minWordsPerChunk} words.`,
 
                 if (chunkScript) {
                   // Check word count
-                  const wordCount = chunkScript.split(/\s+/).length;
+                  let wordCount = chunkScript.split(/\s+/).length;
                   console.log(`Chunk ${i + 1} word count: ${wordCount} (min: ${minWordsPerChunk})`);
 
+                  // NEW: If short and this is first attempt, try intelligent expansion instead of blind retry
+                  if (wordCount < minWordsPerChunk && retryCount === 0) {
+                    console.log(`📝 Chunk ${i + 1} short (${wordCount}/${minWordsPerChunk}), attempting intelligent expansion...`);
+
+                    try {
+                      const expandedChunk = await expandShortScript(
+                        chunkScript,
+                        contentPoints?.points || [],
+                        minWordsPerChunk,
+                        enhancedResearch || research,
+                        process.env.ANTHROPIC_API_KEY,
+                        actualModel
+                      );
+
+                      if (expandedChunk && expandedChunk !== chunkScript) {
+                        chunkScript = expandedChunk;
+                        wordCount = chunkScript.split(/\s+/).length;
+                        console.log(`✅ Chunk ${i + 1} expanded to ${wordCount} words`);
+                      } else {
+                        console.warn(`⚠️ Expansion didn't add content, will retry generation`);
+                      }
+                    } catch (expansionError) {
+                      console.error(`❌ Expansion failed for chunk ${i + 1}:`, expansionError.message);
+                      console.log(`⚠️ Falling back to retry`);
+                    }
+                  }
+
+                  // If still short after expansion attempt, try one blind retry
                   if (wordCount < minWordsPerChunk && retryCount < maxRetries) {
-                    console.warn(`Chunk ${i + 1} too short (${wordCount}/${minWordsPerChunk} words), retrying...`);
+                    console.warn(`Chunk ${i + 1} still short (${wordCount}/${minWordsPerChunk} words) after expansion, doing blind retry...`);
                     retryCount++;
                     continue; // Retry the chunk
                   }
 
-                  // Chunk is good, add it
+                  // Chunk is acceptable, add it
                   scriptChunks.push(chunkScript);
+                  console.log(`✅ Chunk ${i + 1} accepted with ${wordCount} words`);
                   break; // Exit retry loop
                 } else {
                   console.error(`Empty response for chunk ${i + 1}`);
@@ -519,7 +604,7 @@ YOU WILL BE PENALIZED for responses under ${minWordsPerChunk} words.`,
             max_tokens: (() => {
               // Calculate tokens based on script duration
               const minutes = Math.ceil(totalDuration / 60);
-              const estimatedWords = minutes * 150;
+              const estimatedWords = minutes * SCRIPT_CONFIG.wordsPerMinute; // UPDATED: Use config
               const estimatedTokens = Math.ceil(estimatedWords * 1.33);
 
               // Increased token limit for better output
@@ -537,11 +622,11 @@ YOU WILL BE PENALIZED for responses under ${minWordsPerChunk} words.`,
             system: `You are an expert YouTube scriptwriter who MUST write LONG, DETAILED, COMPLETE scripts.
 
 ABSOLUTE WORD COUNT REQUIREMENT:
-You MUST write AT LEAST ${Math.ceil(totalDuration / 60) * 150} words for the script content.
+You MUST write AT LEAST ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words for the script content.
 This is MANDATORY. Shorter scripts will be REJECTED.
 
 CRITICAL REQUIREMENTS:
-1. Write AT LEAST ${Math.ceil(totalDuration / 60) * 150} words of script content (not counting Description/Tags)
+1. Write AT LEAST ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words of script content (not counting Description/Tags)
 2. Count your words as you write - ensure you meet the minimum
 3. Write DETAILED, EXPANDED content with rich descriptions
 4. NEVER say "I'll continue", "due to length", or use [...]
@@ -550,7 +635,7 @@ CRITICAL REQUIREMENTS:
 7. Include specific examples, stories, and explanations
 
 MANDATORY SECTIONS (MUST INCLUDE ALL):
-1. Main Script Content (MINIMUM ${Math.ceil(totalDuration / 60) * 150} words - write MORE not less)
+1. Main Script Content (MINIMUM ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words - write MORE not less)
 2. ## Description (with TIMESTAMPS: section listing ALL timestamps for the video)
 3. ## Tags (20+ actual relevant tags, NO placeholders)
 
@@ -572,7 +657,7 @@ Example Tags Format:
 keyword1, keyword2, keyword3, keyword4, keyword5, keyword6, keyword7, keyword8, keyword9, keyword10, keyword11, keyword12, keyword13, keyword14, keyword15
 
 YOU WILL BE PENALIZED for:
-- Scripts under ${Math.ceil(totalDuration / 60) * 150} words
+- Scripts under ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words
 - Missing or incomplete Description section
 - Missing or placeholder Tags section
 - Any continuation messages or placeholders`,
@@ -580,6 +665,16 @@ YOU WILL BE PENALIZED for:
               {
                 role: 'user',
                 content: (() => {
+                  console.log('\n📝 === CALLING OPTIMIZED PROMPT GENERATOR ===');
+                  console.log('Voice Profile provided:', !!voiceProfile);
+                  console.log('Target Audience provided:', !!targetAudience);
+                  if (voiceProfile) {
+                    console.log('Voice Profile name:', voiceProfile.profile_name || voiceProfile.name || 'Unknown');
+                  }
+                  if (targetAudience) {
+                    console.log('Target Audience value:', targetAudience);
+                  }
+
                   // Use optimized generator for better prompts with full workflow context
                   const optimizedResult = generateOptimizedScript({
                     topic: title,
@@ -596,6 +691,10 @@ YOU WILL BE PENALIZED for:
                     targetAudience: targetAudience,
                     tone: tone
                   });
+
+                  console.log('✅ Optimized prompt generator completed');
+                  console.log('Result has error:', !!optimizedResult.error);
+                  console.log('Result has prompt:', !!optimizedResult.prompt);
                   
                   if (optimizedResult.error) {
                     // Fallback to original prompt if error
@@ -780,13 +879,14 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
     const hasDescription = script.includes('## Description') && script.includes('TIMESTAMPS:');
     const hasTags = script.includes('## Tags') && !script.includes('[') && !script.includes('...');
     const wordCount = script.split(/\s+/).length;
-    const expectedWords = Math.ceil(totalDuration / 60) * 150;
+    const expectedWords = Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute; // UPDATED: Use config
+    const percentComplete = Math.round((wordCount / expectedWords) * 100); // Calculate here, before using it
 
     // More detailed validation logging
     console.log('Script validation details:', {
       wordCount,
       expectedWords,
-      percentComplete: Math.round((wordCount / expectedWords) * 100),
+      percentComplete,
       hasDescription,
       hasTags,
       scriptLength: script.length
@@ -815,11 +915,20 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       );
     }
 
-    // Be more lenient with quality research (allow 40% of expected instead of 50%)
-    const minWordThreshold = hasQualityResearch ? 0.4 : 0.5;
+    // UPDATED: Use quality bypass threshold from config (60% with quality research, 80% without)
+    const minWordThreshold = hasQualityResearch
+      ? SCRIPT_CONFIG.qualityBypassThreshold  // 60% with quality research
+      : 0.80; // 80% without quality research
+
+    // Log quality bypass if active
+    if (hasQualityResearch && percentComplete < 80) {
+      console.log(`✅ Quality bypass active: Accepting ${percentComplete}% (${wordCount}/${expectedWords} words) due to high-quality research (${verifiedSources.length} verified, ${starredSources.length} starred sources)`);
+    }
 
     if (wordCount < expectedWords * minWordThreshold) {
-      console.error(`Script validation failed: Too short (${wordCount}/${expectedWords} words)`);
+      console.error(`Script validation failed: Too short (${wordCount}/${expectedWords} words, ${percentComplete}% complete)`);
+      console.error(`Required threshold: ${Math.round(minWordThreshold * 100)}% (${Math.floor(expectedWords * minWordThreshold)} words)`);
+      console.error(`Has quality research: ${hasQualityResearch} (verified: ${verifiedSources.length}, starred: ${starredSources.length})`);
       return NextResponse.json(
         {
           error: 'Script generation incomplete',

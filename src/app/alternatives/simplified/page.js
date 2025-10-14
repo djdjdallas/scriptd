@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Check, X, ArrowRight, Star, TrendingUp, Shield, Zap, 
-  Brain, Target, MessageSquare, Eye, Users 
+import {
+  Check, X, ArrowRight, Star, TrendingUp, Shield, Zap,
+  Brain, Target, MessageSquare, Eye, Users, FileText
 } from 'lucide-react';
 import {
   MarketingHero,
@@ -25,14 +25,19 @@ export default function SimplifiedAlternativePage() {
   const migrationOffer = migrationOffers.simplified || migrationOffers.default;
 
   const comparisonFeatures = [
-    { 
-      feature: 'Script Generation', 
-      competitor: '✗ Design tools only', 
+    {
+      feature: 'Transcript Extraction',
+      competitor: '✗ Not available',
+      genscript: 'AI-powered competitive research'
+    },
+    {
+      feature: 'Script Generation',
+      competitor: '✗ Design tools only',
       genscript: 'Full AI generation'
     },
-    { 
-      feature: 'YouTube Optimization', 
-      competitor: '✗ Generic social media', 
+    {
+      feature: 'YouTube Optimization',
+      competitor: '✗ Generic social media',
       genscript: '70%+ retention focus'
     },
     { 

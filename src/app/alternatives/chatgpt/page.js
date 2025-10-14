@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Check, X, ArrowRight, Star, TrendingUp, Clock, Users, 
-  Shield, Zap, ChevronRight, Brain, Timer, MessageSquare
+import {
+  Check, X, ArrowRight, Star, TrendingUp, Clock, Users,
+  Shield, Zap, ChevronRight, Brain, Timer, MessageSquare, FileText
 } from 'lucide-react';
 import {
   MarketingHero,
@@ -28,14 +28,19 @@ export default function ChatGPTAlternativePage() {
   const migration = migrationOffers.chatgpt;
 
   const comparisonFeatures = [
-    { 
-      feature: 'YouTube Specialization', 
-      competitor: '✗ General purpose AI', 
+    {
+      feature: 'Transcript Extraction',
+      competitor: '✗ Not available',
+      genscript: 'AI-powered competitive research'
+    },
+    {
+      feature: 'YouTube Specialization',
+      competitor: '✗ General purpose AI',
       genscript: 'Built exclusively for YouTube'
     },
-    { 
-      feature: 'Retention Optimization', 
-      competitor: '✗ No retention focus', 
+    {
+      feature: 'Retention Optimization',
+      competitor: '✗ No retention focus',
       genscript: '68%+ AVD targeting'
     },
     { 
