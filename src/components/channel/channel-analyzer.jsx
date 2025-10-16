@@ -71,14 +71,22 @@ export function ChannelAnalyzer({
             channelData.audience_analysis?.persona ||
             channelData.audience_description ||
             "",
-          insights: channelData.insights || {},
-          // CRITICAL: Use audience_persona from database (which contains the deep analysis)
+          // Extract insights from analytics_data.audience.insights or directly from insights field
+          insights: channelData.analytics_data?.audience?.insights || channelData.insights || {},
+          // CRITICAL: Extract deep audience analysis from nested structure
           audienceAnalysis:
+            channelData.analytics_data?.audience?.insights?.audience_analysis ||
             channelData.audience_persona ||
             channelData.audience_analysis ||
             channelData.analytics_data?.audience ||
             {},
-          contentIdeas: channelData.content_ideas || [],
+          // Extract content ideas - prioritize contentStrategy.ideas over generic content_ideas
+          contentIdeas:
+            channelData.analytics_data?.contentStrategy?.ideas ||
+            channelData.analytics_data?.content_ideas ||
+            channelData.contentStrategy?.ideas ||
+            channelData.content_ideas ||
+            [],
           voiceProfile:
             channelData.voice_profile ||
             channelData.combined_voice_profile ||
@@ -94,9 +102,17 @@ export function ChannelAnalyzer({
             !!formattedData.audienceAnalysis?.psychographic_analysis,
           contentIdeasCount: formattedData.contentIdeas?.length || 0,
           contentIdeasIsArray: Array.isArray(formattedData.contentIdeas),
+          contentIdeasSource: channelData.analytics_data?.contentStrategy?.ideas ? 'analytics_data.contentStrategy.ideas' :
+                             channelData.analytics_data?.content_ideas ? 'analytics_data.content_ideas' :
+                             channelData.contentStrategy?.ideas ? 'contentStrategy.ideas' :
+                             channelData.content_ideas ? 'content_ideas' : 'none',
           insightsKeys: Object.keys(formattedData.insights),
           hasStrengths: !!formattedData.insights?.strengths?.length,
           hasOpportunities: !!formattedData.insights?.opportunities?.length,
+          insightsMetrics: formattedData.insights?.metrics,
+          strengthsCount: formattedData.insights?.strengths?.length || 0,
+          opportunitiesCount: formattedData.insights?.opportunities?.length || 0,
+          recommendationsCount: formattedData.insights?.recommendations?.length || 0,
         });
 
         setAnalysisData(formattedData);
@@ -426,54 +442,71 @@ export function ChannelAnalyzer({
       <div className="animate-reveal">
         {activeTab === "insights" && (
           <div className="space-y-6">
-            {/* Channel Health Metrics */}
-            <div className="glass-card p-6">
-              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <Activity className="h-5 w-5 text-purple-400" />
-                Channel Health Metrics
-              </h3>
-
-              <div className="space-y-6">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-white font-medium">
-                      Performance Score
-                    </span>
-                    <span className="text-2xl font-bold text-purple-400">
-                      {insights?.metrics?.performanceScore || 0}/100
-                    </span>
-                  </div>
-                  <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden">
-                    <div
-                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-purple-400 rounded-full transition-all duration-700"
-                      style={{
-                        width: `${insights?.metrics?.performanceScore || 0}%`,
-                      }}
-                    />
-                  </div>
+            {/* Show message if insights data is missing or empty */}
+            {(!insights || (!insights.metrics && !insights.strengths && !insights.opportunities && !insights.recommendations)) && (
+              <div className="glass-card p-8 border-2 border-yellow-500/30">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <AlertCircle className="h-12 w-12 text-yellow-400 mb-4" />
+                  <h3 className="text-xl font-bold text-white mb-2">Insights Not Generated Yet</h3>
+                  <p className="text-gray-300 mb-6 max-w-md">
+                    Channel insights, metrics, and recommendations haven't been generated for this {isRemix ? 'remix' : 'channel'} yet. Click "Run Fresh Analysis" above to generate comprehensive insights.
+                  </p>
                 </div>
+              </div>
+            )}
 
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-white font-medium">
-                      Growth Potential
-                    </span>
-                    <span className="text-2xl font-bold text-blue-400">
-                      {insights?.metrics?.growthPotential || 0}/100
-                    </span>
-                  </div>
-                  <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden">
-                    <div
-                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-700"
-                      style={{
-                        width: `${insights?.metrics?.growthPotential || 0}%`,
-                      }}
-                    />
-                  </div>
-                </div>
+            {/* Only show metrics if they exist */}
+            {(insights?.metrics || insights?.strengths || insights?.opportunities) && (
+              <>
+                {/* Channel Health Metrics */}
+                {insights?.metrics && (
+                  <div className="glass-card p-6">
+                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-purple-400" />
+                      Channel Health Metrics
+                    </h3>
 
-                <div>
-                  <div className="flex items-center justify-between mb-3">
+                    <div className="space-y-6">
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-white font-medium">
+                            Performance Score
+                          </span>
+                          <span className="text-2xl font-bold text-purple-400">
+                            {insights.metrics.performanceScore || 0}/100
+                          </span>
+                        </div>
+                        <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden">
+                          <div
+                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-purple-400 rounded-full transition-all duration-700"
+                            style={{
+                              width: `${insights.metrics.performanceScore || 0}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-white font-medium">
+                            Growth Potential
+                          </span>
+                          <span className="text-2xl font-bold text-blue-400">
+                            {insights.metrics.growthPotential || 0}/100
+                          </span>
+                        </div>
+                        <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden">
+                          <div
+                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-700"
+                            style={{
+                              width: `${insights.metrics.growthPotential || 0}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
                     <span className="text-white font-medium">
                       Audience Quality
                     </span>
@@ -492,6 +525,7 @@ export function ChannelAnalyzer({
                 </div>
               </div>
             </div>
+                )}
 
             {/* Strengths and Opportunities */}
             <div className="grid md:grid-cols-2 gap-6">
@@ -741,6 +775,8 @@ export function ChannelAnalyzer({
                 )}
               </div>
             </div>
+              </>
+            )}
           </div>
         )}
 
@@ -1553,17 +1589,31 @@ export function ChannelAnalyzer({
           </div>
         )}
 
-        {activeTab === "ideas" && contentIdeas && (
+        {activeTab === "ideas" && (
           <div className="space-y-6">
-            {/* Video Ideas Generated by AI */}
-            <div className="glass-card p-6">
-              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-yellow-400" />
-                AI-Generated Video Ideas
-              </h3>
+            {/* Show message if content ideas are missing */}
+            {(!contentIdeas || (Array.isArray(contentIdeas) && contentIdeas.length === 0) && !contentIdeas?.viralPotentialIdeas && !contentIdeas?.quickWins) && (
+              <div className="glass-card p-8 border-2 border-yellow-500/30">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <Lightbulb className="h-12 w-12 text-yellow-400 mb-4" />
+                  <h3 className="text-xl font-bold text-white mb-2">Video Ideas Not Generated Yet</h3>
+                  <p className="text-gray-300 mb-6 max-w-md">
+                    AI-generated video ideas haven't been created for this {isRemix ? 'remix' : 'channel'} yet. Click "Run Fresh Analysis" above to generate personalized content ideas.
+                  </p>
+                </div>
+              </div>
+            )}
 
-              {/* Handle array format (from generateRemixContentIdeas) */}
-              {Array.isArray(contentIdeas) && contentIdeas.length > 0 && (
+            {/* Video Ideas Generated by AI */}
+            {(contentIdeas && ((Array.isArray(contentIdeas) && contentIdeas.length > 0) || contentIdeas?.viralPotentialIdeas || contentIdeas?.quickWins)) && (
+              <div className="glass-card p-6">
+                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                  <Lightbulb className="h-5 w-5 text-yellow-400" />
+                  AI-Generated Video Ideas
+                </h3>
+
+                {/* Handle array format (from generateRemixContentIdeas) */}
+                {Array.isArray(contentIdeas) && contentIdeas.length > 0 && (
                 <div className="space-y-4">
                   {contentIdeas.map((idea, i) => (
                     <div
@@ -1741,7 +1791,8 @@ export function ChannelAnalyzer({
                     </div>
                   </div>
                 )}
-            </div>
+              </div>
+            )}
           </div>
         )}
       </div>

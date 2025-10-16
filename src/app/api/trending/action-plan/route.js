@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request) {
   try {
-    const { channelName, topic, channelId } = await request.json();
+    const { channelName, topic, channelId, remixAnalytics } = await request.json();
 
     if (!channelName || !topic) {
       return NextResponse.json(
@@ -29,10 +29,65 @@ export async function POST(request) {
     // Fetch actual channel data from YouTube if possible
     let channelData = null;
     let channelAnalytics = '';
-    
-    try {
-      let apiUrl;
-      if (channelId) {
+
+    // NEW: Check if this is a remix channel with analytics data
+    if (remixAnalytics) {
+      // Build analytics summary from remix channel data
+      console.log('Using remix analytics data for action plan generation');
+
+      channelAnalytics = `
+Remix Channel Analysis for "${channelName}":
+- Channel Type: Remix channel combining multiple successful channels
+- Combined Audience Reach: ${remixAnalytics.combinedReach || 'Multi-million combined reach'}
+- Content Focus: ${remixAnalytics.contentFocus || 'Educational documentary content'}
+`;
+
+      // Add content ideas if available
+      if (remixAnalytics.contentIdeas && remixAnalytics.contentIdeas.length > 0) {
+        channelAnalytics += `\nExisting Verified Content Ideas (High-Potential):\n`;
+        remixAnalytics.contentIdeas.slice(0, 5).forEach((idea, index) => {
+          channelAnalytics += `${index + 1}. "${idea.title}" - ${idea.description}\n`;
+          if (idea.growth_potential) {
+            channelAnalytics += `   Growth Potential: ${idea.growth_potential}/10\n`;
+          }
+          if (idea.tags && idea.tags.length > 0) {
+            channelAnalytics += `   Tags: ${idea.tags.join(', ')}\n`;
+          }
+        });
+      }
+
+      // Add voice style if available
+      if (remixAnalytics.voiceStyle) {
+        channelAnalytics += `\nVoice & Style Profile:\n`;
+        if (remixAnalytics.voiceStyle.tone) {
+          channelAnalytics += `- Tone: ${Array.isArray(remixAnalytics.voiceStyle.tone) ? remixAnalytics.voiceStyle.tone.join(', ') : remixAnalytics.voiceStyle.tone}\n`;
+        }
+        if (remixAnalytics.voiceStyle.style) {
+          channelAnalytics += `- Style: ${Array.isArray(remixAnalytics.voiceStyle.style) ? remixAnalytics.voiceStyle.style.join(', ') : remixAnalytics.voiceStyle.style}\n`;
+        }
+        if (remixAnalytics.voiceStyle.energy) {
+          channelAnalytics += `- Energy: ${remixAnalytics.voiceStyle.energy}\n`;
+        }
+      }
+
+      // Add audience insights if available
+      if (remixAnalytics.audienceProfile) {
+        channelAnalytics += `\nTarget Audience:\n`;
+        if (remixAnalytics.audienceProfile.interests) {
+          channelAnalytics += `- Interests: ${remixAnalytics.audienceProfile.interests.slice(0, 5).join(', ')}\n`;
+        }
+        if (remixAnalytics.audienceProfile.demographics) {
+          channelAnalytics += `- Demographics: ${remixAnalytics.audienceProfile.demographics}\n`;
+        }
+      }
+
+      channelAnalytics += `\nIMPORTANT: This is a high-quality remix channel. Generate content ideas that match the verified ideas listed above. Focus on investigative, documentary-style content with high production value and strong storytelling. The audience expects deep-dive analysis and well-researched content.`;
+    }
+    // EXISTING: Fall back to YouTube API if no remix analytics
+    else {
+      try {
+        let apiUrl;
+        if (channelId) {
         // Use channel ID directly
         apiUrl = `https://www.googleapis.com/youtube/v3/channels?` +
           `part=snippet,statistics,contentDetails&` +
@@ -111,10 +166,11 @@ Actual Channel Data for "${channelData.snippet.title}":
           }
         }
       }
-    } catch (error) {
-      console.error('Error fetching YouTube channel data:', error);
-      // Continue without channel data
-    }
+      } catch (error) {
+        console.error('Error fetching YouTube channel data:', error);
+        // Continue without channel data
+      }
+    } // End of else block (YouTube API fallback)
 
     // Generate a comprehensive action plan using AI
     const prompt = `Create a detailed 30-day action plan for a YouTube channel named "${channelName}" to capitalize on the trending topic "${topic}".

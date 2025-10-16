@@ -11,6 +11,7 @@ import {
   Users,
   Mic,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ export default function ChannelDetailPage({ params }) {
   const [channel, setChannel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [creatingActionPlan, setCreatingActionPlan] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false });
 
   // Unwrap params using React.use()
@@ -120,6 +122,128 @@ export default function ChannelDetailPage({ params }) {
     setDeleteModal({ isOpen: false });
   };
 
+  const handleCreateActionPlan = async () => {
+    setCreatingActionPlan(true);
+
+    try {
+      // Extract topic from channel data
+      // Priority: 1) First content idea topic 2) First audience interest 3) Fallback
+      let topic = "Channel Growth Strategy";
+
+      // Try to get topic from content ideas
+      const contentIdeas =
+        channel.analytics_data?.contentStrategy?.ideas ||
+        channel.analytics_data?.content_ideas ||
+        channel.contentStrategy?.ideas ||
+        [];
+
+      if (contentIdeas && contentIdeas.length > 0) {
+        // Use tags or title from first content idea
+        if (contentIdeas[0].tags && contentIdeas[0].tags.length > 0) {
+          topic = contentIdeas[0].tags.slice(0, 2).join(" & ");
+        } else if (contentIdeas[0].title) {
+          topic = contentIdeas[0].title;
+        }
+      } else {
+        // Try to get from audience interests
+        const audienceData =
+          channel.remix_analysis?.analysis_data?.audience?.audience_analysis ||
+          channel.analytics_data?.audience?.insights?.audience_analysis ||
+          channel.analytics_data?.audience?.audience_analysis;
+
+        if (audienceData?.audience_overlap?.common_interests &&
+            audienceData.audience_overlap.common_interests.length > 0) {
+          topic = audienceData.audience_overlap.common_interests[0];
+        }
+      }
+
+      // Build remix analytics object if this is a remix channel
+      let remixAnalytics = null;
+
+      if (channel.is_remix) {
+        // Extract voice profile data
+        const voiceData =
+          channel.combined_voice_profile ||
+          channel.voice_profile ||
+          channel.remix_data?.combined_voice_profile ||
+          channel.analytics_data?.voiceProfile;
+
+        const basicVoice = voiceData?.voiceProfile?.basicProfile || voiceData?.basicProfile || voiceData?.basic || voiceData;
+
+        // Extract audience data
+        const audienceData =
+          channel.remix_analysis?.analysis_data?.audience?.audience_analysis ||
+          channel.analytics_data?.audience?.insights?.audience_analysis ||
+          channel.analytics_data?.audience?.audience_analysis;
+
+        remixAnalytics = {
+          combinedReach: audienceData?.total_combined_reach?.estimated_unique_audience
+            ? `${(audienceData.total_combined_reach.estimated_unique_audience / 1000000).toFixed(1)}M+ combined reach`
+            : "Multi-million combined reach",
+
+          contentFocus: contentIdeas.length > 0
+            ? `Investigative documentary - ${contentIdeas.map(i => i.tags?.[0]).filter(Boolean).slice(0, 3).join(", ")}`
+            : "Educational documentary content",
+
+          contentIdeas: contentIdeas.slice(0, 10), // Pass all 10 verified ideas
+
+          voiceStyle: basicVoice ? {
+            tone: basicVoice.tone,
+            style: basicVoice.style,
+            energy: basicVoice.energy,
+          } : null,
+
+          audienceProfile: audienceData ? {
+            interests: audienceData.audience_overlap?.common_interests || [],
+            demographics: audienceData.demographic_profile?.age_distribution?.median_age
+              ? `Median age ${audienceData.demographic_profile.age_distribution.median_age}, ${audienceData.demographic_profile.gender_distribution?.male || 0}% male`
+              : null,
+          } : null,
+        };
+      }
+
+      toast.loading("Generating your personalized action plan...");
+
+      // Call the action plan API
+      const response = await fetch("/api/trending/action-plan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          channelName: channel.name || channel.title,
+          topic: topic,
+          remixAnalytics: remixAnalytics, // Pass remix analytics if available
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create action plan");
+      }
+
+      const actionPlan = await response.json();
+
+      toast.dismiss();
+      toast.success("Action plan created successfully!");
+
+      // Navigate to the action plan view
+      // The plan was stored in the database by the API, so we need to get its ID
+      // For now, navigate with channel and topic params - the follow page will load the latest plan
+      router.push(
+        `/trending/follow?channel=${encodeURIComponent(
+          channel.name || channel.title
+        )}&topic=${encodeURIComponent(topic)}`
+      );
+    } catch (error) {
+      console.error("Error creating action plan:", error);
+      toast.dismiss();
+      toast.error(error.message || "Failed to create action plan");
+    } finally {
+      setCreatingActionPlan(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -191,6 +315,20 @@ export default function ChannelDetailPage({ params }) {
                 />
                 Refresh
               </Button>
+              {channel.is_remix && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleCreateActionPlan}
+                  disabled={creatingActionPlan}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                >
+                  <Zap
+                    className={`mr-2 h-4 w-4 ${creatingActionPlan ? "animate-pulse" : ""}`}
+                  />
+                  {creatingActionPlan ? "Creating..." : "Create Action Plan"}
+                </Button>
+              )}
               <Button
                 variant="destructive"
                 size="sm"
@@ -266,10 +404,13 @@ export default function ChannelDetailPage({ params }) {
             </CardHeader>
             <CardContent>
               {(() => {
+                // Try multiple paths for audience data
                 const audienceData =
-                  channel.remix_analysis?.analysis_data?.audience
-                    ?.audience_analysis ||
+                  channel.remix_analysis?.analysis_data?.audience?.audience_analysis ||
+                  channel.remix_analysis?.analysis_data?.audience?.insights?.audience_analysis ||
                   channel.audience_analysis?.audience_analysis ||
+                  channel.analytics_data?.audience?.insights?.audience_analysis ||
+                  channel.analytics_data?.audience?.audience_analysis ||
                   channel.analytics_data?.audience;
                 const hasAudienceData =
                   channel.audience_description || audienceData;
@@ -423,8 +564,9 @@ export default function ChannelDetailPage({ params }) {
                   voiceData = channel.analytics_data.voiceProfile;
                 }
 
-                // Voice data can be nested under 'basic' or at the root level
-                const basicVoice = voiceData?.basic || voiceData;
+                // Voice data can be nested under 'voiceProfile' (from API response) or 'basic' or at the root level
+                const nestedVoiceProfile = voiceData?.voiceProfile || voiceData;
+                const basicVoice = nestedVoiceProfile?.basicProfile || nestedVoiceProfile?.basic || nestedVoiceProfile;
 
                 // Check if we have actual voice properties (not just an empty object)
                 const hasVoiceData =
@@ -438,6 +580,7 @@ export default function ChannelDetailPage({ params }) {
                     basicVoice.personality ||
                     basicVoice.catchphrases ||
                     basicVoice.signature_phrases ||
+                    basicVoice.signaturePhrases ||
                     basicVoice.summary);
 
                 if (!hasVoiceData) {
@@ -456,8 +599,8 @@ export default function ChannelDetailPage({ params }) {
                   );
                 }
 
-                // Extract data from advanced section if basic is empty
-                const advancedVoice = voiceData?.advanced || {};
+                // Extract data from enhanced/advanced section
+                const advancedVoice = nestedVoiceProfile?.enhancedProfile || nestedVoiceProfile?.advanced || {};
 
                 // Build RICH tone array from multiple sources with contextual info
                 const toneData = [];

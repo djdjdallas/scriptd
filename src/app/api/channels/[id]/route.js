@@ -52,6 +52,40 @@ export async function GET(request, { params }) {
     // Remove the nested channel_analyses array since we merged it
     delete channel.channel_analyses;
 
+    // Parse voice_profile if it's a JSON string (from channels table)
+    if (channel.voice_profile) {
+      try {
+        channel.voice_profile = typeof channel.voice_profile === 'string'
+          ? JSON.parse(channel.voice_profile)
+          : channel.voice_profile;
+        console.log('API: Parsed channel.voice_profile:', {
+          hasVoiceProfile: !!channel.voice_profile?.voiceProfile,
+          hasBasicProfile: !!channel.voice_profile?.voiceProfile?.basicProfile,
+          keys: Object.keys(channel.voice_profile || {})
+        });
+      } catch (e) {
+        console.error('Error parsing voice_profile:', e);
+        channel.voice_profile = {};
+      }
+    }
+
+    // Parse analytics_data if it's a JSON string (from channels table)
+    if (channel.analytics_data) {
+      try {
+        channel.analytics_data = typeof channel.analytics_data === 'string'
+          ? JSON.parse(channel.analytics_data)
+          : channel.analytics_data;
+        console.log('API: Parsed channel.analytics_data:', {
+          hasAudience: !!channel.analytics_data?.audience,
+          hasInsights: !!channel.analytics_data?.audience?.insights,
+          keys: Object.keys(channel.analytics_data || {})
+        });
+      } catch (e) {
+        console.error('Error parsing analytics_data:', e);
+        channel.analytics_data = {};
+      }
+    }
+
     // Always check for remix data (a channel might have remix data even if is_remix is false)
     try {
       // Get remix channel data
