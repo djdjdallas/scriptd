@@ -2,50 +2,53 @@
 
 import { useState, useEffect, useRef } from "react";
 
-export function AnimatedCounter({ 
-  end, 
-  duration = 2000, 
-  prefix = "", 
+export function AnimatedCounter({
+  end,
+  duration = 2000,
+  prefix = "",
   suffix = "",
   decimals = 0,
   startOnView = true,
   className = ""
 }) {
   const [count, setCount] = useState(0);
-  const [isInView, setIsInView] = useState(!startOnView);
+  const [hasStarted, setHasStarted] = useState(false);
   const counterRef = useRef(null);
   const animationRef = useRef(null);
 
   useEffect(() => {
     if (!startOnView) {
-      setIsInView(true);
+      setHasStarted(true);
       return;
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && !isInView) {
-            setIsInView(true);
+          if (entry.isIntersecting) {
+            setHasStarted(true);
+            observer.disconnect();
           }
         });
       },
-      { threshold: 0.3 }
+      {
+        threshold: 0.1,
+        rootMargin: '50px'
+      }
     );
 
-    if (counterRef.current) {
-      observer.observe(counterRef.current);
+    const currentRef = counterRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
     }
 
     return () => {
-      if (counterRef.current) {
-        observer.unobserve(counterRef.current);
-      }
+      observer.disconnect();
     };
-  }, [startOnView, isInView]);
+  }, [startOnView]);
 
   useEffect(() => {
-    if (!isInView) return;
+    if (!hasStarted) return;
 
     const startTime = Date.now();
     const startValue = 0;
@@ -54,11 +57,11 @@ export function AnimatedCounter({
     const animate = () => {
       const now = Date.now();
       const progress = Math.min((now - startTime) / duration, 1);
-      
+
       // Easing function for smooth animation
       const easeOutQuart = 1 - Math.pow(1 - progress, 4);
       const currentValue = startValue + (endValue - startValue) * easeOutQuart;
-      
+
       setCount(currentValue);
 
       if (progress < 1) {
@@ -66,14 +69,14 @@ export function AnimatedCounter({
       }
     };
 
-    animate();
+    animationRef.current = requestAnimationFrame(animate);
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [end, duration, isInView]);
+  }, [end, duration, hasStarted]);
 
   const formattedCount = count.toFixed(decimals);
   const displayValue = decimals === 0 ? Math.floor(count).toLocaleString() : formattedCount.toLocaleString();

@@ -34,7 +34,7 @@ const tools = [
     badge: 'New',
     badgeVariant: 'secondary',
     features: ['Hook analysis', 'Topic extraction', 'Keyword detection', 'Timestamp identification'],
-    href: '/signup',
+    href: '/tools/transcript-extraction',
     category: 'research',
     popularity: 5
   },
@@ -103,6 +103,54 @@ const tools = [
     href: '/tools/length-calculator',
     category: 'planning',
     popularity: 3
+  },
+  {
+    id: 'faceless-youtube',
+    title: 'Faceless YouTube Channel Generator',
+    description: 'Create complete faceless YouTube videos without showing your face',
+    icon: Users,
+    badge: 'Popular',
+    badgeVariant: 'secondary',
+    features: ['Automated scripts', 'AI voiceover', 'Visual generation', 'Monetization ready'],
+    href: '/tools/faceless-youtube-generator',
+    category: 'content',
+    popularity: 5
+  },
+  {
+    id: 'retention-optimizer',
+    title: 'Retention Optimizer',
+    description: 'Transform scripts for 68%+ retention with psychological triggers',
+    icon: TrendingUp,
+    badge: 'Advanced',
+    badgeVariant: 'secondary',
+    features: ['Pattern interrupts', 'Open loops', 'Micro-commitments', 'Visual anchoring'],
+    href: '/tools/retention-optimizer',
+    category: 'content',
+    popularity: 4
+  },
+  {
+    id: 'pvss-framework',
+    title: 'PVSS Viral Framework',
+    description: 'Pattern-Value-Story-Surprise structure for viral videos',
+    icon: Sparkles,
+    badge: 'Framework',
+    badgeVariant: 'secondary',
+    features: ['Proven structure', 'Psychology-based', '3x higher virality', 'Template library'],
+    href: '/tools/pvss-framework',
+    category: 'planning',
+    popularity: 4
+  },
+  {
+    id: 'voice-matching',
+    title: 'Voice Matching AI',
+    description: 'AI that writes exactly like you do with deep linguistic profiling',
+    icon: Users,
+    badge: 'Advanced',
+    badgeVariant: 'secondary',
+    features: ['100+ voice metrics', 'Real transcript analysis', 'Pattern enforcement', '95%+ accuracy'],
+    href: '/tools/voice-matching',
+    category: 'content',
+    popularity: 5
   }
 ];
 

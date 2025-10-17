@@ -12,7 +12,7 @@ export function StatHero() {
           <div className="flex items-center justify-center gap-2 mb-2">
             <TrendingUp className="w-5 h-5 text-purple-400" />
             <div className="text-2xl md:text-3xl font-bold text-white">
-              $<AnimatedCounter end={1.5} decimals={1} startOnView={true} />B → $<AnimatedCounter end={7.5} decimals={1} startOnView={true} />B
+              $<AnimatedCounter end={1.5} decimals={1} startOnView={false} />B → $<AnimatedCounter end={7.5} decimals={1} startOnView={false} />B
             </div>
           </div>
           <p className="text-sm text-gray-400">AI Video Market by 2033</p>
@@ -26,7 +26,7 @@ export function StatHero() {
           <div className="flex items-center justify-center gap-2 mb-2">
             <Users className="w-5 h-5 text-pink-400" />
             <div className="text-2xl md:text-3xl font-bold gradient-text">
-              <AnimatedCounter end={71.7} decimals={1} suffix="%" startOnView={true} />
+              <AnimatedCounter end={71.7} decimals={1} suffix="%" startOnView={false} />
             </div>
           </div>
           <p className="text-sm text-gray-400">Marketers Use AI for Outlining</p>
@@ -40,7 +40,7 @@ export function StatHero() {
           <div className="flex items-center justify-center gap-2 mb-2">
             <Users className="w-5 h-5 text-blue-400" />
             <div className="text-2xl md:text-3xl font-bold text-white">
-              <AnimatedCounter end={69} suffix="M+" startOnView={true} />
+              <AnimatedCounter end={69} suffix="M+" startOnView={false} />
             </div>
           </div>
           <p className="text-sm text-gray-400">YouTube Creators Globally</p>
@@ -54,7 +54,7 @@ export function StatHero() {
       <div className="mt-8 flex justify-center">
         <div className="inline-flex items-center gap-2 glass-card px-4 py-2 text-xs text-gray-300">
           <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-          Join the <AnimatedCounter end={180} suffix="%" startOnView={true} /> faster growing creators
+          Join the <AnimatedCounter end={180} suffix="%" startOnView={false} /> faster growing creators
         </div>
       </div>
     </div>

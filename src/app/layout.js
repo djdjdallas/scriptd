@@ -24,19 +24,19 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
+      <head />
+      <body className={`${inter.className} antialiased`}>
         <Script
           id="structured-data"
           type="application/ld+json"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(allStructuredData)
           }}
         />
-      </head>
-      <body className={`${inter.className} antialiased`}>
         {children}
-        <Toaster 
-          position="bottom-right" 
+        <Toaster
+          position="bottom-right"
           expand={false}
           richColors
           duration={4000}

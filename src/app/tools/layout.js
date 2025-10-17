@@ -4,6 +4,22 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
+export const metadata = {
+  title: 'Free YouTube Tools | AI-Powered Creator Tools for YouTube Success',
+  description: 'Access 11 free YouTube creator tools: title generator, hook generator, transcript extractor, idea generator, hashtag generator, thumbnail ideas, and more. AI-powered tools to grow your YouTube channel faster.',
+  keywords: 'youtube tools, youtube title generator, hook generator, transcript extractor, video idea generator, hashtag generator, youtube creator tools, ai youtube tools, free youtube tools, faceless youtube, retention optimizer, pvss framework, voice matching ai',
+  openGraph: {
+    title: 'Free YouTube Tools | 11 AI-Powered Creator Tools',
+    description: 'Grow your YouTube channel with free AI tools: title generator, hook generator, transcript extractor, and more. Used by 50,000+ creators worldwide.',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Free YouTube Tools | 11 AI-Powered Creator Tools',
+    description: 'Access 11 free YouTube creator tools to grow your channel faster. Title generator, hook generator, and more.',
+  }
+};
+
 export default function ToolsLayout({ children }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">

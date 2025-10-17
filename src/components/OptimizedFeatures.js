@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import dynamic from "next/dynamic";
+import { useState } from "react";
 import { TiltCard } from "@/components/ui/tilt-card";
+import InteractiveFeatureDetail from "./InteractiveFeatureDetail";
 import {
   Mic,
   TrendingUp,
@@ -12,14 +12,6 @@ import {
   Users,
   FileText
 } from "lucide-react";
-
-const InteractiveFeatureDetail = dynamic(
-  () => import("./InteractiveFeatureDetail"),
-  { 
-    ssr: false,
-    loading: () => <div className="h-16 glass rounded-lg animate-pulse" />
-  }
-);
 
 export function OptimizedFeatures() {
   const [activeFeature, setActiveFeature] = useState(null);
@@ -146,9 +138,7 @@ export function OptimizedFeatures() {
                   )}
 
                   {activeFeature === feature.id && (
-                    <Suspense fallback={<div className="mt-4 h-12 glass rounded-lg animate-pulse" />}>
-                      <InteractiveFeatureDetail feature={feature} />
-                    </Suspense>
+                    <InteractiveFeatureDetail feature={feature} />
                   )}
                 </div>
               </div>
