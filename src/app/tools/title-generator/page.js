@@ -323,7 +323,7 @@ export default function TitleGeneratorPage() {
             Sign up for free and get access to our full AI script generator
           </p>
           <Button asChild>
-            <Link href="/sign-up">
+            <Link href="/signup">
               Get Started Free
             </Link>
           </Button>
