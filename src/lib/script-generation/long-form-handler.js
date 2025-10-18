@@ -373,54 +373,69 @@ export class LongFormScriptHandler {
         // Log raw structure for debugging
         console.log('\n🔍 DEBUG - Voice Profile Structure:');
         logContent += '\n🔍 DEBUG - Voice Profile Structure:\n';
-        console.log('Has parameters:', !!voiceProfile.parameters);
-        console.log('Has training_data:', !!voiceProfile.training_data);
-        console.log('Has basic:', !!voiceProfile.basic);
-        console.log('Has advanced:', !!voiceProfile.advanced);
-        logContent += `Has parameters: ${!!voiceProfile.parameters}\n`;
-        logContent += `Has training_data: ${!!voiceProfile.training_data}\n`;
-        logContent += `Has basic: ${!!voiceProfile.basic}\n`;
-        logContent += `Has advanced: ${!!voiceProfile.advanced}\n`;
+        console.log('Has basicProfile:', !!voiceProfile.basicProfile);
+        console.log('Has enhancedProfile:', !!voiceProfile.enhancedProfile);
+        console.log('Has voiceProfileData:', !!voiceProfile.voiceProfileData);
+        console.log('Has metadata:', !!voiceProfile.metadata);
+        console.log('basedOnRealData:', voiceProfile.basedOnRealData);
+        console.log('All keys:', Object.keys(voiceProfile));
+        logContent += `Has basicProfile: ${!!voiceProfile.basicProfile}\n`;
+        logContent += `Has enhancedProfile: ${!!voiceProfile.enhancedProfile}\n`;
+        logContent += `Has voiceProfileData: ${!!voiceProfile.voiceProfileData}\n`;
+        logContent += `Has metadata: ${!!voiceProfile.metadata}\n`;
+        logContent += `basedOnRealData: ${voiceProfile.basedOnRealData}\n`;
 
-        // Support both structures: voice_profiles table (parameters) and channels table (basic)
-        const params = voiceProfile.parameters || voiceProfile.basic;
-        const trainingData = voiceProfile.training_data;
-        const advanced = voiceProfile.advanced;
+        // Support new structure: basicProfile and enhancedProfile
+        // Fallback to old structure for backwards compatibility
+        const params = voiceProfile.basicProfile || voiceProfile.parameters || voiceProfile.basic;
+        const trainingData = voiceProfile.voiceProfileData || voiceProfile.training_data;
+        const advanced = voiceProfile.enhancedProfile || voiceProfile.advanced;
 
         if (params) {
           console.log('\n📝 VOICE CHARACTERISTICS:');
           logContent += '\n📝 VOICE CHARACTERISTICS:\n';
 
-          console.log('  Formality:', params.formality || 'not set');
-          console.log('  Enthusiasm:', params.enthusiasm || 'not set');
+          // Log actual fields from basicProfile
+          console.log('  Tone:', params.tone?.join(', ') || 'not set');
+          console.log('  Style:', params.style?.join(', ') || 'not set');
+          console.log('  Pace:', params.pace || 'not set');
+          console.log('  Energy:', params.energy || 'not set');
           console.log('  Humor:', params.humor || 'not set');
-          console.log('  Technical Level:', params.technicalLevel || 'not set');
-          console.log('  Pacing Style:', params.pacingStyle || 'not set');
-          console.log('  Avg Words/Sentence:', params.avgWordsPerSentence || 'not set');
+          console.log('  Vocabulary:', params.vocabulary || 'not set');
+          console.log('  Sentence Structure:', params.sentenceStructure || 'not set');
 
-          logContent += `  Formality: ${params.formality || 'not set'}\n`;
-          logContent += `  Enthusiasm: ${params.enthusiasm || 'not set'}\n`;
+          logContent += `  Tone: ${params.tone?.join(', ') || 'not set'}\n`;
+          logContent += `  Style: ${params.style?.join(', ') || 'not set'}\n`;
+          logContent += `  Pace: ${params.pace || 'not set'}\n`;
+          logContent += `  Energy: ${params.energy || 'not set'}\n`;
           logContent += `  Humor: ${params.humor || 'not set'}\n`;
-          logContent += `  Technical Level: ${params.technicalLevel || 'not set'}\n`;
-          logContent += `  Pacing Style: ${params.pacingStyle || 'not set'}\n`;
-          logContent += `  Avg Words/Sentence: ${params.avgWordsPerSentence || 'not set'}\n`;
+          logContent += `  Vocabulary: ${params.vocabulary || 'not set'}\n`;
+          logContent += `  Sentence Structure: ${params.sentenceStructure || 'not set'}\n`;
 
-          console.log('\n👋 GREETINGS:');
-          logContent += '\n👋 GREETINGS:\n';
-          if (params.greetings && params.greetings.length > 0) {
-            params.greetings.forEach((item, i) => {
-              console.log(`  ${i + 1}. "${item}"`);
-              logContent += `  ${i + 1}. "${item}"\n`;
+          // Log DOs and DONTs
+          if (params.dos && params.dos.length > 0) {
+            console.log('\n✅ DO:');
+            logContent += '\n✅ DO:\n';
+            params.dos.slice(0, 5).forEach((item, i) => {
+              console.log(`  ${i + 1}. ${item}`);
+              logContent += `  ${i + 1}. ${item}\n`;
             });
-          } else {
-            console.log('  (None specified)');
-            logContent += '  (None specified)\n';
           }
 
-          console.log('\n💬 CATCHPHRASES:');
-          logContent += '\n💬 CATCHPHRASES:\n';
-          if (params.catchphrases && params.catchphrases.length > 0) {
-            params.catchphrases.forEach((phrase, i) => {
+          if (params.donts && params.donts.length > 0) {
+            console.log('\n❌ DON\'T:');
+            logContent += '\n❌ DON\'T:\n';
+            params.donts.slice(0, 5).forEach((item, i) => {
+              console.log(`  ${i + 1}. ${item}`);
+              logContent += `  ${i + 1}. ${item}\n`;
+            });
+          }
+
+          // Log signature phrases
+          console.log('\n💬 SIGNATURE PHRASES:');
+          logContent += '\n💬 SIGNATURE PHRASES:\n';
+          if (params.signaturePhrases && params.signaturePhrases.length > 0) {
+            params.signaturePhrases.slice(0, 8).forEach((phrase, i) => {
               console.log(`  ${i + 1}. "${phrase}"`);
               logContent += `  ${i + 1}. "${phrase}"\n`;
             });
@@ -429,47 +444,21 @@ export class LongFormScriptHandler {
             logContent += '  (None specified)\n';
           }
 
-          console.log('\n👋 SIGNOFFS:');
-          logContent += '\n👋 SIGNOFFS:\n';
-          if (params.signoffs && params.signoffs.length > 0) {
-            params.signoffs.forEach((item, i) => {
-              console.log(`  ${i + 1}. "${item}"`);
-              logContent += `  ${i + 1}. "${item}"\n`;
-            });
-          } else {
-            console.log('  (None specified)');
-            logContent += '  (None specified)\n';
-          }
+          // Log hooks and transitions
+          console.log('\n🎣 HOOK STYLE:');
+          logContent += '\n🎣 HOOK STYLE:\n';
+          console.log(`  ${params.hooks || 'not specified'}`);
+          logContent += `  ${params.hooks || 'not specified'}\n`;
 
-          console.log('\n🔄 TRANSITION PHRASES:');
-          logContent += '\n🔄 TRANSITION PHRASES:\n';
-          if (params.transitionPhrases && params.transitionPhrases.length > 0) {
-            params.transitionPhrases.forEach((item, i) => {
-              console.log(`  ${i + 1}. "${item}"`);
-              logContent += `  ${i + 1}. "${item}"\n`;
-            });
-          } else {
-            console.log('  (None specified)');
-            logContent += '  (None specified)\n';
-          }
+          console.log('\n🔄 TRANSITIONS:');
+          logContent += '\n🔄 TRANSITIONS:\n';
+          console.log(`  ${params.transitions || 'not specified'}`);
+          logContent += `  ${params.transitions || 'not specified'}\n`;
 
-          console.log('\n🎨 INTRO STYLE:');
-          logContent += '\n🎨 INTRO STYLE:\n';
-          console.log(`  ${params.introStyle || 'not specified'}`);
-          logContent += `  ${params.introStyle || 'not specified'}\n`;
-
-          console.log('\n📊 TOP VOCABULARY:');
-          logContent += '\n📊 TOP VOCABULARY:\n';
-          if (params.topWords && params.topWords.length > 0) {
-            params.topWords.slice(0, 10).forEach((word, i) => {
-              const line = `  ${i + 1}. "${word.word}": ${word.count} uses`;
-              console.log(line);
-              logContent += line + '\n';
-            });
-          } else {
-            console.log('  (None specified)');
-            logContent += '  (None specified)\n';
-          }
+          console.log('\n👥 ENGAGEMENT:');
+          logContent += '\n👥 ENGAGEMENT:\n';
+          console.log(`  ${params.engagement || 'not specified'}`);
+          logContent += `  ${params.engagement || 'not specified'}\n`;
 
           // Advanced features
           if (params.prosody && Object.keys(params.prosody).length > 0) {
@@ -587,19 +576,126 @@ export class LongFormScriptHandler {
       }
     }
 
+    // Calculate target words (using 130 WPM standard)
+    const targetWords = duration * 130;
+    const bufferWords = Math.ceil(targetWords * 1.10); // 10% buffer for quality
+
     let prompt = `Generate PART ${chunkNumber} of ${totalChunks} for a YouTube script.
 
-CRITICAL: You MUST write AT LEAST ${duration * 150} words for this section. Be VERBOSE and DETAILED.
+CRITICAL: You MUST write AT LEAST ${bufferWords} words for this section. Be VERBOSE and DETAILED.
 
 VIDEO CONTEXT:
 - Title: ${context.title}
 - Topic: ${context.topic}
 - This section: Minutes ${startTime}-${endTime} (${duration} minutes)
 - Script type: FULL DETAILED SCRIPT with complete narration
-- Required length: MINIMUM ${duration * 150} words (write MORE not less)
-${context.voiceProfile ? `- Voice Style: ${context.voiceProfile.name}` : ''}
+- Target length: ${targetWords} words (aim for ${bufferWords}+ to ensure quality)
 
 `;
+
+    // Add voice profile details if available
+    if (context.voiceProfile) {
+      const vp = context.voiceProfile;
+      const basicProfile = vp.basicProfile || vp.parameters || vp.basic;
+      const enhancedProfile = vp.enhancedProfile || vp.advanced;
+
+      if (basicProfile || enhancedProfile) {
+        prompt += `
+VOICE PROFILE & STYLE GUIDELINES:
+Profile: ${vp.profile_name || vp.name || 'Custom Voice'}
+${vp.basedOnRealData ? '✓ Based on real channel analysis' : ''}
+
+`;
+
+        if (basicProfile) {
+          prompt += `
+🎤 MANDATORY VOICE PROFILE - YOU MUST FOLLOW THESE EXACTLY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+`;
+          if (basicProfile.summary) {
+            prompt += `📋 VOICE SUMMARY:\n${basicProfile.summary}\n\n`;
+          }
+
+          prompt += `🎯 REQUIRED CHARACTERISTICS:\n`;
+          if (basicProfile.tone && basicProfile.tone.length > 0) {
+            prompt += `• Tone: ${basicProfile.tone.join(', ')} - MAINTAIN THIS THROUGHOUT\n`;
+          }
+          if (basicProfile.style && basicProfile.style.length > 0) {
+            prompt += `• Style: ${basicProfile.style.join(', ')} - USE THIS STYLE CONSISTENTLY\n`;
+          }
+          if (basicProfile.pace) {
+            prompt += `• Pacing: ${basicProfile.pace} - MATCH THIS RHYTHM\n`;
+          }
+          if (basicProfile.energy) {
+            prompt += `• Energy Level: ${basicProfile.energy} - SUSTAIN THIS ENERGY\n`;
+          }
+          if (basicProfile.humor) {
+            prompt += `• Humor: ${basicProfile.humor} - FOLLOW THIS APPROACH\n`;
+          }
+          if (basicProfile.vocabulary) {
+            prompt += `• Vocabulary: ${basicProfile.vocabulary}\n`;
+          }
+          if (basicProfile.sentenceStructure) {
+            prompt += `• Sentence Structure: ${basicProfile.sentenceStructure}\n`;
+            prompt += `  → Target average: 13-14 words per sentence\n`;
+            prompt += `  → Vary between 8-20 words for rhythm\n`;
+          }
+
+          if (basicProfile.dos && basicProfile.dos.length > 0) {
+            prompt += `\n✅ MANDATORY RULES - YOU MUST:\n`;
+            basicProfile.dos.forEach(d => prompt += `  • ${d}\n`);
+          }
+
+          if (basicProfile.donts && basicProfile.donts.length > 0) {
+            prompt += `\n❌ FORBIDDEN - YOU MUST NOT:\n`;
+            basicProfile.donts.forEach(d => prompt += `  • ${d}\n`);
+          }
+
+          if (basicProfile.signaturePhrases && basicProfile.signaturePhrases.length > 0) {
+            const phrasesToUse = basicProfile.signaturePhrases.slice(0, 8);
+            const targetUsage = Math.ceil((context.contentPoints?.length || 5) / 2); // ~3-5 times
+            prompt += `\n💬 SIGNATURE PHRASES - REQUIRED USAGE:\n`;
+            prompt += `YOU MUST naturally incorporate ${targetUsage} of these phrases throughout the script:\n`;
+            phrasesToUse.forEach(p => prompt += `  • "${p}"\n`);
+            prompt += `\nUSAGE REQUIREMENT: Use at least ${targetUsage} different signature phrases naturally integrated into your narration.\n`;
+          }
+
+          if (basicProfile.hooks) {
+            prompt += `\n🎣 OPENING HOOK STYLE (REQUIRED):\n${basicProfile.hooks}\n`;
+          }
+          if (basicProfile.transitions) {
+            prompt += `\n🔄 TRANSITION STYLE (REQUIRED):\n${basicProfile.transitions}\n`;
+          }
+          if (basicProfile.engagement) {
+            prompt += `\n👥 AUDIENCE ENGAGEMENT (REQUIRED):\n${basicProfile.engagement}\n`;
+          }
+
+          prompt += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        }
+
+        if (enhancedProfile) {
+          if (enhancedProfile.contentPositioning) {
+            const cp = enhancedProfile.contentPositioning;
+            if (cp.authorityStance) prompt += `\nAuthority Stance: ${cp.authorityStance}\n`;
+            if (cp.valueProposition) prompt += `Value Proposition: ${cp.valueProposition}\n`;
+          }
+
+          if (enhancedProfile.narrativeStructure) {
+            const ns = enhancedProfile.narrativeStructure;
+            if (ns.informationFlow) prompt += `Information Flow: ${ns.informationFlow}\n`;
+            if (ns.exampleStyle) prompt += `Example Style: ${ns.exampleStyle}\n`;
+          }
+
+          if (enhancedProfile.technicalPatterns) {
+            const tp = enhancedProfile.technicalPatterns;
+            if (tp.dataPresentation) prompt += `Data Presentation: ${tp.dataPresentation}\n`;
+          }
+        }
+
+        prompt += `\n`;
+      }
+    }
 
     if (isFirst) {
       prompt += `
@@ -626,14 +722,16 @@ Write an engaging description of the entire video (2-3 paragraphs)
 
 TIMESTAMPS:
 0:00 Introduction
-[Add all major timestamps for the ENTIRE video, not just this section]
+(Add all major section timestamps for the ENTIRE video here, e.g., 5:00 Topic 1, 10:00 Topic 2, etc.)
 ${endTime}:00 Conclusion
 
 Links:
-[Any relevant links]
+(Add any relevant source links here)
 
 ## Tags
-[Generate 15-20 relevant tags for the video, separated by commas. Example: youtube, video essay, documentary, ${context.topic}, etc.]
+CRITICAL: You MUST generate 20+ actual tags as a comma-separated list with NO brackets or placeholders.
+Format: tag1, tag2, tag3, tag4, ... (20+ tags total)
+Example tags to include: youtube, video essay, documentary, ${context.topic}, current events, analysis, etc.
 `;
     } else {
       prompt += `
@@ -720,9 +818,9 @@ Use these sources to provide specific facts, statistics, quotes, and examples in
 
     prompt += `
 CRITICAL RULES:
-- Write AT LEAST ${duration * 150} words (MINIMUM - this is ${duration} minutes of content)
+- Write AT LEAST ${bufferWords} words (TARGET - this is ${duration} minutes of content with quality buffer)
 - You MUST reach the minimum word count - shorter responses will be rejected
-- Count your words as you write and ensure you meet the ${duration * 150} word minimum
+- Count your words as you write and ensure you meet the ${bufferWords} word target
 - Include specific timestamps throughout from [${startTime}:00] to [${endTime}:00]
 - NO placeholders or shortcuts - write everything in full detail
 - Maintain engaging, conversational tone with rich descriptions
@@ -733,7 +831,7 @@ CRITICAL RULES:
 - MUST include ## Description section with full timestamps for ENTIRE video
 - MUST include ## Tags section with 20+ real tags (no placeholders)` : ''}
 
-WORD COUNT REQUIREMENT: Write AT LEAST ${duration * 150} words. This is mandatory.
+WORD COUNT REQUIREMENT: Write AT LEAST ${bufferWords} words. This is mandatory.
 
 ⚠️ IMPORTANT: Write ONLY the script content. DO NOT include any meta-commentary, explanations about word counts, notes about expansions, or any text that isn't part of the actual script. Just write the script itself.
 
@@ -813,9 +911,9 @@ Write the complete section now:`;
    * @param {number} targetMinutes - Target duration
    * @returns {Object} Validation result
    */
-  static validateCompleteness(script, targetMinutes) {
+  static validateCompleteness(script, targetMinutes, wordsPerMinute = 130) {
     const wordCount = script.split(/\s+/).length;
-    const expectedWords = targetMinutes * 150;
+    const expectedWords = targetMinutes * wordsPerMinute;
     
     // Comprehensive placeholder patterns
     const placeholderPatterns = [
@@ -835,7 +933,14 @@ Write the complete section now:`;
     const hasPlaceholders = placeholderPatterns.some(pattern => pattern.test(script));
     const hasTimestamps = /\d{1,2}:\d{2}/.test(script);
     const hasDescription = script.includes('## Description') && script.includes('TIMESTAMPS:');
-    const hasTags = script.includes('## Tags') && !script.includes('[');
+
+    // Check for tags section specifically - extract tags section and check for placeholders
+    const tagsMatch = script.match(/## Tags\s*\n([^\n#]+)/);
+    const hasTags = tagsMatch &&
+                    tagsMatch[1].trim().length > 20 && // Must have actual content
+                    !tagsMatch[1].includes('[') &&      // No brackets in tags
+                    !tagsMatch[1].includes('...') &&    // No ellipsis placeholders
+                    tagsMatch[1].split(',').length >= 10; // At least 10 comma-separated tags
     
     return {
       isValid: wordCount >= expectedWords * 0.8 && !hasPlaceholders && hasTimestamps && hasDescription && hasTags,

@@ -346,6 +346,21 @@ export async function POST(request) {
       // Store quality research flag for later use
       hasQualityResearch = validation.hasQualityResearch;
 
+      // Filter out empty/snippet sources before using them
+      const isWebSearchSnippet = (source) => {
+        const content = source.source_content || '';
+        return content.includes('Source found via web search. Page last updated:') && content.length < 100;
+      };
+
+      const originalCount = research.sources.length;
+      research.sources = research.sources.filter(s =>
+        s.source_content &&
+        s.source_content.length > 200 && // Must have at least 200 chars
+        !isWebSearchSnippet(s)
+      );
+
+      console.log(`🧹 Filtered research sources: ${originalCount} → ${research.sources.length} (removed ${originalCount - research.sources.length} empty/snippet sources)`);
+
       if (!validation.isValid) {
         console.error('❌ Content quality validation failed:', validation.errors);
         console.log('Source details:', research.sources.map(s => ({
@@ -423,11 +438,14 @@ export async function POST(request) {
             let chunkScript = '';
             let retryCount = 0;
             const maxRetries = SCRIPT_CONFIG.maxRetries; // UPDATED: Use config (1 instead of 2)
-            // UPDATED: Use new WPM with quality bypass
-            const wordsPerMinute = hasQualityResearch
-              ? Math.ceil(SCRIPT_CONFIG.wordsPerMinute * SCRIPT_CONFIG.qualityBypassThreshold)
-              : SCRIPT_CONFIG.wordsPerMinute;
-            const minWordsPerChunk = Math.ceil((totalMinutes / chunkConfig.chunks) * wordsPerMinute);
+
+            // Calculate per-chunk minimum with 10% buffer to account for:
+            // 1. Stitching losses (headers/meta-commentary removed)
+            // 2. Ensuring final script exceeds 80% target even after trimming
+            // Do NOT apply quality bypass here - that's only for final validation
+            const minWordsPerChunk = Math.ceil((totalMinutes / chunkConfig.chunks) * SCRIPT_CONFIG.wordsPerMinute * 1.10);
+
+            console.log(`📊 Chunk targets: ${minWordsPerChunk} words per chunk (${totalMinutes / chunkConfig.chunks} min × ${SCRIPT_CONFIG.wordsPerMinute} WPM × 1.10 buffer)`);
 
             // Retry loop for short chunks
             while (retryCount <= maxRetries) {
@@ -578,14 +596,39 @@ This is the LAST section - MUST include:
           // Stitch chunks together
           script = LongFormScriptHandler.stitchChunks(scriptChunks);
 
-          // Validate completeness (more lenient with quality research)
-          const validation = LongFormScriptHandler.validateCompleteness(script, totalMinutes);
+          // Validate completeness - strict 80% minimum required
+          const validation = LongFormScriptHandler.validateCompleteness(script, totalMinutes, SCRIPT_CONFIG.wordsPerMinute);
           if (!validation.isValid) {
             console.warn('Script validation issues:', validation.issues);
 
-            // If we have quality research, be more lenient
-            if (hasQualityResearch) {
-              console.log('⚠️ Validation issues detected, but proceeding due to quality research bypass');
+            // STRICT: Always require 80% minimum word count, even with quality research
+            if (validation.percentComplete < 80) {
+              return NextResponse.json({
+                error: 'Script generation incomplete',
+                details: `Script is too short (${validation.wordCount} words, expected at least ${Math.floor(validation.expectedWords * 0.8)} - 80% minimum). Please try again.`,
+                retry: true
+              }, { status: 500 });
+            }
+
+            // Tags section is now REQUIRED - no bypass
+            if (!validation.hasTags) {
+              return NextResponse.json({
+                error: 'Script generation incomplete',
+                details: 'Script is missing required Tags section. Please try again.',
+                retry: true
+              }, { status: 500 });
+            }
+
+            // Quality research can only bypass minor issues (missing description/timestamps)
+            if (hasQualityResearch && (validation.hasPlaceholders || !validation.hasDescription || !validation.hasTimestamps)) {
+              console.log('⚠️ Minor validation issues detected, but proceeding due to quality research (length and tags are OK)');
+            } else if (!hasQualityResearch) {
+              // Without quality research, all validation must pass
+              return NextResponse.json({
+                error: 'Script generation incomplete',
+                details: `Validation failed: ${validation.issues.join(', ')}. Please try again.`,
+                retry: true
+              }, { status: 500 });
             }
           }
           
@@ -877,7 +920,23 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
 
     // Check for required sections
     const hasDescription = script.includes('## Description') && script.includes('TIMESTAMPS:');
-    const hasTags = script.includes('## Tags') && !script.includes('[') && !script.includes('...');
+
+    // Check tags section specifically - extract it and validate (not the whole script!)
+    const tagsMatch = script.match(/## Tags\s*\n([^\n#]+)/);
+    const hasTags = tagsMatch &&
+                    tagsMatch[1].trim().length > 20 && // Must have actual content
+                    !tagsMatch[1].includes('[') &&      // No brackets in tags
+                    !tagsMatch[1].includes('...') &&    // No ellipsis placeholders
+                    tagsMatch[1].split(',').length >= 10; // At least 10 comma-separated tags
+
+    // Debug logging for tags validation
+    if (tagsMatch) {
+      console.log('📝 Tags section found:', tagsMatch[1].substring(0, 200));
+      console.log('   Tag count:', tagsMatch[1].split(',').length);
+    } else {
+      console.log('❌ No tags section found in script');
+    }
+
     const wordCount = script.split(/\s+/).length;
     const expectedWords = Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute; // UPDATED: Use config
     const percentComplete = Math.round((wordCount / expectedWords) * 100); // Calculate here, before using it
@@ -915,14 +974,15 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       );
     }
 
-    // UPDATED: Use quality bypass threshold from config (60% with quality research, 80% without)
-    const minWordThreshold = hasQualityResearch
-      ? SCRIPT_CONFIG.qualityBypassThreshold  // 60% with quality research
-      : 0.80; // 80% without quality research
+    // UPDATED: Stricter thresholds - minimum 80% even with quality research
+    const minWordThreshold = 0.80; // Always require 80% minimum
+
+    // Quality bypass now requires BOTH quality research AND adequate length
+    const qualityBypassActive = hasQualityResearch && percentComplete >= 80;
 
     // Log quality bypass if active
-    if (hasQualityResearch && percentComplete < 80) {
-      console.log(`✅ Quality bypass active: Accepting ${percentComplete}% (${wordCount}/${expectedWords} words) due to high-quality research (${verifiedSources.length} verified, ${starredSources.length} starred sources)`);
+    if (qualityBypassActive) {
+      console.log(`✅ Quality bypass active: Accepting ${percentComplete}% (${wordCount}/${expectedWords} words) with high-quality research (${verifiedSources.length} verified, ${starredSources.length} starred sources)`);
     }
 
     if (wordCount < expectedWords * minWordThreshold) {
@@ -932,26 +992,39 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       return NextResponse.json(
         {
           error: 'Script generation incomplete',
-          details: `Script is too short (${wordCount} words, expected at least ${Math.floor(expectedWords * minWordThreshold)}). Please try again.`,
+          details: `Script is too short (${wordCount} words, expected at least ${Math.floor(expectedWords * minWordThreshold)} - 80% minimum). Please try again.`,
           retry: true
         },
         { status: 500 }
       );
     }
 
-    // With quality research, we can be more lenient about missing sections
-    if (!hasQualityResearch && (!hasDescription || !hasTags)) {
-      console.error('Script validation failed: Missing required sections');
+    // Tags section is now REQUIRED - no bypass
+    if (!hasTags) {
+      console.error('Script validation failed: Missing required tags section');
       return NextResponse.json(
         {
           error: 'Script generation incomplete',
-          details: 'Script is missing Description or Tags section. Please try again.',
+          details: 'Script is missing required Tags section. Please try again.',
           retry: true
         },
         { status: 500 }
       );
-    } else if (hasQualityResearch && (!hasDescription || !hasTags)) {
-      console.warn('⚠️ Script missing some sections, but proceeding due to quality research');
+    }
+
+    // Description is required but can be bypassed with quality research
+    if (!hasDescription && !hasQualityResearch) {
+      console.error('Script validation failed: Missing required description section');
+      return NextResponse.json(
+        {
+          error: 'Script generation incomplete',
+          details: 'Script is missing Description section. Please try again.',
+          retry: true
+        },
+        { status: 500 }
+      );
+    } else if (!hasDescription && hasQualityResearch) {
+      console.warn('⚠️ Script missing description, but proceeding due to quality research');
     }
 
     console.log('✅ Script validation passed:', {

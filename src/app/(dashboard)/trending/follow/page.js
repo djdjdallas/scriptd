@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   TrendingUp,
   Sparkles,
@@ -35,6 +35,7 @@ import { TransferToCalendar } from '@/components/trending/TransferToCalendar';
 
 export default function FollowTrendPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const channelName = searchParams.get('channel') || 'TechVision Pro';
   const channelId = searchParams.get('channelId') || null;
   const topic = searchParams.get('topic') || 'AI Tools & Applications';
@@ -42,15 +43,59 @@ export default function FollowTrendPage() {
   const [actionPlan, setActionPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [completedSteps, setCompletedSteps] = useState(new Set());
+  const isGenerating = useRef(false);
+  const currentPlanKey = useRef('');
+  const abortControllerRef = useRef(null);
 
   useEffect(() => {
-    if (planId) {
-      // If we have a planId, fetch the existing plan
-      fetchExistingPlan();
-    } else {
-      // Otherwise generate a new one
-      generateActionPlan();
+    console.log(`🔄 useEffect triggered for: ${channelName} (${topic})`);
+
+    // Create unique key for this plan request
+    const planKey = `${planId || 'new'}-${channelName}-${topic}`;
+
+    // Prevent duplicate calls for the same plan
+    if (currentPlanKey.current === planKey && isGenerating.current) {
+      console.log('⚠️ Action plan generation already in progress, skipping duplicate call');
+      return;
     }
+
+    // Abort any pending request from previous navigation (different plan)
+    if (abortControllerRef.current && currentPlanKey.current !== planKey) {
+      console.log('🛑 Aborting previous action plan request');
+      abortControllerRef.current.abort();
+      isGenerating.current = false; // Reset the flag
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    currentPlanKey.current = planKey;
+    isGenerating.current = true;
+
+    const initializePlan = async () => {
+      try {
+        if (planId) {
+          // If we have a planId, fetch the existing plan
+          await fetchExistingPlan();
+        } else {
+          // Otherwise generate a new one
+          await generateActionPlan();
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.log('⏹️ Action plan request was cancelled');
+        }
+      } finally {
+        isGenerating.current = false;
+      }
+    };
+
+    initializePlan();
+
+    // Cleanup function runs when component unmounts or dependencies change
+    return () => {
+      // Only abort if we're navigating away (plan key will change)
+      console.log('🧹 useEffect cleanup running');
+    };
   }, [planId, channelName, channelId, topic]);
 
   const fetchExistingPlan = async () => {
@@ -83,8 +128,17 @@ export default function FollowTrendPage() {
   };
 
   const generateActionPlan = async () => {
+    // Double-check we're not already loading
+    if (loading && actionPlan !== null) {
+      console.log('⚠️ Action plan already loaded, skipping generation');
+      return;
+    }
+
     setLoading(true);
+
     try {
+      console.log(`🎬 Generating action plan for: ${channelName} (${topic})`);
+
       // Call the API to generate a real action plan
       const response = await fetch('/api/trending/action-plan', {
         method: 'POST',
@@ -96,6 +150,7 @@ export default function FollowTrendPage() {
           channelId,
           topic,
         }),
+        signal: abortControllerRef.current?.signal, // Add abort signal
       });
 
       if (!response.ok) {
@@ -104,6 +159,7 @@ export default function FollowTrendPage() {
       }
 
       const actionPlanData = await response.json();
+      console.log(`✅ Received action plan for: ${actionPlanData.channel}`);
       
       // Ensure the plan has all required fields
       const processedPlan = {
@@ -132,9 +188,15 @@ export default function FollowTrendPage() {
       setActionPlan(processedPlan);
       toast.success('Action plan generated successfully!');
     } catch (error) {
+      // Don't show error if request was intentionally cancelled
+      if (error.name === 'AbortError') {
+        console.log('⏹️ Action plan generation was cancelled');
+        return;
+      }
+
       console.error('Error generating action plan:', error);
       toast.error(error.message || 'Failed to generate action plan');
-      
+
       // Set a basic fallback plan if API fails
       setActionPlan({
         channel: channelName,
@@ -214,6 +276,40 @@ export default function FollowTrendPage() {
     }
   };
 
+  const useTemplate = (template) => {
+    // Navigate to script workflow with template data pre-filled
+    const params = new URLSearchParams({
+      templateTitle: template.title || '',
+      templateType: template.type || '',
+      templateFormat: template.format || template.structure || '',
+      templateHook: template.hook || '',
+      templateDuration: template.duration || '',
+      topic: actionPlan.detectedNiche || actionPlan.topic || topic, // Use detected niche for specific topic
+      niche: actionPlan.detectedNiche || '',
+    });
+
+    router.push(`/scripts/create?${params.toString()}`);
+    toast.success('Opening script workflow with template...');
+  };
+
+  const useContentIdea = (idea) => {
+    // Navigate to script workflow with content idea pre-filled
+    const params = new URLSearchParams({
+      contentIdeaTitle: idea.title || '',
+      contentIdeaHook: idea.hook || '',
+      contentIdeaDescription: idea.description || '',
+      contentIdeaEvent: idea.basedOnEvent || '',
+      contentIdeaSpecifics: idea.specifics || '',
+      estimatedViews: idea.estimatedViews || '',
+      topic: actionPlan.detectedNiche || actionPlan.topic || topic, // Use detected niche for specific topic
+      niche: actionPlan.detectedNiche || '',
+      sourceType: 'content-idea', // Flag to identify this as a content idea
+    });
+
+    router.push(`/scripts/create?${params.toString()}`);
+    toast.success('Opening script workflow with content idea...');
+  };
+
   const exportPlan = () => {
     if (!actionPlan) {
       toast.error('No plan to export');
@@ -256,8 +352,9 @@ export default function FollowTrendPage() {
         exportContent += `### 📝 CONTENT TEMPLATES\n\n`;
         actionPlan.contentTemplates.forEach((template, index) => {
           exportContent += `**${index + 1}. ${template.title}**\n`;
-          exportContent += `- Format: ${template.format}\n`;
-          exportContent += `- Hook: ${template.hook}\n`;
+          exportContent += `- Format: ${template.format || template.structure || 'Standard format'}\n`;
+          exportContent += `- Hook: ${template.hook || 'Open with a strong hook to grab attention...'}\n`;
+          exportContent += `- Structure: ${template.structure || 'Hook → Content → CTA'}\n`;
           exportContent += `- Duration: ${template.duration}\n\n`;
         });
       }
@@ -275,8 +372,12 @@ export default function FollowTrendPage() {
         exportContent += `### 🎥 RECOMMENDED EQUIPMENT\n\n`;
         actionPlan.equipment.forEach((item, index) => {
           exportContent += `${index + 1}. **${item.item}**\n`;
-          exportContent += `   - Purpose: ${item.purpose}\n`;
-          exportContent += `   - Budget: ${item.budget}\n\n`;
+          exportContent += `   - Purpose: ${item.purpose || 'Essential for content production'}\n`;
+          exportContent += `   - Budget: ${item.budget}\n`;
+          if (item.essential !== undefined) {
+            exportContent += `   - Essential: ${item.essential ? 'Yes' : 'No'}\n`;
+          }
+          exportContent += `\n`;
         });
       }
       
@@ -473,13 +574,43 @@ export default function FollowTrendPage() {
         ))}
       </div>
 
+      {/* Specific Content Ideas - if available */}
+      {actionPlan.contentIdeas && actionPlan.contentIdeas.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Lightbulb className="h-6 w-6 text-yellow-400" />
+            Specific Content Ideas
+          </h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {actionPlan.contentIdeas.map((idea, index) => (
+              <div key={index} className="glass-card p-4">
+                <h4 className="text-white font-bold mb-2">{idea.title}</h4>
+                <p className="text-purple-300 text-sm mb-2">Hook: {idea.hook}</p>
+                <p className="text-gray-400 text-sm mb-2">{idea.description}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-green-400">Est. {idea.estimatedViews} views</span>
+                  <Button
+                    size="sm"
+                    className="glass-button text-xs"
+                    onClick={() => useContentIdea(idea)}
+                  >
+                    <Edit3 className="h-3 w-3 mr-1" />
+                    Use Idea
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Content Templates */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
           <FileText className="h-6 w-6 text-purple-400" />
           Content Templates
         </h2>
-        
+
         <div className="grid md:grid-cols-3 gap-4">
           {actionPlan.contentTemplates.map((template, index) => (
             <TiltCard key={index}>
@@ -491,7 +622,11 @@ export default function FollowTrendPage() {
                 <h4 className="text-white font-bold mb-2">{template.type}</h4>
                 <p className="text-sm text-purple-300 mb-3">{template.title}</p>
                 <p className="text-xs text-gray-400 mb-3">{template.structure}</p>
-                <Button size="sm" className="w-full glass-button text-white">
+                <Button
+                  size="sm"
+                  className="w-full glass-button text-white"
+                  onClick={() => useTemplate(template)}
+                >
                   <Edit3 className="h-3 w-3 mr-1" />
                   Use Template
                 </Button>
@@ -532,32 +667,6 @@ export default function FollowTrendPage() {
           </div>
         </div>
       </div>
-
-      {/* Content Ideas - if available */}
-      {actionPlan.contentIdeas && actionPlan.contentIdeas.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Lightbulb className="h-6 w-6 text-yellow-400" />
-            Specific Content Ideas
-          </h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            {actionPlan.contentIdeas.map((idea, index) => (
-              <div key={index} className="glass-card p-4">
-                <h4 className="text-white font-bold mb-2">{idea.title}</h4>
-                <p className="text-purple-300 text-sm mb-2">Hook: {idea.hook}</p>
-                <p className="text-gray-400 text-sm mb-2">{idea.description}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-green-400">Est. {idea.estimatedViews} views</span>
-                  <Button size="sm" className="glass-button text-xs">
-                    <Edit3 className="h-3 w-3 mr-1" />
-                    Use Idea
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Competitor Analysis - if available */}
       {actionPlan.competitorAnalysis && (

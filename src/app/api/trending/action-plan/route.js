@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getClaudeService } from '@/lib/ai/claude';
 import { createClient } from '@/lib/supabase/server';
+import { detectChannelNiche, findRealEvents, validateContentIdeas, enrichActionPlan } from '@/lib/ai/action-plan-enhancer';
 
 export async function POST(request) {
   try {
@@ -29,6 +30,7 @@ export async function POST(request) {
     // Fetch actual channel data from YouTube if possible
     let channelData = null;
     let channelAnalytics = '';
+    let recentVideos = []; // Declare at function scope
 
     // NEW: Check if this is a remix channel with analytics data
     if (remixAnalytics) {
@@ -126,8 +128,7 @@ Remix Channel Analysis for "${channelName}":
           if (channelData) {
             // Get recent videos for better context
             const uploadsPlaylistId = channelData.contentDetails?.relatedPlaylists?.uploads;
-            let recentVideos = [];
-            
+
             if (uploadsPlaylistId) {
               const videosResponse = await fetch(
                 `https://www.googleapis.com/youtube/v3/playlistItems?` +
@@ -172,11 +173,71 @@ Actual Channel Data for "${channelData.snippet.title}":
       }
     } // End of else block (YouTube API fallback)
 
-    // Generate a comprehensive action plan using AI
-    const prompt = `Create a detailed 30-day action plan for a YouTube channel named "${channelName}" to capitalize on the trending topic "${topic}".
+    // ========================================
+    // MULTI-STAGE AI ENHANCEMENT PIPELINE
+    // ========================================
+
+    console.log('🚀 Starting multi-stage action plan generation');
+
+    // STAGE 1: Detect actual channel niche using AI (ENHANCED)
+    console.log('📊 Stage 1: Detecting channel niche...');
+    const nicheDetection = await detectChannelNiche({
+      name: channelName,
+      description: channelData?.snippet?.description || '',
+      recentVideos: recentVideos || [],
+      subscriberCount: parseInt(channelData?.statistics?.subscriberCount || 0),
+      viewCount: parseInt(channelData?.statistics?.viewCount || 0),
+      videoCount: parseInt(channelData?.statistics?.videoCount || 0)
+    });
+
+    // Extract niche data (handle both old string format and new object format)
+    const detectedNiche = typeof nicheDetection === 'string' ? nicheDetection : nicheDetection.niche;
+    const broadCategory = nicheDetection.broadCategory || 'Content Creation';
+    const subCategories = nicheDetection.subCategories || [];
+    const confidence = nicheDetection.confidence || 'medium';
+    const reasoning = nicheDetection.reasoning || 'AI-detected niche';
+
+    console.log(`✅ Detected niche: ${detectedNiche} (${confidence} confidence)`);
+
+    // Use detected niche instead of generic topic where appropriate
+    const actualTopic = topic === 'Search Result' || topic === 'Content Creation' ? detectedNiche : topic;
+
+    // STAGE 2: Find real events in this niche (pass sub-categories for better search)
+    console.log('🔍 Stage 2: Finding real events...');
+    const { success: eventsSuccess, events: realEvents, searchProvider } = await findRealEvents(
+      detectedNiche,
+      '12 months',
+      subCategories
+    );
+
+    if (eventsSuccess && realEvents.length > 0) {
+      console.log(`✅ Found ${realEvents.length} real events using ${searchProvider}`);
+    } else {
+      console.warn('⚠️ No real events found, will use AI-generated examples');
+    }
+
+    // Generate a comprehensive action plan using AI with real events
+    const prompt = `Create a detailed 30-day action plan for a YouTube channel named "${channelName}" to capitalize on the topic "${actualTopic}".
+
+CHANNEL CONTEXT:
 ${channelAnalytics}
 
-IMPORTANT: The channel "${channelName}" focuses on "${topic}". Make sure ALL content ideas, strategies, and recommendations are specifically tailored to this channel's focus area and topic. Do not default to technology content unless the topic is actually about technology. Base your recommendations on the actual channel data provided above when available.
+DETECTED NICHE: ${detectedNiche}
+
+${realEvents && realEvents.length > 0 ? `REAL EVENTS TO BASE CONTENT ON:
+${realEvents.map((event, i) => `${i + 1}. "${event.title}" (${event.date})
+   - ${event.description}
+   - Entities: ${event.entities?.join(', ') || 'N/A'}
+   - Video Angle: ${event.videoAngle || 'Deep dive analysis'}`).join('\n')}
+
+CRITICAL: Use these REAL events as the foundation for content ideas. Every video suggestion MUST reference specific events with real names, dates, and details.` : ''}
+
+IMPORTANT:
+- The channel "${channelName}" focuses on "${actualTopic}".
+- Make ALL content ideas specific with real names, dates, and events
+- Do NOT use generic templates like "The [X] That [Y]" without specifics
+- Base recommendations on actual channel data and real events
+- Include ALL fields completely - no placeholders or undefined values
 
 Please provide a comprehensive JSON response with the following structure:
 {
@@ -206,6 +267,8 @@ Please provide a comprehensive JSON response with the following structure:
     {
       "type": "Video type",
       "title": "Title template with [placeholder]",
+      "format": "Production format (e.g., 'Documentary investigation', 'Tutorial walkthrough')",
+      "hook": "Specific 15-second opening line to grab attention",
       "structure": "Hook → Section1 → Section2 → CTA",
       "duration": "Recommended duration"
     }
@@ -215,6 +278,7 @@ Please provide a comprehensive JSON response with the following structure:
   "equipment": [
     {
       "item": "Equipment name",
+      "purpose": "Why this equipment is needed for ${actualTopic} content (5-15 words)",
       "essential": true/false,
       "budget": "Price range"
     }
@@ -250,14 +314,16 @@ Please provide a comprehensive JSON response with the following structure:
   ]
 }
 
-Make the plan specific, actionable, and realistic for a channel named "${channelName}" focusing on "${topic}". 
+Make the plan specific, actionable, and realistic for a channel named "${channelName}" focusing on "${actualTopic}".
 Ensure all content ideas, equipment recommendations, and strategies are relevant to the specific topic area.
-Include current trends and best practices for YouTube growth in 2024 that are relevant to this specific niche.`;
+Include current trends and best practices for YouTube growth in 2025 that are relevant to this specific niche.`;
 
+    // STAGE 3: Generate action plan with enhanced prompt
+    console.log('🎨 Stage 3: Generating action plan with AI...');
     const response = await claude.generateCompletion(prompt, {
       model: 'claude-sonnet-4-20250514',
       temperature: 0.7,
-      maxTokens: 3000,
+      maxTokens: 4000, // Increased for more complete responses
     });
 
     // Parse the AI response
@@ -273,15 +339,49 @@ Include current trends and best practices for YouTube growth in 2024 that are re
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
       console.error('Raw response:', response);
-      
+
       // Fallback to a basic plan if parsing fails
-      actionPlan = generateFallbackPlan(channelName, topic);
+      actionPlan = generateFallbackPlan(channelName, actualTopic);
     }
 
-    // Add metadata
+    console.log('✅ Action plan generated');
+
+    // STAGE 4: Validate content ideas against real events
+    if (realEvents && realEvents.length > 0 && actionPlan.contentIdeas) {
+      console.log('✅ Stage 4: Validating content ideas...');
+      try {
+        actionPlan.contentIdeas = await validateContentIdeas(
+          actionPlan.contentIdeas,
+          realEvents,
+          detectedNiche
+        );
+        console.log('✅ Content ideas validated');
+      } catch (error) {
+        console.warn('⚠️ Content idea validation failed:', error.message);
+      }
+    }
+
+    // STAGE 5: Enrich missing fields
+    console.log('🎨 Stage 5: Enriching missing fields...');
+    try {
+      actionPlan = await enrichActionPlan(actionPlan, detectedNiche);
+      console.log('✅ Action plan enriched');
+    } catch (error) {
+      console.warn('⚠️ Enrichment failed:', error.message);
+    }
+
+    // Add metadata (ENHANCED with niche detection data)
     actionPlan.channel = channelName;
-    actionPlan.topic = topic;
+    actionPlan.topic = actualTopic;
+    actionPlan.detectedNiche = detectedNiche;
+    actionPlan.broadCategory = broadCategory;
+    actionPlan.subCategories = subCategories;
+    actionPlan.nicheConfidence = confidence;
+    actionPlan.nicheReasoning = reasoning;
+    actionPlan.realEventsUsed = realEvents?.length || 0;
+    actionPlan.searchProvider = searchProvider || 'none';
     actionPlan.generatedAt = new Date().toISOString();
+    actionPlan.enhancementPipeline = 'multi-stage-v2';
 
     // Store the plan in the database
     const { error: dbError } = await supabase
@@ -289,10 +389,12 @@ Include current trends and best practices for YouTube growth in 2024 that are re
       .insert({
         user_id: user.id,
         channel_name: channelName,
-        topic: topic,
+        topic: actualTopic,
         plan_data: actionPlan,
         created_at: new Date().toISOString()
       });
+
+    console.log('✅ Multi-stage action plan generation complete!');
 
     if (dbError) {
       console.error('Failed to store action plan:', dbError);

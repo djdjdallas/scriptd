@@ -65,8 +65,8 @@ function analyzeContentGaps(script, contentPoints, targetWords) {
     gaps.push({
       type: 'missing_tags',
       title: 'Tags Section',
-      description: '20+ relevant tags',
-      priority: 'medium',
+      description: '20+ relevant tags separated by commas - NO placeholders, NO brackets',
+      priority: 'high', // Changed from medium to high - tags are required!
       estimatedWords: 50
     });
   }
@@ -128,11 +128,20 @@ ${topGaps[2] ? `3. **${topGaps[2].title}** - Write ${topGaps[2].estimatedWords |
 
 REQUIREMENTS:
 - Write ONLY the new content (don't rewrite existing script)
-- Label each section clearly (e.g., "### ${topGaps[0]?.title}")
+- Label each section with proper headers:
+  * Use "## Tags" for tags section (NOT "### Tags" or "Tags Section")
+  * Use "## Description" for description section
+  * Use "###" for other content sections
 - Be specific and detailed
 - Include examples and explanations
 - Maintain the same tone and style as the original
 - Write ALL ${wordsNeeded} words needed
+
+CRITICAL TAGS FORMATTING (if generating tags):
+- Use EXACTLY this format: ## Tags
+- Then list 20+ comma-separated tags with NO brackets, NO placeholders
+- Example: cyber attacks, hacktivism, India Pakistan, border tensions, cybersecurity
+- DO NOT write: [tag1, tag2, ...] or [20+ tags here]
 
 ${research?.sources ? `
 RESEARCH SOURCES TO USE:
@@ -187,7 +196,16 @@ function insertExpansion(originalScript, expansionContent, gapAnalysis) {
     return originalScript;
   }
 
-  // Split expansion into sections if it has headers
+  // Check if expansion already has proper ## headers (for tags/description)
+  const hasProperHeaders = /^##\s+(Tags|Description)/m.test(expansionContent);
+
+  if (hasProperHeaders) {
+    // Expansion already has correct formatting, append directly
+    console.log('✅ Expansion has proper headers, appending to script');
+    return originalScript + '\n\n' + expansionContent;
+  }
+
+  // Split expansion into sections if it has ### headers
   const sections = expansionContent.split(/###\s+/);
 
   let enhancedScript = originalScript;
@@ -199,7 +217,18 @@ function insertExpansion(originalScript, expansionContent, gapAnalysis) {
     const section = sections[index + 1] || sections[index]; // sections[0] might be empty
     if (!section) return;
 
-    const sectionWithHeader = `\n\n### ${section}`;
+    // Use proper header format based on gap type
+    let sectionWithHeader;
+    if (gap.type === 'missing_tags') {
+      // Tags needs ## header, not ###
+      sectionWithHeader = `\n\n## Tags\n${section}`;
+    } else if (gap.type === 'missing_description') {
+      // Description needs ## header
+      sectionWithHeader = `\n\n## Description\n${section}`;
+    } else {
+      // Regular content uses ###
+      sectionWithHeader = `\n\n### ${section}`;
+    }
 
     if (gap.type === 'missing_description') {
       // Insert before any existing ## Description or at the end
@@ -211,8 +240,8 @@ function insertExpansion(originalScript, expansionContent, gapAnalysis) {
         enhancedScript += sectionWithHeader;
       }
     } else if (gap.type === 'missing_tags') {
-      // Insert at the very end
-      enhancedScript += `\n\n${sectionWithHeader}`;
+      // Insert at the very end (tags are always last)
+      enhancedScript += sectionWithHeader;
     } else {
       // Insert near related content or at the end of main content
       const insertPoint = enhancedScript.indexOf('## Description') !== -1

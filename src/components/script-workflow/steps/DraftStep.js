@@ -99,7 +99,10 @@ export default function DraftStep() {
       targetAudience: workflowData.summary?.targetAudience,
       tone: workflowData.summary?.tone,
       targetDuration: workflowData.summary?.targetDuration,
-      voiceProfile: workflowData.summary?.voiceProfile
+      voiceProfile: workflowData.summary?.voiceProfile,
+      niche: workflowData.summary?.niche,
+      hasContentIdeaInfo: !!workflowData.summary?.contentIdeaInfo,
+      contentIdeaInfo: workflowData.summary?.contentIdeaInfo
     });
     
     // Use loaded research sources (from database) instead of workflowData
@@ -171,19 +174,24 @@ export default function DraftStep() {
       targetAudience: workflowData.summary?.targetAudience,
       tone: workflowData.summary?.tone,
       targetDuration: workflowData.summary?.targetDuration || 300,
-      workflowId: workflowId
+      workflowId: workflowId,
+      // Include content idea info if available
+      contentIdeaInfo: workflowData.summary?.contentIdeaInfo,
+      niche: workflowData.summary?.niche
     };
 
     // Debug voice profile structure being sent
     if (requestBody.voiceProfile) {
       console.log('8A. VOICE PROFILE DEBUG:', {
         profile_name: requestBody.voiceProfile.profile_name,
-        hasBasic: !!requestBody.voiceProfile.basic,
-        hasAdvanced: !!requestBody.voiceProfile.advanced,
-        hasParameters: !!requestBody.voiceProfile.parameters,
-        hasTrainingData: !!requestBody.voiceProfile.training_data,
-        basicKeys: requestBody.voiceProfile.basic ? Object.keys(requestBody.voiceProfile.basic) : [],
-        advancedKeys: requestBody.voiceProfile.advanced ? Object.keys(requestBody.voiceProfile.advanced) : []
+        hasBasicProfile: !!requestBody.voiceProfile.basicProfile,
+        hasEnhancedProfile: !!requestBody.voiceProfile.enhancedProfile,
+        hasVoiceProfileData: !!requestBody.voiceProfile.voiceProfileData,
+        hasMetadata: !!requestBody.voiceProfile.metadata,
+        basedOnRealData: requestBody.voiceProfile.basedOnRealData,
+        allKeys: Object.keys(requestBody.voiceProfile),
+        basicProfileKeys: requestBody.voiceProfile.basicProfile ? Object.keys(requestBody.voiceProfile.basicProfile) : [],
+        enhancedProfileKeys: requestBody.voiceProfile.enhancedProfile ? Object.keys(requestBody.voiceProfile.enhancedProfile) : []
       });
     }
 

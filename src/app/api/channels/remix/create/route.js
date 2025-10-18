@@ -38,6 +38,7 @@ export async function POST(request) {
     // Begin transaction-like operations
     let createdChannel = null;
     let createdRemix = null;
+    let tempSourceChannelIds = []; // Track temporary source channels to clean up
 
     try {
       // Ensure we have a proper voice profile
@@ -148,7 +149,8 @@ export async function POST(request) {
                 
                 if (newChannel && !createError) {
                   dbId = newChannel.id;
-                  console.log('Created new channel in database:', sourceChannel.title, dbId);
+                  tempSourceChannelIds.push(dbId); // Track for cleanup
+                  console.log('Created temporary source channel in database:', sourceChannel.title, dbId);
                 } else {
                   console.error('Failed to create channel:', createError);
                 }
@@ -296,6 +298,22 @@ export async function POST(request) {
         await generateInitialContentIdeas(channel.id, analysisData, supabase);
       }
 
+      // Cleanup: Delete temporary source channels that were created
+      if (tempSourceChannelIds.length > 0) {
+        console.log('Cleaning up temporary source channels:', tempSourceChannelIds);
+        const { error: deleteError } = await supabase
+          .from('channels')
+          .delete()
+          .in('id', tempSourceChannelIds);
+
+        if (deleteError) {
+          console.error('Error cleaning up temporary source channels:', deleteError);
+          // Non-critical error, continue
+        } else {
+          console.log(`Successfully deleted ${tempSourceChannelIds.length} temporary source channels`);
+        }
+      }
+
       return NextResponse.json({
         success: true,
         channel: channel,
@@ -311,7 +329,16 @@ export async function POST(request) {
           .delete()
           .eq('id', createdChannel.id);
       }
-      
+
+      // Also cleanup any temporary source channels created
+      if (tempSourceChannelIds.length > 0) {
+        console.log('Cleaning up temporary source channels after error:', tempSourceChannelIds);
+        await supabase
+          .from('channels')
+          .delete()
+          .in('id', tempSourceChannelIds);
+      }
+
       throw error;
     }
 

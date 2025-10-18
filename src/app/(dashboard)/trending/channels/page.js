@@ -154,13 +154,32 @@ export default function AllRisingChannelsPage() {
           console.log('    - Is valid YouTube ID?', !!youtubeChannelId);
           console.log('    - Will Analyze work?', finalId && !finalId.includes('-') && !finalId.startsWith('demo') && finalId.length > 10);
           
+          // Determine category from channel description or use fallback
+          let category = 'Content Creation';
+          if (channel.description) {
+            const desc = channel.description.toLowerCase();
+            // Simple keyword detection for common niches
+            if (desc.includes('gaming') || desc.includes('game')) category = 'Gaming';
+            else if (desc.includes('tech') || desc.includes('technology')) category = 'Technology';
+            else if (desc.includes('cooking') || desc.includes('recipe')) category = 'Cooking';
+            else if (desc.includes('music') || desc.includes('song')) category = 'Music';
+            else if (desc.includes('education') || desc.includes('tutorial')) category = 'Education';
+            else if (desc.includes('vlog') || desc.includes('lifestyle')) category = 'Lifestyle';
+            else if (desc.includes('comedy') || desc.includes('funny')) category = 'Comedy';
+            else if (desc.includes('review') || desc.includes('unbox')) category = 'Product Reviews';
+            else if (desc.includes('documentary') || desc.includes('investigation')) category = 'Documentary';
+            else if (desc.includes('fitness') || desc.includes('workout')) category = 'Fitness';
+            else if (desc.includes('business') || desc.includes('entrepreneur')) category = 'Business';
+            // Will be refined by AI in action plan generation
+          }
+
           return {
             id: finalId, // Use YouTube ID if available
             name: channel.title,
             handle: channel.customUrl || '',
             description: channel.description?.substring(0, 150) || '',
             thumbnail: channel.thumbnails?.high?.url || channel.thumbnails?.default?.url || '/youtube-default.svg',
-            category: 'Search Result',
+            category: category,
             subscribers: formatSubscriberCount(channel.subscriberCount),
             growth: 'N/A',
             avgViews: formatViewCount(channel.viewCount, channel.videoCount),

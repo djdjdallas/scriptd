@@ -40,7 +40,7 @@ export function useWorkflow() {
   return useContext(WorkflowContext);
 }
 
-export default function ScriptWorkflow({ workflowId = null }) {
+export default function ScriptWorkflow({ workflowId = null, initialTemplateData = null, initialContentIdeaData = null }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [workflowData, setWorkflowData] = useState({});
   const [completedSteps, setCompletedSteps] = useState([]);
@@ -48,7 +48,7 @@ export default function ScriptWorkflow({ workflowId = null }) {
   const [isSaving, setIsSaving] = useState(false);
   const [workflowTitle, setWorkflowTitle] = useState('Untitled Script');
   const [generatedScript, setGeneratedScript] = useState('');
-  
+
   const supabase = createClient();
   const router = useRouter();
 
@@ -58,7 +58,7 @@ export default function ScriptWorkflow({ workflowId = null }) {
     } else {
       // For new workflows, we'll let the database handle the user_id
       // using RLS policies and the authenticated user from the session
-      createNewWorkflow();
+      createNewWorkflow(initialTemplateData, initialContentIdeaData);
     }
   }, [workflowId]);
 
@@ -92,31 +92,98 @@ export default function ScriptWorkflow({ workflowId = null }) {
     }
   };
 
-  const createNewWorkflow = async () => {
+  const createNewWorkflow = async (templateData = null, contentIdeaData = null) => {
     try {
       console.log('[ScriptWorkflow] Starting workflow creation...');
-      
+
       // Get the current user - this is required for workflow creation
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
+
       if (userError) {
         console.error('[ScriptWorkflow] Error getting user:', userError);
         console.error('[ScriptWorkflow] Full error details:', JSON.stringify(userError, null, 2));
       }
-      
+
       if (!user) {
         console.error('[ScriptWorkflow] No user found, cannot create workflow');
         toast.error('Authentication required. Please sign in again.');
         router.push('/login');
         return;
       }
-      
+
       console.log('[ScriptWorkflow] Creating workflow for user:', user.email, 'ID:', user.id);
-      
+
+      // Prepare initial workflow data with template or content idea info if provided
+      let initialData = {};
+      let title = 'Untitled Script';
+
+      if (contentIdeaData) {
+        console.log('[ScriptWorkflow] Pre-filling with content idea data:', contentIdeaData);
+
+        // Extract video title from the content idea title
+        const videoTitle = contentIdeaData.contentIdeaTitle || '';
+
+        // Use the event/specifics as the topic, or extract from title
+        const specificTopic = contentIdeaData.contentIdeaEvent ||
+                             contentIdeaData.contentIdeaTitle ||
+                             contentIdeaData.topic;
+
+        initialData = {
+          summary: {
+            topic: specificTopic, // Use specific event/title as topic
+            targetAudience: '',
+            tone: 'professional',
+            targetDuration: 900, // Default 15 minutes for content ideas
+            niche: contentIdeaData.niche, // Store the niche separately
+            contentIdeaInfo: {
+              title: contentIdeaData.contentIdeaTitle,
+              hook: contentIdeaData.contentIdeaHook,
+              description: contentIdeaData.contentIdeaDescription,
+              basedOnEvent: contentIdeaData.contentIdeaEvent,
+              specifics: contentIdeaData.contentIdeaSpecifics,
+              estimatedViews: contentIdeaData.estimatedViews,
+            },
+          },
+          title: {
+            mainTitle: videoTitle,
+          },
+          hook: {
+            hookText: contentIdeaData.contentIdeaHook,
+          },
+        };
+
+        title = videoTitle || `${specificTopic} Script`;
+        toast.success(`Content idea loaded: ${videoTitle.substring(0, 50)}...`);
+      } else if (templateData) {
+        console.log('[ScriptWorkflow] Pre-filling with template data:', templateData);
+
+        // Convert duration string to seconds
+        const durationMatch = templateData.templateDuration?.match(/(\d+)/);
+        const durationInSeconds = durationMatch ? parseInt(durationMatch[0]) * 60 : 300;
+
+        initialData = {
+          summary: {
+            topic: templateData.topic || '',
+            targetAudience: '',
+            tone: 'professional',
+            targetDuration: durationInSeconds,
+            templateInfo: {
+              title: templateData.templateTitle,
+              type: templateData.templateType,
+              format: templateData.templateFormat,
+              hook: templateData.templateHook,
+            },
+          },
+        };
+
+        title = `${templateData.templateType || 'Script'} - ${templateData.topic || 'Untitled'}`;
+        toast.success(`Template loaded: ${templateData.templateType}`);
+      }
+
       const workflowData = {
         user_id: user.id,
-        title: 'Untitled Script',
-        workflow_data: {},
+        title: title,
+        workflow_data: initialData,
         current_step: 1,  // Start at step 1 (Summary)
         completed_steps: []
       };

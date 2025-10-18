@@ -354,29 +354,33 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
         messages: [
           {
             role: 'system',
-            content: 'You are a thorough research assistant. Provide comprehensive, well-sourced information with specific URLs and citations. Focus on the most recent and relevant information.'
+            content: 'You are a thorough research assistant. Provide FULL, DETAILED content with comprehensive information. Include complete paragraphs, not summaries. Cite all sources with specific URLs.'
           },
           {
             role: 'user',
-            content: `Research this topic comprehensively: "${query}"
+            content: `Research this topic in FULL DETAIL: "${query}"
 ${topic ? `Main Topic: ${topic}` : ''}
 ${context ? `Context: ${context}` : ''}
 
-Provide:
-1. A comprehensive summary (3-4 paragraphs)
-2. Key facts and statistics with dates
-3. Recent developments and trends
-4. Expert opinions and quotes
-5. Common misconceptions
-6. Actionable insights
+IMPORTANT: Provide COMPLETE, DETAILED information - not just summaries or bullet points.
 
-Include specific URLs and sources for all information.${!recencyFilter ? ' Search ALL available sources, including historical information.' : ' Focus on recent events.'}`
+Include:
+1. A comprehensive summary (4-5 FULL paragraphs with detailed explanations)
+2. Key facts and statistics with specific dates and numbers
+3. Recent developments and trends with full context
+4. Expert opinions with COMPLETE quotes (not excerpts)
+5. Common misconceptions with full explanations
+6. Actionable insights with specific steps
+
+CRITICAL: Write in FULL PARAGRAPHS with extensive detail. Include ALL relevant information from sources, not just highlights. Minimum 500 words of content.
+
+Include specific URLs and complete citations for all information.${!recencyFilter ? ' Search ALL available sources, including historical information.' : ' Focus on recent events.'}`
           }
         ],
         temperature: 0.2,
         max_tokens: 4000,
         return_citations: true,
-        return_related_questions: true
+        return_related_questions: false  // Don't need related questions, just content
       };
 
       // ✅ Only add recency filter if specified

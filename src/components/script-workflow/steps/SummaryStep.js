@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useWorkflow } from "../ScriptWorkflow";
-import { FileText, Users, Mic, Brain, Youtube, Sparkles, Clock, Lock } from "lucide-react";
+import { FileText, Users, Mic, Brain, Video, Sparkles, Clock, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { CustomDropdown } from "@/components/ui/custom-dropdown";
@@ -54,6 +54,18 @@ export default function SummaryStep() {
     loadVoiceProfiles();
     loadChannels();
   }, []);
+
+  // Sync voiceProfile state with loaded voiceProfiles when they become available
+  useEffect(() => {
+    if (voiceProfiles.length > 0 && voiceProfile?.id) {
+      // Find the matching profile with full data
+      const matchingProfile = voiceProfiles.find(p => p.id === voiceProfile.id);
+      if (matchingProfile) {
+        console.log('[SummaryStep] Syncing voice profile with loaded data');
+        setVoiceProfile(matchingProfile);
+      }
+    }
+  }, [voiceProfiles]);
 
   // NEW: Load user subscription tier
   const loadUserTier = async () => {
@@ -127,24 +139,30 @@ export default function SummaryStep() {
           }
         }
 
+        // Handle nested structure: {success: true, voiceProfile: {...}}
+        const actualProfile = voiceProfileData?.voiceProfile || voiceProfileData;
+
         const profile = {
           id: channel.id,
           profile_name: channel.title || channel.name,
           channel_id: channel.id,
           channel_title: channel.title,
           channel_name: channel.name,
-          // Include the full voice profile data (basic, advanced, etc.)
-          ...voiceProfileData
+          // Include the full voice profile data
+          voiceProfileData: actualProfile,
+          // Map to expected structure for compatibility
+          basicProfile: actualProfile?.basicProfile,
+          enhancedProfile: actualProfile?.enhancedProfile,
+          metadata: actualProfile?.metadata,
+          basedOnRealData: voiceProfileData?.basedOnRealData || actualProfile?.basedOnRealData,
         };
 
         // Debug logging
         console.log(`[SummaryStep] Voice profile for ${channel.title}:`, {
-          hasBasic: !!profile.basic,
-          hasAdvanced: !!profile.advanced,
-          hasParameters: !!profile.parameters,
-          hasTrainingData: !!profile.training_data,
-          basicKeys: profile.basic ? Object.keys(profile.basic) : [],
-          advancedKeys: profile.advanced ? Object.keys(profile.advanced) : []
+          hasBasicProfile: !!profile.basicProfile,
+          hasEnhancedProfile: !!profile.enhancedProfile,
+          hasMetadata: !!profile.metadata,
+          basedOnRealData: profile.basedOnRealData,
         });
 
         return profile;
@@ -198,55 +216,36 @@ export default function SummaryStep() {
     console.log('[SummaryStep] Channel selected:', channelId);
 
     if (channel) {
-      // Try to load rich audience analysis from channel_analyses table
+      // Try to load rich audience analysis from channel's analytics_data
       try {
-        console.log('[SummaryStep] Querying channel_analyses for channel_id:', channelId);
+        console.log('[SummaryStep] Loading analytics_data for channel:', channelId);
 
-        const { data: analysisData, error } = await supabase
-          .from("channel_analyses")
-          .select("audience_persona")
-          .eq("channel_id", channelId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single();
+        // Parse analytics_data if it's a string
+        let analyticsData = channel.analytics_data;
+        if (typeof analyticsData === 'string') {
+          try {
+            analyticsData = JSON.parse(analyticsData);
+            console.log('[SummaryStep] Parsed analytics_data');
+          } catch (e) {
+            console.error('[SummaryStep] Failed to parse analytics_data:', e);
+            analyticsData = null;
+          }
+        }
 
-        console.log('[SummaryStep] Query result:', {
-          hasData: !!analysisData,
-          hasError: !!error,
-          errorMessage: error?.message,
-          hasAudiencePersona: !!analysisData?.audience_persona,
-          audiencePersonaType: typeof analysisData?.audience_persona
+        console.log('[SummaryStep] Analytics data:', {
+          hasData: !!analyticsData,
+          hasAudience: !!analyticsData?.audience,
+          hasInsights: !!analyticsData?.audience?.insights,
+          hasAudienceAnalysis: !!analyticsData?.audience?.insights?.audience_analysis
         });
 
-        if (!error && analysisData?.audience_persona) {
-          // Parse audience_persona if it's a string
-          let audiencePersona = analysisData.audience_persona;
-          if (typeof audiencePersona === 'string') {
-            try {
-              audiencePersona = JSON.parse(audiencePersona);
-              console.log('[SummaryStep] Parsed audience_persona, keys:', Object.keys(audiencePersona));
-            } catch (e) {
-              console.error('[SummaryStep] Failed to parse audience_persona:', e);
-            }
-          } else {
-            console.log('[SummaryStep] audience_persona is already an object, keys:', Object.keys(audiencePersona));
-          }
-
-          // If we have the audience_analysis object, use it
-          if (audiencePersona?.audience_analysis) {
-            console.log('[SummaryStep] ✅ Loaded rich audience analysis for channel');
-            console.log('[SummaryStep] audience_analysis keys:', Object.keys(audiencePersona.audience_analysis));
-            setTargetAudience(JSON.stringify(audiencePersona.audience_analysis));
-            setAudienceType("channel");
-            toast.success("Rich audience analysis loaded from your channel");
-            return;
-          } else {
-            console.log('[SummaryStep] ❌ No audience_analysis found in audiencePersona');
-          }
-        } else if (error) {
-          console.error('[SummaryStep] Error querying channel_analyses:', error);
-        } else {
-          console.log('[SummaryStep] No analysis data found for channel');
+        // Check if we have rich audience analysis
+        if (analyticsData?.audience?.insights?.audience_analysis) {
+          console.log('[SummaryStep] ✅ Loaded rich audience analysis from channel');
+          setTargetAudience(JSON.stringify(analyticsData.audience.insights.audience_analysis));
+          setAudienceType("channel");
+          toast.success("Rich audience analysis loaded from your channel");
+          return;
         }
       } catch (error) {
         console.error("[SummaryStep] Error loading audience analysis:", error);
@@ -333,19 +332,23 @@ export default function SummaryStep() {
       voiceProfile,
       aiModel,
       targetDuration,
+      // Preserve content idea info and other metadata
+      niche: workflowData.summary?.niche,
+      contentIdeaInfo: workflowData.summary?.contentIdeaInfo,
+      templateInfo: workflowData.summary?.templateInfo,
     };
 
     // Debug logging for voice profile
     if (voiceProfile) {
       console.log('[SummaryStep] Saving voice profile to workflow:', {
         profile_name: voiceProfile.profile_name,
-        hasBasic: !!voiceProfile.basic,
-        hasAdvanced: !!voiceProfile.advanced,
-        hasParameters: !!voiceProfile.parameters,
-        hasTrainingData: !!voiceProfile.training_data,
-        basicKeys: voiceProfile.basic ? Object.keys(voiceProfile.basic) : [],
-        advancedKeys: voiceProfile.advanced ? Object.keys(voiceProfile.advanced) : []
+        channel_id: voiceProfile.channel_id,
+        hasBasicProfile: !!voiceProfile.basicProfile,
+        hasEnhancedProfile: !!voiceProfile.enhancedProfile,
+        hasMetadata: !!voiceProfile.metadata,
+        basedOnRealData: voiceProfile.basedOnRealData,
       });
+      console.log('[SummaryStep] Full voice profile object keys:', Object.keys(voiceProfile));
     }
 
     updateStepData("summary", summaryData);
@@ -426,6 +429,62 @@ export default function SummaryStep() {
       </div>
 
       <div className="space-y-6">
+        {/* Content Idea Info Display */}
+        {workflowData.summary?.contentIdeaInfo && (
+          <div className="glass-card-no-overflow p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/30">
+            <div className="flex items-start gap-3">
+              <Sparkles className="h-5 w-5 text-green-400 mt-1 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-white mb-3">Content Idea Loaded</h3>
+                <div className="space-y-2 text-sm">
+                  {workflowData.summary.contentIdeaInfo.title && (
+                    <div>
+                      <span className="text-green-400 font-medium">Title: </span>
+                      <span className="text-gray-300">{workflowData.summary.contentIdeaInfo.title}</span>
+                    </div>
+                  )}
+                  {workflowData.summary.contentIdeaInfo.hook && (
+                    <div>
+                      <span className="text-green-400 font-medium">Hook: </span>
+                      <span className="text-gray-300">{workflowData.summary.contentIdeaInfo.hook}</span>
+                    </div>
+                  )}
+                  {workflowData.summary.contentIdeaInfo.description && (
+                    <div>
+                      <span className="text-green-400 font-medium">Description: </span>
+                      <span className="text-gray-300">{workflowData.summary.contentIdeaInfo.description}</span>
+                    </div>
+                  )}
+                  {workflowData.summary.contentIdeaInfo.basedOnEvent && (
+                    <div>
+                      <span className="text-green-400 font-medium">Based on Event: </span>
+                      <span className="text-gray-300">{workflowData.summary.contentIdeaInfo.basedOnEvent}</span>
+                    </div>
+                  )}
+                  {workflowData.summary.contentIdeaInfo.specifics && (
+                    <div>
+                      <span className="text-green-400 font-medium">Specifics: </span>
+                      <span className="text-gray-300">{workflowData.summary.contentIdeaInfo.specifics}</span>
+                    </div>
+                  )}
+                  {workflowData.summary.contentIdeaInfo.estimatedViews && (
+                    <div>
+                      <span className="text-green-400 font-medium">Est. Views: </span>
+                      <span className="text-green-300 font-semibold">{workflowData.summary.contentIdeaInfo.estimatedViews}</span>
+                    </div>
+                  )}
+                  {workflowData.summary.niche && (
+                    <div>
+                      <span className="text-green-400 font-medium">Niche: </span>
+                      <span className="text-gray-300">{workflowData.summary.niche}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="glass-card-no-overflow p-6">
           <label className="block mb-2">
             <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
@@ -563,7 +622,7 @@ export default function SummaryStep() {
                     : "bg-black/50 border border-purple-500/30 text-gray-400 hover:border-purple-500/50"
                 }`}
               >
-                <Youtube className="h-4 w-4" />
+                <Video className="h-4 w-4" />
                 YouTube Channel
               </button>
             )}
@@ -656,7 +715,7 @@ export default function SummaryStep() {
                 </>
               ) : (
                 <div className="p-4 bg-gray-800/50 rounded-lg text-center">
-                  <Youtube className="h-8 w-8 text-gray-500 mx-auto mb-2" />
+                  <Video className="h-8 w-8 text-gray-500 mx-auto mb-2" />
                   <p className="text-sm text-gray-400">
                     No YouTube channels connected
                   </p>
@@ -836,6 +895,94 @@ export default function SummaryStep() {
                   ]),
             ]}
           />
+
+          {/* Voice Profile Details Display */}
+          {voiceProfile && voiceProfile.basicProfile && (
+            <div className="mt-4 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+              <div className="flex items-start gap-2 mb-3">
+                <Mic className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-purple-300 mb-1">
+                    {voiceProfile.profile_name || voiceProfile.channel_title}
+                  </p>
+                  {voiceProfile.basedOnRealData && (
+                    <p className="text-xs text-green-400 mb-2">✓ Based on real channel analysis</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                {voiceProfile.basicProfile.summary && (
+                  <div className="pb-2 border-b border-purple-500/20">
+                    <p className="text-gray-300 italic">{voiceProfile.basicProfile.summary}</p>
+                  </div>
+                )}
+
+                {voiceProfile.basicProfile.tone && voiceProfile.basicProfile.tone.length > 0 && (
+                  <div>
+                    <span className="text-purple-300 font-medium">Tone: </span>
+                    <span className="text-gray-300">{voiceProfile.basicProfile.tone.join(', ')}</span>
+                  </div>
+                )}
+
+                {voiceProfile.basicProfile.style && voiceProfile.basicProfile.style.length > 0 && (
+                  <div>
+                    <span className="text-purple-300 font-medium">Style: </span>
+                    <span className="text-gray-300">{voiceProfile.basicProfile.style.join(', ')}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  {voiceProfile.basicProfile.pace && (
+                    <div>
+                      <span className="text-purple-300 font-medium text-xs">Pace: </span>
+                      <span className="text-gray-300 text-xs">{voiceProfile.basicProfile.pace}</span>
+                    </div>
+                  )}
+                  {voiceProfile.basicProfile.energy && (
+                    <div>
+                      <span className="text-purple-300 font-medium text-xs">Energy: </span>
+                      <span className="text-gray-300 text-xs">{voiceProfile.basicProfile.energy}</span>
+                    </div>
+                  )}
+                  {voiceProfile.basicProfile.humor && (
+                    <div>
+                      <span className="text-purple-300 font-medium text-xs">Humor: </span>
+                      <span className="text-gray-300 text-xs">{voiceProfile.basicProfile.humor}</span>
+                    </div>
+                  )}
+                </div>
+
+                {voiceProfile.basicProfile.signaturePhrases && voiceProfile.basicProfile.signaturePhrases.length > 0 && (
+                  <div className="pt-2 border-t border-purple-500/20">
+                    <span className="text-purple-300 font-medium text-xs">Signature Phrases: </span>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {voiceProfile.basicProfile.signaturePhrases.slice(0, 5).map((phrase, idx) => (
+                        <span key={idx} className="text-xs bg-purple-500/20 text-purple-200 px-2 py-0.5 rounded">
+                          "{phrase}"
+                        </span>
+                      ))}
+                      {voiceProfile.basicProfile.signaturePhrases.length > 5 && (
+                        <span className="text-xs text-purple-400">
+                          +{voiceProfile.basicProfile.signaturePhrases.length - 5} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {voiceProfile.enhancedProfile?.confidenceScores && (
+                  <div className="pt-2 mt-2 border-t border-purple-500/20">
+                    <span className="text-purple-300 font-medium text-xs">Authenticity Score: </span>
+                    <span className="text-green-400 font-semibold text-xs">
+                      {Math.round(voiceProfile.enhancedProfile.confidenceScores.overallAuthenticity * 100)}%
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {voiceProfiles.length === 0 && (
             <p className="text-xs text-gray-500 mt-2">
               Train a voice profile for your channel to maintain consistent tone

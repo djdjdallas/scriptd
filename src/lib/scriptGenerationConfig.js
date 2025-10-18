@@ -7,8 +7,8 @@ const SCRIPT_CONFIG = {
   // Content targets - REDUCED FROM 150 to 130 WPM
   wordsPerMinute: 130, // More realistic for engaging content
 
-  // Quality thresholds - NEW: More lenient with quality research
-  qualityBypassThreshold: 0.60, // Accept 60% of target if research quality is high (lowered from 0.80)
+  // Quality thresholds - Strict minimum to ensure quality
+  qualityBypassThreshold: 0.80, // Require 80% minimum even with quality research
   minResearchRatio: 1.1, // Minimum research:script ratio
 
   // Generation settings - REDUCED FROM 3 to 1
