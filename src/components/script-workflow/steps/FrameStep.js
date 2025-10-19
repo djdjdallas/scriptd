@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useWorkflow } from '../ScriptWorkflow';
 import { Layout, ArrowRight, Lightbulb, Target, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
+import ContentIdeaBanner from '../ContentIdeaBanner';
 
 export default function FrameStep() {
   const { workflowData, updateStepData, markStepComplete } = useWorkflow();
@@ -92,6 +93,17 @@ export default function FrameStep() {
           Structure your video's story arc for maximum impact
         </p>
       </div>
+
+      {/* Content Idea Banner */}
+      {workflowData.summary?.contentIdeaInfo && (
+        <div className="mb-6">
+          <ContentIdeaBanner
+            contentIdeaInfo={workflowData.summary.contentIdeaInfo}
+            niche={workflowData.summary.niche}
+            compact={true}
+          />
+        </div>
+      )}
 
       <div className="space-y-6">
         <div className="glass-card p-6">

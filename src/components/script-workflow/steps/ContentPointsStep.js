@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useWorkflow } from '../ScriptWorkflow';
 import { Target, Plus, Trash2, GripVertical, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import ContentIdeaBanner from '../ContentIdeaBanner';
 
 export default function ContentPointsStep() {
   const { workflowData, updateStepData, markStepComplete, trackCredits } = useWorkflow();
@@ -111,6 +112,17 @@ export default function ContentPointsStep() {
           Define the main value points of your video
         </p>
       </div>
+
+      {/* Content Idea Banner */}
+      {workflowData.summary?.contentIdeaInfo && (
+        <div className="mb-6">
+          <ContentIdeaBanner
+            contentIdeaInfo={workflowData.summary.contentIdeaInfo}
+            niche={workflowData.summary.niche}
+            compact={true}
+          />
+        </div>
+      )}
 
       {contentPoints.length === 0 ? (
         <div className="glass-card p-8 text-center">

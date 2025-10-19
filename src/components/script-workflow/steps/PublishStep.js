@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useWorkflow } from '../ScriptWorkflow';
 import { Send, CheckCircle, XCircle, AlertCircle, Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import ContentIdeaBanner from '../ContentIdeaBanner';
 
 export default function PublishStep() {
   const { workflowData, completedSteps, markStepComplete } = useWorkflow();
@@ -116,6 +117,17 @@ ${sources.length > 0 ? `\nSources:\n${sources.map(s => `• ${s.source_title}: $
           Final review before publishing your video
         </p>
       </div>
+
+      {/* Content Idea Banner */}
+      {workflowData.summary?.contentIdeaInfo && (
+        <div className="mb-6">
+          <ContentIdeaBanner
+            contentIdeaInfo={workflowData.summary.contentIdeaInfo}
+            niche={workflowData.summary.niche}
+            compact={true}
+          />
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">

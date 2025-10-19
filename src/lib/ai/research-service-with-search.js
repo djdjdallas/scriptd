@@ -15,7 +15,9 @@ class ResearchServiceWithSearch {
       topic = '',
       context = '',
       minSources = 10,
-      minContentLength = 1000
+      minContentLength = 1000,
+      contentIdeaInfo,
+      niche
     } = options;
 
     console.log(`🔍 Starting iterative research for: "${query}"`);
@@ -44,7 +46,9 @@ Focus on sources not yet covered. Already found ${allSources.length} sources.`;
         context,
         minSources: minSources - allSources.length, // Request remaining needed
         minContentLength,
-        excludeUrls: Array.from(excludedUrls)
+        excludeUrls: Array.from(excludedUrls),
+        contentIdeaInfo,
+        niche
       });
 
       if (!result.success) {
@@ -114,7 +118,9 @@ Focus on sources not yet covered. Already found ${allSources.length} sources.`;
       topic = '',
       context = '',
       minSources = 10,
-      minContentLength = 1000
+      minContentLength = 1000,
+      contentIdeaInfo,
+      niche
     } = options;
 
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -136,10 +142,22 @@ Focus on sources not yet covered. Already found ${allSources.length} sources.`;
       });
 
       // Use Claude's actual web search tool (not just asking it to search in the prompt!)
+      // Build rich context from content idea info if available
+      let enrichedContext = '';
+      if (contentIdeaInfo) {
+        const { hook, description, specifics } = contentIdeaInfo;
+        enrichedContext = `
+${hook ? `Content Hook: ${hook}` : ''}
+${description ? `Description: ${description}` : ''}
+${specifics ? `Key Details to Research: ${specifics}` : ''}`.trim();
+      }
+
       const searchPrompt = `Research the following topic using web search. Provide comprehensive, current information with real sources.
 
 Topic: "${query}"
 ${topic ? `Context: ${topic}` : ''}
+${niche ? `Content Niche: ${niche}` : ''}
+${enrichedContext ? `\nResearch Focus:\n${enrichedContext}\n` : ''}
 
 Instructions:
 1. Use web search to find AT LEAST ${minSources} different high-quality sources

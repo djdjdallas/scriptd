@@ -9,12 +9,25 @@ class ResearchService {
   /**
    * Build research prompt that forces tool usage
    */
-  static buildResearchPrompt({ query, topic, context, minSources, minContentLength }) {
+  static buildResearchPrompt({ query, topic, context, minSources, minContentLength, contentIdeaInfo, niche }) {
+    // Build rich context from content idea info if available
+    let enrichedContext = context || '';
+
+    if (contentIdeaInfo) {
+      const { title, hook, description, specifics } = contentIdeaInfo;
+      enrichedContext = `
+${hook ? `Content Hook: ${hook}` : ''}
+${description ? `Description: ${description}` : ''}
+${specifics ? `Key Details to Research: ${specifics}` : ''}
+${context ? `Additional Context: ${context}` : ''}`.trim();
+    }
+
     return `You are a research assistant. Research the following topic and return your findings in JSON format.
 
 Topic to research: "${query}"
 ${topic ? `Additional context: ${topic}` : ''}
-${context ? `Specific focus: ${context}` : ''}
+${niche ? `Content Niche: ${niche}` : ''}
+${enrichedContext ? `Research Focus:\n${enrichedContext}` : ''}
 
 CRITICAL: You MUST return ONLY valid JSON in the exact format specified below. Do not include any text before or after the JSON.
 
@@ -53,6 +66,8 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
    * @param {string} options.context - Additional context (optional)
    * @param {number} options.minSources - Minimum number of sources (default: 10)
    * @param {number} options.minContentLength - Minimum content length per source (default: 1000)
+   * @param {Object} options.contentIdeaInfo - Rich content idea context (optional)
+   * @param {string} options.niche - Content niche (optional)
    * @returns {Object} Research results
    */
   static async performResearch(options) {
@@ -61,7 +76,9 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
       topic = '',
       context = '',
       minSources = 10, // Increased from 5 for better script generation depth
-      minContentLength = 1000
+      minContentLength = 1000,
+      contentIdeaInfo,
+      niche
     } = options;
 
     // Try Perplexity first if API key is available
@@ -76,7 +93,9 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
           topic,
           context,
           minSources,
-          recencyFilter: isRecentEvent ? 'year' : null // ✅ Only filter recent topics
+          recencyFilter: isRecentEvent ? 'year' : null, // ✅ Only filter recent topics
+          contentIdeaInfo,
+          niche
         });
 
         if (perplexityResult.success) {
@@ -113,7 +132,7 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
         temperature: 0.3,
         messages: [{
           role: 'user',
-          content: this.buildResearchPrompt({ query, topic, context, minSources, minContentLength })
+          content: this.buildResearchPrompt({ query, topic, context, minSources, minContentLength, contentIdeaInfo, niche })
         }]
       });
 
@@ -339,7 +358,9 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
     topic,
     context,
     minSources,
-    recencyFilter = null // ✅ Now optional!
+    recencyFilter = null, // ✅ Now optional!
+    contentIdeaInfo,
+    niche
   }) {
     if (!process.env.PERPLEXITY_API_KEY) {
       return { success: false, error: 'Perplexity API key not configured' };
@@ -360,7 +381,14 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
             role: 'user',
             content: `Research this topic in FULL DETAIL: "${query}"
 ${topic ? `Main Topic: ${topic}` : ''}
+${niche ? `Content Niche: ${niche}` : ''}
 ${context ? `Context: ${context}` : ''}
+${contentIdeaInfo ? `
+Content Focus:
+${contentIdeaInfo.hook ? `Hook: ${contentIdeaInfo.hook}` : ''}
+${contentIdeaInfo.description ? `Description: ${contentIdeaInfo.description}` : ''}
+${contentIdeaInfo.specifics ? `Key Details to Research: ${contentIdeaInfo.specifics}` : ''}
+` : ''}
 
 IMPORTANT: Provide COMPLETE, DETAILED information - not just summaries or bullet points.
 
@@ -633,7 +661,9 @@ Include specific URLs and complete citations for all information.${!recencyFilte
       enableExpansion = true,
       useIntelligentResearch = true,
       minSources = 10,
-      minContentLength = 1000
+      minContentLength = 1000,
+      contentIdeaInfo,
+      niche
     } = options;
 
     console.log('🚀 Starting enhanced research for:', query);
@@ -653,7 +683,9 @@ Include specific URLs and complete citations for all information.${!recencyFilte
         topic: searchTopic,
         context,
         minSources,
-        minContentLength
+        minContentLength,
+        contentIdeaInfo,
+        niche
       });
 
       return {

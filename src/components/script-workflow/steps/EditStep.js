@@ -5,6 +5,7 @@ import { useWorkflow } from '../ScriptWorkflow';
 import { Wand2, Sparkles, Lock, Save, RefreshCw, ArrowLeft } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'sonner';
+import ContentIdeaBanner from '../ContentIdeaBanner';
 
 export default function EditStep() {
   const { 
@@ -154,6 +155,17 @@ export default function EditStep() {
           Refine and perfect your script with AI assistance
         </p>
       </div>
+
+      {/* Content Idea Banner */}
+      {workflowData.summary?.contentIdeaInfo && (
+        <div className="mb-6">
+          <ContentIdeaBanner
+            contentIdeaInfo={workflowData.summary.contentIdeaInfo}
+            niche={workflowData.summary.niche}
+            compact={true}
+          />
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">

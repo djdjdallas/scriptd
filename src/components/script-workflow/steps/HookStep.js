@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useWorkflow } from '../ScriptWorkflow';
 import { Zap, RefreshCw, Clock, AlertCircle, TrendingUp, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import ContentIdeaBanner from '../ContentIdeaBanner';
 
 export default function HookStep() {
   const { workflowData, updateStepData, markStepComplete, trackCredits } = useWorkflow();
@@ -75,6 +76,17 @@ export default function HookStep() {
           Capture attention in the first 3 seconds
         </p>
       </div>
+
+      {/* Content Idea Banner */}
+      {workflowData.summary?.contentIdeaInfo && (
+        <div className="mb-6">
+          <ContentIdeaBanner
+            contentIdeaInfo={workflowData.summary.contentIdeaInfo}
+            niche={workflowData.summary.niche}
+            compact={true}
+          />
+        </div>
+      )}
 
       {hooks.length === 0 ? (
         <div className="glass-card p-8 text-center">

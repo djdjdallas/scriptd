@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useWorkflow } from '../ScriptWorkflow';
 import { Download, FileText, FileJson, Copy, Check, Printer, Film, Music } from 'lucide-react';
 import { toast } from 'sonner';
+import ContentIdeaBanner from '../ContentIdeaBanner';
 
 export default function ExportStep() {
   const { generatedScript, workflowData, markStepComplete } = useWorkflow();
@@ -113,6 +114,17 @@ ${sources.length > 0 ? `\nSources:\n${sources.map(s => `• ${s.source_title}: $
           Download your script in various formats
         </p>
       </div>
+
+      {/* Content Idea Banner */}
+      {workflowData.summary?.contentIdeaInfo && (
+        <div className="mb-6">
+          <ContentIdeaBanner
+            contentIdeaInfo={workflowData.summary.contentIdeaInfo}
+            niche={workflowData.summary.niche}
+            compact={true}
+          />
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {exportFormats.map((format) => {

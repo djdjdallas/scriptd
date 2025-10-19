@@ -5,6 +5,8 @@
 
 import fs from 'fs';
 import path from 'path';
+import { formatOutlineForPrompt } from './outline-generator';
+import { validateChunkAgainstOutline, checkTopicMatch } from './outline-validator';
 
 export class LongFormScriptHandler {
   /**
@@ -66,22 +68,94 @@ export class LongFormScriptHandler {
       targetAudience,
       tone,
       research,
-      frame
+      frame,
+      contentPlan,
+      comprehensiveOutline
     } = config;
 
     const chunkConfig = this.getChunkConfig(totalMinutes);
     const prompts = [];
-    
+
     // Distribute content points across chunks
     const pointsPerChunk = Math.ceil(contentPoints.length / chunkConfig.chunks);
-    
+
+    // Log content distribution for debugging
+    console.log(`📊 Content Distribution: ${contentPoints.length} points across ${chunkConfig.chunks} chunks`);
+    console.log(`📊 Points per chunk: ${pointsPerChunk}`);
+
     for (let i = 0; i < chunkConfig.chunks; i++) {
       const chunkStart = i * chunkConfig.minutesPerChunk;
       const chunkEnd = Math.min((i + 1) * chunkConfig.minutesPerChunk, totalMinutes);
-      const chunkPoints = contentPoints.slice(
-        i * pointsPerChunk, 
-        (i + 1) * pointsPerChunk
-      );
+
+      // Use content plan if available, otherwise mechanical distribution
+      let chunkPoints;
+      let previouslyCoveredSections;
+      let outlineForChunk = null;
+
+      // PRIORITY 1: Use comprehensive outline for 30+ minute scripts
+      if (comprehensiveOutline && comprehensiveOutline.chunks && comprehensiveOutline.chunks[i]) {
+        console.log(`📝 Chunk ${i + 1} using COMPREHENSIVE OUTLINE`);
+
+        // Get outline sections for this chunk
+        const outlineChunk = comprehensiveOutline.chunks[i];
+        outlineForChunk = outlineChunk;
+
+        // Map outline sections to content points if possible
+        if (contentPoints.length > 0) {
+          chunkPoints = contentPoints.filter(point => {
+            const pointTitle = point.title || point.name || '';
+            // Check if this point matches any section in the outline
+            return outlineChunk.sections.some(section =>
+              section.title.toLowerCase().includes(pointTitle.toLowerCase()) ||
+              pointTitle.toLowerCase().includes(section.title.toLowerCase())
+            );
+          });
+        } else {
+          // No content points, just use outline
+          chunkPoints = [];
+        }
+
+        // Get all previously covered sections from outline
+        previouslyCoveredSections = comprehensiveOutline.chunks
+          .slice(0, i)
+          .flatMap(c => c.sections.map(s => s.title));
+
+      } else if (contentPlan && contentPlan.chunks && contentPlan.chunks[i]) {
+        // Use planned distribution
+        const plannedChunk = contentPlan.chunks[i];
+        const assignedTitles = plannedChunk.assignedSections.map(s => s.title);
+
+        // Find content points that match the assigned titles
+        chunkPoints = contentPoints.filter(point => {
+          const pointTitle = point.title || point.name || '';
+          return assignedTitles.some(title =>
+            title.toLowerCase() === pointTitle.toLowerCase()
+          );
+        });
+
+        // Get all sections from previous chunks in the plan
+        previouslyCoveredSections = contentPlan.chunks
+          .slice(0, i)
+          .flatMap(c => c.assignedSections.map(s => s.title));
+
+        console.log(`📋 Chunk ${i + 1} using PLANNED distribution: ${chunkPoints.length} sections`);
+      } else {
+        // Fallback to mechanical slicing
+        chunkPoints = contentPoints.slice(
+          i * pointsPerChunk,
+          (i + 1) * pointsPerChunk
+        );
+
+        // Get previously covered points mechanically
+        previouslyCoveredSections = i > 0 ?
+          contentPoints.slice(0, i * pointsPerChunk)
+            .map(p => p.title || p.name || 'Section')
+            .filter(Boolean) : [];
+
+        console.log(`📊 Chunk ${i + 1} using MECHANICAL distribution: ${chunkPoints.length} sections`);
+      }
+
+      console.log(`📊 Chunk ${i + 1} assigned ${chunkPoints.length} content points for minutes ${chunkStart}-${chunkEnd}`);
 
       let chunkPrompt = {
         chunkNumber: i + 1,
@@ -101,7 +175,9 @@ export class LongFormScriptHandler {
           tone,
           research,
           frame
-        }
+        },
+        outline: outlineForChunk, // Add outline for this specific chunk
+        comprehensiveOutline: comprehensiveOutline // Add full outline for reference
       };
 
       // First chunk includes intro and hook
@@ -117,7 +193,21 @@ export class LongFormScriptHandler {
 
       // Middle chunks need context from previous
       if (i > 0) {
-        chunkPrompt.previousChunkSummary = `Continue from minute ${chunkStart}`;
+        // Use the previouslyCoveredSections we calculated above (either from plan or mechanical)
+        const lastTopicCovered = previouslyCoveredSections.length > 0
+          ? previouslyCoveredSections[previouslyCoveredSections.length - 1]
+          : 'Previous discussion';
+
+        chunkPrompt.previousChunkSummary = {
+          timeMarker: `Continue from minute ${chunkStart}`,
+          lastTopic: lastTopicCovered,
+          transitionNote: 'Smoothly transition from the previous section without repeating covered points',
+          continuityCheck: 'Ensure narrative flow and avoid starting from scratch - build on what came before',
+          criticalWarning: `DO NOT repeat ANY content from the ${i} previous chunk${i > 1 ? 's' : ''}. Start with completely NEW content only.`
+        };
+
+        // Use the calculated previouslyCoveredSections
+        chunkPrompt.previouslyCoveredSections = previouslyCoveredSections;
       }
 
       prompts.push(this.formatChunkPrompt(chunkPrompt));
@@ -144,7 +234,9 @@ export class LongFormScriptHandler {
       includeIntro,
       includeConclusion,
       hook,
-      previousChunkSummary
+      previousChunkSummary,
+      outline,
+      comprehensiveOutline
     } = chunk;
 
     // Log voice profile and target audience details (only for first chunk to avoid spam)
@@ -580,7 +672,72 @@ export class LongFormScriptHandler {
     const targetWords = duration * 130;
     const bufferWords = Math.ceil(targetWords * 1.10); // 10% buffer for quality
 
-    let prompt = `Generate PART ${chunkNumber} of ${totalChunks} for a YouTube script.
+    // START WITH OUTLINE IF AVAILABLE - THIS IS THE MOST CRITICAL
+    let prompt = '';
+
+    if (outline && comprehensiveOutline) {
+      prompt = `${formatOutlineForPrompt(comprehensiveOutline, chunkNumber)}
+
+⚡⚡⚡ CRITICAL: THE OUTLINE ABOVE IS MANDATORY ⚡⚡⚡
+You MUST write EXACTLY what the outline specifies. ANY deviation = REJECTION.
+
+🔴🔴🔴 ABSOLUTE WORD COUNT REQUIREMENT 🔴🔴🔴
+This chunk MUST be AT LEAST ${bufferWords} words.
+CURRENT REQUIREMENT: ${bufferWords} WORDS MINIMUM
+THIS IS NOT OPTIONAL - WRITE ${bufferWords}+ WORDS OR THE SCRIPT WILL BE REJECTED!
+
+Each section has a SPECIFIC word count requirement - MEET OR EXCEED IT:
+- Look at the word count for EACH section in the outline
+- Write AT LEAST that many words for each section
+- Total must be ${bufferWords}+ words
+
+DO NOT rush or summarize - EXPAND each point with:
+• Detailed explanations (100+ words per main point)
+• Specific examples and case studies (50-100 words each)
+• Statistics and data (25-50 words per stat)
+• Historical context (50-100 words)
+• Expert analysis (50-100 words)
+• Visual descriptions (25-50 words)
+• Smooth transitions (25-50 words)
+
+`;
+    }
+
+    // THEN ADD STRICT CONTENT BOUNDARIES
+    prompt += `🚨🚨🚨 STRICT CONTENT BOUNDARIES FOR CHUNK ${chunkNumber}/${totalChunks} 🚨🚨🚨
+
+====================================================================
+CHUNK ${chunkNumber} MUST COVER THESE TOPICS (AND ONLY THESE):
+====================================================================
+${context.contentPoints && context.contentPoints.length > 0 ?
+  context.contentPoints.map((point, idx) =>
+    `✅ SECTION ${idx + 1}: "${point.title || point.name || 'Topic ' + (idx + 1)}"
+   - Description: ${point.description || 'Cover this topic thoroughly'}
+   - Duration: ~${Math.ceil((point.duration || duration * 60 / context.contentPoints.length) / 60)} minutes
+   - Key focus: ${point.keyTakeaway || 'Explain in detail'}`
+  ).join('\n\n') :
+  outline ? '✅ Follow the outline sections specified above EXACTLY' :
+  `✅ Content for minutes ${startTime}-${endTime} of the video`}
+
+====================================================================
+CHUNK ${chunkNumber} MUST NOT COVER (ABSOLUTELY FORBIDDEN):
+====================================================================
+${chunk.previouslyCoveredSections && chunk.previouslyCoveredSections.length > 0 ?
+  chunk.previouslyCoveredSections.map((section, idx) =>
+    `❌ DO NOT WRITE ABOUT: "${section}"
+   ⚠️ Status: Already covered in chunk ${idx + 1 < chunkNumber ? idx + 1 : 'previous'}
+   ⚠️ Violation consequence: IMMEDIATE REJECTION`
+  ).join('\n\n') :
+  '(No previous content - this is the first chunk)'}
+
+⚡ ENFORCEMENT RULES:
+1. If you write ANY content about topics marked with ❌, your response will be REJECTED
+2. You MUST write about ALL topics marked with ✅
+3. Stay STRICTLY within your assigned boundaries
+4. Each ✅ topic needs substantial coverage (${Math.floor(targetWords / (context.contentPoints?.length || 1))} words minimum)
+
+====================================================================
+Now generate PART ${chunkNumber} of ${totalChunks} for this YouTube script.
 
 CRITICAL: You MUST write AT LEAST ${bufferWords} words for this section. Be VERBOSE and DETAILED.
 
@@ -590,6 +747,13 @@ VIDEO CONTEXT:
 - This section: Minutes ${startTime}-${endTime} (${duration} minutes)
 - Script type: FULL DETAILED SCRIPT with complete narration
 - Target length: ${targetWords} words (aim for ${bufferWords}+ to ensure quality)
+
+⚖️ CHUNK BALANCING REQUIREMENT:
+${totalChunks > 1 ? `This is a multi-part script. ALL chunks must be similar in length.
+- Each chunk should be approximately ${targetWords} words
+- Do NOT write significantly more or less than ${bufferWords} words
+- Maintain consistency with other sections - avoid one chunk being 50%+ longer than others
+- If you're in the middle of explaining something at ${bufferWords} words, wrap it up gracefully` : ''}
 
 `;
 
@@ -710,11 +874,34 @@ SECTION REQUIREMENTS:
       prompt += `
 SECTION REQUIREMENTS:
 - This is the FINAL section (minutes ${startTime}-${endTime})
-- Include a strong conclusion summarizing key points
-- Add a compelling call-to-action
-- Include next video teaser
-- End on a high note to encourage engagement
 - Include timestamps from [${startTime}:00] to [${endTime}:00]
+
+🎬 POWERFUL CONCLUSION REQUIREMENTS (MANDATORY):
+Your conclusion MUST include ALL of these elements:
+1. **Summary Hook** - Start with a powerful statement that encapsulates the entire story
+2. **Three Key Takeaways** - Explicitly state "Here are the three things you need to remember..."
+3. **Future Implications** - "What does this mean for the future? [specific prediction]"
+4. **Personal Reflection** - Share what this story means for viewers personally
+5. **Strong CTA** - Choose one of these formats:
+   - "If this story shocked you, you need to see [next topic]..."
+   - "Before you click away, ask yourself this one question..."
+   - "Your action today could prevent the next [incident type]..."
+   - "Share this with someone who needs to know about [key issue]..."
+6. **Next Video Teaser** - "In our next investigation, we reveal..."
+7. **Final Power Statement** - End with a memorable quote or provocative question
+
+Example conclusion structure:
+"[Powerful summary statement]. Here are the three things you absolutely need to remember from this investigation: First, [takeaway 1]. Second, [takeaway 2]. Third, [takeaway 3].
+
+What does this mean for your future? [Specific prediction with timeline].
+
+[Personal reflection on why this matters to each viewer].
+
+[Strong CTA with specific action].
+
+In our next video, we'll expose [compelling teaser].
+
+[Final memorable statement or question that lingers]."
 
 ALSO INCLUDE AT THE END:
 ## Description
@@ -738,37 +925,56 @@ Example tags to include: youtube, video essay, documentary, ${context.topic}, cu
 SECTION REQUIREMENTS:
 - This is the MIDDLE section (minutes ${startTime}-${endTime})
 - Continue naturally from the previous section
-${previousChunkSummary ? `- Previous section context: ${previousChunkSummary}` : ''}
+${previousChunkSummary ? `- ${previousChunkSummary.timeMarker}
+- Last topic covered: "${previousChunkSummary.lastTopic}"
+- Transition guidance: ${previousChunkSummary.transitionNote}
+- Continuity: ${previousChunkSummary.continuityCheck}
+- ⚠️ CRITICAL WARNING: ${previousChunkSummary.criticalWarning || 'DO NOT repeat any content from previous chunks'}` : ''}
 - Maintain consistent tone and pacing
 - Include timestamps from [${startTime}:00] to [${endTime}:00]
 - Include smooth transitions between topics
 `;
     }
 
-    if (context.contentPoints && context.contentPoints.length > 0) {
-      prompt += `
-CONTENT TO COVER IN THIS SECTION:
-${context.contentPoints.map((point, idx) =>
-  `${idx + 1}. ${point.title} (${Math.ceil(point.duration / 60)} min)
-   - ${point.description}
-   - Key takeaway: ${point.keyTakeaway}`
-).join('\n')}
-`;
-    }
+    // Previously covered content warning - already handled in boundaries section at top
+
+    // Content points already specified in strict boundaries section at top
 
     // Add research sources if available
     if (context.research?.sources && context.research.sources.length > 0) {
       // Filter out web search snippets - only include sources with substantial content
+      // IMPROVED: More strict filtering to exclude low-quality snippets
       const isWebSearchSnippet = (source) => {
         const content = source.source_content || '';
-        return content.includes('Source found via web search. Page last updated:') && content.length < 100;
+
+        // Check for snippet indicators
+        const hasSnippetMarkers = content.includes('Source found via web search') ||
+                                  content.includes('Page last updated:');
+
+        // Check for very short content (< 300 chars is usually just metadata)
+        const isTooShort = content.length < 300;
+
+        // Check word count - snippets typically have < 50 meaningful words
+        const words = content.split(/\s+/).filter(w => w.length > 3);
+        const hasLowWordCount = words.length < 50;
+
+        return (hasSnippetMarkers && isTooShort) || hasLowWordCount;
       };
 
-      const substantiveSources = context.research.sources.filter(s =>
-        s.source_type === 'synthesis' || (s.source_content && s.source_content.length > 500 && !isWebSearchSnippet(s))
-      );
+      // Prioritize synthesis and substantive sources
+      // Synthesis sources = comprehensive research summaries (ALWAYS include)
+      // Substantive = verified/starred OR has >500 chars AND not a snippet
+      const substantiveSources = context.research.sources.filter(s => {
+        if (s.source_type === 'synthesis') return true; // Always include synthesis
+        if (isWebSearchSnippet(s)) return false; // Exclude snippets
+        if (s.source_content && s.source_content.length > 500) return true; // Include long content
+        if (s.fact_check_status === 'verified' || s.fact_check_status === 'perplexity-verified') return true; // Include verified
+        if (s.is_starred) return true; // Include starred
+        return false; // Exclude everything else
+      });
 
-      console.log(`📚 Adding ${substantiveSources.length} research sources to chunk ${chunkNumber} prompt (filtered ${context.research.sources.length - substantiveSources.length} web search snippets)`);
+      const filteredCount = context.research.sources.length - substantiveSources.length;
+      console.log(`📚 Adding ${substantiveSources.length} research sources to chunk ${chunkNumber} prompt (filtered ${filteredCount} low-quality snippets - ${Math.round((filteredCount / context.research.sources.length) * 100)}% removed)`);
       const verifiedSources = substantiveSources.filter(s => s.fact_check_status === 'verified' || s.fact_check_status === 'perplexity-verified');
       const starredSources = substantiveSources.filter(s => s.is_starred);
       const synthesisSources = substantiveSources.filter(s => s.source_type === 'synthesis');
@@ -817,6 +1023,33 @@ Use these sources to provide specific facts, statistics, quotes, and examples in
     }
 
     prompt += `
+TRANSITION VARIETY (CRITICAL - DON'T BE REPETITIVE):
+⛔ FORBIDDEN TRANSITIONS (DO NOT USE MORE THAN ONCE):
+- "Now" to start a sentence (maximum 2 uses in entire script)
+- "This brings us to..." (maximum 1 use)
+- "Let's examine/look at/explore..." (maximum 1 use total)
+- "Moving on to..." (maximum 1 use)
+
+✅ REQUIRED VARIETY - Use at least 8 DIFFERENT transition styles:
+- "Here's where the story takes an unexpected turn..."
+- "But that's only half the picture..."
+- "What happened next shocked even security experts..."
+- "The implications go far deeper than initially apparent..."
+- "Consider what this means in practice..."
+- "The real breakthrough came when..."
+- "Behind the scenes, something remarkable was happening..."
+- "Against this backdrop, a pattern emerged..."
+- "The evidence points to something more troubling..."
+- "Digging deeper reveals..."
+- "The turning point arrived when..."
+- "This sets the stage for what came next..."
+- "Beneath the surface lurked..."
+- "The ripple effects spread quickly..."
+- "Investigators uncovered something unexpected..."
+- "The timeline reveals a crucial detail..."
+
+Each transition MUST feel natural and advance the narrative. Mechanical transitions will be rejected.
+
 CRITICAL RULES:
 - Write AT LEAST ${bufferWords} words (TARGET - this is ${duration} minutes of content with quality buffer)
 - You MUST reach the minimum word count - shorter responses will be rejected
@@ -824,12 +1057,71 @@ CRITICAL RULES:
 - Include specific timestamps throughout from [${startTime}:00] to [${endTime}:00]
 - NO placeholders or shortcuts - write everything in full detail
 - Maintain engaging, conversational tone with rich descriptions
-- Include [Visual: ...] cues for production
 - Expand on each point thoroughly - don't rush through topics
+- VARY YOUR TRANSITIONS - each transition should be unique and different from the last
+
+📺 VISUAL CUE REQUIREMENTS (MANDATORY):
+- Include [Visual: ...] markers at LEAST every 60-90 seconds (minimum 10 per 15-minute chunk)
+- Each visual cue must be specific and production-ready:
+  ✅ Good: "[Visual: Split-screen showing AWS dashboard with red security alerts]"
+  ❌ Bad: "[Visual: Something about security]"
+- Required visual types to include:
+  1. Opening visual for each major section
+  2. Data visualizations for statistics
+  3. Diagrams for technical explanations
+  4. Timeline graphics for sequences
+  5. Comparison graphics for before/after
+  6. Human element visuals (photos, avatars, office scenes)
+- Format: Always use [Visual: description] at the start of a paragraph where the visual appears
 - ${isFirst ? 'Start strong with the hook and set up the entire video' : ''}
 - ${isLast ? `End with a powerful conclusion and CTA
 - MUST include ## Description section with full timestamps for ENTIRE video
 - MUST include ## Tags section with 20+ real tags (no placeholders)` : ''}
+${!isFirst ? `
+⚠️ CHUNK SEPARATION RULE:
+This is chunk ${chunkNumber} of ${totalChunks}. You are ONLY responsible for minutes ${startTime}-${endTime}.
+DO NOT attempt to cover content from other time segments. Each chunk covers DIFFERENT topics.
+If you generate content that belongs to another chunk, your response will be rejected.` : ''}
+
+SPECIFIC EXAMPLES REQUIRED (NO GENERIC TEMPLATES):
+- NEVER use generic placeholders like "Company X" or "a major tech company"
+- ALWAYS use real, specific examples with names, dates, and numbers
+- Instead of: "Many companies have been affected..."
+  Write: "In March 2024, Microsoft disclosed that 245 of their enterprise customers..."
+- Instead of: "Attacks can cost millions..."
+  Write: "The Equifax breach in 2017 resulted in $1.4 billion in total costs, including $425 million in consumer relief..."
+- Include specific technical details: exact CVE numbers, specific malware variants, real IP addresses (when appropriate)
+- Use concrete case studies from the research sources provided
+- Every major point should have at least ONE specific, named example with quantifiable details
+
+👥 HUMAN ELEMENT REQUIREMENTS (MANDATORY):
+You MUST include at least 3 human-interest elements per chunk:
+1. **Personal Impact Stories** - Reference specific people affected (even if anonymized)
+   Example: "Sarah Martinez, a federal contractor from Virginia, discovered her security clearance data..."
+2. **Expert Quotes** - Include at least 2 expert opinions with attribution
+   Example: "As Dr. James Chen from MIT's Cybersecurity Lab explains, 'This wasn't just a breach...'"
+3. **Emotional Stakes** - Connect technical details to human consequences
+   Example: "For the 15,000 government employees affected, this meant sleepless nights wondering..."
+4. **Relatable Comparisons** - Use everyday analogies people understand
+   Example: "Imagine if someone not only had your house key, but also knew exactly when you'd be away..."
+5. **Individual Decisions** - Highlight specific choices made by real people
+   Example: "The security researcher who discovered the breach faced an ethical dilemma..."
+
+Make the story HUMAN, not just technical. Viewers need to feel the impact, not just understand it.
+
+FACTUAL ACCURACY REQUIREMENTS:
+- When discussing hypothetical scenarios, theoretical attacks, or illustrative examples, CLEARLY label them as such
+- Use phrases like "In this hypothetical scenario...", "Based on known vulnerabilities...", or "To illustrate how this could work..."
+- Distinguish between confirmed incidents and illustrative examples
+- Never present fictional entities or alliances as confirmed real organizations without explicit disclaimer
+- If combining multiple real incidents into a narrative, acknowledge this is for educational purposes
+
+AUDIO-FIRST GUIDELINES:
+- When using [Visual: X] markers, ALWAYS describe what's shown in the narration as well
+- Make content fully comprehensible without seeing any visuals
+- Example: Instead of just "[Visual: Chart showing costs]", write "As shown in this data visualization, breach costs have increased by 45% year-over-year, rising from $3.2 million to $4.6 million on average..."
+- Audio-only listeners should get the same educational value as visual viewers
+- Describe graphs, charts, and diagrams in the narration, not just in visual cues
 
 WORD COUNT REQUIREMENT: Write AT LEAST ${bufferWords} words. This is mandatory.
 
@@ -847,39 +1139,100 @@ Write the complete section now:`;
    */
   static stitchChunks(chunks) {
     // Remove duplicate headers/footers between chunks
+    const seenSectionHeaders = new Set();
+    const seenSectionContent = new Map(); // Track content fingerprints
+
     const processedChunks = chunks.map((chunk, index) => {
-      if (index === 0) return chunk; // Keep first chunk as-is
+      if (index === 0) {
+        // Track section headers and content in first chunk
+        const sections = chunk.split(/^###\s+/gm);
+        sections.forEach((section, idx) => {
+          if (idx === 0) return; // Skip content before first header
+
+          const lines = section.split('\n');
+          const headerLine = lines[0];
+          const headerText = headerLine.toLowerCase().trim();
+          seenSectionHeaders.add(headerText);
+
+          // Track content fingerprint (first 100 words)
+          const contentText = lines.slice(1).join(' ').replace(/\s+/g, ' ').trim();
+          const fingerprint = contentText.substring(0, 500).toLowerCase();
+          seenSectionContent.set(headerText, fingerprint);
+        });
+        return chunk; // Keep first chunk as-is
+      }
 
       // Remove any duplicate title or metadata from subsequent chunks
       let processed = chunk;
 
-      // Remove lines that look like headers (start with #) or meta-commentary
+      // Split into sections and check each one
       if (index > 0) {
-        const lines = processed.split('\n');
-        const filteredLines = lines.filter((line, idx) => {
-          // Skip the first few lines if they're headers
-          if (idx < 5 && line.startsWith('#')) return false;
+        const sections = processed.split(/^###\s+/gm);
+        const filteredSections = sections.map((section, sectionIdx) => {
+          if (sectionIdx === 0) {
+            // Content before first header - keep but filter lines
+            const lines = section.split('\n');
+            return lines.filter((line, idx) => {
+              // Skip initial headers
+              if (idx < 5 && line.startsWith('#')) return false;
 
-          // Remove meta-commentary patterns
-          const metaPatterns = [
-            /here's.*word.*expansion/i,
-            /this.*\d+.*word.*expansion/i,
-            /maintains.*style.*tone/i,
-            /filling in.*details/i,
-            /note:/i,
-            /^###.*expansion/i,
-            /to meet.*word.*count/i,
-            /word count.*requirement/i
-          ];
-
-          if (metaPatterns.some(pattern => pattern.test(line))) {
-            console.log(`🧹 Removing meta-commentary: "${line}"`);
-            return false;
+              // Remove meta-commentary
+              const metaPatterns = [
+                /here's.*word.*expansion/i,
+                /this.*\d+.*word.*expansion/i,
+                /maintains.*style.*tone/i,
+                /filling in.*details/i,
+                /note:/i,
+                /to meet.*word.*count/i,
+                /word count.*requirement/i
+              ];
+              if (metaPatterns.some(pattern => pattern.test(line))) {
+                console.log(`🧹 Removing meta-commentary: "${line}"`);
+                return false;
+              }
+              return true;
+            }).join('\n');
           }
 
-          return true;
-        });
-        processed = filteredLines.join('\n');
+          // This is a section with a header
+          const lines = section.split('\n');
+          const headerLine = lines[0];
+          const headerText = headerLine.toLowerCase().trim();
+          const contentText = lines.slice(1).join(' ').replace(/\s+/g, ' ').trim();
+          const fingerprint = contentText.substring(0, 500).toLowerCase();
+
+          // Check for duplicate header
+          if (seenSectionHeaders.has(headerText)) {
+            console.log(`🧹 Removing duplicate section: "### ${headerLine}"`);
+            return null; // Skip this entire section
+          }
+
+          // Check for exact match first (100% duplicate)
+          const existingFingerprint = seenSectionContent.get(headerText);
+          if (existingFingerprint && fingerprint) {
+            // Exact match check
+            if (existingFingerprint === fingerprint) {
+              console.log(`🧹 Removing exact duplicate section: "### ${headerLine}"`);
+              return null;
+            }
+
+            // Then check similarity (>80% match)
+            const similarity = this.calculateSimilarity(existingFingerprint, fingerprint);
+            if (similarity > 0.8) {
+              console.log(`🧹 Removing duplicate content for section "### ${headerLine}" (${Math.round(similarity * 100)}% similar)`);
+              return null;
+            }
+          }
+
+          // Track this section
+          seenSectionHeaders.add(headerText);
+          seenSectionContent.set(headerText, fingerprint);
+
+          // Return section with header
+          return '### ' + section;
+        }).filter(s => s !== null);
+
+        processed = filteredSections.join('\n\n');
       }
 
       return processed;
@@ -889,20 +1242,155 @@ Write the complete section now:`;
     let stitched = processedChunks.join('\n\n---\n\n');
 
     // Final cleanup: Remove any remaining meta-commentary blocks
+    // NOTE: DO NOT use 's' flag - it makes '.' match newlines and causes massive over-matching
     const metaBlockPatterns = [
-      /###\s*Here's.*?(?=\n\[|\n##|\n$)/gis,
-      /###\s*Note:.*?(?=\n\[|\n##|\n$)/gis,
-      /###\s*\d+.*word.*expansion.*?(?=\n\[|\n##|\n$)/gis
+      /###\s*Here's.*word.*expansion.*$/gim,  // "### Here's a 500-word expansion"
+      /###\s*Note:.*$/gim,                     // "### Note: ..."
+      /\[Total word count added:.*?\]/gi,     // "[Total word count added: 551]"
+      /\[Word count:.*?\]/gi,                 // "[Word count: ...]"
+      /\[.*?\d+.*?words.*?added.*?\]/gi       // "[...X words added...]"
     ];
 
-    metaBlockPatterns.forEach(pattern => {
-      if (pattern.test(stitched)) {
-        console.log('🧹 Removing meta-commentary block');
-        stitched = stitched.replace(pattern, '');
+    metaBlockPatterns.forEach((pattern, index) => {
+      const before = stitched.length;
+      stitched = stitched.replace(pattern, '');
+      const after = stitched.length;
+      if (before !== after) {
+        console.log(`🧹 Removing meta-commentary block (pattern ${index + 1}, removed ${before - after} chars)`);
       }
     });
 
+    // CRITICAL: Final deduplication pass to catch duplicates within chunks
+    // The previous deduplication only works between chunks, not within them
+    console.log('🔍 Running final deduplication pass on complete script...');
+    stitched = this.removeDuplicateSections(stitched);
+
     return stitched;
+  }
+
+  /**
+   * Remove duplicate sections from the complete script
+   * This catches duplicates that appear within the same chunk
+   * @param {string} script - The complete script
+   * @returns {string} Script with duplicates removed
+   */
+  static removeDuplicateSections(script) {
+    const lines = script.split('\n');
+
+    // First, map out all sections with their content
+    const sections = [];
+    let currentSection = null;
+    let currentContent = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const sectionMatch = line.match(/^(###|##)\s+(.+)$/);
+
+      if (sectionMatch) {
+        // Save previous section if exists
+        if (currentSection) {
+          sections.push({
+            header: currentSection.header,
+            headerLine: currentSection.headerLine,
+            headerKey: currentSection.headerKey,
+            content: currentContent,
+            wordCount: currentContent.join(' ').split(/\s+/).filter(w => w.length > 0).length
+          });
+        }
+
+        // Start new section
+        currentSection = {
+          header: sectionMatch[2],
+          headerLine: line,
+          headerKey: sectionMatch[2].toLowerCase().trim()
+        };
+        currentContent = [];
+      } else if (currentSection) {
+        // Add line to current section
+        currentContent.push(line);
+      } else {
+        // Content before any section
+        sections.push({
+          header: null,
+          headerLine: null,
+          headerKey: null,
+          content: [line],
+          wordCount: line.split(/\s+/).filter(w => w.length > 0).length
+        });
+      }
+    }
+
+    // Don't forget the last section
+    if (currentSection) {
+      sections.push({
+        header: currentSection.header,
+        headerLine: currentSection.headerLine,
+        headerKey: currentSection.headerKey,
+        content: currentContent,
+        wordCount: currentContent.join(' ').split(/\s+/).filter(w => w.length > 0).length
+      });
+    }
+
+    // Now identify and remove duplicates
+    const seenHeaders = new Set();
+    const result = [];
+    let removedCount = 0;
+    let removedWords = 0;
+
+    for (const section of sections) {
+      if (section.headerKey && seenHeaders.has(section.headerKey)) {
+        // This is a duplicate - skip it
+        console.log(`🧹 Final pass: Removing duplicate section "${section.header}" (${section.wordCount} words)`);
+        removedCount++;
+        removedWords += section.wordCount;
+      } else {
+        // Keep this section
+        if (section.headerKey) {
+          seenHeaders.add(section.headerKey);
+        }
+
+        // Add header if exists
+        if (section.headerLine) {
+          result.push(section.headerLine);
+        }
+
+        // Add content
+        result.push(...section.content);
+      }
+    }
+
+    if (removedCount > 0) {
+      console.log(`✅ Final deduplication pass removed ${removedCount} duplicate section(s) (${removedWords} words)`);
+    } else {
+      console.log(`✅ Final deduplication pass: No duplicates found`);
+    }
+
+    return result.join('\n');
+  }
+
+  /**
+   * Calculate similarity between two strings using a simple word overlap ratio
+   * @param {string} str1 - First string
+   * @param {string} str2 - Second string
+   * @returns {number} Similarity score (0-1)
+   */
+  static calculateSimilarity(str1, str2) {
+    if (!str1 || !str2) return 0;
+
+    // Normalize and split into words
+    const words1 = str1.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+    const words2 = str2.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+
+    if (words1.length === 0 || words2.length === 0) return 0;
+
+    // Count matching words
+    const set1 = new Set(words1);
+    const set2 = new Set(words2);
+    const intersection = new Set([...set1].filter(w => set2.has(w)));
+
+    // Calculate Jaccard similarity
+    const union = new Set([...set1, ...set2]);
+    return intersection.size / union.size;
   }
 
   /**
@@ -959,6 +1447,28 @@ Write the complete section now:`;
         !hasTags ? 'Missing or incomplete tags section' : null
       ].filter(Boolean)
     };
+  }
+
+  /**
+   * Validates a generated chunk against its outline
+   * @param {string} chunkContent - The generated chunk content
+   * @param {Object} outlineChunk - The outline for this chunk
+   * @param {number} chunkNumber - The chunk number (1-based)
+   * @returns {Object} Validation result
+   */
+  static validateChunk(chunkContent, outlineChunk, chunkNumber) {
+    return validateChunkAgainstOutline(chunkContent, outlineChunk, chunkNumber);
+  }
+
+  /**
+   * Checks if content matches the expected topic
+   * @param {string} content - The content to check
+   * @param {string} expectedTopic - The expected topic
+   * @param {Array} keywords - Optional keywords to check
+   * @returns {Object} Match result
+   */
+  static checkTopicMatch(content, expectedTopic, keywords = []) {
+    return checkTopicMatch(content, expectedTopic, keywords);
   }
 }
 

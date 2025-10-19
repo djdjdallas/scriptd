@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { CustomDropdown } from "@/components/ui/custom-dropdown";
 import { SCRIPT_CONFIG } from "@/lib/scriptGenerationConfig";
+import ContentIdeaBanner from "../ContentIdeaBanner";
 
 export default function SummaryStep() {
   const {
@@ -54,6 +55,37 @@ export default function SummaryStep() {
     loadVoiceProfiles();
     loadChannels();
   }, []);
+
+  // Sync local state with workflowData when it changes (for content idea pre-fill)
+  useEffect(() => {
+    if (workflowData.summary) {
+      console.log('[SummaryStep] Syncing state with workflowData.summary');
+      if (workflowData.summary.topic && !topic) {
+        setTopic(workflowData.summary.topic);
+      }
+      if (workflowData.summary.targetAudience && !targetAudience) {
+        setTargetAudience(workflowData.summary.targetAudience);
+      }
+      if (workflowData.summary.audienceType && audienceType === 'preset') {
+        setAudienceType(workflowData.summary.audienceType);
+      }
+      if (workflowData.summary.tone && tone === 'professional') {
+        setTone(workflowData.summary.tone);
+      }
+      if (workflowData.summary.voiceProfile && !voiceProfile) {
+        setVoiceProfile(workflowData.summary.voiceProfile);
+      }
+      if (workflowData.summary.channelId && !selectedChannel) {
+        setSelectedChannel(workflowData.summary.channelId);
+      }
+      if (workflowData.summary.targetDuration && targetDuration === 300) {
+        setTargetDuration(workflowData.summary.targetDuration);
+      }
+      if (workflowData.summary.aiModel && aiModel === 'claude-3-5-sonnet') {
+        setAiModel(workflowData.summary.aiModel);
+      }
+    }
+  }, [workflowData.summary]);
 
   // Sync voiceProfile state with loaded voiceProfiles when they become available
   useEffect(() => {
@@ -431,58 +463,11 @@ export default function SummaryStep() {
       <div className="space-y-6">
         {/* Content Idea Info Display */}
         {workflowData.summary?.contentIdeaInfo && (
-          <div className="glass-card-no-overflow p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/30">
-            <div className="flex items-start gap-3">
-              <Sparkles className="h-5 w-5 text-green-400 mt-1 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white mb-3">Content Idea Loaded</h3>
-                <div className="space-y-2 text-sm">
-                  {workflowData.summary.contentIdeaInfo.title && (
-                    <div>
-                      <span className="text-green-400 font-medium">Title: </span>
-                      <span className="text-gray-300">{workflowData.summary.contentIdeaInfo.title}</span>
-                    </div>
-                  )}
-                  {workflowData.summary.contentIdeaInfo.hook && (
-                    <div>
-                      <span className="text-green-400 font-medium">Hook: </span>
-                      <span className="text-gray-300">{workflowData.summary.contentIdeaInfo.hook}</span>
-                    </div>
-                  )}
-                  {workflowData.summary.contentIdeaInfo.description && (
-                    <div>
-                      <span className="text-green-400 font-medium">Description: </span>
-                      <span className="text-gray-300">{workflowData.summary.contentIdeaInfo.description}</span>
-                    </div>
-                  )}
-                  {workflowData.summary.contentIdeaInfo.basedOnEvent && (
-                    <div>
-                      <span className="text-green-400 font-medium">Based on Event: </span>
-                      <span className="text-gray-300">{workflowData.summary.contentIdeaInfo.basedOnEvent}</span>
-                    </div>
-                  )}
-                  {workflowData.summary.contentIdeaInfo.specifics && (
-                    <div>
-                      <span className="text-green-400 font-medium">Specifics: </span>
-                      <span className="text-gray-300">{workflowData.summary.contentIdeaInfo.specifics}</span>
-                    </div>
-                  )}
-                  {workflowData.summary.contentIdeaInfo.estimatedViews && (
-                    <div>
-                      <span className="text-green-400 font-medium">Est. Views: </span>
-                      <span className="text-green-300 font-semibold">{workflowData.summary.contentIdeaInfo.estimatedViews}</span>
-                    </div>
-                  )}
-                  {workflowData.summary.niche && (
-                    <div>
-                      <span className="text-green-400 font-medium">Niche: </span>
-                      <span className="text-gray-300">{workflowData.summary.niche}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          <ContentIdeaBanner
+            contentIdeaInfo={workflowData.summary.contentIdeaInfo}
+            niche={workflowData.summary.niche}
+            compact={false}
+          />
         )}
 
         <div className="glass-card-no-overflow p-6">

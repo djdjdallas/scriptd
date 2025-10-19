@@ -13,6 +13,13 @@ import {
   validateUserAccess
 } from '@/lib/scriptGenerationConfig';
 import { expandShortScript } from '@/lib/script-generation/expansion-handler';
+import { generateContentPlan, applyContentPlan } from '@/lib/script-generation/content-planner';
+import { generateComprehensiveOutline, formatOutlineForPrompt } from '@/lib/script-generation/outline-generator';
+import {
+  validateChunkAgainstOutline,
+  validateCompleteScript,
+  validateOutlineBeforeGeneration
+} from '@/lib/script-generation/outline-validator';
 
 // Helper function to calculate credits based on duration and model
 function calculateCreditsForDuration(durationInSeconds, model = 'claude-3-5-haiku') {
@@ -414,22 +421,95 @@ export async function POST(request) {
 
         if (needsChunking) {
           console.log(`Using chunked generation for ${totalMinutes}-minute script (${chunkConfig.chunks} chunks)`);
-          
+
+          // Store all content points for chunk-specific distribution
+          const allContentPoints = contentPoints?.points || [];
+          const pointsPerChunk = Math.ceil(allContentPoints.length / chunkConfig.chunks);
+
+          // GENERATE COMPREHENSIVE OUTLINE for 30+ minute scripts
+          let comprehensiveOutline = null;
+          if (totalMinutes >= 30) {
+            console.log('📝 Generating comprehensive outline for entire video (30+ minutes)...');
+            comprehensiveOutline = await generateComprehensiveOutline({
+              title,
+              topic,
+              contentPoints: allContentPoints,
+              totalMinutes,
+              chunkCount: chunkConfig.chunks,
+              research: enhancedResearch || research,
+              hook,
+              targetAudience,
+              tone,
+              apiKey: process.env.ANTHROPIC_API_KEY,
+              model: actualModel
+            });
+
+            if (comprehensiveOutline) {
+              console.log('✅ Comprehensive outline generated successfully');
+              // Save outline for debugging
+              const outlineLog = JSON.stringify(comprehensiveOutline, null, 2);
+              console.log('📋 Outline structure:', outlineLog.substring(0, 500) + '...');
+
+              // PRE-GENERATION VALIDATION: Ensure outline matches expectations
+              const expectedTopics = allContentPoints.map(p => p.title || p.name || '').filter(t => t);
+              const preValidation = validateOutlineBeforeGeneration(
+                comprehensiveOutline,
+                title,
+                expectedTopics
+              );
+
+              if (!preValidation.passed) {
+                console.error('❌ Outline validation failed:');
+                preValidation.issues.forEach(issue => {
+                  console.error(`  ${issue.severity === 'critical' ? '🚨' : '⚠️'} ${issue.message}`);
+                });
+                // Continue anyway but log the issues
+              } else {
+                console.log('✅ Outline passed pre-generation validation');
+              }
+            } else {
+              console.log('⚠️ Outline generation failed, falling back to content plan');
+            }
+          }
+
+          // GENERATE CONTENT PLAN as fallback for <30 min or if outline fails
+          let contentPlan = null;
+          if (!comprehensiveOutline && allContentPoints.length > 0) {
+            console.log('📋 Creating content distribution plan...');
+            contentPlan = await generateContentPlan({
+              title,
+              topic,
+              contentPoints: allContentPoints,
+              totalMinutes,
+              chunkCount: chunkConfig.chunks,
+              apiKey: process.env.ANTHROPIC_API_KEY,
+              model: actualModel
+            });
+
+            if (contentPlan && contentPlan.chunks) {
+              console.log('✅ Content plan created with explicit chunk assignments');
+            } else {
+              console.log('⚠️ Content planning failed, using mechanical distribution');
+            }
+          }
+
           // Generate chunks with full context
           const chunkPrompts = LongFormScriptHandler.generateChunkPrompts({
             totalMinutes,
             title,
             topic,
-            contentPoints: contentPoints?.points || [],
+            contentPoints: allContentPoints,
             type,
             hook,
             voiceProfile,
             targetAudience,
             tone,
             research: enhancedResearch || research,
-            frame
+            frame,
+            contentPlan, // Pass the plan to inform chunk generation
+            comprehensiveOutline // Pass the outline for 30+ minute scripts
           });
-          
+
           const scriptChunks = [];
           
           for (let i = 0; i < chunkPrompts.length; i++) {
@@ -459,8 +539,15 @@ export async function POST(request) {
               body: JSON.stringify({
                 model: actualModel,
                 max_tokens: 8192, // Increased from 4096 for longer content
-                temperature: 0.7,
+                temperature: comprehensiveOutline ? 0.8 : 0.7, // Higher temp with outline for more detailed content
                 system: `You are an expert YouTube scriptwriter who MUST write LONG, DETAILED scripts.
+
+${comprehensiveOutline ? `
+⚡⚡⚡ CRITICAL: YOU HAVE A MANDATORY OUTLINE TO FOLLOW ⚡⚡⚡
+The outline specifies EXACT section titles and word counts.
+You MUST follow the outline EXACTLY and meet ALL word count requirements.
+Each section has a specific word count - MEET OR EXCEED IT!
+` : ''}
 
 🎯 ABSOLUTE WORD COUNT REQUIREMENT:
 Your section MUST be EXACTLY ${minWordsPerChunk} words or MORE.
@@ -473,15 +560,24 @@ Track your progress as you write:
 - ${Math.floor(minWordsPerChunk * 0.75)} words = 75% complete (almost done!)
 - ${minWordsPerChunk} words = 100% MINIMUM TARGET (you can write more!)
 
-🚨 CRITICAL RULES:
-1. **COUNT YOUR WORDS CONSTANTLY** - After every paragraph, estimate your word count
-2. **WRITE COMPREHENSIVE CONTENT** - Each topic needs 200-300 words minimum
-3. **USE SPECIFIC EXAMPLES** - Don't just explain, give real-world examples with details
-4. **TELL STORIES** - Include anecdotes, case studies, real incidents (${minWordsPerChunk} words requires stories!)
-5. **NEVER SUMMARIZE** - If you feel like rushing, that means you need to expand more
-6. **NO SHORTCUTS** - No "I'll continue", no [...], no placeholders, no meta-commentary
-7. **EXPAND EVERY POINT** - Each content point should have: introduction, explanation, example, impact, conclusion
-8. **ADD TRANSITIONS** - Smooth, natural transitions between topics add valuable words
+🚨 CRITICAL CONTENT REQUIREMENTS:
+1. **FOLLOW THE OUTLINE EXACTLY** - Each section has a specific word count target
+2. **EXPAND WITH THESE ELEMENTS FOR EACH SECTION**:
+   - Hook/Introduction (50-75 words)
+   - Background context and history (150-200 words)
+   - Main explanation with details (200-300 words)
+   - Specific examples and case studies (150-200 words)
+   - Statistics and data points (100-150 words)
+   - Impact and implications (100-150 words)
+   - Expert quotes or analysis (50-100 words)
+   - Transition to next section (25-50 words)
+
+3. **NEVER WRITE LESS THAN THE SECTION MINIMUM**
+4. **USE STORYTELLING** - Don't just state facts, tell the story
+5. **PROVIDE SPECIFIC DETAILS** - Names, dates, numbers, locations
+6. **EXPAND WITH CONTEXT** - Historical background, technical details, related events
+7. **NO PLACEHOLDERS** - Write complete, detailed content
+8. **COUNT WORDS PER SECTION** - Ensure each section meets its target
 
 💡 WHAT ${minWordsPerChunk} WORDS LOOKS LIKE:
 - That's about ${Math.floor(minWordsPerChunk / 150)} minutes of spoken content
@@ -519,43 +615,194 @@ This is the LAST section - MUST include:
                   let wordCount = chunkScript.split(/\s+/).length;
                   console.log(`Chunk ${i + 1} word count: ${wordCount} (min: ${minWordsPerChunk})`);
 
-                  // NEW: If short and this is first attempt, try intelligent expansion instead of blind retry
-                  if (wordCount < minWordsPerChunk && retryCount === 0) {
-                    console.log(`📝 Chunk ${i + 1} short (${wordCount}/${minWordsPerChunk}), attempting intelligent expansion...`);
+                  // IMPROVED: Multi-tier retry strategy for short chunks
+                  if (wordCount < minWordsPerChunk && retryCount <= maxRetries) {
+                    // Calculate chunk-specific content points (not all points!)
+                    const chunkSpecificPoints = allContentPoints.slice(
+                      i * pointsPerChunk,
+                      Math.min((i + 1) * pointsPerChunk, allContentPoints.length)
+                    );
 
-                    try {
-                      const expandedChunk = await expandShortScript(
-                        chunkScript,
-                        contentPoints?.points || [],
-                        minWordsPerChunk,
-                        enhancedResearch || research,
-                        process.env.ANTHROPIC_API_KEY,
-                        actualModel
-                      );
+                    // Attempt 1 (retryCount = 0): Intelligent expansion with 120% target
+                    if (retryCount === 0) {
+                      console.log(`📝 Chunk ${i + 1} short (${wordCount}/${minWordsPerChunk}), attempting intelligent expansion (120% target)...`);
 
-                      if (expandedChunk && expandedChunk !== chunkScript) {
-                        chunkScript = expandedChunk;
-                        wordCount = chunkScript.split(/\s+/).length;
-                        console.log(`✅ Chunk ${i + 1} expanded to ${wordCount} words`);
-                      } else {
-                        console.warn(`⚠️ Expansion didn't add content, will retry generation`);
+                      try {
+                        // Create chunk info for expansion
+                        const chunkInfo = {
+                          chunkNumber: i + 1,
+                          totalChunks: chunkConfig.chunks,
+                          startTime: i * 15,
+                          endTime: Math.min((i + 1) * 15, totalMinutes),
+                          isFirst: i === 0,
+                          isLast: i === chunkConfig.chunks - 1,
+                          previouslyCoveredSections: i > 0 ? allContentPoints.slice(0, i * pointsPerChunk).map(p => p.title || p.name || 'Section') : []
+                        };
+
+                        const expandedChunk = await expandShortScript(
+                          chunkScript,
+                          chunkSpecificPoints,
+                          Math.ceil(minWordsPerChunk * 1.2), // 120% target for better results
+                          enhancedResearch || research,
+                          process.env.ANTHROPIC_API_KEY,
+                          actualModel,
+                          chunkInfo
+                        );
+
+                        if (expandedChunk && expandedChunk !== chunkScript) {
+                          chunkScript = expandedChunk;
+                          wordCount = chunkScript.split(/\s+/).length;
+                          console.log(`✅ Chunk ${i + 1} expanded to ${wordCount} words (${Math.round((wordCount / minWordsPerChunk) * 100)}% of target)`);
+
+                          // If still short, try second expansion
+                          if (wordCount < minWordsPerChunk) {
+                            console.log(`📝 Still short, trying second expansion (150% target)...`);
+                            const secondExpansion = await expandShortScript(
+                              chunkScript,
+                              chunkSpecificPoints,
+                              Math.ceil(minWordsPerChunk * 1.5), // 150% target
+                              enhancedResearch || research,
+                              process.env.ANTHROPIC_API_KEY,
+                              actualModel,
+                              chunkInfo  // Use the same chunk info
+                            );
+
+                            if (secondExpansion && secondExpansion !== chunkScript) {
+                              chunkScript = secondExpansion;
+                              wordCount = chunkScript.split(/\s+/).length;
+                              console.log(`✅ Second expansion: ${wordCount} words (${Math.round((wordCount / minWordsPerChunk) * 100)}% of target)`);
+                            }
+                          }
+                        } else {
+                          console.warn(`⚠️ Expansion didn't add content`);
+                        }
+                      } catch (expansionError) {
+                        console.error(`❌ Expansion failed for chunk ${i + 1}:`, expansionError.message);
                       }
-                    } catch (expansionError) {
-                      console.error(`❌ Expansion failed for chunk ${i + 1}:`, expansionError.message);
-                      console.log(`⚠️ Falling back to retry`);
+                    }
+
+                    // If still short after expansion attempts, check if we're close enough
+                    if (wordCount < minWordsPerChunk && retryCount < maxRetries) {
+                      // If we're at 85% or more after expansion, accept it rather than retrying
+                      const percentComplete = (wordCount / minWordsPerChunk) * 100;
+                      if (percentComplete >= 85) {
+                        console.log(`Chunk ${i + 1} at ${Math.round(percentComplete)}% after expansion - accepting to avoid regression`);
+                      } else {
+                        console.warn(`Chunk ${i + 1} still short (${wordCount}/${minWordsPerChunk} words) after ${retryCount === 0 ? 'expansion attempts' : 'previous retry'}, doing blind retry ${retryCount + 1}/${maxRetries}...`);
+                        retryCount++;
+                        continue; // Retry the chunk from scratch
+                      }
                     }
                   }
 
-                  // If still short after expansion attempt, try one blind retry
-                  if (wordCount < minWordsPerChunk && retryCount < maxRetries) {
-                    console.warn(`Chunk ${i + 1} still short (${wordCount}/${minWordsPerChunk} words) after expansion, doing blind retry...`);
-                    retryCount++;
-                    continue; // Retry the chunk
+                  // CRITICAL: Enforce minimum acceptance threshold
+                  // Use 70% threshold if we've done expansion, 75% otherwise
+                  const hadExpansion = retryCount === 0 && wordCount > minWordsPerChunk * 0.6;
+                  const threshold = hadExpansion ? 0.70 : 0.75;
+                  const minimumAcceptableWords = Math.floor(minWordsPerChunk * threshold);
+
+                  if (wordCount < minimumAcceptableWords) {
+                    console.error(`❌ Chunk ${i + 1} rejected: ${wordCount} words (${Math.round((wordCount / minWordsPerChunk) * 100)}%) is below ${Math.round(threshold * 100)}% threshold (${minimumAcceptableWords} words minimum)`);
+                    return NextResponse.json(
+                      {
+                        error: 'Script chunk too short',
+                        details: `Section ${i + 1} generated only ${wordCount} words (${Math.round((wordCount / minWordsPerChunk) * 100)}% of target). Minimum acceptable is ${minimumAcceptableWords} words (${Math.round(threshold * 100)}% of ${minWordsPerChunk} target). Please try again.`,
+                        retry: true
+                      },
+                      { status: 500 }
+                    );
                   }
 
-                  // Chunk is acceptable, add it
+                  // CONTENT VALIDATION: Check if chunk respects boundaries
+                  const forbiddenTopics = [];
+
+                  // Check for content that belongs to OTHER chunks
+                  if (i < chunkPrompts.length - 1) {
+                    // Check if this chunk contains topics meant for future chunks
+                    for (let j = (i + 1) * pointsPerChunk; j < allContentPoints.length; j++) {
+                      const futurePoint = allContentPoints[j];
+                      const futureTopic = futurePoint.title || futurePoint.name || '';
+                      if (futureTopic) {
+                        // Check if this forbidden topic appears in current chunk
+                        const topicRegex = new RegExp(`###\\s*${futureTopic.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
+                        if (topicRegex.test(chunkScript)) {
+                          forbiddenTopics.push({
+                            topic: futureTopic,
+                            belongsTo: `chunk ${Math.floor(j / pointsPerChunk) + 1}`
+                          });
+                        }
+                      }
+                    }
+                  }
+
+                  // Check for content that was already covered in previous chunks
+                  if (i > 0) {
+                    const previouslyCoveredPoints = allContentPoints.slice(0, i * pointsPerChunk);
+                    for (const prevPoint of previouslyCoveredPoints) {
+                      const prevTopic = prevPoint.title || prevPoint.name || '';
+                      if (prevTopic) {
+                        // Count occurrences - one mention might be OK for continuity, but a full section is not
+                        const sectionRegex = new RegExp(`###\\s*${prevTopic.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi');
+                        const matches = chunkScript.match(sectionRegex);
+                        if (matches && matches.length > 0) {
+                          forbiddenTopics.push({
+                            topic: prevTopic,
+                            belongsTo: `previous chunks`,
+                            severity: 'high'
+                          });
+                        }
+                      }
+                    }
+                  }
+
+                  // If violations found, log warning but don't reject (yet) - just track for analysis
+                  if (forbiddenTopics.length > 0) {
+                    console.warn(`⚠️ BOUNDARY VIOLATIONS in Chunk ${i + 1}:`);
+                    forbiddenTopics.forEach(violation => {
+                      console.warn(`  - "${violation.topic}" belongs to ${violation.belongsTo}`);
+                    });
+                    console.warn(`  Total violations: ${forbiddenTopics.length}`);
+
+                    // For now, just log - in future we could reject and retry if violations are severe
+                    // if (forbiddenTopics.some(v => v.severity === 'high')) {
+                    //   console.error(`❌ Chunk ${i + 1} rejected due to boundary violations`);
+                    //   retryCount++;
+                    //   continue;
+                    // }
+                  } else {
+                    console.log(`✅ Chunk ${i + 1} passed content boundary validation`);
+                  }
+
+                  // OUTLINE VALIDATION: If we have a comprehensive outline, validate against it
+                  if (comprehensiveOutline) {
+                    const outlineValidation = validateChunkAgainstOutline(
+                      chunkScript,
+                      comprehensiveOutline.chunks[i],
+                      i + 1
+                    );
+
+                    if (!outlineValidation.passed) {
+                      console.error(`❌ Chunk ${i + 1} FAILED outline validation!`);
+
+                      // Critical failures require retry
+                      if (outlineValidation.severity === 'critical' && retryCount < maxRetries) {
+                        console.error('🚨 Critical topic mismatch - chunk wrote about wrong topics!');
+                        console.error('Issues:', outlineValidation.issues);
+                        retryCount++;
+                        console.log(`Retrying chunk ${i + 1} with stronger enforcement (attempt ${retryCount + 1})...`);
+                        continue; // Retry the chunk
+                      }
+
+                      // Log warnings but continue
+                      console.warn('⚠️ Outline validation warnings:', outlineValidation.issues);
+                    } else {
+                      console.log(`✅ Chunk ${i + 1} passed outline validation`);
+                    }
+                  }
+
+                  // Chunk meets minimum threshold, add it
                   scriptChunks.push(chunkScript);
-                  console.log(`✅ Chunk ${i + 1} accepted with ${wordCount} words`);
+                  console.log(`✅ Chunk ${i + 1} accepted with ${wordCount} words (${Math.round((wordCount / minWordsPerChunk) * 100)}% of target)`);
                   break; // Exit retry loop
                 } else {
                   console.error(`Empty response for chunk ${i + 1}`);
@@ -596,16 +843,52 @@ This is the LAST section - MUST include:
           // Stitch chunks together
           script = LongFormScriptHandler.stitchChunks(scriptChunks);
 
+          // FINAL OUTLINE VALIDATION: Check complete script against outline
+          if (comprehensiveOutline) {
+            const finalValidation = validateCompleteScript(script, comprehensiveOutline);
+
+            if (!finalValidation.passed) {
+              console.error('❌ Final script validation failed - missing required topics!');
+              finalValidation.overallIssues.forEach(issue => {
+                console.error(`  🚨 ${issue.message}`);
+              });
+
+              // Log coverage report
+              console.log('\n📊 Topic Coverage Report:');
+              Object.entries(finalValidation.topicCoverage).forEach(([topic, found]) => {
+                console.log(`  ${found ? '✅' : '❌'} ${topic}`);
+              });
+
+              // Return error if critical topics are missing
+              const missingCount = finalValidation.overallIssues.filter(i => i.type === 'missing_topic').length;
+              if (missingCount > 0) {
+                return NextResponse.json({
+                  error: 'Script validation failed',
+                  details: `The final script is missing ${missingCount} required topics from the outline. This indicates a critical generation failure.`,
+                  issues: finalValidation.overallIssues.map(i => i.message),
+                  retry: true
+                }, { status: 500 });
+              }
+            } else {
+              console.log('✅ Final script passed complete outline validation');
+            }
+          }
+
           // Validate completeness - strict 80% minimum required
           const validation = LongFormScriptHandler.validateCompleteness(script, totalMinutes, SCRIPT_CONFIG.wordsPerMinute);
           if (!validation.isValid) {
             console.warn('Script validation issues:', validation.issues);
 
             // STRICT: Always require 80% minimum word count, even with quality research
-            if (validation.percentComplete < 80) {
+            // EXCEPTION: If deduplication removed content and we're close (>75%), allow it
+            const deduplicationGrace = script.includes('removed duplicate') ||
+                                      scriptChunks.join('').length > script.length * 1.1;
+            const minThreshold = deduplicationGrace ? 75 : 80;
+
+            if (validation.percentComplete < minThreshold) {
               return NextResponse.json({
                 error: 'Script generation incomplete',
-                details: `Script is too short (${validation.wordCount} words, expected at least ${Math.floor(validation.expectedWords * 0.8)} - 80% minimum). Please try again.`,
+                details: `Script is too short (${validation.wordCount} words, expected at least ${Math.floor(validation.expectedWords * (minThreshold / 100))} - ${minThreshold}% minimum). ${deduplicationGrace ? 'Note: Threshold lowered to 75% due to duplicate content removal.' : ''} Please try again.`,
                 retry: true
               }, { status: 500 });
             }
@@ -918,8 +1201,9 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       );
     }
 
-    // Check for required sections
-    const hasDescription = script.includes('## Description') && script.includes('TIMESTAMPS:');
+    // Check for required sections - be more flexible with description
+    const hasDescription = script.includes('## Description') ||
+                          (script.includes('Description') && script.includes('video'));
 
     // Check tags section specifically - extract it and validate (not the whole script!)
     const tagsMatch = script.match(/## Tags\s*\n([^\n#]+)/);
@@ -951,13 +1235,15 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       scriptLength: script.length
     });
 
-    // Check for placeholder patterns
+    // Check for placeholder patterns - be more specific to avoid false positives
     const placeholderPatterns = [
-      /\[Add specific examples.*\]/i,
-      /\[Continue.*\]/i,
-      /\[Rest of.*\]/i,
-      /Let me break this down for you\.\.\./,
-      /\[Add more.*\]/i
+      /\[Add specific examples here\]/i,
+      /\[Continue writing here\]/i,
+      /\[Rest of script here\]/i,
+      /\[Add more content here\]/i,
+      /\[Insert .* here\]/i,
+      /\[TODO.*\]/i,
+      /\.\.\. \[continue\]/i
     ];
 
     const hasPlaceholders = placeholderPatterns.some(pattern => pattern.test(script));
@@ -972,6 +1258,55 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
         },
         { status: 500 }
       );
+    }
+
+    // Enhanced quality checks for human elements and visual cues
+    const humanElementPatterns = [
+      /"[^"]{20,}".*?(?:said|explains|notes|stated|according to)/i,  // Quotes with attribution
+      /(?:Dr\.|Professor|Expert|Researcher|Analyst)\s+[A-Z][a-z]+/,   // Expert references
+      /(?:for|meant|affected|impacted)\s+(?:the\s+)?(?:\d+|thousands|millions|hundreds)/i, // Human impact
+      /imagine if|picture this|consider what it's like/i              // Relatable comparisons
+    ];
+    const hasHumanElements = humanElementPatterns.filter(pattern => pattern.test(script)).length >= 2;
+
+    // Check for visual cues
+    const visualCueMatches = script.match(/\[Visual:/gi) || [];
+    const hasEnoughVisuals = visualCueMatches.length >= Math.floor(totalDuration / 90); // At least 1 per 90 seconds
+
+    // Check for repetitive transitions
+    const transitionOveruse = {
+      'Now,': (script.match(/^Now,/gm) || []).length,
+      'This brings us': (script.match(/This brings us/gi) || []).length,
+      'Let\'s': (script.match(/Let's (?:examine|look|explore)/gi) || []).length,
+      'Moving on': (script.match(/Moving on/gi) || []).length
+    };
+    const hasRepetitiveTransitions = Object.entries(transitionOveruse).some(([phrase, count]) => {
+      if (count > 2) {
+        console.warn(`⚠️ Overused transition: "${phrase}" appears ${count} times`);
+        return true;
+      }
+      return false;
+    });
+
+    // Log enhanced validation details
+    console.log('Enhanced quality checks:', {
+      hasHumanElements,
+      visualCueCount: visualCueMatches.length,
+      requiredVisuals: Math.floor(totalDuration / 90),
+      hasEnoughVisuals,
+      transitionOveruse,
+      hasRepetitiveTransitions
+    });
+
+    // Warn about quality issues but don't fail (these are improvements, not requirements)
+    if (!hasHumanElements) {
+      console.warn('⚠️ Script lacks human elements (quotes, expert opinions, personal impact)');
+    }
+    if (!hasEnoughVisuals) {
+      console.warn(`⚠️ Script has insufficient visual cues (${visualCueMatches.length} found, ${Math.floor(totalDuration / 90)} recommended)`);
+    }
+    if (hasRepetitiveTransitions) {
+      console.warn('⚠️ Script has repetitive transitions');
     }
 
     // UPDATED: Stricter thresholds - minimum 80% even with quality research

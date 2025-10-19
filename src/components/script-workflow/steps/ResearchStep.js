@@ -5,6 +5,7 @@ import { useWorkflow } from '../ScriptWorkflow';
 import { Search, Globe, FileText, Link, CheckCircle, XCircle, AlertCircle, Star, Trash2, Plus, Loader2, Info, HelpCircle, Brain, Sparkles, Upload, File, Check, X, Video, ExternalLink, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import ContentIdeaBanner from '../ContentIdeaBanner';
 
 export default function ResearchStep() {
   const { workflowData, updateStepData, markStepComplete, workflowId, trackCredits, goToStep } = useWorkflow();
@@ -155,7 +156,10 @@ export default function ResearchStep() {
           topic: workflowData.summary?.topic,
           workflowId,
           targetDuration: workflowData.summary?.targetDuration || 1800, // Default to 30 minutes
-          enableExpansion: true // ← ENABLE ENHANCED RESEARCH WITH GAP ANALYSIS!
+          enableExpansion: true, // ← ENABLE ENHANCED RESEARCH WITH GAP ANALYSIS!
+          // Include content idea context for better research targeting
+          contentIdeaInfo: workflowData.summary?.contentIdeaInfo,
+          niche: workflowData.summary?.niche
         })
       });
 
@@ -849,6 +853,17 @@ export default function ResearchStep() {
         </p>
       </div>
 
+      {/* Content Idea Banner */}
+      {workflowData.summary?.contentIdeaInfo && (
+        <div className="mb-6">
+          <ContentIdeaBanner
+            contentIdeaInfo={workflowData.summary.contentIdeaInfo}
+            niche={workflowData.summary.niche}
+            compact={true}
+          />
+        </div>
+      )}
+
       {/* Research Summary Section */}
       {researchSummary && (
         <div className="glass-card-no-overflow p-6 mb-6">
@@ -883,17 +898,19 @@ export default function ResearchStep() {
                 <button
                   onClick={performAISearch}
                   disabled={isSearching}
-                  className="w-full glass-button bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 py-3 flex items-center justify-center gap-2"
+                  className={`w-full glass-button bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 py-4 min-h-[80px] flex flex-col items-center justify-center gap-2 transition-all ${
+                    isSearching ? 'opacity-60 cursor-not-allowed' : ''
+                  }`}
                 >
                   {isSearching ? (
                     <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Searching with AI...
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      <span className="text-sm">Searching with AI...</span>
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-5 w-5" />
-                      AI Web Search for "{workflowData.summary.topic}" (1 credit)
+                      <span className="text-sm">AI Web Search for "{workflowData.summary.topic}" (1 credit)</span>
                     </>
                   )}
                 </button>

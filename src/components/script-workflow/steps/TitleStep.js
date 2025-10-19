@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useWorkflow } from '../ScriptWorkflow';
 import { Sparkles, RefreshCw, Copy, Check, Type, Edit3, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import ContentIdeaBanner from '../ContentIdeaBanner';
 
 export default function TitleStep() {
   const { workflowData, updateStepData, markStepComplete, trackCredits } = useWorkflow();
@@ -99,6 +100,17 @@ export default function TitleStep() {
           AI-powered title generation optimized for YouTube CTR
         </p>
       </div>
+
+      {/* Content Idea Banner */}
+      {workflowData.summary?.contentIdeaInfo && (
+        <div className="mb-6">
+          <ContentIdeaBanner
+            contentIdeaInfo={workflowData.summary.contentIdeaInfo}
+            niche={workflowData.summary.niche}
+            compact={true}
+          />
+        </div>
+      )}
 
       {titles.length === 0 ? (
         <div className="space-y-6">

@@ -5,6 +5,7 @@ import { useWorkflow } from '../ScriptWorkflow';
 import { FileText, Sparkles, ScrollText, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
+import ContentIdeaBanner from '../ContentIdeaBanner';
 
 export default function DraftStep() {
   const {
@@ -417,6 +418,17 @@ export default function DraftStep() {
         </p>
       </div>
 
+      {/* Content Idea Banner */}
+      {workflowData.summary?.contentIdeaInfo && (
+        <div className="mb-6">
+          <ContentIdeaBanner
+            contentIdeaInfo={workflowData.summary.contentIdeaInfo}
+            niche={workflowData.summary.niche}
+            compact={true}
+          />
+        </div>
+      )}
+
       <div className="grid md:grid-cols-2 gap-6">
         <div className="glass-card p-6 text-center">
           <ScrollText className="h-12 w-12 text-blue-400 mx-auto mb-4" />
@@ -435,15 +447,20 @@ export default function DraftStep() {
           <button
             onClick={() => generateScript('outline')}
             disabled={isGenerating}
-            className="glass-button bg-blue-600 hover:bg-blue-700 w-full"
+            className={`glass-button bg-blue-600 hover:bg-blue-700 w-full py-4 min-h-[80px] flex flex-col items-center justify-center gap-2 transition-all ${
+              isGenerating ? 'opacity-60 cursor-not-allowed' : ''
+            }`}
           >
             {isGenerating && generationType === 'outline' ? (
               <>
-                <Sparkles className="h-4 w-4 mr-2 animate-spin" />
-                Generating Outline...
+                <Sparkles className="h-6 w-6 animate-spin" />
+                <span className="text-sm">Generating Outline...</span>
               </>
             ) : (
-              'Generate Outline'
+              <>
+                <ScrollText className="h-5 w-5" />
+                <span className="text-sm font-medium">Generate Outline</span>
+              </>
             )}
           </button>
         </div>
@@ -465,15 +482,20 @@ export default function DraftStep() {
           <button
             onClick={() => generateScript('full')}
             disabled={isGenerating}
-            className="glass-button bg-purple-600 hover:bg-purple-700 w-full"
+            className={`glass-button bg-purple-600 hover:bg-purple-700 w-full py-4 min-h-[80px] flex flex-col items-center justify-center gap-2 transition-all ${
+              isGenerating ? 'opacity-60 cursor-not-allowed' : ''
+            }`}
           >
             {isGenerating && generationType === 'full' ? (
               <>
-                <Sparkles className="h-4 w-4 mr-2 animate-spin" />
-                Generating Full Script...
+                <Sparkles className="h-6 w-6 animate-spin" />
+                <span className="text-sm">Generating Full Script...</span>
               </>
             ) : (
-              'Generate Full Script'
+              <>
+                <FileText className="h-5 w-5" />
+                <span className="text-sm font-medium">Generate Full Script</span>
+              </>
             )}
           </button>
         </div>

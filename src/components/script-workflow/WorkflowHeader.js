@@ -32,8 +32,8 @@ export default function WorkflowHeader({ title, isSaving, creditsUsed, targetDur
             <ChevronLeft className="h-5 w-5" />
           </button>
           
-          <div>
-            <h1 className="text-xl font-semibold text-white">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-semibold text-white truncate max-w-2xl" title={title || 'Untitled Script'}>
               {title || 'Untitled Script'}
             </h1>
             <div className="flex items-center gap-4 mt-1">

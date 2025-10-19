@@ -19,7 +19,9 @@ export async function POST(request) {
       context,
       workflowId,
       targetDuration,
-      enableExpansion = false // New option for enhanced research with gap analysis
+      enableExpansion = false, // New option for enhanced research with gap analysis
+      contentIdeaInfo, // Rich content idea context from Summary step
+      niche // Content niche for targeted research
     } = await request.json();
 
     if (!query) {
@@ -34,7 +36,9 @@ export async function POST(request) {
       topic,
       workflowId,
       targetDuration,
-      enableExpansion
+      enableExpansion,
+      hasContentIdeaInfo: !!contentIdeaInfo,
+      niche
     });
 
     // Try the enhanced service first, fall back to regular if needed
@@ -52,7 +56,9 @@ export async function POST(request) {
           enableExpansion: true,
           maxExpansionSearches: 6,
           minSources: 10,
-          minContentLength: 1000
+          minContentLength: 1000,
+          contentIdeaInfo, // Pass content idea context for targeted research
+          niche // Pass niche for better query generation
         });
       } else {
         // First attempt with enhanced search service
@@ -61,7 +67,9 @@ export async function POST(request) {
           topic,
           context,
           minSources: 10, // Increased from 5 for better content depth
-          minContentLength: 1000
+          minContentLength: 1000,
+          contentIdeaInfo, // Pass content idea context for targeted research
+          niche // Pass niche for better query generation
         });
       }
     } catch (error) {
@@ -72,7 +80,9 @@ export async function POST(request) {
         topic,
         context,
         minSources: 10, // Increased from 5 for better content depth
-        minContentLength: 1000
+        minContentLength: 1000,
+        contentIdeaInfo, // Pass content idea context for targeted research
+        niche // Pass niche for better query generation
       });
     }
 
