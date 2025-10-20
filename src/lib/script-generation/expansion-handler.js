@@ -302,7 +302,15 @@ Write the expansion content now:`;
     }
 
     const data = await response.json();
-    const expansionContent = data.content?.[0]?.text || '';
+    let expansionContent = data.content?.[0]?.text || '';
+
+    // Filter out meta-commentary that shouldn't appear in final script
+    expansionContent = expansionContent
+      .replace(/^I'll expand.*?(?:additional words?|content|sections?):\s*/gim, '')
+      .replace(/^\[?Continuing from.*?\]\.?\.\.\s*/gim, '')
+      .replace(/^Here'?s? the (additional|expanded|new) .*?:\s*/gim, '')
+      .replace(/^Let me (expand|add|continue).*?:\s*/gim, '')
+      .trim();
 
     const expansionWords = expansionContent.split(/\s+/).length;
     console.log(`✅ Expansion generated: ${expansionWords} words`);

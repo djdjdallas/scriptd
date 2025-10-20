@@ -161,6 +161,33 @@ export default function DraftStep() {
       description: workflowData.thumbnail?.description
     });
 
+    // Load sponsor data from database
+    let sponsorData = null;
+    if (workflowId) {
+      try {
+        const { data, error } = await supabase
+          .from('workflow_sponsors')
+          .select('*')
+          .eq('workflow_id', workflowId)
+          .single();
+
+        if (data && !error) {
+          sponsorData = data;
+          console.log('✅ Sponsor data loaded:', sponsorData.sponsor_name);
+        }
+      } catch (error) {
+        console.error('Error loading sponsor data:', error);
+      }
+    }
+
+    console.log('8. SPONSOR DATA:', {
+      hasSponsor: !!sponsorData,
+      sponsorName: sponsorData?.sponsor_name,
+      placement: sponsorData?.placement_preference,
+      duration: sponsorData?.sponsor_duration,
+      keyPointsCount: sponsorData?.sponsor_key_points?.length || 0
+    });
+
     const requestBody = {
       type,
       title: workflowData.title?.selected || workflowData.summary?.topic,
@@ -171,6 +198,7 @@ export default function DraftStep() {
       hook: workflowData.hook?.selected,
       contentPoints: workflowData.contentPoints,
       thumbnail: workflowData.thumbnail,
+      sponsor: sponsorData, // ✅ Add sponsor data
       model: workflowData.summary?.aiModel || 'claude-3-5-haiku',
       targetAudience: workflowData.summary?.targetAudience,
       tone: workflowData.summary?.tone,
@@ -183,7 +211,7 @@ export default function DraftStep() {
 
     // Debug voice profile structure being sent
     if (requestBody.voiceProfile) {
-      console.log('8A. VOICE PROFILE DEBUG:', {
+      console.log('9. VOICE PROFILE DEBUG:', {
         profile_name: requestBody.voiceProfile.profile_name,
         hasBasicProfile: !!requestBody.voiceProfile.basicProfile,
         hasEnhancedProfile: !!requestBody.voiceProfile.enhancedProfile,
@@ -196,12 +224,17 @@ export default function DraftStep() {
       });
     }
 
-    console.log('8. FINAL REQUEST BODY:', {
+    console.log('10. FINAL REQUEST BODY:', {
       ...requestBody,
       research: requestBody.research ? {
         sourcesCount: requestBody.research.sources?.length,
         hasKeywords: !!requestBody.research.keywords,
         hasSummary: !!requestBody.research.summary
+      } : null,
+      sponsor: requestBody.sponsor ? {
+        name: requestBody.sponsor.sponsor_name,
+        placement: requestBody.sponsor.placement_preference,
+        duration: requestBody.sponsor.sponsor_duration
       } : null
     });
     

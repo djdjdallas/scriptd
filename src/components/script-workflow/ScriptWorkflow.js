@@ -15,6 +15,7 @@ import TitleStep from './steps/TitleStep';
 import ThumbnailStep from './steps/ThumbnailStep';
 import HookStep from './steps/HookStep';
 import ContentPointsStep from './steps/ContentPointsStep';
+import SponsorStep from './steps/SponsorStep';
 import DraftStep from './steps/DraftStep';
 import EditStep from './steps/EditStep';
 import ExportStep from './steps/ExportStep';
@@ -28,10 +29,11 @@ const WORKFLOW_STEPS = [
   { id: 5, name: 'thumbnail', title: 'Thumbnail', component: ThumbnailStep, icon: 'Image' },
   { id: 6, name: 'hook', title: 'Hook', component: HookStep, icon: 'Zap' },
   { id: 7, name: 'contentPoints', title: 'Content Points', component: ContentPointsStep, icon: 'Target' },
-  { id: 8, name: 'draft', title: 'Draft', component: DraftStep, icon: 'Edit' },
-  { id: 9, name: 'edit', title: 'Edit', component: EditStep, icon: 'Wand2' },
-  { id: 10, name: 'export', title: 'Export', component: ExportStep, icon: 'Download' },
-  { id: 11, name: 'publish', title: 'Publish', component: PublishStep, icon: 'Send' }
+  { id: 8, name: 'sponsor', title: 'Sponsor', component: SponsorStep, icon: 'DollarSign' },
+  { id: 9, name: 'draft', title: 'Draft', component: DraftStep, icon: 'Edit' },
+  { id: 10, name: 'edit', title: 'Edit', component: EditStep, icon: 'Wand2' },
+  { id: 11, name: 'export', title: 'Export', component: ExportStep, icon: 'Download' },
+  { id: 12, name: 'publish', title: 'Publish', component: PublishStep, icon: 'Send' }
 ];
 
 const WorkflowContext = createContext();

@@ -6,6 +6,7 @@ import { Search, Globe, FileText, Link, CheckCircle, XCircle, AlertCircle, Star,
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import ContentIdeaBanner from '../ContentIdeaBanner';
+import ResearchAdequacyMeter from '@/components/research/ResearchAdequacyMeter';
 
 export default function ResearchStep() {
   const { workflowData, updateStepData, markStepComplete, workflowId, trackCredits, goToStep } = useWorkflow();
@@ -29,6 +30,7 @@ export default function ResearchStep() {
   const [videoTranscripts, setVideoTranscripts] = useState({});
   const [isExtractingTranscript, setIsExtractingTranscript] = useState({});
   const [expandedTranscripts, setExpandedTranscripts] = useState(new Set());
+  const [researchAdequacy, setResearchAdequacy] = useState(null);
 
   const supabase = createClient();
 
@@ -123,6 +125,48 @@ export default function ResearchStep() {
 
     loadSavedData();
   }, [workflowId]);
+
+  // Calculate research adequacy for 35+ minute scripts
+  useEffect(() => {
+    const calculateAdequacy = async () => {
+      const targetDuration = workflowData.summary?.targetDuration;
+      if (!targetDuration || !sources || sources.length === 0) {
+        setResearchAdequacy(null);
+        return;
+      }
+
+      const totalMinutes = Math.ceil(targetDuration / 60);
+
+      // Only calculate for 35+ minute scripts
+      if (totalMinutes < 35) {
+        setResearchAdequacy(null);
+        return;
+      }
+
+      try {
+        // Dynamically import the validator
+        const { validateResearchForDuration, calculateResearchScore } =
+          await import('@/lib/script-generation/research-validator');
+
+        const hasUserDocuments = sources.some(s =>
+          s.source_type === 'document' || s.source_type === 'upload'
+        );
+
+        const validation = validateResearchForDuration(
+          { sources },
+          totalMinutes,
+          hasUserDocuments
+        );
+
+        setResearchAdequacy(validation);
+      } catch (error) {
+        console.error('Error calculating research adequacy:', error);
+        setResearchAdequacy(null);
+      }
+    };
+
+    calculateAdequacy();
+  }, [sources, workflowData.summary?.targetDuration]);
 
   // AI-powered search using the video topic
   const performAISearch = async () => {
@@ -1516,6 +1560,19 @@ export default function ResearchStep() {
               <p className="text-xs text-gray-500 mt-3">
                 Click a question to search for it
               </p>
+            </div>
+          )}
+
+          {/* Research Adequacy Meter for 35+ minute scripts */}
+          {researchAdequacy && (
+            <div className="glass-card p-6">
+              <ResearchAdequacyMeter
+                adequacyPercent={researchAdequacy.adequacyPercent}
+                current={researchAdequacy.current}
+                requirements={researchAdequacy.requirements}
+                recommendations={researchAdequacy.recommendations}
+                isAdequate={researchAdequacy.isAdequate}
+              />
             </div>
           )}
 

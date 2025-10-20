@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronRight, Menu, X, FileText, Search, Layout, Type, Image, Zap, Target, Edit, Wand2, Download, Send, Check } from 'lucide-react';
+import { ChevronRight, Menu, X, FileText, Search, Layout, Type, Image, Zap, Target, DollarSign, Edit, Wand2, Download, Send, Check } from 'lucide-react';
 
 const Icons = {
   FileText,
@@ -11,6 +11,7 @@ const Icons = {
   Image,
   Zap,
   Target,
+  DollarSign,
   Edit,
   Wand2,
   Download,

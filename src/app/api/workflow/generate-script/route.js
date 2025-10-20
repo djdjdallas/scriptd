@@ -67,6 +67,7 @@ export async function POST(request) {
       hook,
       contentPoints,
       thumbnail,
+      sponsor, // Add sponsor data
       model = 'claude-3-5-haiku',
       targetAudience,
       tone,
@@ -399,7 +400,45 @@ export async function POST(request) {
     // Use targetDuration from summary if available, otherwise calculate from content points
     const totalDuration = targetDuration || contentPoints?.points?.reduce((acc, p) => acc + p.duration, 0) || 600;
     const totalMinutes = Math.ceil(totalDuration / 60);
-    
+
+    // ENHANCED RESEARCH VALIDATION FOR 35+ MINUTE SCRIPTS
+    if (totalMinutes >= 35 && research?.sources && research.sources.length > 0) {
+      console.log('📊 === ENHANCED RESEARCH VALIDATION (35+ MIN) ===');
+
+      const { validateResearchForDuration, calculateResearchScore } =
+        require('@/lib/script-generation/research-validator');
+
+      const hasUserDocuments = research.sources.some(s =>
+        s.source_type === 'document' || s.source_type === 'upload'
+      );
+
+      const researchValidation = validateResearchForDuration(
+        { sources: research.sources },
+        totalMinutes,
+        hasUserDocuments
+      );
+
+      if (!researchValidation.isAdequate) {
+        console.error('❌ Insufficient research for long-form content (35+ minutes)');
+        console.error('Current:', researchValidation.current);
+        console.error('Required:', researchValidation.requirements);
+
+        return NextResponse.json({
+          error: 'Insufficient research for long-form content',
+          details: `Your ${totalMinutes}-minute script requires more comprehensive research to maintain quality throughout.`,
+          validation: researchValidation,
+          recommendations: researchValidation.recommendations,
+          required: researchValidation.requirements,
+          current: researchValidation.current,
+          adequacyPercent: Math.round(researchValidation.adequacyPercent)
+        }, { status: 422 }); // 422 Unprocessable Entity
+      }
+
+      console.log(`✅ Research validation passed for ${totalMinutes}-minute script`);
+      console.log(`   Adequacy: ${Math.round(researchValidation.adequacyPercent)}%`);
+      console.log(`   Score: ${researchValidation.score.toFixed(2)}`);
+    }
+
     let script = '';
     // Check if we need chunked generation for long scripts
     const needsChunking = LongFormScriptHandler.needsChunking(totalDuration);
@@ -1014,6 +1053,7 @@ YOU WILL BE PENALIZED for:
                     research: enhancedResearch || research,
                     voiceProfile: voiceProfile,
                     thumbnail: thumbnail,
+                    sponsor: sponsor, // Add sponsor data
                     targetAudience: targetAudience,
                     tone: tone
                   });
@@ -1068,6 +1108,27 @@ ${enhancedResearch.insights.trends?.length > 0 ? `Trends: ${enhancedResearch.ins
 ${thumbnail ? `
 THUMBNAIL CONTEXT:
 ${thumbnail.description || 'Visual hook to support the content'}
+` : ''}
+
+${sponsor ? `
+SPONSOR INTEGRATION:
+Sponsor: ${sponsor.sponsor_name}
+Product: ${sponsor.sponsor_product}
+Call-to-Action: ${sponsor.sponsor_cta}
+${sponsor.sponsor_key_points?.length > 0 ? `Key Points to Mention:
+${sponsor.sponsor_key_points.map((p, i) => `${i + 1}. ${p}`).join('\n')}` : ''}
+Duration: Approximately ${sponsor.sponsor_duration || 30} seconds
+Placement: ${sponsor.placement_preference === 'auto' ? 'Optimal point (typically 25-35% into video)' :
+            sponsor.placement_preference === 'early' ? 'Early in video (after hook)' :
+            sponsor.placement_preference === 'mid' ? 'Middle of video' :
+            sponsor.placement_preference === 'late' ? 'Near end (before conclusion)' :
+            `Custom timing at ${sponsor.custom_placement_time} seconds`}
+Transition Style: ${sponsor.transition_style === 'natural' ? 'Smooth, natural segue' :
+                   sponsor.transition_style === 'direct' ? 'Quick, straightforward' :
+                   'Thematic bridge'}
+${sponsor.include_disclosure !== false ? `Disclosure Required: Include FTC-compliant disclosure (e.g., "This video is sponsored by ${sponsor.sponsor_name}")` : ''}
+
+IMPORTANT: Integrate this sponsor segment naturally into the script. Make it feel authentic and maintain viewer engagement. Use [SPONSOR SEGMENT START] and [SPONSOR SEGMENT END] markers.
 ` : ''}
 
 REQUIREMENTS:

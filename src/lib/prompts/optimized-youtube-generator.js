@@ -29,7 +29,8 @@ const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext =
     voiceProfile = null,
     thumbnail = null,
     targetAudience = null,
-    tone = 'professional'
+    tone = 'professional',
+    sponsor = null
   } = workflowContext;
   
   console.log('📋 WORKFLOW CONTEXT EXTRACTED:');
@@ -281,7 +282,17 @@ const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext =
     console.log('\n🖼️ THUMBNAIL:');
     console.log('Description provided:', !!thumbnail.description);
   }
-  
+
+  // Log sponsor
+  if (sponsor) {
+    console.log('\n💰 SPONSOR INTEGRATION:');
+    console.log('Sponsor:', sponsor.sponsor_name);
+    console.log('Product:', sponsor.sponsor_product);
+    console.log('Placement:', sponsor.placement_preference);
+    console.log('Duration:', sponsor.sponsor_duration, 'seconds');
+    console.log('Key points:', sponsor.sponsor_key_points?.length || 0);
+  }
+
   console.log('\n');
   console.log('═════════════════════════════════════════════════════════════');
   console.log('📤 FINAL SUMMARY OF DATA BEING SENT TO CLAUDE:');
@@ -426,6 +437,77 @@ const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext =
     - Tease next video (if applicable)
   </conclusion>
 </content_structure>
+
+${sponsor ? `
+<sponsor_integration>
+  <sponsor_info>
+    <name>${sponsor.sponsor_name}</name>
+    <product>${sponsor.sponsor_product}</product>
+    <call_to_action>${sponsor.sponsor_cta}</call_to_action>
+    ${sponsor.sponsor_key_points?.length > 0 ? `
+    <key_points>
+      ${sponsor.sponsor_key_points.map(point => `<point>${point}</point>`).join('\n      ')}
+    </key_points>` : ''}
+    <duration_seconds>${sponsor.sponsor_duration || 30}</duration_seconds>
+  </sponsor_info>
+
+  <integration_requirements>
+    <placement>
+      <preference>${sponsor.placement_preference || 'auto'}</preference>
+      ${sponsor.placement_preference === 'auto' ? `
+      <optimal_placement>Place sponsor segment at the optimal retention point (typically 25-35% into video, after establishing value but before main climax). This is statistically the best time for sponsor mentions.</optimal_placement>` : ''}
+      ${sponsor.placement_preference === 'early' ? `
+      <placement_timing>Place sponsor segment in the early part of the video (15-25% into video), after the hook but before diving deep into main content.</placement_timing>` : ''}
+      ${sponsor.placement_preference === 'mid' ? `
+      <placement_timing>Place sponsor segment in the middle of the video (45-55% into video), during a natural transition point.</placement_timing>` : ''}
+      ${sponsor.placement_preference === 'late' ? `
+      <placement_timing>Place sponsor segment near the end (75-85% into video), before the conclusion but after delivering main value.</placement_timing>` : ''}
+      ${sponsor.custom_placement_time ? `
+      <custom_timing>Place sponsor segment at approximately ${sponsor.custom_placement_time} seconds into the video.</custom_timing>` : ''}
+    </placement>
+
+    <transition_style>${sponsor.transition_style || 'natural'}</transition_style>
+    <transition_instructions>
+      ${sponsor.transition_style === 'natural' || !sponsor.transition_style ? `
+      Create a smooth, natural segue that connects the sponsor to the surrounding content thematically. Make the transition feel organic and relevant to what was just discussed.
+      Example: "Speaking of [topic], this actually reminds me of something that's made this so much easier for me..."` : ''}
+      ${sponsor.transition_style === 'direct' ? `
+      Use a quick, straightforward transition. Be honest and direct about the sponsorship.
+      Example: "Before we continue, I want to tell you about today's sponsor..."` : ''}
+      ${sponsor.transition_style === 'segue' ? `
+      Create a thematic bridge that relates the sponsor to the current topic. Find a genuine connection.
+      Example: "And if you're serious about [topic], you'll want to check out..."` : ''}
+    </transition_instructions>
+
+    <tone_matching>${sponsor.tone_match !== false ? 'Match sponsor segment tone to overall script style' : 'Keep sponsor segment neutral'}</tone_matching>
+
+    ${sponsor.include_disclosure !== false ? `
+    <disclosure>
+      IMPORTANT: Include FTC-compliant sponsorship disclosure at the beginning of the sponsor segment.
+      Example: "This video is sponsored by ${sponsor.sponsor_name}" OR "A huge thank you to ${sponsor.sponsor_name} for sponsoring this video"
+    </disclosure>` : ''}
+  </integration_requirements>
+
+  <writing_guidelines>
+    <rule>SEAMLESS INTEGRATION: The sponsor segment should feel like a natural part of the video, not a jarring interruption</rule>
+    <rule>VALUE CONNECTION: Connect the sponsor to the viewer's needs or interests based on the video topic</rule>
+    <rule>ENTHUSIASM: Write the sponsor segment with the same energy and authenticity as the rest of the script</rule>
+    <rule>ALL REQUIRED ELEMENTS: Ensure ALL key points are mentioned naturally throughout the sponsor segment</rule>
+    <rule>CTA CLARITY: Make the call-to-action clear, memorable, and easy to act on. Include any special URLs or codes exactly as provided</rule>
+    <rule>TIMING: Keep sponsor segment to approximately ${sponsor.sponsor_duration || 30} seconds (${Math.floor((sponsor.sponsor_duration || 30) / 150 * 100)} words)</rule>
+    <rule>RETENTION AWARENESS: Use engaging language to maintain viewer attention during sponsor segment. Don't let energy drop!</rule>
+    <rule>AUTHENTICITY: If possible, add a personal touch or genuine endorsement that feels natural to the creator's voice</rule>
+  </writing_guidelines>
+
+  <placement_markers>
+    When writing the script, clearly indicate where the sponsor segment begins and ends:
+
+    [SPONSOR SEGMENT START]
+    Your naturally integrated sponsor content here, following all guidelines above.
+    [SPONSOR SEGMENT END]
+  </placement_markers>
+</sponsor_integration>
+` : ''}
 
 <accuracy_requirements>
   <fact_checking>CRITICAL: Verify all statistics and claims before including</fact_checking>
