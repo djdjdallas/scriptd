@@ -53,7 +53,12 @@ export default function SponsorStep() {
 
         if (data) {
           setHasSponsor(true);
-          setSponsorData(data);
+          setSponsorData({
+            ...data,
+            sponsor_duration: data.sponsor_duration || 30,
+            custom_placement_time: data.custom_placement_time || 0,
+            sponsor_key_points: data.sponsor_key_points || ['']
+          });
         }
       } catch (error) {
         console.error('Error loading sponsor data:', error);
@@ -193,18 +198,53 @@ export default function SponsorStep() {
           return;
         }
 
-        // Upsert sponsor data
-        const { error } = await supabase
-          .from('workflow_sponsors')
-          .upsert({
-            workflow_id: workflowId,
-            user_id: user.id,
-            ...sponsorData,
-            sponsor_key_points: cleanedKeyPoints,
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'workflow_id'
-          });
+        // Prepare sponsor data
+        const sponsorPayload = {
+          workflow_id: workflowId,
+          user_id: user.id,
+          sponsor_name: sponsorData.sponsor_name,
+          sponsor_product: sponsorData.sponsor_product,
+          sponsor_cta: sponsorData.sponsor_cta,
+          sponsor_key_points: cleanedKeyPoints,
+          sponsor_duration: sponsorData.sponsor_duration || 30,
+          placement_preference: sponsorData.placement_preference || 'auto',
+          custom_placement_time: sponsorData.custom_placement_time,
+          transition_style: sponsorData.transition_style || 'natural',
+          tone_match: sponsorData.tone_match !== false,
+          include_disclosure: sponsorData.include_disclosure !== false,
+          updated_at: new Date().toISOString()
+        };
+
+        let error;
+
+        // Check if we're updating an existing record or creating a new one
+        if (sponsorData.id) {
+          // Update existing record
+          ({ error } = await supabase
+            .from('workflow_sponsors')
+            .update(sponsorPayload)
+            .eq('id', sponsorData.id));
+        } else {
+          // Check if record exists for this workflow
+          const { data: existing } = await supabase
+            .from('workflow_sponsors')
+            .select('id')
+            .eq('workflow_id', workflowId)
+            .single();
+
+          if (existing) {
+            // Update existing
+            ({ error } = await supabase
+              .from('workflow_sponsors')
+              .update(sponsorPayload)
+              .eq('id', existing.id));
+          } else {
+            // Insert new
+            ({ error } = await supabase
+              .from('workflow_sponsors')
+              .insert(sponsorPayload));
+          }
+        }
 
         if (error) throw error;
 
@@ -372,8 +412,11 @@ export default function SponsorStep() {
                   type="number"
                   min="15"
                   max="120"
-                  value={sponsorData.sponsor_duration}
-                  onChange={(e) => setSponsorData({ ...sponsorData, sponsor_duration: parseInt(e.target.value) })}
+                  value={sponsorData.sponsor_duration || 30}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    setSponsorData({ ...sponsorData, sponsor_duration: isNaN(val) ? 30 : val });
+                  }}
                   className="w-full px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -419,7 +462,10 @@ export default function SponsorStep() {
                     min="0"
                     max={workflowData.summary?.targetDuration || 300}
                     value={sponsorData.custom_placement_time || 0}
-                    onChange={(e) => setSponsorData({ ...sponsorData, custom_placement_time: parseInt(e.target.value) })}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      setSponsorData({ ...sponsorData, custom_placement_time: isNaN(val) ? 0 : val });
+                    }}
                     className="w-full px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>

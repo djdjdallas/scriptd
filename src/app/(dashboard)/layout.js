@@ -275,7 +275,7 @@ export default function DashboardLayout({ children }) {
         onMouseEnter={() => setSidebarHovered(true)}
         onMouseLeave={() => setSidebarHovered(false)}
         className={cn(
-          "fixed left-0 top-0 h-full glass border-r border-white/10 transition-all duration-300 z-40 flex flex-col overflow-hidden",
+          "fixed left-0 top-0 h-full glass border-r border-white/10 transition-all duration-500 ease-in-out z-40 flex flex-col overflow-hidden",
           sidebarCollapsed && !sidebarHovered ? "w-20" : "w-64",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -292,15 +292,6 @@ export default function DashboardLayout({ children }) {
               )}
             </Link>
           </div>
-
-          {/* User Info */}
-          {!(sidebarCollapsed && !sidebarHovered) && user && (
-            <div className="glass-card p-4 mb-8">
-              <p className="text-white font-medium text-sm break-all text-center">
-                {user.email}
-              </p>
-            </div>
-          )}
 
           {/* Navigation */}
           <nav className="space-y-2">
@@ -426,14 +417,14 @@ export default function DashboardLayout({ children }) {
           {/* Credits Display */}
           {!(sidebarCollapsed && !sidebarHovered) && (
             <div className="glass-card p-4 mt-auto">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-300 mb-10">Credits</span>
+              <div className="flex items-center gap-2 mb-3 py-1">
+                <span className="text-sm text-gray-300 leading-none">Credits:</span>
                 {creditsLoading ? (
-                  <span className="text-lg font-bold text-gray-500 animate-pulse">
+                  <span className="text-sm font-bold text-gray-500 animate-pulse leading-none">
                     ...
                   </span>
                 ) : (
-                  <span className="text-lg font-bold text-white mb-10">
+                  <span className="text-sm font-bold text-white leading-none">
                     {credits.toLocaleString()}
                   </span>
                 )}
@@ -453,7 +444,7 @@ export default function DashboardLayout({ children }) {
           )}
 
           {/* Sign Out */}
-          <div>
+          <div className="mt-4">
             <Button
               onClick={handleSignOut}
               className={cn(
@@ -473,7 +464,7 @@ export default function DashboardLayout({ children }) {
       {/* Main Content */}
       <main
         className={cn(
-          "transition-all duration-300",
+          "transition-all duration-500 ease-in-out",
           sidebarCollapsed && !sidebarHovered ? "lg:ml-20" : "lg:ml-64"
         )}
       >

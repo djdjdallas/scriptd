@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import YouTubeTools from "@/components/youtube-tools";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,7 +25,6 @@ import {
   BarChart3,
   ChevronRight,
   Loader2,
-  Wrench,
   Plus,
   Trash2,
   Menu,
@@ -643,17 +641,6 @@ Please analyze:
                 <BookOpen className="h-4 w-4" />
                 Prompt Library
               </button>
-              <button
-                onClick={() => setActiveTab('tools')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                  activeTab === 'tools'
-                    ? 'bg-purple-500/20 text-white ring-2 ring-purple-400'
-                    : 'text-gray-400 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <Wrench className="h-4 w-4" />
-                YouTube Tools
-              </button>
             </div>
           </div>
 
@@ -865,12 +852,6 @@ Please analyze:
                   ))}
                 </div>
               </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="tools" className="m-0">
-              <div className="p-6">
-                <YouTubeTools />
-              </div>
             </TabsContent>
           </div>
         </Tabs>

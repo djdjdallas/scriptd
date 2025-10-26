@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { extractTranscript, extractVideoId, generateCopyrightNotice, FAIR_USE_GUIDELINES } from '@/lib/youtube/transcript-extractor';
-import { createClient } from '@supabase/supabase-js';
+import { createServiceClient } from '@/lib/supabase/service';
 
 /**
  * POST /api/workflow/transcript-extract
@@ -106,10 +106,7 @@ export async function POST(request) {
       try {
         console.log(`[API] Saving transcript to workflow_video_transcripts for workflow ${workflowId}`);
 
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL,
-          process.env.SUPABASE_SERVICE_ROLE_KEY
-        );
+        const supabase = createServiceClient();
 
         // Prepare transcript entry for dedicated table
         const transcriptEntry = {

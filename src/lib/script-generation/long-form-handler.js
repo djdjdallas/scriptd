@@ -69,6 +69,7 @@ export class LongFormScriptHandler {
       tone,
       research,
       frame,
+      sponsor, // ✅ ADD SPONSOR PARAMETER
       contentPlan,
       comprehensiveOutline
     } = config;
@@ -82,6 +83,17 @@ export class LongFormScriptHandler {
     // Log content distribution for debugging
     console.log(`📊 Content Distribution: ${contentPoints.length} points across ${chunkConfig.chunks} chunks`);
     console.log(`📊 Points per chunk: ${pointsPerChunk}`);
+
+    // Log sponsor data
+    if (sponsor) {
+      console.log(`💰 SPONSOR DATA IN CHUNK HANDLER:`);
+      console.log(`   Sponsor: ${sponsor.sponsor_name}`);
+      console.log(`   Product: ${sponsor.sponsor_product}`);
+      console.log(`   Placement: ${sponsor.placement_preference}`);
+      console.log(`   Duration: ${sponsor.sponsor_duration}s`);
+    } else {
+      console.log(`⚠️ No sponsor data provided to chunk handler`);
+    }
 
     for (let i = 0; i < chunkConfig.chunks; i++) {
       const chunkStart = i * chunkConfig.minutesPerChunk;
@@ -174,7 +186,8 @@ export class LongFormScriptHandler {
           targetAudience,
           tone,
           research,
-          frame
+          frame,
+          sponsor // ✅ ADD SPONSOR TO CONTEXT
         },
         outline: outlineForChunk, // Add outline for this specific chunk
         comprehensiveOutline: comprehensiveOutline // Add full outline for reference
@@ -1124,6 +1137,27 @@ AUDIO-FIRST GUIDELINES:
 - Describe graphs, charts, and diagrams in the narration, not just in visual cues
 
 WORD COUNT REQUIREMENT: Write AT LEAST ${bufferWords} words. This is mandatory.
+
+${context.sponsor ? `
+💰 SPONSOR INTEGRATION:
+Sponsor: ${context.sponsor.sponsor_name}
+Product: ${context.sponsor.sponsor_product}
+Call-to-Action: ${context.sponsor.sponsor_cta}
+${context.sponsor.sponsor_key_points?.length > 0 ? `Key Points to Mention:
+${context.sponsor.sponsor_key_points.map((p, i) => `${i + 1}. ${p}`).join('\n')}` : ''}
+Duration: Approximately ${context.sponsor.sponsor_duration || 30} seconds
+Placement: ${context.sponsor.placement_preference === 'auto' ? 'Optimal point (typically 25-35% into video)' :
+            context.sponsor.placement_preference === 'early' ? 'Early in video (after hook)' :
+            context.sponsor.placement_preference === 'mid' ? 'Middle of video' :
+            context.sponsor.placement_preference === 'late' ? 'Near end (before conclusion)' :
+            `Custom timing at ${context.sponsor.custom_placement_time} seconds`}
+Transition Style: ${context.sponsor.transition_style === 'natural' ? 'Smooth, natural segue' :
+                   context.sponsor.transition_style === 'direct' ? 'Quick, straightforward' :
+                   'Thematic bridge'}
+${context.sponsor.include_disclosure !== false ? `Disclosure Required: Include FTC-compliant disclosure (e.g., "This video is sponsored by ${context.sponsor.sponsor_name}")` : ''}
+
+IMPORTANT: Integrate this sponsor segment naturally into the script. Make it feel authentic and maintain viewer engagement. Use [SPONSOR SEGMENT START] and [SPONSOR SEGMENT END] markers.
+` : ''}
 
 ⚠️ IMPORTANT: Write ONLY the script content. DO NOT include any meta-commentary, explanations about word counts, notes about expansions, or any text that isn't part of the actual script. Just write the script itself.
 

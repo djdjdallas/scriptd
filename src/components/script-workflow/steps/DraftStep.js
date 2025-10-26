@@ -165,19 +165,35 @@ export default function DraftStep() {
     let sponsorData = null;
     if (workflowId) {
       try {
+        console.log('🔍 Loading sponsor data for workflow:', workflowId);
+
         const { data, error } = await supabase
           .from('workflow_sponsors')
           .select('*')
           .eq('workflow_id', workflowId)
           .single();
 
+        console.log('📊 Sponsor query result:', {
+          hasData: !!data,
+          hasError: !!error,
+          errorCode: error?.code,
+          errorMessage: error?.message,
+          errorDetails: error?.details
+        });
+
         if (data && !error) {
           sponsorData = data;
           console.log('✅ Sponsor data loaded:', sponsorData.sponsor_name);
+        } else if (error) {
+          console.log('⚠️ No sponsor data found or error:', error.message || error.code);
+        } else {
+          console.log('⚠️ Sponsor query returned no data and no error');
         }
       } catch (error) {
-        console.error('Error loading sponsor data:', error);
+        console.error('❌ Exception loading sponsor data:', error);
       }
+    } else {
+      console.log('⚠️ No workflowId provided, skipping sponsor load');
     }
 
     console.log('8. SPONSOR DATA:', {

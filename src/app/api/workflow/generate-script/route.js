@@ -75,6 +75,19 @@ export async function POST(request) {
       workflowId // Add workflow ID to link the script
     } = await request.json();
 
+    // Debug: Log sponsor data received
+    console.log('📢 === SPONSOR DATA RECEIVED IN API ===');
+    console.log('Sponsor data:', {
+      hasSponsor: !!sponsor,
+      sponsorName: sponsor?.sponsor_name,
+      sponsorProduct: sponsor?.sponsor_product,
+      sponsorCTA: sponsor?.sponsor_cta,
+      placement: sponsor?.placement_preference,
+      duration: sponsor?.sponsor_duration,
+      keyPointsCount: sponsor?.sponsor_key_points?.length || 0,
+      fullSponsor: sponsor
+    });
+
     // Get user tier from database
     const { data: userProfile } = await supabase
       .from('users')
@@ -545,6 +558,7 @@ export async function POST(request) {
             tone,
             research: enhancedResearch || research,
             frame,
+            sponsor, // ✅ ADD SPONSOR DATA
             contentPlan, // Pass the plan to inform chunk generation
             comprehensiveOutline // Pass the outline for 30+ minute scripts
           });

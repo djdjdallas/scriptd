@@ -409,8 +409,48 @@ export default function ResearchStep() {
     setSelectedSources(allSourceIds);
   };
 
-  const deselectAllSources = () => {
+  const deselectAllSources = async () => {
+    // Clear all sources from the UI
+    setSources([]);
     setSelectedSources(new Set());
+    setRelatedVideos([]);
+    setVideoTranscripts({});
+    setExpandedTranscripts(new Set());
+
+    // Clear uploaded documents
+    setUploadedDocuments([]);
+
+    // Also clear from database if workflowId exists
+    if (workflowId) {
+      try {
+        // Delete all workflow research sources
+        const { error: researchError } = await supabase
+          .from('workflow_research')
+          .delete()
+          .eq('workflow_id', workflowId);
+
+        if (researchError) {
+          console.error('Error deleting research sources:', researchError);
+        }
+
+        // Delete all video transcripts
+        const { error: transcriptError } = await supabase
+          .from('workflow_video_transcripts')
+          .delete()
+          .eq('workflow_id', workflowId);
+
+        if (transcriptError) {
+          console.error('Error deleting video transcripts:', transcriptError);
+        }
+
+        toast.success('All sources removed');
+      } catch (error) {
+        console.error('Error removing sources:', error);
+        toast.error('Failed to remove all sources');
+      }
+    } else {
+      toast.success('All sources cleared');
+    }
   };
 
   const handleFileUpload = async (event) => {
