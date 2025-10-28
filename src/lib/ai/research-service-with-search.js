@@ -4,6 +4,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { fetchMultipleUrls } from '@/lib/utils/web-content-fetcher';
 
 class ResearchServiceWithSearch {
   /**
@@ -279,6 +280,58 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
           fact_check_status: 'verified',
           relevance: 0.75
         });
+      }
+
+      // === NEW: ENRICH SOURCES WITH FULL WEB CONTENT ===
+      console.log('📚 Enriching search results with full web content...');
+
+      // Identify URLs that need content fetching (those with placeholder content)
+      const urlsToEnrich = normalizedSources
+        .filter(s => {
+          const isWebUrl = s.source_url.startsWith('http://') || s.source_url.startsWith('https://');
+          const hasPlaceholder = s.source_content.includes('Source found via web search');
+          const hasShortContent = (s.source_content || '').split(/\s+/).length < 100;
+          return isWebUrl && (hasPlaceholder || hasShortContent);
+        })
+        .map(s => s.source_url);
+
+      console.log(`  🔍 Found ${urlsToEnrich.length} sources needing enrichment`);
+
+      if (urlsToEnrich.length > 0) {
+        try {
+          const fetchedContents = await fetchMultipleUrls(urlsToEnrich, {
+            maxConcurrent: 5,
+            minWordCount: 100,
+            timeout: 30000,
+            useJina: true,
+            fallbackToRaw: true
+          });
+
+          // Map fetched content back to sources
+          for (let i = 0; i < normalizedSources.length; i++) {
+            const source = normalizedSources[i];
+            const fetched = fetchedContents.find(f => f.url === source.source_url);
+
+            if (fetched && fetched.success && fetched.wordCount >= 100) {
+              normalizedSources[i] = {
+                ...source,
+                source_content: fetched.content,
+                fetch_method: fetched.method,
+                word_count: fetched.wordCount,
+                is_starred: fetched.wordCount >= 500 ? true : source.is_starred
+              };
+              console.log(`  ✅ Enriched: ${source.source_title} (${fetched.wordCount} words)`);
+            }
+          }
+
+          const successCount = fetchedContents.filter(f => f.success).length;
+          const totalWords = fetchedContents.reduce((sum, f) => sum + (f.wordCount || 0), 0);
+          console.log(`  📊 Enrichment complete: ${successCount}/${urlsToEnrich.length} successful (${totalWords.toLocaleString()} words added)`);
+
+        } catch (error) {
+          console.error('  ❌ Content enrichment failed:', error);
+          console.log('  ⚠️ Continuing with original sources');
+        }
       }
 
       // Add Claude's analysis as a synthesis source

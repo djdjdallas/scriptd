@@ -4,6 +4,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { fetchMultipleUrls } from '@/lib/utils/web-content-fetcher';
 
 class ResearchService {
   /**
@@ -146,7 +147,7 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
         throw new Error('Research failed: ' + errorContent.text);
       }
 
-      const result = this.parseAndValidateResponse(response, minSources, minContentLength);
+      const result = await this.parseAndValidateResponse(response, minSources, minContentLength);
 
       return {
         success: true,
@@ -181,7 +182,7 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
   /**
    * Parse and validate Claude's response with tool usage enforcement
    */
-  static parseAndValidateResponse(response, minSources, minContentLength) {
+  static async parseAndValidateResponse(response, minSources, minContentLength) {
     const textContent = response.content.find(c => c.type === 'text');
 
     if (!textContent) {
@@ -310,6 +311,72 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
       relevance: source.relevance || (1 - index * 0.1)
     }));
 
+    // === NEW: ENRICH SOURCES WITH FULL WEB CONTENT ===
+    console.log('📚 Enriching sources with full web content...');
+
+    // Identify URLs that need content fetching (web sources with short content)
+    const urlsToFetch = normalizedSources
+      .filter(s => {
+        const isWebUrl = s.source_url.startsWith('http://') || s.source_url.startsWith('https://');
+        const hasShortContent = (s.source_content || '').split(/\s+/).length < 100;
+        return isWebUrl && hasShortContent;
+      })
+      .map(s => s.source_url);
+
+    console.log(`  🔍 Found ${urlsToFetch.length} sources needing content enrichment`);
+
+    let enrichedSources = normalizedSources;
+
+    if (urlsToFetch.length > 0) {
+      try {
+        // Fetch full content from URLs
+        const fetchedContents = await fetchMultipleUrls(urlsToFetch, {
+          maxConcurrent: 5,
+          minWordCount: 100,
+          timeout: 30000,
+          useJina: true,
+          fallbackToRaw: true,
+          onProgress: (completed, total, currentUrl) => {
+            if (completed % 5 === 0 || completed === total) {
+              console.log(`  📊 Progress: ${completed}/${total} URLs fetched`);
+            }
+          }
+        });
+
+        // Map fetched content back to sources
+        enrichedSources = normalizedSources.map(source => {
+          const fetched = fetchedContents.find(f => f.url === source.source_url);
+
+          if (fetched && fetched.success && fetched.wordCount >= 100) {
+            console.log(`  ✅ Enriched: ${source.source_title} (${fetched.wordCount} words via ${fetched.method})`);
+            return {
+              ...source,
+              source_content: fetched.content,
+              fetch_method: fetched.method,
+              word_count: fetched.wordCount,
+              // Mark as highly relevant if we got good content
+              is_starred: fetched.wordCount >= 500 ? true : source.is_starred
+            };
+          }
+
+          // Keep original if fetch failed (synthesis sources, or fetch error)
+          return source;
+        });
+
+        const successfulFetches = fetchedContents.filter(f => f.success).length;
+        const totalWords = fetchedContents.reduce((sum, f) => sum + (f.wordCount || 0), 0);
+
+        console.log(`  📊 Content enrichment complete: ${successfulFetches}/${urlsToFetch.length} successful (${totalWords.toLocaleString()} words added)`);
+
+      } catch (error) {
+        console.error('  ❌ Content enrichment failed:', error);
+        console.log('  ⚠️ Continuing with original sources');
+        // Continue with original sources if enrichment fails
+      }
+    } else {
+      console.log('  ℹ️ No sources need enrichment (all have substantial content)');
+    }
+
     // Add AI synthesis as first source
     const allSources = [
       {
@@ -321,10 +388,10 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
         fact_check_status: 'verified',
         relevance: 1.0
       },
-      ...normalizedSources
+      ...enrichedSources
     ];
 
-    console.log(`✅ Validated ${normalizedSources.length} sources with real content`);
+    console.log(`✅ Validated ${enrichedSources.length} sources with real content`);
 
     return {
       summary: parsed.summary || '',

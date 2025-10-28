@@ -174,6 +174,24 @@ export default function SummaryStep() {
         // Handle nested structure: {success: true, voiceProfile: {...}}
         const actualProfile = voiceProfileData?.voiceProfile || voiceProfileData;
 
+        // Normalize the structure - handle both flat and nested formats
+        // Database stores: { tone: [], style: [], pace: "..." }
+        // UI expects: { basicProfile: { tone: [], style: [], pace: "..." } }
+        let basicProfile = actualProfile?.basicProfile;
+
+        if (!basicProfile && actualProfile) {
+          // If basicProfile doesn't exist but we have top-level properties, create it
+          basicProfile = {
+            tone: actualProfile.tone || [],
+            style: actualProfile.style || [],
+            pace: actualProfile.pace || 'moderate',
+            energy: actualProfile.energy || 'medium',
+            humor: actualProfile.humor || 'occasional',
+            summary: actualProfile.summary || '',
+            signaturePhrases: actualProfile.signature_phrases || actualProfile.signaturePhrases || []
+          };
+        }
+
         const profile = {
           id: channel.id,
           profile_name: channel.title || channel.name,
@@ -183,15 +201,16 @@ export default function SummaryStep() {
           // Include the full voice profile data
           voiceProfileData: actualProfile,
           // Map to expected structure for compatibility
-          basicProfile: actualProfile?.basicProfile,
-          enhancedProfile: actualProfile?.enhancedProfile,
-          metadata: actualProfile?.metadata,
-          basedOnRealData: voiceProfileData?.basedOnRealData || actualProfile?.basedOnRealData,
+          basicProfile: basicProfile,
+          enhancedProfile: actualProfile?.enhancedProfile || actualProfile?.confidenceScores,
+          metadata: actualProfile?.metadata || (actualProfile?.metadata ? actualProfile.metadata : undefined),
+          basedOnRealData: voiceProfileData?.basedOnRealData || actualProfile?.basedOnRealData || actualProfile?.metadata?.basedOnRealData,
         };
 
         // Debug logging
         console.log(`[SummaryStep] Voice profile for ${channel.title}:`, {
           hasBasicProfile: !!profile.basicProfile,
+          hasTopLevelTone: !!actualProfile?.tone,
           hasEnhancedProfile: !!profile.enhancedProfile,
           hasMetadata: !!profile.metadata,
           basedOnRealData: profile.basedOnRealData,
@@ -227,15 +246,6 @@ export default function SummaryStep() {
 
       if (error) throw error;
       setChannels(data || []);
-
-      // If there's only one channel, auto-select it
-      if (data && data.length === 1) {
-        setSelectedChannel(data[0].id);
-        if (data[0].audience_description) {
-          setAudienceType("channel");
-          setTargetAudience(data[0].audience_description);
-        }
-      }
     } catch (error) {
       console.error("Error loading channels:", error);
     }
@@ -882,87 +892,99 @@ export default function SummaryStep() {
           />
 
           {/* Voice Profile Details Display */}
-          {voiceProfile && voiceProfile.basicProfile && (
+          {voiceProfile && voiceProfile.id && (
             <div className="mt-4 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-              <div className="flex items-start gap-2 mb-3">
-                <Mic className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-purple-300 mb-1">
+              <p className="text-sm text-purple-300 mb-2 flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                Voice Profile Analysis
+              </p>
+
+              <div className="space-y-2 text-sm">
+                <div className="pb-2 border-b border-purple-500/20">
+                  <p className="text-sm font-semibold text-white mb-1">
                     {voiceProfile.profile_name || voiceProfile.channel_title}
                   </p>
                   {voiceProfile.basedOnRealData && (
-                    <p className="text-xs text-green-400 mb-2">✓ Based on real channel analysis</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                {voiceProfile.basicProfile.summary && (
-                  <div className="pb-2 border-b border-purple-500/20">
-                    <p className="text-gray-300 italic">{voiceProfile.basicProfile.summary}</p>
-                  </div>
-                )}
-
-                {voiceProfile.basicProfile.tone && voiceProfile.basicProfile.tone.length > 0 && (
-                  <div>
-                    <span className="text-purple-300 font-medium">Tone: </span>
-                    <span className="text-gray-300">{voiceProfile.basicProfile.tone.join(', ')}</span>
-                  </div>
-                )}
-
-                {voiceProfile.basicProfile.style && voiceProfile.basicProfile.style.length > 0 && (
-                  <div>
-                    <span className="text-purple-300 font-medium">Style: </span>
-                    <span className="text-gray-300">{voiceProfile.basicProfile.style.join(', ')}</span>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-2 pt-2">
-                  {voiceProfile.basicProfile.pace && (
-                    <div>
-                      <span className="text-purple-300 font-medium text-xs">Pace: </span>
-                      <span className="text-gray-300 text-xs">{voiceProfile.basicProfile.pace}</span>
-                    </div>
-                  )}
-                  {voiceProfile.basicProfile.energy && (
-                    <div>
-                      <span className="text-purple-300 font-medium text-xs">Energy: </span>
-                      <span className="text-gray-300 text-xs">{voiceProfile.basicProfile.energy}</span>
-                    </div>
-                  )}
-                  {voiceProfile.basicProfile.humor && (
-                    <div>
-                      <span className="text-purple-300 font-medium text-xs">Humor: </span>
-                      <span className="text-gray-300 text-xs">{voiceProfile.basicProfile.humor}</span>
-                    </div>
+                    <p className="text-xs text-green-400">✓ Based on real channel analysis</p>
                   )}
                 </div>
 
-                {voiceProfile.basicProfile.signaturePhrases && voiceProfile.basicProfile.signaturePhrases.length > 0 && (
-                  <div className="pt-2 border-t border-purple-500/20">
-                    <span className="text-purple-300 font-medium text-xs">Signature Phrases: </span>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {voiceProfile.basicProfile.signaturePhrases.slice(0, 5).map((phrase, idx) => (
-                        <span key={idx} className="text-xs bg-purple-500/20 text-purple-200 px-2 py-0.5 rounded">
-                          "{phrase}"
-                        </span>
-                      ))}
-                      {voiceProfile.basicProfile.signaturePhrases.length > 5 && (
-                        <span className="text-xs text-purple-400">
-                          +{voiceProfile.basicProfile.signaturePhrases.length - 5} more
-                        </span>
+                {voiceProfile.basicProfile ? (
+                  <>
+                    {voiceProfile.basicProfile.summary && (
+                      <div className="pb-2">
+                        <p className="text-gray-300 italic">{voiceProfile.basicProfile.summary}</p>
+                      </div>
+                    )}
+
+                    {voiceProfile.basicProfile.tone && voiceProfile.basicProfile.tone.length > 0 && (
+                      <div>
+                        <span className="text-purple-300 font-medium">Tone: </span>
+                        <span className="text-gray-300">{voiceProfile.basicProfile.tone.join(', ')}</span>
+                      </div>
+                    )}
+
+                    {voiceProfile.basicProfile.style && voiceProfile.basicProfile.style.length > 0 && (
+                      <div>
+                        <span className="text-purple-300 font-medium">Style: </span>
+                        <span className="text-gray-300">{voiceProfile.basicProfile.style.join(', ')}</span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                      {voiceProfile.basicProfile.pace && (
+                        <div>
+                          <span className="text-purple-300 font-medium text-xs">Pace: </span>
+                          <span className="text-gray-300 text-xs">{voiceProfile.basicProfile.pace}</span>
+                        </div>
+                      )}
+                      {voiceProfile.basicProfile.energy && (
+                        <div>
+                          <span className="text-purple-300 font-medium text-xs">Energy: </span>
+                          <span className="text-gray-300 text-xs">{voiceProfile.basicProfile.energy}</span>
+                        </div>
+                      )}
+                      {voiceProfile.basicProfile.humor && (
+                        <div>
+                          <span className="text-purple-300 font-medium text-xs">Humor: </span>
+                          <span className="text-gray-300 text-xs">{voiceProfile.basicProfile.humor}</span>
+                        </div>
                       )}
                     </div>
-                  </div>
-                )}
 
-                {voiceProfile.enhancedProfile?.confidenceScores && (
-                  <div className="pt-2 mt-2 border-t border-purple-500/20">
-                    <span className="text-purple-300 font-medium text-xs">Authenticity Score: </span>
-                    <span className="text-green-400 font-semibold text-xs">
-                      {Math.round(voiceProfile.enhancedProfile.confidenceScores.overallAuthenticity * 100)}%
-                    </span>
-                  </div>
+                    {voiceProfile.basicProfile.signaturePhrases && voiceProfile.basicProfile.signaturePhrases.length > 0 && (
+                      <div className="pt-2 border-t border-purple-500/20">
+                        <span className="text-purple-300 font-medium text-xs">Signature Phrases: </span>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {voiceProfile.basicProfile.signaturePhrases.slice(0, 5).map((phrase, idx) => (
+                            <span key={idx} className="text-xs bg-purple-500/20 text-purple-200 px-2 py-0.5 rounded">
+                              "{phrase}"
+                            </span>
+                          ))}
+                          {voiceProfile.basicProfile.signaturePhrases.length > 5 && (
+                            <span className="text-xs text-purple-400">
+                              +{voiceProfile.basicProfile.signaturePhrases.length - 5} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {voiceProfile.enhancedProfile?.confidenceScores && (
+                      <div className="pt-2 mt-2 border-t border-purple-500/20">
+                        <span className="text-purple-300 font-medium text-xs">Authenticity Score: </span>
+                        <span className="text-green-400 font-semibold text-xs">
+                          {Math.round(voiceProfile.enhancedProfile.confidenceScores.overallAuthenticity * 100)}%
+                        </span>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-400 mt-2">✨ Full voice profile will be used for script generation</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-300">
+                    Voice profile loaded for {voiceProfile.profile_name || voiceProfile.channel_title}
+                  </p>
                 )}
               </div>
             </div>

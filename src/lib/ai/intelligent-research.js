@@ -4,6 +4,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { fetchMultipleUrls } from '@/lib/utils/web-content-fetcher';
 
 /**
  * Extracts key entities and facts from a research topic to create targeted searches
@@ -566,29 +567,35 @@ export async function performIntelligentResearch(topic, targetDuration, initialR
     console.log(`📊 Final after deduplication: ${allUniqueSources.length} sources`);
     console.log(`📊 Breakdown: ${uniqueSources.length} primary + ${expandedSources.length} expanded → ${allUniqueSources.length} unique`);
 
+    // Enrich sources with full web content
+    const enrichedSources = await enrichSourcesWithWebContent(allUniqueSources);
+
     return {
-      sources: allUniqueSources,
+      sources: enrichedSources,
       metrics: {
         primarySources: uniqueSources.length,
         expandedSources: expandedSources.length,
-        finalSources: allUniqueSources.length,
-        totalWords: calculateTotalWords(allUniqueSources),
+        finalSources: enrichedSources.length,
+        totalWords: calculateTotalWords(enrichedSources),
         targetWords: targetWords,
-        coveragePercent: (calculateTotalWords(allUniqueSources) / targetWords) * 100,
+        coveragePercent: (calculateTotalWords(enrichedSources) / targetWords) * 100,
         method: 'intelligent-expanded'
       }
     };
   }
 
+  // Enrich sources with full web content before returning
+  const enrichedSources = await enrichSourcesWithWebContent(uniqueSources);
+
   return {
-    sources: uniqueSources,
+    sources: enrichedSources,
     metrics: {
       primarySources: uniqueSources.length,
       expandedSources: 0,
-      finalSources: uniqueSources.length,
-      totalWords: totalWords,
+      finalSources: enrichedSources.length,
+      totalWords: calculateTotalWords(enrichedSources),
       targetWords: targetWords,
-      coveragePercent: (totalWords / targetWords) * 100,
+      coveragePercent: (calculateTotalWords(enrichedSources) / targetWords) * 100,
       method: 'intelligent-basic'
     }
   };
@@ -650,6 +657,80 @@ function deduplicateSources(sources) {
  */
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Enrich sources with full web content via Jina AI
+ * @param {Array} sources - Array of sources to enrich
+ * @returns {Promise<Array>} Enriched sources
+ */
+async function enrichSourcesWithWebContent(sources) {
+  if (!sources || sources.length === 0) return sources;
+
+  console.log('📚 Enriching sources with full web content...');
+
+  // Identify URLs that need content fetching (web sources with short content)
+  const urlsToFetch = sources
+    .filter(s => {
+      const isWebUrl = s.source_url?.startsWith('http://') || s.source_url?.startsWith('https://');
+      const hasShortContent = (s.source_content || '').split(/\s+/).length < 100;
+      return isWebUrl && hasShortContent;
+    })
+    .map(s => s.source_url);
+
+  console.log(`  🔍 Found ${urlsToFetch.length} sources needing content enrichment`);
+
+  if (urlsToFetch.length === 0) {
+    console.log('  ℹ️ No sources need enrichment (all have substantial content)');
+    return sources;
+  }
+
+  try {
+    // Fetch full content from URLs
+    const fetchedContents = await fetchMultipleUrls(urlsToFetch, {
+      maxConcurrent: 5,
+      minWordCount: 100,
+      timeout: 30000,
+      useJina: true,
+      fallbackToRaw: true,
+      onProgress: (completed, total, currentUrl) => {
+        if (completed % 5 === 0 || completed === total) {
+          console.log(`  📊 Progress: ${completed}/${total} URLs fetched`);
+        }
+      }
+    });
+
+    // Map fetched content back to sources
+    const enrichedSources = sources.map(source => {
+      const fetched = fetchedContents.find(f => f.url === source.source_url);
+
+      if (fetched && fetched.success && fetched.wordCount >= 100) {
+        console.log(`  ✅ Enriched: ${source.source_title} (${fetched.wordCount} words via ${fetched.method})`);
+        return {
+          ...source,
+          source_content: fetched.content,
+          fetch_method: fetched.method,
+          word_count: fetched.wordCount,
+          // Mark as highly relevant if we got good content
+          is_starred: fetched.wordCount >= 500 ? true : source.is_starred
+        };
+      }
+
+      // Keep original if fetch failed (synthesis sources, or fetch error)
+      return source;
+    });
+
+    const successfulFetches = fetchedContents.filter(f => f.success).length;
+    const totalWords = fetchedContents.reduce((sum, f) => sum + (f.wordCount || 0), 0);
+
+    console.log(`  📊 Content enrichment complete: ${successfulFetches}/${urlsToFetch.length} successful (${totalWords.toLocaleString()} words added)`);
+
+    return enrichedSources;
+  } catch (error) {
+    console.error('  ❌ Content enrichment failed:', error);
+    console.log('  ⚠️ Continuing with original sources');
+    return sources;
+  }
 }
 
 export default {
