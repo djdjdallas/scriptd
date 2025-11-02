@@ -18,7 +18,7 @@ export const MODEL_TIERS = {
     name: 'Fast Generation',
     description: 'Quick drafts and ideation',
     baseCredits: 3,
-    actualModel: 'claude-3-5-haiku-20241022', // Hidden from user
+    actualModel: process.env.FAST_MODEL || 'claude-3-5-haiku-20241022',
     features: ['60 second generation', 'Good for outlines', 'Testing ideas'],
     icon: '⚡'
   },
@@ -27,7 +27,7 @@ export const MODEL_TIERS = {
     name: 'Professional Quality',
     description: 'High-quality scripts for publishing',
     baseCredits: 8,
-    actualModel: 'claude-3-5-sonnet-20241022', // Hidden from user - fixed model name
+    actualModel: process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
     features: ['2-3 minute generation', 'Optimized for YouTube', 'Best value'],
     icon: '⭐',
     recommended: true
@@ -37,7 +37,7 @@ export const MODEL_TIERS = {
     name: 'Hollywood Studio',
     description: 'Cinema-grade scripts with maximum creativity',
     baseCredits: 15,
-    actualModel: 'claude-opus-4-1-20250805', // Hidden from user
+    actualModel: process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805',
     features: ['State-of-the-art AI', 'Maximum creativity', 'Best for viral content'],
     icon: '🎬'
   }
@@ -71,11 +71,10 @@ export const TIER_ACCESS_BY_SUBSCRIPTION = {
 // Legacy AI Models (kept for backward compatibility but hidden from UI)
 // Only Claude models are supported
 export const AI_MODELS = {
-  CLAUDE_4_OPUS_41: 'claude-opus-4-1-20250805',
-  CLAUDE_37_SONNET: 'claude-3-5-sonnet-20241022',
-  CLAUDE_3_HAIKU: 'claude-3-5-haiku-20241022',
-  // Deprecated - will be removed
-  CLAUDE_4_OPUS: 'claude-4-opus-20250522'
+  CLAUDE_3_OPUS: process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805',
+  CLAUDE_3_SONNET: process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
+  CLAUDE_3_HAIKU: process.env.FAST_MODEL || 'claude-3-5-haiku-20241022',
+  CLAUDE_VOICE: process.env.VOICE_MODEL || 'claude-sonnet-4-20250514'
 };
 
 // Script Types
@@ -183,9 +182,8 @@ export const CREDIT_COSTS = {
   },
   // Legacy model costs (for backward compatibility)
   SCRIPT_GENERATION: {
-    [AI_MODELS.CLAUDE_4_OPUS_41]: 15, // Maps to PREMIUM tier
-    [AI_MODELS.CLAUDE_4_OPUS]: 25,
-    [AI_MODELS.CLAUDE_37_SONNET]: 8, // Maps to BALANCED tier
+    [AI_MODELS.CLAUDE_3_OPUS]: 15, // Maps to PREMIUM tier
+    [AI_MODELS.CLAUDE_3_SONNET]: 8, // Maps to BALANCED tier
     [AI_MODELS.CLAUDE_3_HAIKU]: 3, // Maps to FAST tier
   },
   RESEARCH_CHAT: 1, // per message

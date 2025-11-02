@@ -114,7 +114,7 @@ export async function POST(request) {
       targetAudience,
       tone,
       apiKey: process.env.ANTHROPIC_API_KEY,
-      model: 'claude-3-5-sonnet-20241022'
+      model: process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929'
     });
 
     if (!outline) {

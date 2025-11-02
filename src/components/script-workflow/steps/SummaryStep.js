@@ -188,7 +188,10 @@ export default function SummaryStep() {
             energy: actualProfile.energy || 'medium',
             humor: actualProfile.humor || 'occasional',
             summary: actualProfile.summary || '',
-            signaturePhrases: actualProfile.signature_phrases || actualProfile.signaturePhrases || []
+            signaturePhrases: actualProfile.signature_phrases || actualProfile.signaturePhrases || [],
+            hooks: actualProfile.hooks || '',
+            transitions: actualProfile.transitions || '',
+            engagement: actualProfile.engagement || ''
           };
         }
 
@@ -205,6 +208,11 @@ export default function SummaryStep() {
           enhancedProfile: actualProfile?.enhancedProfile || actualProfile?.confidenceScores,
           metadata: actualProfile?.metadata || (actualProfile?.metadata ? actualProfile.metadata : undefined),
           basedOnRealData: voiceProfileData?.basedOnRealData || actualProfile?.basedOnRealData || actualProfile?.metadata?.basedOnRealData,
+          // Include top-level fields for backward compatibility
+          hooks: actualProfile.hooks || basicProfile?.hooks || '',
+          transitions: actualProfile.transitions || basicProfile?.transitions || '',
+          engagement: actualProfile.engagement || basicProfile?.engagement || '',
+          signature_phrases: actualProfile.signature_phrases || actualProfile.signaturePhrases || basicProfile?.signaturePhrases || []
         };
 
         // Debug logging
@@ -909,75 +917,98 @@ export default function SummaryStep() {
                   )}
                 </div>
 
-                {voiceProfile.basicProfile ? (
+                {(voiceProfile.basicProfile || voiceProfile.tone || voiceProfile.style || voiceProfile.summary) ? (
                   <>
-                    {voiceProfile.basicProfile.summary && (
+                    {(voiceProfile.basicProfile?.summary || voiceProfile.summary) && (
                       <div className="pb-2">
-                        <p className="text-gray-300 italic">{voiceProfile.basicProfile.summary}</p>
+                        <p className="text-gray-300 italic">{voiceProfile.basicProfile?.summary || voiceProfile.summary}</p>
                       </div>
                     )}
 
-                    {voiceProfile.basicProfile.tone && voiceProfile.basicProfile.tone.length > 0 && (
+                    {(voiceProfile.basicProfile?.tone || voiceProfile.tone) && (
                       <div>
                         <span className="text-purple-300 font-medium">Tone: </span>
-                        <span className="text-gray-300">{voiceProfile.basicProfile.tone.join(', ')}</span>
+                        <span className="text-gray-300">
+                          {(() => {
+                            const tone = voiceProfile.basicProfile?.tone || voiceProfile.tone;
+                            return Array.isArray(tone) ? tone.join(', ') : tone;
+                          })()}
+                        </span>
                       </div>
                     )}
 
-                    {voiceProfile.basicProfile.style && voiceProfile.basicProfile.style.length > 0 && (
+                    {(voiceProfile.basicProfile?.style || voiceProfile.style) && (
                       <div>
                         <span className="text-purple-300 font-medium">Style: </span>
-                        <span className="text-gray-300">{voiceProfile.basicProfile.style.join(', ')}</span>
+                        <span className="text-gray-300">
+                          {(() => {
+                            const style = voiceProfile.basicProfile?.style || voiceProfile.style;
+                            return Array.isArray(style) ? style.join(', ') : style;
+                          })()}
+                        </span>
                       </div>
                     )}
 
                     <div className="grid grid-cols-2 gap-2 pt-2">
-                      {voiceProfile.basicProfile.pace && (
+                      {(voiceProfile.basicProfile?.pace || voiceProfile.pace) && (
                         <div>
                           <span className="text-purple-300 font-medium text-xs">Pace: </span>
-                          <span className="text-gray-300 text-xs">{voiceProfile.basicProfile.pace}</span>
+                          <span className="text-gray-300 text-xs">{voiceProfile.basicProfile?.pace || voiceProfile.pace}</span>
                         </div>
                       )}
-                      {voiceProfile.basicProfile.energy && (
+                      {(voiceProfile.basicProfile?.energy || voiceProfile.energy) && (
                         <div>
                           <span className="text-purple-300 font-medium text-xs">Energy: </span>
-                          <span className="text-gray-300 text-xs">{voiceProfile.basicProfile.energy}</span>
+                          <span className="text-gray-300 text-xs">{voiceProfile.basicProfile?.energy || voiceProfile.energy}</span>
                         </div>
                       )}
-                      {voiceProfile.basicProfile.humor && (
+                      {(voiceProfile.basicProfile?.humor || voiceProfile.humor) && (
                         <div>
                           <span className="text-purple-300 font-medium text-xs">Humor: </span>
-                          <span className="text-gray-300 text-xs">{voiceProfile.basicProfile.humor}</span>
+                          <span className="text-gray-300 text-xs">{voiceProfile.basicProfile?.humor || voiceProfile.humor}</span>
                         </div>
                       )}
                     </div>
 
-                    {voiceProfile.basicProfile.signaturePhrases && voiceProfile.basicProfile.signaturePhrases.length > 0 && (
-                      <div className="pt-2 border-t border-purple-500/20">
-                        <span className="text-purple-300 font-medium text-xs">Signature Phrases: </span>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {voiceProfile.basicProfile.signaturePhrases.slice(0, 5).map((phrase, idx) => (
-                            <span key={idx} className="text-xs bg-purple-500/20 text-purple-200 px-2 py-0.5 rounded">
-                              "{phrase}"
-                            </span>
-                          ))}
-                          {voiceProfile.basicProfile.signaturePhrases.length > 5 && (
-                            <span className="text-xs text-purple-400">
-                              +{voiceProfile.basicProfile.signaturePhrases.length - 5} more
-                            </span>
-                          )}
+                    {(() => {
+                      const phrases = voiceProfile.basicProfile?.signaturePhrases ||
+                                     voiceProfile.signature_phrases ||
+                                     voiceProfile.signaturePhrases;
+                      const phrasesArray = Array.isArray(phrases) ? phrases : (phrases ? [phrases] : null);
+                      return phrasesArray && phrasesArray.length > 0 && (
+                        <div className="pt-2 border-t border-purple-500/20">
+                          <span className="text-purple-300 font-medium text-xs">Signature Phrases: </span>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {phrasesArray.slice(0, 5).map((phrase, idx) => (
+                              <span key={idx} className="text-xs bg-purple-500/20 text-purple-200 px-2 py-0.5 rounded">
+                                "{phrase}"
+                              </span>
+                            ))}
+                            {phrasesArray.length > 5 && (
+                              <span className="text-xs text-purple-400">
+                                +{phrasesArray.length - 5} more
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
-                    {voiceProfile.enhancedProfile?.confidenceScores && (
-                      <div className="pt-2 mt-2 border-t border-purple-500/20">
-                        <span className="text-purple-300 font-medium text-xs">Authenticity Score: </span>
-                        <span className="text-green-400 font-semibold text-xs">
-                          {Math.round(voiceProfile.enhancedProfile.confidenceScores.overallAuthenticity * 100)}%
-                        </span>
-                      </div>
-                    )}
+                    {(() => {
+                      const scores = voiceProfile.enhancedProfile?.confidenceScores || voiceProfile.confidenceScores;
+                      const overallScore = scores?.overallAuthenticity || scores?.overall?.confidence;
+                      return overallScore && (
+                        <div className="pt-2 mt-2 border-t border-purple-500/20">
+                          <span className="text-purple-300 font-medium text-xs">Confidence Score: </span>
+                          <span className="text-green-400 font-semibold text-xs">
+                            {typeof overallScore === 'number'
+                              ? (overallScore > 1 ? Math.round(overallScore) : Math.round(overallScore * 100))
+                              : overallScore}
+                            {typeof overallScore === 'number' && overallScore <= 1 ? '%' : ''}
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                     <p className="text-xs text-gray-400 mt-2">✨ Full voice profile will be used for script generation</p>
                   </>

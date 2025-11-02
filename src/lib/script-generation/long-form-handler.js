@@ -500,17 +500,23 @@ export class LongFormScriptHandler {
           console.log('\n📝 VOICE CHARACTERISTICS:');
           logContent += '\n📝 VOICE CHARACTERISTICS:\n';
 
+          // Helper to safely convert arrays or strings
+          const formatField = (field) => {
+            if (!field) return 'not set';
+            return Array.isArray(field) ? field.join(', ') : field;
+          };
+
           // Log actual fields from basicProfile
-          console.log('  Tone:', params.tone?.join(', ') || 'not set');
-          console.log('  Style:', params.style?.join(', ') || 'not set');
+          console.log('  Tone:', formatField(params.tone));
+          console.log('  Style:', formatField(params.style));
           console.log('  Pace:', params.pace || 'not set');
           console.log('  Energy:', params.energy || 'not set');
           console.log('  Humor:', params.humor || 'not set');
           console.log('  Vocabulary:', params.vocabulary || 'not set');
           console.log('  Sentence Structure:', params.sentenceStructure || 'not set');
 
-          logContent += `  Tone: ${params.tone?.join(', ') || 'not set'}\n`;
-          logContent += `  Style: ${params.style?.join(', ') || 'not set'}\n`;
+          logContent += `  Tone: ${formatField(params.tone)}\n`;
+          logContent += `  Style: ${formatField(params.style)}\n`;
           logContent += `  Pace: ${params.pace || 'not set'}\n`;
           logContent += `  Energy: ${params.energy || 'not set'}\n`;
           logContent += `  Humor: ${params.humor || 'not set'}\n`;
@@ -536,11 +542,13 @@ export class LongFormScriptHandler {
             });
           }
 
-          // Log signature phrases
+          // Log signature phrases (check both snake_case and camelCase)
           console.log('\n💬 SIGNATURE PHRASES:');
           logContent += '\n💬 SIGNATURE PHRASES:\n';
-          if (params.signaturePhrases && params.signaturePhrases.length > 0) {
-            params.signaturePhrases.slice(0, 8).forEach((phrase, i) => {
+          const signaturePhrases = voiceProfile.signature_phrases || params.signature_phrases ||
+                                   voiceProfile.signaturePhrases || params.signaturePhrases;
+          if (signaturePhrases && signaturePhrases.length > 0) {
+            signaturePhrases.slice(0, 8).forEach((phrase, i) => {
               console.log(`  ${i + 1}. "${phrase}"`);
               logContent += `  ${i + 1}. "${phrase}"\n`;
             });
@@ -549,21 +557,24 @@ export class LongFormScriptHandler {
             logContent += '  (None specified)\n';
           }
 
-          // Log hooks and transitions
+          // Log hooks and transitions (check both top-level and params)
           console.log('\n🎣 HOOK STYLE:');
           logContent += '\n🎣 HOOK STYLE:\n';
-          console.log(`  ${params.hooks || 'not specified'}`);
-          logContent += `  ${params.hooks || 'not specified'}\n`;
+          const hooks = voiceProfile.hooks || voiceProfile.voiceProfileData?.hooks || params.hooks || 'not specified';
+          console.log(`  ${hooks}`);
+          logContent += `  ${hooks}\n`;
 
           console.log('\n🔄 TRANSITIONS:');
           logContent += '\n🔄 TRANSITIONS:\n';
-          console.log(`  ${params.transitions || 'not specified'}`);
-          logContent += `  ${params.transitions || 'not specified'}\n`;
+          const transitions = voiceProfile.transitions || voiceProfile.voiceProfileData?.transitions || params.transitions || 'not specified';
+          console.log(`  ${transitions}`);
+          logContent += `  ${transitions}\n`;
 
           console.log('\n👥 ENGAGEMENT:');
           logContent += '\n👥 ENGAGEMENT:\n';
-          console.log(`  ${params.engagement || 'not specified'}`);
-          logContent += `  ${params.engagement || 'not specified'}\n`;
+          const engagement = voiceProfile.engagement || voiceProfile.voiceProfileData?.engagement || params.engagement || 'not specified';
+          console.log(`  ${engagement}`);
+          logContent += `  ${engagement}\n`;
 
           // Advanced features
           if (params.prosody && Object.keys(params.prosody).length > 0) {
@@ -795,11 +806,17 @@ ${vp.basedOnRealData ? '✓ Based on real channel analysis' : ''}
           }
 
           prompt += `🎯 REQUIRED CHARACTERISTICS:\n`;
-          if (basicProfile.tone && basicProfile.tone.length > 0) {
-            prompt += `• Tone: ${basicProfile.tone.join(', ')} - MAINTAIN THIS THROUGHOUT\n`;
+          if (basicProfile.tone) {
+            const toneStr = Array.isArray(basicProfile.tone) ? basicProfile.tone.join(', ') : basicProfile.tone;
+            if (toneStr && toneStr.length > 0) {
+              prompt += `• Tone: ${toneStr} - MAINTAIN THIS THROUGHOUT\n`;
+            }
           }
-          if (basicProfile.style && basicProfile.style.length > 0) {
-            prompt += `• Style: ${basicProfile.style.join(', ')} - USE THIS STYLE CONSISTENTLY\n`;
+          if (basicProfile.style) {
+            const styleStr = Array.isArray(basicProfile.style) ? basicProfile.style.join(', ') : basicProfile.style;
+            if (styleStr && styleStr.length > 0) {
+              prompt += `• Style: ${styleStr} - USE THIS STYLE CONSISTENTLY\n`;
+            }
           }
           if (basicProfile.pace) {
             prompt += `• Pacing: ${basicProfile.pace} - MATCH THIS RHYTHM\n`;
@@ -838,14 +855,19 @@ ${vp.basedOnRealData ? '✓ Based on real channel analysis' : ''}
             prompt += `\nUSAGE REQUIREMENT: Use at least ${targetUsage} different signature phrases naturally integrated into your narration.\n`;
           }
 
-          if (basicProfile.hooks) {
-            prompt += `\n🎣 OPENING HOOK STYLE (REQUIRED):\n${basicProfile.hooks}\n`;
+          // Check basicProfile first, then fall back to voiceProfileData, then params
+          const hookStyle = basicProfile.hooks || vp.voiceProfileData?.hooks || params.hooks;
+          const transitionStyle = basicProfile.transitions || vp.voiceProfileData?.transitions || params.transitions;
+          const engagementStyle = basicProfile.engagement || vp.voiceProfileData?.engagement || params.engagement;
+
+          if (hookStyle) {
+            prompt += `\n🎣 OPENING HOOK STYLE (REQUIRED):\n${hookStyle}\n`;
           }
-          if (basicProfile.transitions) {
-            prompt += `\n🔄 TRANSITION STYLE (REQUIRED):\n${basicProfile.transitions}\n`;
+          if (transitionStyle) {
+            prompt += `\n🔄 TRANSITION STYLE (REQUIRED):\n${transitionStyle}\n`;
           }
-          if (basicProfile.engagement) {
-            prompt += `\n👥 AUDIENCE ENGAGEMENT (REQUIRED):\n${basicProfile.engagement}\n`;
+          if (engagementStyle) {
+            prompt += `\n👥 AUDIENCE ENGAGEMENT (REQUIRED):\n${engagementStyle}\n`;
           }
 
           prompt += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
@@ -1073,6 +1095,36 @@ CRITICAL RULES:
 - Expand on each point thoroughly - don't rush through topics
 - VARY YOUR TRANSITIONS - each transition should be unique and different from the last
 
+🎯 FILLER WORD REDUCTION (MANDATORY - TARGET: <2%):
+Minimize filler words and weak qualifiers. Your script must be direct and confident.
+
+❌ FORBIDDEN/MINIMIZE THESE FILLER WORDS:
+- "kind of", "sort of" - Use specific language instead
+- "really", "very" - Use stronger adjectives instead
+- "actually", "basically" - Usually unnecessary
+- "literally" - Only use when literally appropriate
+- "just" - Often weakens the statement
+- "like" (as filler) - Acceptable in quotes, not narration
+- "you know", "I mean" - Never acceptable in written scripts
+- "somewhat", "rather", "quite" - Use precise terms
+- "perhaps", "maybe", "possibly" (overuse) - Be more definitive
+- "seem/seems" - State facts directly when possible
+
+✅ INSTEAD USE:
+- Strong, specific verbs and adjectives
+- Confident, declarative statements
+- Precise technical terms
+- Active voice construction
+
+Example transformations:
+❌ "This attack was really quite sophisticated and kind of unprecedented"
+✅ "This attack demonstrated unprecedented sophistication"
+
+❌ "The hackers basically just exploited a very simple vulnerability"
+✅ "The hackers exploited a simple SQL injection vulnerability"
+
+REQUIREMENT: Filler word count must be <2% of total words. Calculate this in Card 4.
+
 📺 VISUAL CUE REQUIREMENTS (MANDATORY):
 - Include [Visual: ...] markers at LEAST every 60-90 seconds (minimum 10 per 15-minute chunk)
 - Each visual cue must be specific and production-ready:
@@ -1088,8 +1140,87 @@ CRITICAL RULES:
 - Format: Always use [Visual: description] at the start of a paragraph where the visual appears
 - ${isFirst ? 'Start strong with the hook and set up the entire video' : ''}
 - ${isLast ? `End with a powerful conclusion and CTA
-- MUST include ## Description section with full timestamps for ENTIRE video
-- MUST include ## Tags section with 20+ real tags (no placeholders)` : ''}
+
+🚨 MANDATORY METADATA SECTIONS (MUST BE IN THIS EXACT ORDER):
+
+1. ## Description section (with full timestamps for ENTIRE video)
+2. ## Tags section (20+ comma-separated tags, NO placeholders or brackets)
+3. Then the 4 mandatory cards below
+
+🚨 MANDATORY 4-CARD STRUCTURE (SCRIPT WILL BE REJECTED WITHOUT ALL 4):
+After the Description and Tags sections, you MUST include these 4 cards:
+
+## Card 1: Research & Verification
+[List all sources used with URLs]
+[Add verification status for each major claim]
+Format:
+### Sources Used:
+1. [Source Title] - [URL] - [VERIFIED/UNVERIFIED]
+2. [Source Title] - [URL] - [VERIFIED/UNVERIFIED]
+...
+
+### Fact-Check Notes:
+- [Major Claim 1]: [VERIFIED/UNVERIFIED] - Source: [citation]
+- [Major Claim 2]: [VERIFIED/UNVERIFIED] - Source: [citation]
+...
+
+## Card 2: Production Guide
+[Provide B-roll suggestions and visual production notes]
+Format:
+### B-Roll Suggestions:
+- [Timestamp]: [Specific B-roll footage needed]
+- [Timestamp]: [Specific B-roll footage needed]
+...
+
+### Key Visual Moments:
+- [Timestamp]: [Important visual element description]
+...
+
+### Graphics Needed:
+- [Title/description of graphic]
+- [Title/description of graphic]
+...
+
+## Card 3: Metadata & Optimization
+[Provide performance predictions and optimization recommendations]
+Format:
+### Performance Predictions:
+- Estimated CTR: [X-Y%] - [Reasoning]
+- Estimated Retention: [X-Y%] - [Reasoning]
+- Target Audience: [Demographics and interests]
+
+### SEO Recommendations:
+- Primary Keywords: [list]
+- Secondary Keywords: [list]
+- Suggested Title Variations: [3 variations]
+- Thumbnail Concepts: [2-3 concepts]
+
+### Engagement Optimization:
+- Predicted Hook Performance: [High/Medium/Low] - [Why]
+- Best Upload Time: [Day/Time recommendation]
+- Playlist Suggestions: [Related topics]
+
+## Card 4: Script Quality Metrics
+[Provide factual accuracy and quality metrics]
+Format:
+### Filler Word Analysis:
+- Total Word Count: [X words]
+- Filler Words Found: [X instances] ([Y%])
+- Target: <2% filler words
+- Status: [PASS/FAIL]
+
+### Factual Accuracy:
+- Total Claims Made: [X]
+- Verified Claims: [X] ([Y%])
+- Unverified Claims: [X] ([Y%])
+- Hypothetical Scenarios: [X] (properly labeled: YES/NO)
+
+### Voice Profile Adherence:
+- Tone Match: [Excellent/Good/Needs Work]
+- Style Consistency: [Excellent/Good/Needs Work]
+- Signature Phrases Used: [X out of Y required]
+
+ALL 4 CARDS ARE MANDATORY - Missing any card = AUTOMATIC REJECTION` : ''}
 ${!isFirst ? `
 ⚠️ CHUNK SEPARATION RULE:
 This is chunk ${chunkNumber} of ${totalChunks}. You are ONLY responsible for minutes ${startTime}-${endTime}.
@@ -1128,6 +1259,39 @@ FACTUAL ACCURACY REQUIREMENTS:
 - Distinguish between confirmed incidents and illustrative examples
 - Never present fictional entities or alliances as confirmed real organizations without explicit disclaimer
 - If combining multiple real incidents into a narrative, acknowledge this is for educational purposes
+
+🔍 MANDATORY VERIFICATION & CITATION SYSTEM:
+Every factual claim in the script MUST be tagged and cited:
+
+1. **Verification Tags** - Add after every factual statement:
+   - [VERIFIED] - For facts confirmed by multiple reliable sources
+   - [UNVERIFIED] - For claims from single sources or requiring additional confirmation
+
+   Examples:
+   ✅ "In March 2024, Microsoft reported 245 enterprise breaches [VERIFIED]"
+   ✅ "Some experts estimate the dark web market exceeds $1 trillion [UNVERIFIED]"
+
+2. **HTML Source Citations** - Add immediately after tagged claims:
+   Format: <!-- Source: [Source Name], [URL or Document Reference], [Date] -->
+
+   Examples:
+   ✅ "The FBI recovered $2.3 million in cryptocurrency [VERIFIED]
+       <!-- Source: FBI Press Release, fbi.gov/news/2024/crypto-recovery, March 15 2024 -->"
+
+   ✅ "Attackers used a novel SQL injection technique [VERIFIED]
+       <!-- Source: CISA Advisory AA24-073A, cisa.gov/advisories, March 2024 -->"
+
+3. **Citation Requirements**:
+   - EVERY statistic must have a source citation
+   - EVERY direct quote must have a source citation
+   - EVERY technical claim must have a source citation
+   - General knowledge statements do not need citations
+   - Hypothetical scenarios should be labeled but don't need citations
+
+4. **Citation Placement**:
+   - Place citation HTML comment on the line immediately following the claim
+   - Keep citations close to the facts they support
+   - Don't let citations disrupt the narrative flow (they're hidden in HTML)
 
 AUDIO-FIRST GUIDELINES:
 - When using [Visual: X] markers, ALWAYS describe what's shown in the narration as well

@@ -20,9 +20,9 @@ function getTierModel(tier) {
   
   // Fallback mapping using environment variables for flexibility
   const tierMappings = {
-    'FAST': process.env.FAST_MODEL || 'claude-3-5-haiku-20241022',
-    'BALANCED': process.env.BALANCED_MODEL || 'claude-3-5-sonnet-20241022', 
-    'PREMIUM': process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805'
+    'FAST': process.env.FAST_MODEL || 'claude-3-haiku-20240307',
+    'BALANCED': process.env.BALANCED_MODEL || 'claude-3-sonnet-20240229',
+    'PREMIUM': process.env.PREMIUM_MODEL || 'claude-3-opus-20240229'
   };
   
   return tierMappings[tier] || tierMappings.BALANCED;

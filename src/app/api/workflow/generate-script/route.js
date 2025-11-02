@@ -121,12 +121,22 @@ export async function POST(request) {
     const bypassCredits = userProfile?.bypass_credits || process.env.BYPASS_CREDIT_CHECKS === 'true';
 
     // Debug: Log what research data we received
-    console.log('=== FULL RESEARCH DATA RECEIVED ===');
+    console.log('=== RESEARCH DATA RECEIVED ===');
+    // Log research metadata without overwhelming source_content
+    const researchSummary = research?.sources?.map(source => ({
+      id: source.id,
+      type: source.source_type,
+      url: source.source_url?.substring(0, 60) + '...',
+      title: source.source_title?.substring(0, 80),
+      contentLength: source.source_content?.length || 0,
+      hasContent: !!source.source_content,
+      relevance: source.relevance,
+      verified: source.fact_check_status === 'verified'
+    }));
     console.log('Research data received:', {
       hasResearch: !!research,
       sourcesCount: research?.sources?.length || 0,
-      sources: research?.sources?.slice(0, 2), // Log first 2 sources for debugging
-      fullStructure: JSON.stringify(research, null, 2)
+      sources: researchSummary?.slice(0, 3) // Log first 3 sources metadata only
     });
 
     // SKIP ContentFetcher for web sources - Claude already fetched everything!
@@ -466,9 +476,9 @@ export async function POST(request) {
       try {
         // Get the actual model name
         const actualModel = (() => {
-          if (model === 'claude-opus-4-1') return 'claude-3-opus-20240229';
-          if (model === 'claude-3-5-sonnet') return 'claude-3-5-sonnet-20241022';
-          return 'claude-3-haiku-20240307';
+          if (model === 'claude-opus-4-1') return process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805';
+          if (model === 'claude-3-5-sonnet' || model === 'claude-3-sonnet') return process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929';
+          return process.env.FAST_MODEL || 'claude-3-5-haiku-20241022';
         })();
 
         if (needsChunking) {

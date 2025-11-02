@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useWorkflow } from '../ScriptWorkflow';
-import { FileText, Sparkles, ScrollText, Copy } from 'lucide-react';
+import { FileText, Sparkles, ScrollText, Copy, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import ContentIdeaBanner from '../ContentIdeaBanner';
@@ -21,6 +21,17 @@ export default function DraftStep() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationType, setGenerationType] = useState('');
   const [researchSources, setResearchSources] = useState(workflowData.research?.sources || []);
+
+  // Helper function to estimate generation time based on script duration
+  const getEstimatedTime = () => {
+    const targetMinutes = (workflowData.summary?.targetDuration || 300) / 60;
+    if (targetMinutes <= 5) return '1-2 minutes';
+    if (targetMinutes <= 10) return '2-3 minutes';
+    if (targetMinutes <= 15) return '3-5 minutes';
+    if (targetMinutes <= 30) return '5-8 minutes';
+    if (targetMinutes <= 45) return '7-10 minutes';
+    return '8-10 minutes';
+  };
 
   const supabase = createClient();
 
@@ -87,7 +98,13 @@ export default function DraftStep() {
   const generateScript = async (type) => {
     setIsGenerating(true);
     setGenerationType(type);
-    
+
+    // Show helpful toast with time estimate
+    const estimatedTime = getEstimatedTime();
+    toast.info(`Starting generation... This will take approximately ${estimatedTime}. Please be patient!`, {
+      duration: 5000,
+    });
+
     // Comprehensive debug logging for script generation
     console.log('=== DRAFT STEP: SCRIPT GENERATION DEBUG ===');
     console.log('Generation Type:', type);
@@ -259,9 +276,9 @@ export default function DraftStep() {
     try {
       console.log('Fetching /api/workflow/generate-script...');
       
-      // Add timeout to fetch request (5 minutes for script generation - allows time for long chunked scripts)
+      // Add timeout to fetch request (10 minutes for script generation - allows time for long chunked scripts up to 60 min)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 300000);
+      const timeoutId = setTimeout(() => controller.abort(), 600000);
       
       const response = await fetch('/api/workflow/generate-script', {
         method: 'POST',
@@ -281,7 +298,7 @@ export default function DraftStep() {
         });
         
         if (fetchError.name === 'AbortError') {
-          throw new Error('Request timed out after 5 minutes. For longer scripts, please try a shorter duration or simpler topic.');
+          throw new Error('Request timed out after 10 minutes. For longer scripts, please try a shorter duration or simpler topic.');
         }
         throw fetchError;
       });
@@ -478,6 +495,32 @@ export default function DraftStep() {
         </div>
       )}
 
+      {/* Loading Banner */}
+      {isGenerating && (
+        <div className="mb-6 p-6 bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-lg">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <Sparkles className="h-8 w-8 text-blue-400 animate-spin" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-blue-400" />
+                Generating Your {generationType === 'outline' ? 'Outline' : 'Script'}...
+              </h3>
+              <p className="text-gray-300 mb-3">
+                This may take <span className="font-semibold text-blue-400">{getEstimatedTime()}</span> depending on the length and complexity of your script.
+              </p>
+              <div className="text-sm text-gray-400 space-y-1">
+                <p>✓ Analyzing {researchSources.length} research sources</p>
+                <p>✓ Applying voice profile and tone preferences</p>
+                <p>✓ Structuring content with {workflowData.contentPoints?.points?.length || 0} key points</p>
+                <p className="text-yellow-400 mt-2">⏳ Please be patient and keep this tab open...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid md:grid-cols-2 gap-6">
         <div className="glass-card p-6 text-center">
           <ScrollText className="h-12 w-12 text-blue-400 mx-auto mb-4" />
@@ -552,11 +595,17 @@ export default function DraftStep() {
 
       <div className="mt-8 p-4 bg-gray-800/30 rounded-lg">
         <h4 className="text-sm font-semibold text-white mb-2">Script will include:</h4>
-        <div className="grid md:grid-cols-2 gap-2 text-xs text-gray-400">
+        <div className="grid md:grid-cols-2 gap-2 text-xs text-gray-400 mb-3">
           <div>✓ {workflowData.hook?.selected ? 'Custom opening hook' : 'Opening hook'}</div>
           <div>✓ {workflowData.contentPoints?.points?.length || 0} content points</div>
           <div>✓ {workflowData.research?.sources?.filter(s => s.is_starred).length || 0} starred sources</div>
           <div>✓ Voice profile: {workflowData.summary?.voiceProfile?.name || 'Default'}</div>
+        </div>
+        <div className="pt-2 border-t border-gray-700">
+          <p className="text-xs text-gray-500 flex items-center gap-2">
+            <Clock className="h-3 w-3" />
+            <span>Generation time: <strong className="text-blue-400">{getEstimatedTime()}</strong> for {Math.round((workflowData.summary?.targetDuration || 300) / 60)}-minute script</span>
+          </p>
         </div>
         <div className="mt-3 pt-3 border-t border-gray-700">
           <div className="flex justify-between items-center text-sm">

@@ -21,7 +21,7 @@ async function generateComprehensiveOutline({
   targetAudience,
   tone,
   apiKey,
-  model = 'claude-3-5-sonnet-20241022'
+  model = process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929'
 }) {
   console.log('📝 Generating comprehensive outline for entire video...');
   console.log(`   Total duration: ${totalMinutes} minutes across ${chunkCount} chunks`);

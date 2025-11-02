@@ -17,7 +17,7 @@ async function generateContentPlan({
   totalMinutes,
   chunkCount,
   apiKey,
-  model = 'claude-3-5-sonnet-20241022'
+  model = process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929'
 }) {
   console.log('📋 Generating content plan for optimal chunk distribution...');
 
