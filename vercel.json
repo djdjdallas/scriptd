@@ -5,6 +5,9 @@
     },
     "src/app/api/workflow/research/route.js": {
       "maxDuration": 300
+    },
+    "src/app/api/workflow/generate-script/route.js": {
+      "maxDuration": 300
     }
   }
 }
