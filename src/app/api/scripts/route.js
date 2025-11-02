@@ -148,9 +148,33 @@ export const GET = createApiHandler(async (req) => {
 
   console.log(`[API /scripts] Returning ${items.length} items`);
 
+  // Calculate aggregate stats from ALL user's scripts (not just current page)
+  // Get scripts from last 7 days
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  let statsQuery = supabase
+    .from('scripts')
+    .select('length, created_at');
+
+  // Apply same user filter as main query
+  if (channelIds.length > 0) {
+    statsQuery = statsQuery.or(`channel_id.in.(${channelIds.join(',')}),user_id.eq.${user.id}`);
+  } else {
+    statsQuery = statsQuery.eq('user_id', user.id);
+  }
+
+  const { data: allScripts } = await statsQuery;
+
+  const stats = {
+    thisWeek: allScripts?.filter(s => new Date(s.created_at) > new Date(sevenDaysAgo)).length || 0,
+    totalMinutes: allScripts?.reduce((acc, s) => acc + (s.length || 0), 0) || 0
+  };
+
+  console.log(`[API /scripts] Aggregate stats:`, stats);
+
   return NextResponse.json({
     items,
-    pagination: pagination.getMetadata(count || 0)
+    pagination: pagination.getMetadata(count || 0),
+    stats
   });
 });
 

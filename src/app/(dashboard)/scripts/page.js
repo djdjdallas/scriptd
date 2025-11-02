@@ -44,6 +44,7 @@ export default function ScriptsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalScripts, setTotalScripts] = useState(0);
+  const [stats, setStats] = useState({ thisWeek: 0, totalMinutes: 0 });
   const [hoveredScript, setHoveredScript] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, script: null });
 
@@ -113,15 +114,18 @@ export default function ScriptsPage() {
       // Handle the response
       const scriptsData = result.items || [];
       const paginationData = result.pagination || {};
+      const statsData = result.stats || { thisWeek: 0, totalMinutes: 0 };
 
       setScripts(scriptsData);
       setTotalPages(paginationData.totalPages || 1);
       setTotalScripts(paginationData.total || scriptsData.length);
+      setStats(statsData);
       console.log(
         `[ScriptsPage] Set ${scriptsData.length} scripts, ${
           paginationData.totalPages || 1
         } pages, ${paginationData.total || scriptsData.length} total`
       );
+      console.log(`[ScriptsPage] Stats:`, statsData);
     } catch (error) {
       // Ignore abort errors
       if (error.name === "AbortError") {
@@ -322,19 +326,13 @@ export default function ScriptsPage() {
           </div>
           <div className="glass-card p-4 text-center">
             <div className="text-2xl font-bold gradient-text">
-              {
-                scripts.filter(
-                  (s) =>
-                    new Date(s.createdAt) >
-                    new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                ).length
-              }
+              {stats.thisWeek}
             </div>
             <p className="text-sm text-gray-400">This Week</p>
           </div>
           <div className="glass-card p-4 text-center">
             <div className="text-2xl font-bold gradient-text">
-              {scripts.reduce((acc, s) => acc + (s.length || 0), 0)}
+              {stats.totalMinutes}
             </div>
             <p className="text-sm text-gray-400">Total Minutes</p>
           </div>
