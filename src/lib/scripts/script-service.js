@@ -25,19 +25,19 @@ export class ScriptService {
    */
   async getScript(scriptId, userId) {
     const supabase = await this.getSupabase();
-    
+
+    // Use LEFT JOIN to support scripts without channels
     const { data: script, error } = await supabase
       .from('scripts')
       .select(`
         *,
-        channels!inner(
+        channels(
           id,
           name,
           user_id
         )
       `)
       .eq('id', scriptId)
-      .eq('channels.user_id', userId)
       .single();
 
     if (error) {
@@ -47,12 +47,19 @@ export class ScriptService {
       throw new Error(`Failed to fetch script: ${error.message}`);
     }
 
+    // Check permissions: user must own the script directly OR own the channel
+    const hasAccess = script.user_id === userId || script.channels?.user_id === userId;
+
+    if (!hasAccess) {
+      throw new Error('Script not found or access denied');
+    }
+
     return {
       ...script,
-      channelName: script.channels?.name,
-      canEdit: script.channels?.user_id === userId,
-      canDelete: script.channels?.user_id === userId,
-      canShare: script.channels?.user_id === userId
+      channelName: script.channels?.name || 'No Channel',
+      canEdit: hasAccess,
+      canDelete: hasAccess,
+      canShare: hasAccess
     };
   }
 
