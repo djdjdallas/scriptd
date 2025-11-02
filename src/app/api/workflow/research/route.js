@@ -38,7 +38,9 @@ export async function POST(request) {
       targetDuration,
       enableExpansion,
       hasContentIdeaInfo: !!contentIdeaInfo,
-      niche
+      niche,
+      hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
+      anthropicKeyPrefix: process.env.ANTHROPIC_API_KEY?.substring(0, 10) + '...'
     });
 
     // Try the enhanced service first, fall back to regular if needed
@@ -87,11 +89,19 @@ export async function POST(request) {
     }
 
     if (!researchResult.success) {
-      console.error('❌ Research failed:', researchResult.error);
+      const errorMessage = researchResult.error || 'Research failed';
+      console.error('❌ Research failed:', {
+        error: errorMessage,
+        suggestion: researchResult.suggestion,
+        provider: researchResult.provider,
+        hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY
+      });
+
       return NextResponse.json(
         {
-          error: researchResult.error || 'Research failed',
-          suggestion: researchResult.suggestion
+          error: errorMessage,
+          suggestion: researchResult.suggestion,
+          details: `Provider: ${researchResult.provider || 'unknown'}. Check server logs for more details.`
         },
         { status: 500 }
       );

@@ -2,6 +2,9 @@
   "functions": {
     "src/app/api/cron/collect-metrics/route.js": {
       "maxDuration": 60
+    },
+    "src/app/api/workflow/research/route.js": {
+      "maxDuration": 300
     }
   }
 }

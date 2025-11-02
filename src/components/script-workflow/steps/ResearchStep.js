@@ -208,9 +208,12 @@ export default function ResearchStep() {
       });
 
       if (!response.ok) {
-        // If the API returns an error, log it
-        console.error('Research API error:', response.status, response.statusText);
-        toast.error('Search service error. Please try again.');
+        // If the API returns an error, log it and show details
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Research API error:', response.status, response.statusText, errorData);
+        toast.error(errorData.error || errorData.details || 'Search service error. Please try again.', {
+          duration: 5000
+        });
         return;
       }
 
