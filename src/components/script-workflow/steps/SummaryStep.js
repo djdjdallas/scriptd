@@ -452,6 +452,12 @@ export default function SummaryStep() {
     return limits.allowedModels.includes(model);
   };
 
+  // Helper to check if duration is "coming soon" (45+ minutes)
+  const isDurationComingSoon = (seconds) => {
+    const minutes = Math.ceil(seconds / 60);
+    return minutes >= 45; // 45+ minutes are coming soon
+  };
+
   const durationPresets = [
     { value: 30, label: "30 sec", description: "Quick tip or teaser" },
     { value: 60, label: "1 min", description: "Short-form content" },
@@ -514,14 +520,17 @@ export default function SummaryStep() {
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4 max-h-96 overflow-y-auto pr-2">
             {durationPresets.map((preset) => {
+              const isComingSoon = isDurationComingSoon(preset.value);
               const isAllowed = isDurationAllowed(preset.value);
-              const isLocked = !isAllowed && userTier === "free";
+              const isLocked = isComingSoon || (!isAllowed && userTier === "free");
 
               return (
                 <button
                   key={preset.value}
                   onClick={() => {
-                    if (isAllowed) {
+                    if (isComingSoon) {
+                      toast.info(`${preset.label} scripts are coming soon! Stay tuned.`);
+                    } else if (isAllowed) {
                       setTargetDuration(preset.value);
                       setCustomDuration('');
                     } else {
@@ -551,7 +560,7 @@ export default function SummaryStep() {
                     {preset.label}
                   </div>
                   <div className="text-xs mt-1 opacity-70">
-                    {isLocked ? 'Pro Only' : preset.description}
+                    {isComingSoon ? 'Coming Soon' : isLocked ? 'Pro Only' : preset.description}
                   </div>
                 </button>
               );
