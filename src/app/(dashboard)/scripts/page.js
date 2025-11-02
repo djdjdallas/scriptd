@@ -114,10 +114,10 @@ export default function ScriptsPage() {
       const paginationData = result.pagination || {};
 
       setScripts(scriptsData);
-      setTotalPages(paginationData.pages || 1);
+      setTotalPages(paginationData.totalPages || 1);
       console.log(
         `[ScriptsPage] Set ${scriptsData.length} scripts, ${
-          paginationData.pages || 1
+          paginationData.totalPages || 1
         } pages`
       );
     } catch (error) {
