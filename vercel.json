@@ -4,7 +4,7 @@
       "maxDuration": 60
     },
     "src/app/api/workflow/research/route.js": {
-      "maxDuration": 300
+      "maxDuration": 600
     },
     "src/app/api/workflow/generate-script/route.js": {
       "maxDuration": 300

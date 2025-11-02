@@ -176,6 +176,28 @@ export default function ResearchStep() {
       return;
     }
 
+    // Calculate estimated time based on script duration
+    const targetDuration = workflowData.summary?.targetDuration || 300;
+    const durationMinutes = Math.ceil(targetDuration / 60);
+
+    let estimatedTime = '1-2 minutes';
+    if (durationMinutes >= 35) {
+      estimatedTime = '5-8 minutes';
+    } else if (durationMinutes >= 20) {
+      estimatedTime = '3-5 minutes';
+    }
+
+    // Show informative toast about the process
+    toast.info(
+      <div className="space-y-1">
+        <p className="font-semibold">🔍 AI Research in Progress</p>
+        <p className="text-sm">Gathering comprehensive sources for your {durationMinutes}-minute script.</p>
+        <p className="text-xs opacity-80">Estimated time: {estimatedTime}</p>
+        <p className="text-xs opacity-70">This includes web search, fact-checking, and content enrichment.</p>
+      </div>,
+      { duration: 8000 }
+    );
+
     setSearchQuery(topic);
     await performWebSearch(topic);
   };
