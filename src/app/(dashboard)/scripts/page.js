@@ -43,6 +43,7 @@ export default function ScriptsPage() {
   const [sortBy, setSortBy] = useState("created_at");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalScripts, setTotalScripts] = useState(0);
   const [hoveredScript, setHoveredScript] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, script: null });
 
@@ -115,10 +116,11 @@ export default function ScriptsPage() {
 
       setScripts(scriptsData);
       setTotalPages(paginationData.totalPages || 1);
+      setTotalScripts(paginationData.total || scriptsData.length);
       console.log(
         `[ScriptsPage] Set ${scriptsData.length} scripts, ${
           paginationData.totalPages || 1
-        } pages`
+        } pages, ${paginationData.total || scriptsData.length} total`
       );
     } catch (error) {
       // Ignore abort errors
@@ -314,7 +316,7 @@ export default function ScriptsPage() {
         >
           <div className="glass-card p-4 text-center">
             <div className="text-2xl font-bold gradient-text">
-              {scripts.length}
+              {totalScripts}
             </div>
             <p className="text-sm text-gray-400">Total Scripts</p>
           </div>
@@ -339,7 +341,7 @@ export default function ScriptsPage() {
           <div className="glass-card p-4 text-center">
             <div className="text-2xl font-bold gradient-text flex items-center justify-center gap-1">
               <TrendingUp className="h-5 w-5" />
-              {Math.round(scripts.length * 2.5)}K
+              {Math.round(totalScripts * 2.5)}K
             </div>
             <p className="text-sm text-gray-400">Est. Views</p>
           </div>
