@@ -176,6 +176,7 @@ After completing your research, provide a comprehensive analysis including:
 Focus on quality over speed. Take the time to search thoroughly and fetch full content from the most relevant sources.`;
 
       console.log('🔧 Using Claude web_search and web_fetch tools for real-time research');
+      console.log('🔑 API Key prefix:', process.env.ANTHROPIC_API_KEY?.substring(0, 15) + '...');
 
       const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-5-20250929', // ✅ Correct Sonnet 4.5 model
@@ -196,6 +197,9 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
         // Note: web_fetch removed - it's in beta and may not be available for all API keys
       });
 
+      console.log('📊 API Response - Stop reason:', response.stop_reason);
+      console.log('📊 API Response - Usage:', JSON.stringify(response.usage, null, 2));
+
       // Parse the response - now includes actual web search results!
       console.log(`📊 Response contains ${response.content.length} content blocks`);
 
@@ -203,6 +207,8 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
       const searchResults = [];
       const fetchResults = [];
       let textAnalysis = '';
+
+      console.log('📦 Content block types:', response.content.map(b => b.type).join(', '));
 
       for (const block of response.content) {
         if (block.type === 'web_search_tool_result') {
