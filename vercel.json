@@ -3,11 +3,20 @@
     "src/app/api/cron/collect-metrics/route.js": {
       "maxDuration": 60
     },
+    "src/app/api/cron/process-script-jobs/route.js": {
+      "maxDuration": 300
+    },
     "src/app/api/workflow/research/route.js": {
       "maxDuration": 600
     },
     "src/app/api/workflow/generate-script/route.js": {
-      "maxDuration": 720
+      "maxDuration": 300
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/process-script-jobs",
+      "schedule": "* * * * *"
+    }
+  ]
 }
