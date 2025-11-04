@@ -1,16 +1,16 @@
 {
   "functions": {
     "src/app/api/cron/collect-metrics/route.js": {
-      "maxDuration": 60
+      "maxDuration": 10
     },
     "src/app/api/cron/process-script-jobs/route.js": {
-      "maxDuration": 300
+      "maxDuration": 10
     },
     "src/app/api/workflow/research/route.js": {
-      "maxDuration": 600
+      "maxDuration": 10
     },
     "src/app/api/workflow/generate-script/route.js": {
-      "maxDuration": 300
+      "maxDuration": 10
     }
   },
   "crons": [
