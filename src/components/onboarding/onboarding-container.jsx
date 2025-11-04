@@ -15,6 +15,7 @@ import {
   CheckCircle,
   Gift
 } from 'lucide-react';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 const TOTAL_STEPS = 7;
 

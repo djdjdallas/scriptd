@@ -142,6 +142,19 @@ export default function DashboardLayout({ children }) {
     }
   }, [user]);
 
+  // Add auth timeout - redirect if stuck on "Authenticating..." for too long
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log("[DashboardLayout] No user after loading - starting 10s timeout");
+      const timeout = setTimeout(() => {
+        console.log("[DashboardLayout] Auth timeout - redirecting to login");
+        router.push('/login?error=auth_timeout&message=Authentication timed out. Please try signing in again.');
+      }, 10000); // 10 seconds
+
+      return () => clearTimeout(timeout);
+    }
+  }, [loading, user, router]);
+
   const fetchCredits = async () => {
     if (!user) return;
 

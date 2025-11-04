@@ -8,13 +8,14 @@ import { toast } from 'sonner';
 import ContentIdeaBanner from '../ContentIdeaBanner';
 
 export default function EditStep() {
-  const { 
-    generatedScript, 
+  const {
+    workflowData,
+    generatedScript,
     setGeneratedScript,
     updateStepData,
     markStepComplete,
     trackCredits,
-    goToStep 
+    goToStep
   } = useWorkflow();
   
   const [editedScript, setEditedScript] = useState(generatedScript || '');
