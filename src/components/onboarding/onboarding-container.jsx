@@ -49,7 +49,7 @@ export function OnboardingContainer({ children, currentStep, onNext, onBack, onS
 
         if (error) throw error;
 
-        toast.success('Onboarding skipped. Welcome to Subscribr!');
+        toast.success('Onboarding skipped. Welcome to GenScript!');
         router.push('/dashboard');
       } catch (error) {
         console.error('Error skipping onboarding:', error);
@@ -94,7 +94,7 @@ export function OnboardingContainer({ children, currentStep, onNext, onBack, onS
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <Sparkles className="h-8 w-8 text-purple-400" />
-            <h1 className="text-2xl font-bold text-white">Welcome to Subscribr</h1>
+            <h1 className="text-2xl font-bold text-white">Welcome to GenScript</h1>
           </div>
           <Button
             variant="ghost"

@@ -5,6 +5,7 @@ import { useWorkflow } from '../ScriptWorkflow';
 import { FileText, Sparkles, ScrollText, Copy, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
+import { MODEL_TIERS } from '@/lib/constants';
 import ContentIdeaBanner from '../ContentIdeaBanner';
 import ScriptGenerationProgress from '../ScriptGenerationProgress';
 
@@ -234,7 +235,7 @@ export default function DraftStep() {
       contentPoints: workflowData.contentPoints,
       thumbnail: workflowData.thumbnail,
       sponsor: sponsorData, // ✅ Add sponsor data
-      model: workflowData.summary?.aiModel || 'claude-3-5-haiku',
+      model: workflowData.summary?.aiModel || MODEL_TIERS.FAST.actualModel,
       targetAudience: workflowData.summary?.targetAudience,
       tone: workflowData.summary?.tone,
       targetDuration: workflowData.summary?.targetDuration || 300,
@@ -614,8 +615,8 @@ export default function DraftStep() {
           <div className="flex justify-between items-center text-sm mt-1">
             <span className="text-gray-400">AI Model:</span>
             <span className="text-white font-semibold">
-              {workflowData.summary?.aiModel === 'claude-opus-4-1' ? 'Hollywood' :
-               workflowData.summary?.aiModel === 'claude-3-5-sonnet' ? 'Professional' :
+              {workflowData.summary?.aiModel === MODEL_TIERS.PREMIUM.actualModel ? 'Hollywood' :
+               workflowData.summary?.aiModel === MODEL_TIERS.BALANCED.actualModel ? 'Professional' :
                'Fast'}
             </span>
           </div>
@@ -627,8 +628,8 @@ export default function DraftStep() {
                 const minutes = Math.ceil(targetDuration / 60);
                 // Base rate: 0.33 credits per minute (so 10 min Professional = 5 credits)
                 const baseRate = 0.33;
-                const model = workflowData.summary?.aiModel || 'claude-3-5-haiku';
-                const multiplier = model === 'claude-opus-4-1' ? 3.5 : model === 'claude-3-5-sonnet' ? 1.5 : 1;
+                const model = workflowData.summary?.aiModel || MODEL_TIERS.FAST.actualModel;
+                const multiplier = model === MODEL_TIERS.PREMIUM.actualModel ? 3.5 : model === MODEL_TIERS.BALANCED.actualModel ? 1.5 : 1;
                 const credits = Math.max(1, Math.round(minutes * baseRate * multiplier));
                 
                 console.log('Credit Calculation Debug:', {
@@ -651,12 +652,12 @@ export default function DraftStep() {
               const minutes = Math.ceil(targetDuration / 60);
               const baseRate = 0.33; // 0.33 credits per minute
               const baseCredits = minutes * baseRate;
-              const modelName = workflowData.summary?.aiModel === 'claude-opus-4-1' ? 'Hollywood' :
-                               workflowData.summary?.aiModel === 'claude-3-5-sonnet' ? 'Professional' : 'Fast';
-              const multiplierNum = workflowData.summary?.aiModel === 'claude-opus-4-1' ? 3.5 :
-                                   workflowData.summary?.aiModel === 'claude-3-5-sonnet' ? 1.5 : 1;
-              const multiplier = workflowData.summary?.aiModel === 'claude-opus-4-1' ? '3.5x' :
-                                workflowData.summary?.aiModel === 'claude-3-5-sonnet' ? '1.5x' : '1x';
+              const modelName = workflowData.summary?.aiModel === MODEL_TIERS.PREMIUM.actualModel ? 'Hollywood' :
+                               workflowData.summary?.aiModel === MODEL_TIERS.BALANCED.actualModel ? 'Professional' : 'Fast';
+              const multiplierNum = workflowData.summary?.aiModel === MODEL_TIERS.PREMIUM.actualModel ? 3.5 :
+                                   workflowData.summary?.aiModel === MODEL_TIERS.BALANCED.actualModel ? 1.5 : 1;
+              const multiplier = workflowData.summary?.aiModel === MODEL_TIERS.PREMIUM.actualModel ? '3.5x' :
+                                workflowData.summary?.aiModel === MODEL_TIERS.BALANCED.actualModel ? '1.5x' : '1x';
               const finalCredits = Math.max(1, Math.round(baseCredits * multiplierNum));
               return `${minutes} min × ${baseRate} credits/min = ${baseCredits} base × ${multiplier} (${modelName}) = ${finalCredits} total`;
             })()}

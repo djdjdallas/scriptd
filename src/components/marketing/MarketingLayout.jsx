@@ -155,7 +155,7 @@ export function ComparisonSection({
               <tr className="border-b border-gray-700">
                 <th className="text-left py-4 px-6 text-gray-400 font-medium">Feature</th>
                 <th className="text-center py-4 px-6 text-gray-400 font-medium">{competitor}</th>
-                <th className="text-center py-4 px-6 text-purple-400 font-medium">Subscribr</th>
+                <th className="text-center py-4 px-6 text-purple-400 font-medium">GenScript</th>
               </tr>
             </thead>
             <tbody>
@@ -166,7 +166,7 @@ export function ComparisonSection({
                     <FeatureValue value={feature.competitor} />
                   </td>
                   <td className="py-4 px-6 text-center bg-purple-500/5">
-                    <FeatureValue value={feature.subscribr} winner />
+                    <FeatureValue value={feature.genscript} winner />
                   </td>
                 </tr>
               ))}

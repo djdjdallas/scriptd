@@ -62,7 +62,7 @@ export function WelcomeStep({ userData, onComplete }) {
         </div>
         
         <h1 className="text-4xl font-bold text-white">
-          Welcome to Subscribr, {userData?.name || 'Creator'}!
+          Welcome to GenScript, {userData?.name || 'Creator'}!
         </h1>
         
         <p className="text-xl text-gray-300 max-w-2xl mx-auto">

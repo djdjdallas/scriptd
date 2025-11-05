@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { CustomDropdown } from "@/components/ui/custom-dropdown";
 import { SCRIPT_CONFIG } from "@/lib/scriptGenerationConfig";
+import { MODEL_TIERS } from "@/lib/constants";
 import ContentIdeaBanner from "../ContentIdeaBanner";
 
 export default function SummaryStep() {
@@ -34,7 +35,7 @@ export default function SummaryStep() {
     workflowData.summary?.voiceProfile || null
   );
   const [aiModel, setAiModel] = useState(
-    workflowData.summary?.aiModel || "claude-3-5-sonnet"
+    workflowData.summary?.aiModel || MODEL_TIERS.BALANCED.actualModel
   );
   const [voiceProfiles, setVoiceProfiles] = useState([]);
   const [channels, setChannels] = useState([]);
@@ -788,9 +789,9 @@ export default function SummaryStep() {
             {/* NEW: Show model selection buttons with locked state */}
             <div className="space-y-2 mb-3">
               {[
-                { value: "claude-3-5-haiku", label: "Fast (1x credits)", description: "Quick generation with good quality" },
-                { value: "claude-3-5-sonnet", label: "Professional (1.5x credits)", description: "Better storytelling and flow" },
-                { value: "claude-opus-4-1", label: "Hollywood (3.5x credits)", description: "Premium quality with advanced AI" },
+                { value: MODEL_TIERS.FAST.actualModel, label: "Fast (1x credits)", description: "Quick generation with good quality" },
+                { value: MODEL_TIERS.BALANCED.actualModel, label: "Professional (1.5x credits)", description: "Better storytelling and flow" },
+                { value: MODEL_TIERS.PREMIUM.actualModel, label: "Hollywood (3.5x credits)", description: "Premium quality with advanced AI" },
               ].map((model) => {
                 const isAllowed = isModelAllowed(model.value);
                 const isLocked = !isAllowed && userTier === "free";
@@ -862,15 +863,15 @@ export default function SummaryStep() {
                   {(() => {
                     const minutes = Math.ceil(targetDuration / 60);
                     const baseRate = 0.33;
-                    const multiplier = aiModel === 'claude-opus-4-1' ? 3.5 : 
-                                     aiModel === 'claude-3-5-sonnet' ? 1.5 : 1;
+                    const multiplier = aiModel === MODEL_TIERS.PREMIUM.actualModel ? 3.5 :
+                                     aiModel === MODEL_TIERS.BALANCED.actualModel ? 1.5 : 1;
                     return Math.max(1, Math.round(minutes * baseRate * multiplier));
                   })()} credits
                 </span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                {Math.ceil(targetDuration / 60)} min × {aiModel === 'claude-opus-4-1' ? '3.5x Hollywood' : 
-                 aiModel === 'claude-3-5-sonnet' ? '1.5x Professional' : '1x Fast'}
+                {Math.ceil(targetDuration / 60)} min × {aiModel === MODEL_TIERS.PREMIUM.actualModel ? '3.5x Hollywood' :
+                 aiModel === MODEL_TIERS.BALANCED.actualModel ? '1.5x Professional' : '1x Fast'}
               </p>
             </div>
           </div>

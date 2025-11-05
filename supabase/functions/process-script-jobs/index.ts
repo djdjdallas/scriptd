@@ -106,7 +106,7 @@ serve(async (req) => {
       // The Vercel API has all the complex generation logic
       // This Edge Function just waits for it to complete (NO TIMEOUT!)
 
-      const apiUrl = Deno.env.get('NEXT_PUBLIC_SITE_URL') || Deno.env.get('VERCEL_URL') || 'https://subscribr.ai'
+      const apiUrl = Deno.env.get('NEXT_PUBLIC_SITE_URL') || Deno.env.get('VERCEL_URL') || 'https://genscript.io'
       console.log('🎬 Calling Vercel API at:', apiUrl);
       console.log('📦 Generation params:', {
         type: params.type,
