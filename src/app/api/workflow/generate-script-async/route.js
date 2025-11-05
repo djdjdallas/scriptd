@@ -67,7 +67,7 @@ export async function POST(request) {
 
     // Validate workflow exists and belongs to user
     const { data: workflow, error: workflowError } = await supabase
-      .from('workflows')
+      .from('script_workflows')
       .select('id, user_id')
       .eq('id', workflowId)
       .single();
@@ -111,14 +111,13 @@ export async function POST(request) {
 
     // Validate user access (subscription tier check)
     try {
-      const { data: subscription } = await supabase
-        .from('subscriptions')
-        .select('tier, status')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('subscription_tier, subscription_plan, subscription_status')
+        .eq('id', user.id)
         .single();
 
-      const userTier = subscription?.tier || 'free';
+      const userTier = userProfile?.subscription_tier || userProfile?.subscription_plan || 'free';
 
       // Validate access
       const validation = validateUserAccess(userTier, durationMinutes);
