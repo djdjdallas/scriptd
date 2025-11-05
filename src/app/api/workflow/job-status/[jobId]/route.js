@@ -52,17 +52,17 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Failed to fetch job status' }, { status: 500 });
     }
 
-    // If job is completed, fetch the generated script from workflows table
+    // If job is completed, fetch the generated script from script_workflows table
     let generatedScript = null;
     if (job.status === 'completed') {
       const { data: workflow } = await supabase
-        .from('workflows')
-        .select('generated_script, script_metadata')
+        .from('script_workflows')
+        .select('workflow_data')
         .eq('id', job.workflow_id)
         .single();
 
-      if (workflow) {
-        generatedScript = workflow.generated_script;
+      if (workflow?.workflow_data) {
+        generatedScript = workflow.workflow_data.generated_script || workflow.workflow_data.script;
       }
     }
 
