@@ -6,6 +6,7 @@ import { FileText, Sparkles, ScrollText, Copy, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import ContentIdeaBanner from '../ContentIdeaBanner';
+import ScriptGenerationProgress from '../ScriptGenerationProgress';
 
 export default function DraftStep() {
   const {
@@ -21,6 +22,7 @@ export default function DraftStep() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationType, setGenerationType] = useState('');
   const [researchSources, setResearchSources] = useState(workflowData.research?.sources || []);
+  const [jobId, setJobId] = useState(null); // For async job queue
 
   // Helper function to estimate generation time based on script duration
   const getEstimatedTime = () => {
@@ -274,36 +276,17 @@ export default function DraftStep() {
     console.log('=== END DEBUG ===');
     
     try {
-      console.log('Fetching /api/workflow/generate-script...');
-      
-      // Add timeout to fetch request (10 minutes for script generation - allows time for long chunked scripts up to 60 min)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 600000);
-      
-      const response = await fetch('/api/workflow/generate-script', {
+      console.log('Fetching /api/workflow/generate-script-async... (creates job)');
+
+      // Call async endpoint - creates a job and returns immediately
+      const response = await fetch('/api/workflow/generate-script-async', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache'
         },
-        body: JSON.stringify(requestBody),
-        signal: controller.signal
-      }).catch(fetchError => {
-        clearTimeout(timeoutId);
-        console.error('Fetch error details:', {
-          message: fetchError.message,
-          stack: fetchError.stack,
-          type: fetchError.name,
-          isAbort: fetchError.name === 'AbortError'
-        });
-        
-        if (fetchError.name === 'AbortError') {
-          throw new Error('Request timed out after 10 minutes. For longer scripts, please try a shorter duration or simpler topic.');
-        }
-        throw fetchError;
+        body: JSON.stringify(requestBody)
       });
-      
-      clearTimeout(timeoutId);
 
       if (!response) {
         console.error('No response received from server');
@@ -329,21 +312,19 @@ export default function DraftStep() {
         console.error('Failed to parse success response:', jsonError);
         throw new Error('Invalid response format from server');
       });
-      
-      console.log('Response data:', { 
-        hasScript: !!responseData.script,
-        creditsUsed: responseData.creditsUsed,
-        scriptId: responseData.scriptId 
+
+      console.log('Response data:', {
+        success: responseData.success,
+        jobId: responseData.jobId,
+        status: responseData.status,
+        estimatedTimeMinutes: responseData.estimatedTimeMinutes
       });
-      
-      const { script, creditsUsed, scriptId } = responseData;
-      
-      setGeneratedScript(script);
-      updateStepData('draft', { script, type, scriptId });
-      trackCredits(creditsUsed);
-      markStepComplete(8);
-      
-      toast.success(`${type === 'outline' ? 'Outline' : 'Full script'} generated and saved!`);
+
+      // Store job ID and show progress component
+      setJobId(responseData.jobId);
+      setIsGenerating(false); // Hide button spinner, show progress component instead
+
+      toast.success('Script generation started! This may take a few minutes for longer scripts.');
     } catch (error) {
       console.error('Generation error full details:', {
         message: error.message,
@@ -495,6 +476,28 @@ export default function DraftStep() {
         </div>
       )}
 
+      {/* Job Progress Component (Async Queue) */}
+      {jobId && !generatedScript && (
+        <div className="mb-6">
+          <ScriptGenerationProgress
+            jobId={jobId}
+            onComplete={(job) => {
+              console.log('✅ Script generation completed!', job);
+              setGeneratedScript(job.generated_script);
+              updateStepData('draft', { script: job.generated_script, type: generationType });
+              markStepComplete(8);
+              setJobId(null); // Clear job ID
+              toast.success('Script generated successfully!');
+            }}
+            onError={(job) => {
+              console.error('❌ Script generation failed', job);
+              setJobId(null); // Clear job ID
+              toast.error(job.error_message || 'Script generation failed');
+            }}
+          />
+        </div>
+      )}
+
       {/* Loading Banner */}
       {isGenerating && (
         <div className="mb-6 p-6 bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-lg">
@@ -505,17 +508,11 @@ export default function DraftStep() {
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-blue-400" />
-                Generating Your {generationType === 'outline' ? 'Outline' : 'Script'}...
+                Creating Generation Job...
               </h3>
               <p className="text-gray-300 mb-3">
-                This may take <span className="font-semibold text-blue-400">{getEstimatedTime()}</span> depending on the length and complexity of your script.
+                Setting up script generation...
               </p>
-              <div className="text-sm text-gray-400 space-y-1">
-                <p>✓ Analyzing {researchSources.length} research sources</p>
-                <p>✓ Applying voice profile and tone preferences</p>
-                <p>✓ Structuring content with {workflowData.contentPoints?.points?.length || 0} key points</p>
-                <p className="text-yellow-400 mt-2">⏳ Please be patient and keep this tab open...</p>
-              </div>
             </div>
           </div>
         </div>
