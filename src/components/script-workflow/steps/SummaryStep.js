@@ -10,6 +10,26 @@ import { SCRIPT_CONFIG } from "@/lib/scriptGenerationConfig";
 import { MODEL_TIERS } from "@/lib/constants";
 import ContentIdeaBanner from "../ContentIdeaBanner";
 
+// Helper function to normalize model names from old to new format
+const normalizeModelName = (model) => {
+  // Map old model names to new ones
+  const modelMapping = {
+    'claude-3-5-haiku': MODEL_TIERS.FAST.actualModel,
+    'claude-3-5-sonnet': MODEL_TIERS.BALANCED.actualModel,
+    'claude-3-opus': MODEL_TIERS.PREMIUM.actualModel,
+    'claude-opus-4-1': MODEL_TIERS.PREMIUM.actualModel,
+  };
+
+  // If it's an old model name, return the new one
+  if (modelMapping[model]) {
+    console.log(`[SummaryStep] Migrating old model ${model} to ${modelMapping[model]}`);
+    return modelMapping[model];
+  }
+
+  // Otherwise return as-is (already correct or default)
+  return model;
+};
+
 export default function SummaryStep() {
   const {
     workflowData,
@@ -35,7 +55,7 @@ export default function SummaryStep() {
     workflowData.summary?.voiceProfile || null
   );
   const [aiModel, setAiModel] = useState(
-    workflowData.summary?.aiModel || MODEL_TIERS.BALANCED.actualModel
+    normalizeModelName(workflowData.summary?.aiModel) || MODEL_TIERS.BALANCED.actualModel
   );
   const [voiceProfiles, setVoiceProfiles] = useState([]);
   const [channels, setChannels] = useState([]);
@@ -82,8 +102,11 @@ export default function SummaryStep() {
       if (workflowData.summary.targetDuration && targetDuration === 300) {
         setTargetDuration(workflowData.summary.targetDuration);
       }
-      if (workflowData.summary.aiModel && aiModel === 'claude-3-5-sonnet') {
-        setAiModel(workflowData.summary.aiModel);
+      if (workflowData.summary.aiModel) {
+        const normalizedModel = normalizeModelName(workflowData.summary.aiModel);
+        if (normalizedModel !== aiModel) {
+          setAiModel(normalizedModel);
+        }
       }
     }
   }, [workflowData.summary]);
@@ -381,7 +404,7 @@ export default function SummaryStep() {
       channelId: selectedChannel,
       tone,
       voiceProfile,
-      aiModel,
+      aiModel: normalizeModelName(aiModel), // Ensure we always save the correct model name
       targetDuration,
       // Preserve content idea info and other metadata
       niche: workflowData.summary?.niche,

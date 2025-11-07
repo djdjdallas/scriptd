@@ -28,14 +28,24 @@ function calculateCreditsForDuration(durationInSeconds, model = 'claude-3-5-haik
   // Base rate: 0.33 credits per minute (so 10 min Professional = 5 credits)
   const baseRate = 0.33;
 
-  // Model multipliers based on new model names:
-  // claude-3-5-haiku (Fast): 1x
-  // claude-3-5-sonnet (Professional): 1.5x
-  // claude-opus-4-1 (Hollywood): 3.5x
+  // Normalize model name first
+  const normalizeModel = (m) => {
+    const mapping = {
+      'claude-3-5-haiku': 'claude-3-5-haiku-20241022',
+      'claude-3-5-sonnet': 'claude-sonnet-4-5-20250929',
+      'claude-3-opus': 'claude-opus-4-1-20250805',
+      'claude-opus-4-1': 'claude-opus-4-1-20250805',
+    };
+    return mapping[m] || m;
+  };
+
+  const normalizedModel = normalizeModel(model);
+
+  // Model multipliers based on actual model IDs
   let modelMultiplier = 1;
-  if (model === 'claude-3-5-sonnet') {
+  if (normalizedModel === 'claude-sonnet-4-5-20250929') {
     modelMultiplier = 1.5;
-  } else if (model === 'claude-opus-4-1') {
+  } else if (normalizedModel === 'claude-opus-4-1-20250805') {
     modelMultiplier = 3.5;
   }
 
@@ -474,10 +484,20 @@ export async function POST(request) {
     // Use Claude API to generate script
     if (process.env.ANTHROPIC_API_KEY) {
       try {
-        // Get the actual model name
+        // Get the actual model name - normalize old model names to new ones
         const actualModel = (() => {
-          if (model === 'claude-opus-4-1') return process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805';
-          if (model === 'claude-3-5-sonnet' || model === 'claude-3-sonnet') return process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929';
+          // Map old model names to new ones
+          const modelMapping = {
+            'claude-3-5-haiku': process.env.FAST_MODEL || 'claude-3-5-haiku-20241022',
+            'claude-3-5-sonnet': process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
+            'claude-3-sonnet': process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
+            'claude-3-opus': process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805',
+            'claude-opus-4-1': process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805',
+          };
+          if (modelMapping[model]) return modelMapping[model];
+          // Check if it's already a valid new model ID
+          if (model && model.includes('-202')) return model;
+          // Default to fast model
           return process.env.FAST_MODEL || 'claude-3-5-haiku-20241022';
         })();
 

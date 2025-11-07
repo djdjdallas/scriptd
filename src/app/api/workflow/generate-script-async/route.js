@@ -1,6 +1,23 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { validateUserAccess, calculateChunkStrategy } from '@/lib/scriptGenerationConfig';
+import { MODEL_TIERS } from '@/lib/constants';
+
+// Helper to normalize old model names to new ones
+function normalizeModelName(model) {
+  const modelMapping = {
+    'claude-3-5-haiku': MODEL_TIERS.FAST.actualModel,
+    'claude-3-5-sonnet': MODEL_TIERS.BALANCED.actualModel,
+    'claude-3-opus': MODEL_TIERS.PREMIUM.actualModel,
+    'claude-opus-4-1': MODEL_TIERS.PREMIUM.actualModel,
+  };
+
+  if (modelMapping[model]) {
+    console.log(`Normalizing model: ${model} -> ${modelMapping[model]}`);
+    return modelMapping[model];
+  }
+  return model;
+}
 
 /**
  * POST /api/workflow/generate-script-async
@@ -29,6 +46,7 @@ export async function POST(request) {
     }
 
     // Get request parameters - all the same as generate-script route
+    const requestData = await request.json();
     const {
       type,
       title,
@@ -40,12 +58,14 @@ export async function POST(request) {
       contentPoints,
       thumbnail,
       sponsor,
-      model = 'claude-3-5-haiku',
       targetAudience,
       tone,
       targetDuration,
       workflowId
-    } = await request.json();
+    } = requestData;
+
+    // Normalize the model name (handle old model names)
+    const model = normalizeModelName(requestData.model || MODEL_TIERS.FAST.actualModel);
 
     console.log('📊 Job creation request:', {
       workflowId,
@@ -119,13 +139,15 @@ export async function POST(request) {
 
       const userTier = userProfile?.subscription_tier || userProfile?.subscription_plan || 'free';
 
-      // Validate access
-      const validation = validateUserAccess(userTier, durationMinutes);
-      if (!validation.canGenerate) {
+      // Validate access (pass normalized model)
+      const validation = validateUserAccess(user.id, userTier, durationMinutes, model);
+      if (!validation.allowed) {
+        const errorMessage = validation.errors.map(e => e.message).join('. ');
         return NextResponse.json({
-          error: validation.message,
+          error: errorMessage,
           requiresUpgrade: true,
-          currentLimit: validation.maxDuration
+          currentLimit: validation.limits.maxDurationMinutes,
+          errors: validation.errors
         }, { status: 403 });
       }
     } catch (error) {

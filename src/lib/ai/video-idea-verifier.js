@@ -53,7 +53,7 @@ Return JSON:
 }`;
 
       const response = await anthropic.messages.create({
-        model: process.env.BALANCED_MODEL || 'claude-3-5-sonnet-latest',
+        model: process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
         max_tokens: 1000,
         temperature: 0.1, // Low temperature for factual accuracy
         messages: [{
@@ -173,7 +173,7 @@ Return JSON array:
 ]`;
 
       const response = await anthropic.messages.create({
-        model: process.env.BALANCED_MODEL || 'claude-3-5-sonnet-latest',
+        model: process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
         max_tokens: 3000,
         temperature: 0.7,
         messages: [{
