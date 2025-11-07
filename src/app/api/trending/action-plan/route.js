@@ -321,7 +321,7 @@ Include current trends and best practices for YouTube growth in 2025 that are re
     // STAGE 3: Generate action plan with enhanced prompt
     console.log('🎨 Stage 3: Generating action plan with AI...');
     const response = await claude.generateCompletion(prompt, {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5-20250929',
       temperature: 0.7,
       maxTokens: 4000, // Increased for more complete responses
     });

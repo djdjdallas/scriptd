@@ -29,7 +29,7 @@ export class AnthropicProvider extends BaseAIProvider {
       'claude-opus-4-1-20250805': { input: 0.020, output: 0.100 },
       'claude-4-opus-20250522': { input: 0.018, output: 0.090 },
       'claude-sonnet-4-5-20250929': { input: 0.008, output: 0.040 },
-      'claude-sonnet-4-20250514': { input: 0.010, output: 0.050 },
+      'claude-sonnet-4-5-20250929': { input: 0.010, output: 0.050 },
       'claude-3.7-sonnet-20250224': { input: 0.008, output: 0.040 },
       // Claude 3.5 models
       'claude-3-5-haiku-20241022': { input: 0.00030, output: 0.00150 },

@@ -9,6 +9,26 @@ import { MODEL_TIERS } from '@/lib/constants';
 import ContentIdeaBanner from '../ContentIdeaBanner';
 import ScriptGenerationProgress from '../ScriptGenerationProgress';
 
+// Helper function to normalize model names from old to new format
+const normalizeModelName = (model) => {
+  // Map old model names to new ones
+  const modelMapping = {
+    'claude-3-5-haiku': MODEL_TIERS.FAST.actualModel,
+    'claude-3-5-sonnet': MODEL_TIERS.BALANCED.actualModel,
+    'claude-3-opus': MODEL_TIERS.PREMIUM.actualModel,
+    'claude-opus-4-1': MODEL_TIERS.PREMIUM.actualModel,
+  };
+
+  // If it's an old model name, return the new one
+  if (modelMapping[model]) {
+    console.log(`[DraftStep] Normalizing model ${model} to ${modelMapping[model]}`);
+    return modelMapping[model];
+  }
+
+  // Otherwise return as-is (already correct or default)
+  return model;
+};
+
 export default function DraftStep() {
   const {
     workflowData,
@@ -235,7 +255,7 @@ export default function DraftStep() {
       contentPoints: workflowData.contentPoints,
       thumbnail: workflowData.thumbnail,
       sponsor: sponsorData, // ✅ Add sponsor data
-      model: workflowData.summary?.aiModel || MODEL_TIERS.FAST.actualModel,
+      model: normalizeModelName(workflowData.summary?.aiModel || MODEL_TIERS.FAST.actualModel),
       targetAudience: workflowData.summary?.targetAudience,
       tone: workflowData.summary?.tone,
       targetDuration: workflowData.summary?.targetDuration || 300,
@@ -615,8 +635,8 @@ export default function DraftStep() {
           <div className="flex justify-between items-center text-sm mt-1">
             <span className="text-gray-400">AI Model:</span>
             <span className="text-white font-semibold">
-              {workflowData.summary?.aiModel === MODEL_TIERS.PREMIUM.actualModel ? 'Hollywood' :
-               workflowData.summary?.aiModel === MODEL_TIERS.BALANCED.actualModel ? 'Professional' :
+              {normalizeModelName(workflowData.summary?.aiModel) === MODEL_TIERS.PREMIUM.actualModel ? 'Hollywood' :
+               normalizeModelName(workflowData.summary?.aiModel) === MODEL_TIERS.BALANCED.actualModel ? 'Professional' :
                'Fast'}
             </span>
           </div>
@@ -628,7 +648,7 @@ export default function DraftStep() {
                 const minutes = Math.ceil(targetDuration / 60);
                 // Base rate: 0.33 credits per minute (so 10 min Professional = 5 credits)
                 const baseRate = 0.33;
-                const model = workflowData.summary?.aiModel || MODEL_TIERS.FAST.actualModel;
+                const model = normalizeModelName(workflowData.summary?.aiModel || MODEL_TIERS.FAST.actualModel);
                 const multiplier = model === MODEL_TIERS.PREMIUM.actualModel ? 3.5 : model === MODEL_TIERS.BALANCED.actualModel ? 1.5 : 1;
                 const credits = Math.max(1, Math.round(minutes * baseRate * multiplier));
                 

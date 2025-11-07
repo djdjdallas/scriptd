@@ -12,7 +12,7 @@ const MODEL_TO_PROVIDER = {
   'claude-3-5-haiku-20241022': AI_PROVIDERS.ANTHROPIC,
   'claude-sonnet-4-5-20250929': AI_PROVIDERS.ANTHROPIC,
   'claude-opus-4-1-20250805': AI_PROVIDERS.ANTHROPIC,
-  'claude-sonnet-4-20250514': AI_PROVIDERS.ANTHROPIC
+  'claude-sonnet-4-5-20250929': AI_PROVIDERS.ANTHROPIC
 };
 
 let anthropicService = null;

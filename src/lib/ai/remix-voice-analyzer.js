@@ -20,7 +20,7 @@ const anthropic = new Anthropic({
 });
 
 // Use VOICE_MODEL for voice analysis (Sonnet provides excellent results at lower cost)
-const VOICE_MODEL = process.env.VOICE_MODEL || process.env.PREMIUM_MODEL || 'claude-sonnet-4-20250514';
+const VOICE_MODEL = process.env.VOICE_MODEL || process.env.PREMIUM_MODEL || 'claude-sonnet-4-5-20250929';
 
 /**
  * Analyze transcript voice with deep linguistic profiling

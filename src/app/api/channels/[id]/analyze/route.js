@@ -497,7 +497,7 @@ export async function POST(request, { params }) {
           contentAnalysis: comprehensiveAnalysis?.analysis?.contentStrategy || {},
           competitivePositioning: comprehensiveAnalysis?.analysis?.positioning || {}
         },
-        model: 'claude-sonnet-4-20250514'
+        model: 'claude-sonnet-4-5-20250929'
       };
 
       // If content ideas are empty, generate intelligent fallback ideas

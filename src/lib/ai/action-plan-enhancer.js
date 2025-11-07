@@ -55,7 +55,7 @@ Return in this JSON format:
 
   try {
     const response = await claude.generateCompletion(prompt, {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5-20250929',
       temperature: 0.3,
       maxTokens: 300,
     });
@@ -95,7 +95,7 @@ Videos: ${recentVideos.join(', ')}
 Return ONLY a specific 2-4 word niche category. Examples: "Cybersecurity Documentary", "Tech Reviews", "Cooking Tutorials"`;
 
       const simpleResponse = await claude.generateCompletion(simplePrompt, {
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5-20250929',
         temperature: 0.3,
         maxTokens: 50,
       });
@@ -174,7 +174,7 @@ CRITICAL: Every event MUST be:
 Return ONLY a JSON array of events, no other text.`;
 
     const response = await claude.generateCompletion(prompt, {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5-20250929',
       temperature: 0.5,
       maxTokens: 3000,
     });
@@ -241,7 +241,7 @@ Return a JSON array with validated ideas in this format:
 
   try {
     const response = await claude.generateCompletion(prompt, {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5-20250929',
       temperature: 0.6,
       maxTokens: 3000,
     });
@@ -292,7 +292,7 @@ Generate:
 Return ONLY valid JSON: { "format": "...", "hook": "..." }`;
 
           const response = await claude.generateCompletion(prompt, {
-            model: 'claude-sonnet-4-20250514',
+            model: 'claude-sonnet-4-5-20250929',
             temperature: 0.7,
             maxTokens: 200,
           });
@@ -328,7 +328,7 @@ Answer in ONE sentence (5-15 words max). Be specific to ${niche} content creatio
 Return ONLY the purpose text, no quotes or extra formatting.`;
 
           const purpose = await claude.generateCompletion(prompt, {
-            model: 'claude-sonnet-4-20250514',
+            model: 'claude-sonnet-4-5-20250929',
             temperature: 0.3,
             maxTokens: 50,
           });

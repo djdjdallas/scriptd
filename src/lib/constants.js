@@ -74,7 +74,7 @@ export const AI_MODELS = {
   CLAUDE_3_OPUS: process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805',
   CLAUDE_3_SONNET: process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
   CLAUDE_3_HAIKU: process.env.FAST_MODEL || 'claude-3-5-haiku-20241022',
-  CLAUDE_VOICE: process.env.VOICE_MODEL || 'claude-sonnet-4-20250514'
+  CLAUDE_VOICE: process.env.VOICE_MODEL || 'claude-sonnet-4-5-20250929'
 };
 
 // Script Types
