@@ -178,13 +178,45 @@ export async function POST(request) {
 
     console.log('✅ Job created successfully:', job.id);
 
+    // Trigger the Edge Function to process the job immediately
+    // This ensures immediate processing without waiting for pg_cron
+    try {
+      console.log('🚀 Triggering Edge Function to process job immediately...');
+
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      if (supabaseUrl && supabaseServiceKey) {
+        // Fire and forget - don't wait for the response
+        fetch(`${supabaseUrl}/functions/v1/process-script-jobs`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'x-supabase-caller': 'api'
+          },
+          body: JSON.stringify({})
+        }).catch(error => {
+          console.error('Failed to trigger Edge Function (non-blocking):', error);
+        });
+
+        console.log('✅ Edge Function trigger initiated');
+      } else {
+        console.warn('⚠️ Missing Supabase URL or service key for Edge Function trigger');
+      }
+    } catch (error) {
+      console.error('Error triggering Edge Function (non-blocking):', error);
+      // Don't fail the request if Edge Function trigger fails
+      // pg_cron will pick it up eventually
+    }
+
     // Return job ID immediately
     return NextResponse.json({
       success: true,
       jobId: job.id,
       status: 'pending',
       estimatedTimeMinutes: Math.ceil(durationMinutes / 3), // Rough estimate: 1/3 of script duration
-      message: 'Script generation job created. Check job status for progress.',
+      message: 'Script generation job created. Processing will begin shortly.',
       pollUrl: `/api/workflow/job-status/${job.id}`
     });
 

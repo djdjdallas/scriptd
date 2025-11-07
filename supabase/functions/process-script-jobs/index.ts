@@ -44,9 +44,13 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization')
     const caller = req.headers.get('x-supabase-caller')
 
-    // Allow calls from pg_cron OR with service role key
-    if (caller !== 'pg_cron' && authHeader !== `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`) {
-      console.error('❌ Unauthorized request');
+    // Allow calls from pg_cron, API, manual triggers, OR with service role key
+    const validCallers = ['pg_cron', 'api', 'manual']
+    const hasValidCaller = caller && validCallers.includes(caller)
+    const hasServiceRoleKey = authHeader === `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+
+    if (!hasValidCaller && !hasServiceRoleKey) {
+      console.error('❌ Unauthorized request', { caller, hasServiceRoleKey: !!hasServiceRoleKey });
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
