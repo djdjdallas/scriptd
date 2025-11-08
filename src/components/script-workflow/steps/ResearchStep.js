@@ -31,6 +31,10 @@ export default function ResearchStep() {
   const [isExtractingTranscript, setIsExtractingTranscript] = useState({});
   const [expandedTranscripts, setExpandedTranscripts] = useState(new Set());
   const [researchAdequacy, setResearchAdequacy] = useState(null);
+  const [researchJobId, setResearchJobId] = useState(null);
+  const [researchJobStatus, setResearchJobStatus] = useState(null);
+  const [researchProgress, setResearchProgress] = useState(0);
+  const pollingIntervalRef = useRef(null);
 
   const supabase = createClient();
 
@@ -168,6 +172,158 @@ export default function ResearchStep() {
     calculateAdequacy();
   }, [sources, workflowData.summary?.targetDuration]);
 
+  // Poll research job status
+  useEffect(() => {
+    if (!researchJobId || researchJobStatus === 'completed' || researchJobStatus === 'failed') {
+      return;
+    }
+
+    const pollJobStatus = async () => {
+      try {
+        const response = await fetch(`/api/workflow/research-status/${researchJobId}`);
+
+        if (!response.ok) {
+          console.error('Failed to poll job status:', response.status);
+          return;
+        }
+
+        const data = await response.json();
+
+        setResearchJobStatus(data.status);
+        setResearchProgress(data.progress || 0);
+
+        if (data.status === 'completed' && data.results) {
+          // Stop polling
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+
+          // Process the results
+          const results = data.results;
+
+          // Handle research summary if available
+          if (results.summary || results.researchSummary) {
+            setResearchSummary(results.summary || results.researchSummary);
+          }
+
+          // Handle related questions if available
+          if (results.relatedQuestions && results.relatedQuestions.length > 0) {
+            setRelatedQuestions(results.relatedQuestions);
+          }
+
+          // Map results to source format
+          const newSources = (results.results || results.sources || []).map(result => ({
+            id: result.id || crypto.randomUUID(),
+            source_type: result.source_type || 'web',
+            source_url: result.source_url,
+            source_title: result.source_title,
+            source_content: result.source_content,
+            fact_check_status: result.fact_check_status || 'verified',
+            is_starred: result.is_starred || false,
+            relevance: result.relevance || 0.8,
+            isNew: true
+          }));
+
+          // Animate sources being added
+          setIsAddingSources(true);
+          setAddedSourcesCount(0);
+
+          const existingDocuments = sources.filter(s => s.source_type === 'document');
+          setSources(existingDocuments);
+
+          // Add sources with animation
+          const newSourceIds = [];
+          for (let i = 0; i < newSources.length; i++) {
+            await new Promise(resolve => setTimeout(resolve, 150));
+            const sourceWithId = { ...newSources[i], isNew: false };
+            setSources(prev => [...prev, sourceWithId]);
+            newSourceIds.push(sourceWithId.id);
+            setAddedSourcesCount(i + 1);
+          }
+
+          // Auto-select all new sources
+          setSelectedSources(prev => {
+            const newSet = new Set(prev);
+            newSourceIds.forEach(id => newSet.add(id));
+            return newSet;
+          });
+
+          setIsAddingSources(false);
+          setIsSearching(false);
+
+          if (results.creditsUsed) {
+            trackCredits(results.creditsUsed);
+          }
+
+          if (results.searchProvider) {
+            setSearchProvider(results.searchProvider);
+          }
+
+          const totalContent = newSources.reduce((sum, s) => sum + (s.source_content?.length || 0), 0);
+
+          toast.success(
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                <span>Research completed! Added {newSources.length} sources</span>
+              </div>
+              {totalContent > 0 && (
+                <span className="text-xs opacity-80">
+                  ✨ Full content fetched ({(totalContent / 1000).toFixed(1)}k chars total)
+                </span>
+              )}
+              <span className="text-xs opacity-70">
+                Processing time: {data.processingTime || 'N/A'}s
+              </span>
+            </div>
+          );
+
+          // Clear job tracking
+          setResearchJobId(null);
+          setResearchJobStatus(null);
+          setResearchProgress(0);
+        } else if (data.status === 'failed') {
+          // Stop polling
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+
+          setIsSearching(false);
+          setIsAddingSources(false);
+
+          toast.error(
+            <div className="flex flex-col gap-1">
+              <span>Research job failed</span>
+              {data.error && <span className="text-xs opacity-80">{data.error}</span>}
+            </div>
+          );
+
+          // Clear job tracking
+          setResearchJobId(null);
+          setResearchJobStatus(null);
+          setResearchProgress(0);
+        }
+      } catch (error) {
+        console.error('Error polling job status:', error);
+      }
+    };
+
+    // Start polling every 3 seconds
+    pollingIntervalRef.current = setInterval(pollJobStatus, 3000);
+
+    // Poll immediately
+    pollJobStatus();
+
+    // Cleanup on unmount
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [researchJobId, researchJobStatus]);
+
   // AI-powered search using the video topic
   const performAISearch = async () => {
     const topic = workflowData.summary?.topic;
@@ -208,147 +364,65 @@ export default function ResearchStep() {
       return;
     }
 
+    if (!workflowId) {
+      toast.error('Please save the workflow first');
+      return;
+    }
+
     setIsSearching(true);
+    setResearchProgress(0);
+
     try {
-      // For now, we'll simulate search results since the API endpoint might not exist yet
-      // In production, this would call your actual search API
-      
-      // Check if the research API endpoint exists
-      const response = await fetch('/api/workflow/research', {
+      // Call the async research endpoint
+      const response = await fetch('/api/workflow/research-async', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: query,
           topic: workflowData.summary?.topic,
           workflowId,
-          targetDuration: workflowData.summary?.targetDuration || 1800, // Default to 30 minutes
-          enableExpansion: true, // ← ENABLE ENHANCED RESEARCH WITH GAP ANALYSIS!
-          // Include content idea context for better research targeting
+          targetDuration: workflowData.summary?.targetDuration || 1800,
+          enableExpansion: true,
           contentIdeaInfo: workflowData.summary?.contentIdeaInfo,
           niche: workflowData.summary?.niche
         })
       });
 
       if (!response.ok) {
-        // If the API returns an error, log it and show details
         const errorData = await response.json().catch(() => ({}));
         console.error('Research API error:', response.status, response.statusText, errorData);
-        toast.error(errorData.error || errorData.details || 'Search service error. Please try again.', {
+        toast.error(errorData.error || errorData.details || 'Failed to start research job', {
           duration: 5000
         });
+        setIsSearching(false);
         return;
       }
 
       const data = await response.json();
-      
-      // Check if these are educational results (no API configured)
-      if (data.message && data.message.includes('educational resources')) {
-        // These are educational/help links, not real search results
-        const educationalSources = data.results.map(result => ({
-          id: crypto.randomUUID(),
-          source_type: 'educational',
-          source_url: result.url,
-          source_title: result.title,
-          source_content: result.snippet,
-          fact_check_status: 'unverified',
-          is_starred: false,
-          relevance: 0.5
-        }));
-        
-        setSources(educationalSources); // Replace, don't append
-        toast.info('Showing educational resources. Configure search API for live results.');
+
+      if (!data.success || !data.jobId) {
+        toast.error('Failed to create research job');
+        setIsSearching(false);
         return;
       }
-      
-      // Handle research summary if available
-      if (data.summary || data.researchSummary) {
-        setResearchSummary(data.summary || data.researchSummary);
-      }
 
-      // Handle related questions if available
-      if (data.relatedQuestions && data.relatedQuestions.length > 0) {
-        setRelatedQuestions(data.relatedQuestions);
-      }
+      // Store the job ID and start polling
+      setResearchJobId(data.jobId);
+      setResearchJobStatus(data.status);
 
-      // Handle insights if available
-      if (data.insights) {
-        console.log('Research insights:', data.insights);
-        // You could store these in state if needed for display
-      }
-
-      // Map results to source format - Claude already provides full content!
-      const newSources = (data.results || []).map(result => ({
-        id: result.id || crypto.randomUUID(),
-        source_type: result.source_type || 'web',
-        source_url: result.source_url,
-        source_title: result.source_title,
-        source_content: result.source_content, // Already has full content from Claude!
-        fact_check_status: result.fact_check_status || 'verified',
-        is_starred: result.is_starred || false,
-        relevance: result.relevance || 0.8,
-        isNew: true // Mark as new for animation
-      }));
-
-      // Animate sources being added one by one
-      setIsAddingSources(true);
-      setAddedSourcesCount(0);
-      
-      // Keep uploaded documents, only clear web sources
-      const existingDocuments = sources.filter(s => s.source_type === 'document');
-      setSources(existingDocuments); // Keep documents, clear only web sources
-      
-      // Add sources one by one with delay for animation and auto-select them
-      const newSourceIds = [];
-      for (let i = 0; i < newSources.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 150)); // Delay between each source
-        const sourceWithId = { ...newSources[i], isNew: false };
-        setSources(prev => [...prev, sourceWithId]);
-        newSourceIds.push(sourceWithId.id);
-        setAddedSourcesCount(i + 1);
-      }
-      
-      // Auto-select all new sources
-      setSelectedSources(prev => {
-        const newSet = new Set(prev);
-        newSourceIds.forEach(id => newSet.add(id));
-        return newSet;
-      });
-      
-      setIsAddingSources(false);
-      trackCredits(data.creditsUsed || 2);
-      
-      // Track search provider
-      if (data.searchProvider) {
-        setSearchProvider(data.searchProvider);
-      }
-      
-      // Show provider-specific success message with animation feedback
-      const providerName = data.searchProvider === 'claude' ? 'Claude AI' :
-                          data.searchProvider === 'google' ? 'Google Search' :
-                          'Search';
-
-      // Calculate total content fetched
-      const totalContent = newSources.reduce((sum, s) => sum + (s.source_content?.length || 0), 0);
-
-      toast.success(
+      toast.info(
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            <span>Successfully added {data.results.length} sources from {providerName}</span>
-          </div>
-          {data.searchProvider === 'claude' && totalContent > 0 && (
-            <span className="text-xs opacity-80">
-              ✨ Full content already fetched ({(totalContent / 1000).toFixed(1)}k chars total)
-            </span>
-          )}
-        </div>
+          <span>🔬 Research job started</span>
+          <span className="text-xs opacity-80">Job ID: {data.jobId.substring(0, 8)}...</span>
+          <span className="text-xs opacity-70">This may take 5-8 minutes. Polling for updates...</span>
+        </div>,
+        { duration: 5000 }
       );
+
+      // The polling effect will handle the rest
     } catch (error) {
       console.error('Search error:', error);
-      
-      // Even if there's an error, provide some guidance
-      toast.info('Search service is being configured. You can add sources manually.');
-    } finally {
+      toast.error('Failed to start research job. Please try again.');
       setIsSearching(false);
     }
   };
@@ -1004,25 +1078,46 @@ export default function ResearchStep() {
             <div className="space-y-3">
               {/* AI Search Button - Prominent placement */}
               {workflowData.summary?.topic && (
-                <button
-                  onClick={performAISearch}
-                  disabled={isSearching}
-                  className={`w-full glass-button bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 py-4 min-h-[80px] flex flex-col items-center justify-center gap-2 transition-all ${
-                    isSearching ? 'opacity-60 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {isSearching ? (
-                    <>
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                      <span className="text-sm">Searching with AI...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-5 w-5" />
-                      <span className="text-sm">AI Web Search for "{workflowData.summary.topic}" (1 credit)</span>
-                    </>
+                <div className="space-y-2">
+                  <button
+                    onClick={performAISearch}
+                    disabled={isSearching}
+                    className={`w-full glass-button bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 py-4 min-h-[80px] flex flex-col items-center justify-center gap-2 transition-all ${
+                      isSearching ? 'opacity-60 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {isSearching ? (
+                      <>
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <span className="text-sm">
+                          {researchJobStatus === 'pending' && 'Queueing research job...'}
+                          {researchJobStatus === 'processing' && 'AI Research in Progress...'}
+                          {!researchJobStatus && 'Starting research...'}
+                        </span>
+                        {researchJobStatus && (
+                          <span className="text-xs opacity-75">
+                            Status: {researchJobStatus} {researchProgress > 0 && `(${researchProgress}%)`}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-5 w-5" />
+                        <span className="text-sm">AI Web Search for "{workflowData.summary.topic}" (1 credit)</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Progress Bar */}
+                  {isSearching && researchProgress > 0 && (
+                    <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 h-full transition-all duration-500"
+                        style={{ width: `${researchProgress}%` }}
+                      />
+                    </div>
                   )}
-                </button>
+                </div>
               )}
               
               {/* Manual Search */}
