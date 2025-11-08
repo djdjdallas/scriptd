@@ -106,43 +106,225 @@ serve(async (req) => {
     const params = job.research_params;
 
     try {
-      // Call the Vercel API to perform research
-      // The Vercel API has all the complex research logic
-      // This Edge Function just waits for it to complete (NO TIMEOUT!)
+      // Perform research directly in Edge Function (NO TIMEOUT LIMITS!)
+      // No need to call back to Vercel - we can run indefinitely here
 
-      const apiUrl = Deno.env.get('NEXT_PUBLIC_SITE_URL') || Deno.env.get('VERCEL_URL') || 'https://scriptd.vercel.app'
-      const edgeSecret = Deno.env.get('EDGE_FUNCTION_SECRET') || 'gpM1FDtEM2RXDu6pXQa0dMOWGiP4F3hlmhWVQWUmV2o=';
-
-      console.log('🔬 Calling Vercel API at:', apiUrl);
+      console.log('🔬 Starting research directly in Edge Function');
       console.log('📦 Research params:', {
+        query: params.query?.substring(0, 50),
         topic: params.topic?.substring(0, 50),
         targetDuration: params.targetDuration,
         enableExpansion: params.enableExpansion
       });
 
-      const researchResponse = await fetch(`${apiUrl}/api/workflow/research`, {
+      // Update progress
+      await supabaseClient
+        .from('research_jobs')
+        .update({
+          progress: 10,
+          current_step: 'initializing_research'
+        })
+        .eq('id', job.id);
+
+      const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
+      if (!anthropicApiKey) {
+        throw new Error('ANTHROPIC_API_KEY not configured');
+      }
+
+      // Build research prompt
+      const minSources = params.minSources || 10;
+      const minContentLength = params.minContentLength || 1000;
+
+      let enrichedContext = params.context || '';
+      if (params.contentIdeaInfo) {
+        const { title, hook, description, specifics } = params.contentIdeaInfo;
+        enrichedContext = `
+${hook ? `Content Hook: ${hook}` : ''}
+${description ? `Description: ${description}` : ''}
+${specifics ? `Key Details to Research: ${specifics}` : ''}
+${params.context ? `Additional Context: ${params.context}` : ''}`.trim();
+      }
+
+      const researchPrompt = `You are a research assistant. Research the following topic and return your findings in JSON format.
+
+Topic to research: "${params.query}"
+${params.topic ? `Additional context: ${params.topic}` : ''}
+${params.niche ? `Content Niche: ${params.niche}` : ''}
+${enrichedContext ? `Research Focus:\n${enrichedContext}` : ''}
+
+CRITICAL: You MUST return ONLY valid JSON in the exact format specified below. Do not include any text before or after the JSON.
+
+Return this exact JSON structure:
+{
+  "summary": "A comprehensive 3-4 paragraph synthesis of the research findings",
+  "sources": [
+    {
+      "source_url": "https://example.com/article",
+      "source_title": "Article title",
+      "source_content": "Key information from this source (at least ${minContentLength} characters)",
+      "source_type": "web",
+      "is_starred": false,
+      "fact_check_status": "verified",
+      "relevance": 0.9
+    }
+  ],
+  "relatedQuestions": ["Question 1?", "Question 2?", "Question 3?"],
+  "insights": {
+    "mainThemes": ["Theme 1", "Theme 2"],
+    "keyStatistics": ["Stat 1", "Stat 2"],
+    "controversialPoints": ["Point 1"]
+  }
+}
+
+You MUST find at least ${minSources} high-quality sources. Each source must have at least ${minContentLength} characters of content.`;
+
+      // Update progress
+      await supabaseClient
+        .from('research_jobs')
+        .update({
+          progress: 20,
+          current_step: 'searching_web'
+        })
+        .eq('id', job.id);
+
+      // Call Claude with web search
+      console.log('🤖 Calling Claude API for research...');
+      const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': job.user_id,
-          'X-Job-Id': job.id,
-          'X-Edge-Function-Secret': edgeSecret
+          'x-api-key': anthropicApiKey,
+          'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-          ...params,
-          workflowId: job.workflow_id
+          model: 'claude-sonnet-4-5-20250929',
+          max_tokens: 16000,
+          messages: [{
+            role: 'user',
+            content: researchPrompt
+          }]
         })
       });
 
-      console.log('📡 Vercel API response status:', researchResponse.status);
-
-      if (!researchResponse.ok) {
-        const errorData = await researchResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || `Research failed with status ${researchResponse.status}`);
+      if (!anthropicResponse.ok) {
+        const errorText = await anthropicResponse.text();
+        throw new Error(`Anthropic API error: ${anthropicResponse.status} - ${errorText}`);
       }
 
-      const result = await researchResponse.json();
-      console.log('✅ Research completed');
+      const anthropicData = await anthropicResponse.json();
+      console.log('✅ Claude API response received');
+
+      // Update progress
+      await supabaseClient
+        .from('research_jobs')
+        .update({
+          progress: 80,
+          current_step: 'processing_results'
+        })
+        .eq('id', job.id);
+
+      // Parse Claude's response
+      const responseText = anthropicData.content[0].text;
+      let researchData;
+
+      try {
+        // Try to extract JSON from the response
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          researchData = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('No JSON found in response');
+        }
+      } catch (parseError) {
+        console.error('Failed to parse Claude response:', parseError);
+        throw new Error('Failed to parse research results from Claude');
+      }
+
+      // Format result to match expected structure
+      const result = {
+        success: true,
+        results: researchData.sources || [],
+        sources: researchData.sources || [],
+        summary: researchData.summary,
+        researchSummary: researchData.summary,
+        relatedQuestions: researchData.relatedQuestions || [],
+        insights: researchData.insights,
+        creditsUsed: 1,
+        searchProvider: 'claude',
+        toolsUsed: ['web_search']
+      };
+
+      console.log('✅ Research completed:', {
+        sourcesFound: result.sources.length,
+        hasSummary: !!result.summary
+      });
+
+      // Save research sources to workflow_research table
+      if (result.sources && result.sources.length > 0) {
+        console.log('💾 Saving research sources to workflow_research table');
+
+        // Clear existing research for this workflow
+        await supabaseClient
+          .from('workflow_research')
+          .delete()
+          .eq('workflow_id', job.workflow_id);
+
+        // Insert new research sources
+        const sourcesToSave = result.sources.map((source: any, index: number) => ({
+          workflow_id: job.workflow_id,
+          source_type: source.source_type || 'web',
+          source_url: source.source_url,
+          source_title: source.source_title,
+          source_content: source.source_content,
+          fact_check_status: source.fact_check_status || 'verified',
+          is_starred: source.is_starred || false,
+          is_selected: true,
+          relevance: source.relevance || (1 - index * 0.1),
+          added_at: new Date().toISOString()
+        }));
+
+        const { data: savedSources, error: saveError } = await supabaseClient
+          .from('workflow_research')
+          .insert(sourcesToSave)
+          .select();
+
+        if (saveError) {
+          console.error('Error saving research:', saveError);
+        } else {
+          console.log(`✅ Saved ${savedSources?.length || sourcesToSave.length} sources to workflow`);
+        }
+      }
+
+      // Update user credits
+      const { data: currentUser } = await supabaseClient
+        .from('users')
+        .select('credits')
+        .eq('id', job.user_id)
+        .single();
+
+      if (currentUser && currentUser.credits > 0) {
+        await supabaseClient
+          .from('users')
+          .update({
+            credits: currentUser.credits - 1
+          })
+          .eq('id', job.user_id);
+
+        // Log transaction
+        await supabaseClient
+          .from('credits_transactions')
+          .insert({
+            user_id: job.user_id,
+            amount: -1,
+            type: 'usage',
+            description: `Research: ${params.query?.substring(0, 100)}`,
+            metadata: {
+              workflowId: job.workflow_id,
+              provider: 'claude',
+              sourcesCount: result.sources?.length
+            }
+          });
+      }
 
       // Mark job as completed
       await supabaseClient
