@@ -92,6 +92,16 @@ function validateUserAccess(userId, userTier, duration, model) {
     ? SCRIPT_CONFIG.freeUserLimits
     : SCRIPT_CONFIG.paidUserLimits;
 
+  // Debug logging to see what's being used
+  console.log('🔍 Model validation:', {
+    userId,
+    userTier,
+    normalizedTier,
+    model,
+    allowedModels: limits.allowedModels,
+    modelAllowed: limits.allowedModels.includes(model)
+  });
+
   const errors = [];
 
   if (duration > limits.maxDurationMinutes) {
