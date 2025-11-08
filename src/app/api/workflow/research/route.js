@@ -5,12 +5,44 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request) {
   try {
-    const supabase = await createClient();
+    // Check for Edge Function authentication FIRST
+    const edgeFunctionUserId = request.headers.get('X-User-Id');
+    const edgeFunctionJobId = request.headers.get('X-Job-Id');
+    const edgeFunctionSecret = request.headers.get('X-Edge-Function-Secret');
 
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let user = null;
+    let supabase = null;
+
+    // If request is from Edge Function with proper headers, bypass cookie auth
+    if (edgeFunctionUserId && edgeFunctionJobId && edgeFunctionSecret) {
+      const expectedSecret = process.env.EDGE_FUNCTION_SECRET || 'gpM1FDtEM2RXDu6pXQa0dMOWGiP4F3hlmhWVQWUmV2o=';
+
+      if (edgeFunctionSecret === expectedSecret) {
+        console.log('✅ Edge Function authentication successful');
+        console.log('   User ID:', edgeFunctionUserId);
+        console.log('   Job ID:', edgeFunctionJobId);
+
+        user = { id: edgeFunctionUserId };
+
+        // For Edge Function requests, create a service role client
+        const { createClient: createServiceClient } = require('@supabase/supabase-js');
+        supabase = createServiceClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        );
+      } else {
+        console.error('❌ Edge Function authentication failed: Invalid secret');
+        return NextResponse.json({ error: 'Unauthorized', details: 'Invalid Edge Function secret' }, { status: 401 });
+      }
+    } else {
+      // Standard cookie-based authentication for browser requests
+      supabase = await createClient();
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData?.user) {
+        console.error('Auth error:', authError);
+        return NextResponse.json({ error: 'Unauthorized', details: authError?.message }, { status: 401 });
+      }
+      user = authData.user;
     }
 
     const {
