@@ -22,13 +22,13 @@ const SCRIPT_CONFIG = {
   // FREE USER RESTRICTIONS - NEW
   freeUserLimits: {
     maxDurationMinutes: 21, // Free users limited to 21 minutes
-    allowedModels: ['claude-3-5-haiku-20241022'], // Only 'fast' model - FIXED MODEL NAME
+    allowedModels: ['claude-3-5-haiku-20241022', 'claude-sonnet-4-5-20250929'], // Fast and Balanced models - FIXED MODEL NAMES
   },
 
-  // PAID USER (no restrictions)
+  // PAID USER (all models available)
   paidUserLimits: {
     maxDurationMinutes: 60, // Up to 1 hour
-    allowedModels: ['claude-3-5-haiku-20241022', 'claude-sonnet-4-5-20250929', 'claude-opus-4-1-20250805'], // FIXED MODEL NAMES
+    allowedModels: ['claude-3-5-haiku-20241022', 'claude-sonnet-4-5-20250929', 'claude-opus-4-1-20250805'], // All models: Fast, Balanced, Premium (Hollywood)
   },
 };
 
