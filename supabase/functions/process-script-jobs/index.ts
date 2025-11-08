@@ -110,20 +110,24 @@ serve(async (req) => {
       // The Vercel API has all the complex generation logic
       // This Edge Function just waits for it to complete (NO TIMEOUT!)
 
-      const apiUrl = Deno.env.get('NEXT_PUBLIC_SITE_URL') || Deno.env.get('VERCEL_URL') || 'https://genscript.io'
+      const apiUrl = Deno.env.get('NEXT_PUBLIC_SITE_URL') || Deno.env.get('VERCEL_URL') || 'https://scriptd.vercel.app'
+      const edgeSecret = Deno.env.get('EDGE_FUNCTION_SECRET') || 'gpM1FDtEM2RXDu6pXQa0dMOWGiP4F3hlmhWVQWUmV2o=';
+
       console.log('🎬 Calling Vercel API at:', apiUrl);
       console.log('📦 Generation params:', {
         type: params.type,
         targetDuration: params.targetDuration,
         model: params.model
       });
+      console.log('🔑 Using Edge Function Secret:', edgeSecret.substring(0, 10) + '...');
 
       const generationResponse = await fetch(`${apiUrl}/api/workflow/generate-script`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-User-Id': job.user_id,
-          'X-Job-Id': job.id
+          'X-Job-Id': job.id,
+          'X-Edge-Function-Secret': edgeSecret
         },
         body: JSON.stringify({
           ...params,

@@ -57,14 +57,43 @@ function calculateCreditsForDuration(durationInSeconds, model = 'claude-3-5-haik
 
 export async function POST(request) {
   console.log('🚀 === SCRIPT GENERATION API CALLED ===');
-  
+
   try {
     const supabase = await createClient();
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.error('Auth error:', authError);
-      return NextResponse.json({ error: 'Unauthorized', details: authError?.message }, { status: 401 });
+
+    // Check for Edge Function authentication
+    const edgeFunctionUserId = request.headers.get('X-User-Id');
+    const edgeFunctionJobId = request.headers.get('X-Job-Id');
+    const edgeFunctionSecret = request.headers.get('X-Edge-Function-Secret');
+
+    let user = null;
+
+    // If request is from Edge Function with proper headers, bypass cookie auth
+    if (edgeFunctionUserId && edgeFunctionJobId && edgeFunctionSecret) {
+      // Use the actual secret value until we can set it properly in Vercel
+      const expectedSecret = process.env.EDGE_FUNCTION_SECRET || 'gpM1FDtEM2RXDu6pXQa0dMOWGiP4F3hlmhWVQWUmV2o=';
+
+      if (edgeFunctionSecret === expectedSecret) {
+        console.log('✅ Edge Function authentication successful');
+        console.log('   User ID:', edgeFunctionUserId);
+        console.log('   Job ID:', edgeFunctionJobId);
+
+        // Create a user object with the ID from the Edge Function
+        user = { id: edgeFunctionUserId };
+      } else {
+        console.error('❌ Edge Function authentication failed: Invalid secret');
+        console.error('   Expected:', expectedSecret);
+        console.error('   Received:', edgeFunctionSecret);
+        return NextResponse.json({ error: 'Unauthorized', details: 'Invalid Edge Function secret' }, { status: 401 });
+      }
+    } else {
+      // Standard cookie-based authentication for browser requests
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData?.user) {
+        console.error('Auth error:', authError);
+        return NextResponse.json({ error: 'Unauthorized', details: authError?.message }, { status: 401 });
+      }
+      user = authData.user;
     }
 
     const {
