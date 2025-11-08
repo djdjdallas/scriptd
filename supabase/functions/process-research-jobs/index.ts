@@ -57,13 +57,14 @@ serve(async (req) => {
       )
     }
 
-    // Find oldest pending job (respecting priority)
+    // Find newest pending job (respecting priority)
+    // Process newest first so users get immediate results
     const { data: jobs, error: fetchError } = await supabaseClient
       .from('research_jobs')
       .select('*')
       .eq('status', 'pending')
       .order('priority', { ascending: false }) // Higher priority first
-      .order('created_at', { ascending: true }) // Oldest first within same priority
+      .order('created_at', { ascending: false }) // NEWEST first within same priority
       .limit(1);
 
     if (fetchError) {
