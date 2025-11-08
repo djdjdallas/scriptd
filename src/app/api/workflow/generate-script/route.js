@@ -59,14 +59,13 @@ export async function POST(request) {
   console.log('🚀 === SCRIPT GENERATION API CALLED ===');
 
   try {
-    const supabase = await createClient();
-
-    // Check for Edge Function authentication
+    // Check for Edge Function authentication FIRST
     const edgeFunctionUserId = request.headers.get('X-User-Id');
     const edgeFunctionJobId = request.headers.get('X-Job-Id');
     const edgeFunctionSecret = request.headers.get('X-Edge-Function-Secret');
 
     let user = null;
+    let supabase = null;
 
     // If request is from Edge Function with proper headers, bypass cookie auth
     if (edgeFunctionUserId && edgeFunctionJobId && edgeFunctionSecret) {
@@ -80,6 +79,14 @@ export async function POST(request) {
 
         // Create a user object with the ID from the Edge Function
         user = { id: edgeFunctionUserId };
+
+        // For Edge Function requests, create a service role client
+        // Import createClient from @supabase/supabase-js for service role access
+        const { createClient: createServiceClient } = require('@supabase/supabase-js');
+        supabase = createServiceClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        );
       } else {
         console.error('❌ Edge Function authentication failed: Invalid secret');
         console.error('   Expected:', expectedSecret);
@@ -88,6 +95,7 @@ export async function POST(request) {
       }
     } else {
       // Standard cookie-based authentication for browser requests
+      supabase = await createClient();
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData?.user) {
         console.error('Auth error:', authError);
