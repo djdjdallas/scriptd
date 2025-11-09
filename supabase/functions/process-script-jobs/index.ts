@@ -377,18 +377,29 @@ serve(async (req) => {
         })
         .eq('id', job.id);
 
-      // Save script to workflow
+      // Save script to workflow (in workflow_data JSONB column)
+      const { data: currentWorkflow } = await supabaseClient
+        .from('script_workflows')
+        .select('workflow_data')
+        .eq('id', job.workflow_id)
+        .single();
+
+      const updatedWorkflowData = {
+        ...(currentWorkflow?.workflow_data || {}),
+        generatedScript: generatedScript,
+        script_metadata: {
+          generated_at: new Date().toISOString(),
+          model: params.model,
+          length: generatedScript.length,
+          words: generatedScript.split(/\s+/).length,
+          targetDuration: targetDuration
+        }
+      };
+
       const { error: saveError } = await supabaseClient
         .from('script_workflows')
         .update({
-          generated_script: generatedScript,
-          script_metadata: {
-            generated_at: new Date().toISOString(),
-            model: params.model,
-            length: generatedScript.length,
-            words: generatedScript.split(/\s+/).length,
-            targetDuration: targetDuration
-          }
+          workflow_data: updatedWorkflowData
         })
         .eq('id', job.workflow_id);
 
@@ -399,7 +410,7 @@ serve(async (req) => {
       }
 
       // Update user credits
-      const creditsToDeduct = Math.max(1, Math.round(targetMinutes * 0.33 * 1.5)); // 0.33 per minute * 1.5 for Sonnet
+      const creditsToDeduct = Math.max(1, Math.round(durationMinutes * 0.33 * 1.5)); // 0.33 per minute * 1.5 for Sonnet
 
       const { data: currentUser } = await supabaseClient
         .from('users')
