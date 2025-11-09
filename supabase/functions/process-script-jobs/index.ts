@@ -130,12 +130,14 @@ serve(async (req) => {
         })
         .eq('id', job.id);
 
-      // Extract workflow data
-      const summary = workflow.summary_data || {};
-      const frameData = workflow.frame_data || {};
-      const hookData = workflow.hook_data || {};
-      const contentPoints = workflow.content_points || {};
-      const voiceProfile = workflow.voice_profile || {};
+      // Extract workflow data from JSONB structure
+      const workflowData = workflow.workflow_data || {};
+      const summary = workflowData.summary || {};
+      const frameData = workflowData.frame || {};
+      const hookData = workflowData.hook || {};
+      const contentPoints = workflowData.contentPoints || {};
+      const voiceProfile = summary.voiceProfile || {};
+      const targetAudience = summary.targetAudience || {};
       const research = {
         sources: workflow.workflow_research || []
       };
@@ -146,8 +148,29 @@ serve(async (req) => {
         model: params.model,
         sourcesCount: research.sources.length,
         hasHook: !!hookData?.hook,
-        hasFrame: !!frameData?.narrative_structure
+        hasFrame: !!frameData?.narrative_structure,
+        hasVoiceProfile: !!voiceProfile && Object.keys(voiceProfile).length > 0,
+        hasTargetAudience: !!targetAudience && Object.keys(targetAudience).length > 0
       });
+
+      // Debug logging for voice profile and target audience
+      if (voiceProfile && Object.keys(voiceProfile).length > 0) {
+        console.log('✅ Voice Profile Data:', {
+          hasBasicProfile: !!voiceProfile.basicProfile,
+          hasEnhancedProfile: !!voiceProfile.enhancedProfile,
+          tone: voiceProfile.basicProfile?.tone || 'not set',
+          pace: voiceProfile.basicProfile?.pace || 'not set'
+        });
+      } else {
+        console.log('⚠️ No voice profile data found');
+      }
+
+      if (targetAudience && Object.keys(targetAudience).length > 0) {
+        const audienceStr = typeof targetAudience === 'string' ? targetAudience : JSON.stringify(targetAudience);
+        console.log('✅ Target Audience:', audienceStr.substring(0, 200) + '...');
+      } else {
+        console.log('⚠️ No target audience specified');
+      }
 
       // === QUALITY SCRIPT GENERATION USING A- MODULES ===
       const targetDuration = params.targetDuration || summary.targetDuration || 600;
@@ -407,6 +430,80 @@ serve(async (req) => {
         console.error('Error saving script:', saveError);
       } else {
         console.log('✅ Script saved to workflow');
+      }
+
+      // Save script to permanent scripts table
+      try {
+        // Extract hook and description sections from generated script
+        const hookMatch = generatedScript.match(/\[HOOK\]([\s\S]*?)(?=\[|$)/i);
+        const descriptionMatch = generatedScript.match(/\[DESCRIPTION\]([\s\S]*?)(?=\[|$)/i);
+        const tagsMatch = generatedScript.match(/\[TAGS\]([\s\S]*?)(?=\[|$)/i);
+
+        const hookText = hookMatch ? hookMatch[1].trim() : null;
+        const descriptionText = descriptionMatch ? descriptionMatch[1].trim() : null;
+
+        // Parse tags from the tags section
+        let tagsArray: string[] = [];
+        if (tagsMatch) {
+          const tagsContent = tagsMatch[1].trim();
+          // Extract hashtags or comma-separated tags
+          const hashtagMatches = tagsContent.match(/#[\w]+/g);
+          if (hashtagMatches) {
+            tagsArray = hashtagMatches.map(tag => tag.substring(1)); // Remove # prefix
+          } else {
+            // Try comma-separated
+            tagsArray = tagsContent.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+          }
+        }
+
+        const creditsUsed = Math.max(1, Math.round(durationMinutes * 0.33 * 1.5));
+
+        const { data: scriptRecord, error: scriptSaveError } = await supabaseClient
+          .from('scripts')
+          .insert({
+            user_id: job.user_id,
+            channel_id: summary.channelId || null,
+            title: summary.topic || 'Untitled Script',
+            content: generatedScript,
+            hook: hookText,
+            description: descriptionText,
+            tags: tagsArray.length > 0 ? tagsArray : null,
+            credits_used: creditsUsed,
+            status: 'draft',
+            script_length: generatedScript.split(/\s+/).length,
+            metadata: {
+              workflow_id: job.workflow_id,
+              generated_at: new Date().toISOString(),
+              model: params.model,
+              target_duration: targetDuration,
+              generation_type: strategy.strategy,
+              chunks_used: strategy.chunkCount || 1,
+              voice_profile_used: !!voiceProfile && Object.keys(voiceProfile).length > 0,
+              target_audience_used: !!targetAudience && Object.keys(targetAudience).length > 0
+            }
+          })
+          .select('id')
+          .single();
+
+        if (scriptSaveError) {
+          console.error('⚠️ Error saving to scripts table:', scriptSaveError);
+        } else {
+          console.log('✅ Script saved to permanent scripts table:', scriptRecord?.id);
+
+          // Update workflow with script_id reference
+          await supabaseClient
+            .from('script_workflows')
+            .update({
+              workflow_data: {
+                ...updatedWorkflowData,
+                scriptId: scriptRecord?.id
+              }
+            })
+            .eq('id', job.workflow_id);
+        }
+      } catch (scriptError) {
+        console.error('⚠️ Error saving script to scripts table:', scriptError);
+        // Don't fail the whole job if this fails
       }
 
       // Update user credits

@@ -62,7 +62,10 @@ export async function GET(request, { params }) {
         .single();
 
       if (workflow?.workflow_data) {
-        generatedScript = workflow.workflow_data.generated_script || workflow.workflow_data.script;
+        // Check both camelCase and snake_case for backward compatibility
+        generatedScript = workflow.workflow_data.generatedScript ||
+                         workflow.workflow_data.generated_script ||
+                         workflow.workflow_data.script;
       }
     }
 

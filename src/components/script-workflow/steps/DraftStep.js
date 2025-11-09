@@ -504,11 +504,18 @@ export default function DraftStep() {
             jobId={jobId}
             onComplete={(job) => {
               console.log('✅ Script generation completed!', job);
-              setGeneratedScript(job.generated_script);
-              updateStepData('draft', { script: job.generated_script, type: generationType });
-              markStepComplete(8);
+              // Use camelCase field name (API returns generatedScript, not generated_script)
+              const script = job.generatedScript || job.generated_script; // Backward compatibility
+              if (script) {
+                setGeneratedScript(script);
+                updateStepData('draft', { script: script, type: generationType });
+                markStepComplete(8);
+                toast.success('Script generated successfully!');
+              } else {
+                console.error('⚠️ No script found in job completion data:', job);
+                toast.error('Script generated but could not be retrieved. Please refresh the page.');
+              }
               setJobId(null); // Clear job ID
-              toast.success('Script generated successfully!');
             }}
             onError={(job) => {
               console.error('❌ Script generation failed', job);
