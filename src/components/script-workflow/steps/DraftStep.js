@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { MODEL_TIERS } from "@/lib/constants";
 import ContentIdeaBanner from "../ContentIdeaBanner";
-import ScriptGenerationProgress from "../ScriptGenerationProgress";
 
 // Helper function to normalize model names from old to new format
 const normalizeModelName = (model) => {
@@ -47,7 +46,6 @@ export default function DraftStep() {
   const [researchSources, setResearchSources] = useState(
     workflowData.research?.sources || []
   );
-  const [jobId, setJobId] = useState(null); // For async job queue
 
   // Helper function to estimate generation time based on script duration
   const getEstimatedTime = () => {
@@ -336,11 +334,11 @@ export default function DraftStep() {
 
     try {
       console.log(
-        "Fetching /api/workflow/generate-script-async... (creates job)"
+        "Fetching /api/workflow/generate-script... (synchronous Vercel route)"
       );
 
-      // Call async endpoint - creates a job and returns immediately
-      const response = await fetch("/api/workflow/generate-script-async", {
+      // Call synchronous endpoint - generates and returns script directly
+      const response = await fetch("/api/workflow/generate-script", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -381,19 +379,21 @@ export default function DraftStep() {
       });
 
       console.log("Response data:", {
-        success: responseData.success,
-        jobId: responseData.jobId,
-        status: responseData.status,
-        estimatedTimeMinutes: responseData.estimatedTimeMinutes,
+        hasScript: !!responseData.script,
+        scriptLength: responseData.script?.length,
+        creditsUsed: responseData.creditsUsed,
+        scriptId: responseData.scriptId,
       });
 
-      // Store job ID and show progress component
-      setJobId(responseData.jobId);
-      setIsGenerating(false); // Hide button spinner, show progress component instead
-
-      toast.success(
-        "Script generation started! This may take a few minutes for longer scripts."
-      );
+      // Directly set the generated script
+      if (responseData.script) {
+        setGeneratedScript(responseData.script);
+        updateStepData("draft", { script: responseData.script, type: type });
+        markStepComplete(8);
+        toast.success("Script generated successfully!");
+      } else {
+        throw new Error("No script returned from API");
+      }
     } catch (error) {
       console.error("Generation error full details:", {
         message: error.message,
@@ -547,42 +547,6 @@ export default function DraftStep() {
         </div>
       )}
 
-      {/* Job Progress Component (Async Queue) */}
-      {jobId && !generatedScript && (
-        <div className="mb-6">
-          <ScriptGenerationProgress
-            jobId={jobId}
-            onComplete={(job) => {
-              console.log("✅ Script generation completed!", job);
-              // Use camelCase field name (API returns generatedScript, not generated_script)
-              const script = job.generatedScript || job.generated_script; // Backward compatibility
-              if (script) {
-                setGeneratedScript(script);
-                updateStepData("draft", {
-                  script: script,
-                  type: generationType,
-                });
-                markStepComplete(8);
-                toast.success("Script generated successfully!");
-              } else {
-                console.error(
-                  "⚠️ No script found in job completion data:",
-                  job
-                );
-                toast.error(
-                  "Script generated but could not be retrieved. Please refresh the page."
-                );
-              }
-              setJobId(null); // Clear job ID
-            }}
-            onError={(job) => {
-              console.error("❌ Script generation failed", job);
-              setJobId(null); // Clear job ID
-              toast.error(job.error_message || "Script generation failed");
-            }}
-          />
-        </div>
-      )}
 
       {/* Loading Banner */}
       {isGenerating && (

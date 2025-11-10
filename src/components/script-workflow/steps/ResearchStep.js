@@ -370,11 +370,11 @@ export default function ResearchStep() {
     }
 
     setIsSearching(true);
-    setResearchProgress(0);
+    setResearchProgress(10); // Show initial progress
 
     try {
-      // Call the async research endpoint
-      const response = await fetch('/api/workflow/research-async', {
+      // Call the direct research endpoint (with 800s timeout on Vercel Pro)
+      const response = await fetch('/api/workflow/research', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -391,39 +391,80 @@ export default function ResearchStep() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('Research API error:', response.status, response.statusText, errorData);
-        toast.error(errorData.error || errorData.details || 'Failed to start research job', {
+        toast.error(errorData.error || errorData.details || 'Research failed', {
           duration: 5000
         });
         setIsSearching(false);
+        setResearchProgress(0);
         return;
       }
 
+      setResearchProgress(90); // Almost done
       const data = await response.json();
 
-      if (!data.success || !data.jobId) {
-        toast.error('Failed to create research job');
+      if (!data.success || !data.sources) {
+        toast.error('Research completed but no sources found');
         setIsSearching(false);
+        setResearchProgress(0);
         return;
       }
 
-      // Store the job ID and start polling
-      setResearchJobId(data.jobId);
-      setResearchJobStatus(data.status);
+      // Process the results directly (no polling needed)
+      setResearchProgress(100);
 
-      toast.info(
+      // Handle research summary if available
+      if (data.summary || data.researchSummary) {
+        setResearchSummary(data.summary || data.researchSummary);
+      }
+
+      // Handle related questions if available
+      if (data.relatedQuestions?.length > 0) {
+        setRelatedQuestions(data.relatedQuestions);
+      }
+
+      // Handle search provider info
+      if (data.searchProvider) {
+        setSearchProvider(data.searchProvider);
+      }
+
+      // Add sources to the list
+      const newSources = data.sources.map(source => ({
+        id: source.id || crypto.randomUUID(),
+        source_type: source.source_type || 'web',
+        source_url: source.source_url,
+        source_title: source.source_title,
+        source_content: source.source_content,
+        fact_check_status: source.fact_check_status || 'verified',
+        is_starred: source.is_starred || false,
+        relevance: source.relevance || 0.5
+      }));
+
+      setSources(prev => [...newSources, ...prev]);
+      setAddedSourcesCount(newSources.length);
+
+      // Auto-select all new sources
+      const newSourceIds = newSources.map(s => s.id);
+      setSelectedSources(prev => {
+        const newSet = new Set(prev);
+        newSourceIds.forEach(id => newSet.add(id));
+        return newSet;
+      });
+
+      setIsSearching(false);
+      setResearchProgress(0);
+
+      toast.success(
         <div className="flex flex-col gap-1">
-          <span>🔬 Research job started</span>
-          <span className="text-xs opacity-80">Job ID: {data.jobId.substring(0, 8)}...</span>
-          <span className="text-xs opacity-70">This may take 5-8 minutes. Polling for updates...</span>
-        </div>,
-        { duration: 5000 }
+          <span>✅ Research completed!</span>
+          <span className="text-xs">Found {newSources.length} sources</span>
+        </div>
       );
 
-      // The polling effect will handle the rest
     } catch (error) {
       console.error('Search error:', error);
-      toast.error('Failed to start research job. Please try again.');
+      toast.error('Research failed. Please try again.');
       setIsSearching(false);
+      setResearchProgress(0);
     }
   };
 

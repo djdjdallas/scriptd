@@ -1790,11 +1790,57 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           }
         }
 
+        // Also save script to workflow_data if workflowId was provided
+        if (workflowId && newScript?.id) {
+          try {
+            console.log('Updating workflow_data with generated script...');
+
+            // Get current workflow data
+            const { data: currentWorkflow } = await supabase
+              .from('script_workflows')
+              .select('workflow_data')
+              .eq('id', workflowId)
+              .single();
+
+            // Update workflow with generated script
+            const updatedWorkflowData = {
+              ...(currentWorkflow?.workflow_data || {}),
+              generatedScript: script,
+              scriptId: newScript.id,
+              script_metadata: {
+                generated_at: new Date().toISOString(),
+                model: model,
+                length: script.length,
+                words: script.split(/\s+/).length,
+                targetDuration: totalDuration,
+                creditsUsed: creditsUsed
+              }
+            };
+
+            const { error: workflowUpdateError } = await supabase
+              .from('script_workflows')
+              .update({
+                workflow_data: updatedWorkflowData,
+                current_step: 'edit' // Move to edit step
+              })
+              .eq('id', workflowId);
+
+            if (workflowUpdateError) {
+              console.error('Error updating workflow_data:', workflowUpdateError);
+            } else {
+              console.log('✅ Script saved to workflow_data');
+            }
+          } catch (workflowError) {
+            console.error('Exception updating workflow:', workflowError);
+            // Don't fail the request
+          }
+        }
+
         console.log('=== RETURNING RESPONSE ===');
         console.log('Script ID being returned:', newScript?.id);
         console.log('Credits used:', creditsUsed);
-        
-        return NextResponse.json({ 
+
+        return NextResponse.json({
           script,
           creditsUsed,
           scriptId: newScript?.id // Include script ID in response

@@ -7,10 +7,10 @@
       "maxDuration": 10
     },
     "src/app/api/workflow/research/route.js": {
-      "maxDuration": 300
+      "maxDuration": 800
     },
     "src/app/api/workflow/generate-script/route.js": {
-      "maxDuration": 10
+      "maxDuration": 800
     }
   }
 }
