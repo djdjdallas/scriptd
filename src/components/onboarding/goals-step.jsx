@@ -228,7 +228,7 @@ export function GoalsStep({ userData, onComplete }) {
                   variant={isSelected ? 'default' : 'outline'}
                   className={`
                     cursor-pointer py-2 px-4 transition-all hover:scale-105 text-sm
-                    ${isSelected ? 'bg-purple-500/20 border-purple-500 text-purple-300' : 'hover:bg-white/10'}
+                    ${isSelected ? 'bg-purple-500/20 border-purple-500 text-purple-300' : 'text-gray-300 hover:bg-white/10 hover:text-white'}
                   `}
                   onClick={() => toggleSecondaryGoal(goal.value)}
                 >
@@ -349,7 +349,7 @@ export function GoalsStep({ userData, onComplete }) {
                 variant={isSelected ? 'default' : 'outline'}
                 className={`
                   cursor-pointer py-2 px-4 transition-all hover:scale-105 text-sm
-                  ${isSelected ? 'bg-purple-500/20 border-purple-500 text-purple-300' : 'hover:bg-white/10'}
+                  ${isSelected ? 'bg-purple-500/20 border-purple-500 text-purple-300' : 'text-gray-300 hover:bg-white/10 hover:text-white'}
                 `}
                 onClick={() => toggleAudienceAge(age)}
               >
@@ -379,7 +379,7 @@ export function GoalsStep({ userData, onComplete }) {
                 variant={isSelected ? 'default' : 'outline'}
                 className={`
                   cursor-pointer py-2 px-4 transition-all hover:scale-105 text-sm
-                  ${isSelected ? 'bg-purple-500/20 border-purple-500 text-purple-300' : 'hover:bg-white/10'}
+                  ${isSelected ? 'bg-purple-500/20 border-purple-500 text-purple-300' : 'text-gray-300 hover:bg-white/10 hover:text-white'}
                 `}
                 onClick={() => toggleInterest(interest)}
               >

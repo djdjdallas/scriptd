@@ -163,10 +163,10 @@ export function OnboardingContainer({ children, currentStep, onNext, onBack, onS
             variant="outline"
             onClick={onBack}
             disabled={currentStep === 1}
-            className="glass-button text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            className="backdrop-blur-xl bg-gray-800/80 border border-gray-600/50 text-white hover:bg-gray-700/90 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 rounded-xl transition-all"
           >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            <span className="text-white">Previous</span>
+            <ChevronLeft className="h-4 w-4 mr-2 text-white" />
+            <span className="text-white font-medium">Previous</span>
           </Button>
 
           <div className="flex items-center gap-2">
