@@ -105,43 +105,63 @@ export function FirstScriptStep({ userData, onComplete }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-white">Create Your First Script</h2>
-        <p className="text-gray-400">
-          Let's generate your first AI-powered YouTube script
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="text-center space-y-4">
+        <div className="flex justify-center">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center animate-pulse">
+            <Sparkles className="h-8 w-8 text-white" />
+          </div>
+        </div>
+        <h2 className="text-3xl font-bold text-white">Create Your First Script</h2>
+        <p className="text-gray-400 max-w-xl mx-auto">
+          Experience the power of AI script generation. This is just a preview - you'll be able to generate full scripts in your dashboard.
         </p>
       </div>
 
       {!generatedScript ? (
         <>
           {/* Template Selection */}
-          <div className="space-y-3">
-            <Label className="text-white">
-              Choose a Template <span className="text-red-400">*</span>
-            </Label>
-            <div className="grid md:grid-cols-2 gap-3">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-white text-lg font-semibold">
+                Choose a Script Style <span className="text-red-400">*</span>
+              </Label>
+              {selectedTemplate && (
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                  <Zap className="h-3 w-3 mr-1" />
+                  Selected
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-gray-400">
+              Select the format that best matches your content style
+            </p>
+            <div className="grid md:grid-cols-2 gap-4">
               {templates.map((template) => {
                 const Icon = template.icon;
+                const isSelected = selectedTemplate === template.id;
                 return (
                   <button
                     key={template.id}
                     onClick={() => setSelectedTemplate(template.id)}
                     className={`
-                      glass rounded-lg p-4 text-left transition-all
-                      ${selectedTemplate === template.id ? 'ring-2 ring-purple-500 bg-purple-500/10' : 'hover:bg-white/10'}
+                      glass rounded-xl p-5 text-left transition-all transform hover:scale-105
+                      ${isSelected ? 'ring-2 ring-purple-500 bg-purple-500/20 shadow-lg shadow-purple-500/20' : 'hover:bg-white/10'}
                     `}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${template.color} flex items-center justify-center`}>
-                        <Icon className="h-5 w-5 text-white" />
+                    <div className="flex items-start gap-4">
+                      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center shadow-lg`}>
+                        <Icon className="h-7 w-7 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="text-white font-medium">{template.title}</h4>
-                        <p className="text-xs text-gray-400 mt-1">{template.description}</p>
-                        <p className="text-xs text-purple-400 mt-2">
-                          Example: {template.example}
-                        </p>
+                        <h4 className="text-white font-semibold mb-1">{template.title}</h4>
+                        <p className="text-xs text-gray-400 mb-2">{template.description}</p>
+                        <div className="glass rounded px-2 py-1 inline-block">
+                          <p className="text-xs text-purple-300">
+                            {template.example}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -151,70 +171,107 @@ export function FirstScriptStep({ userData, onComplete }) {
           </div>
 
           {/* Topic Input */}
-          <div className="space-y-2">
-            <Label htmlFor="topic" className="text-white">
-              What's Your Topic? <span className="text-red-400">*</span>
+          <div className="space-y-3">
+            <Label htmlFor="topic" className="text-white text-lg font-semibold">
+              What's Your Video Topic? <span className="text-red-400">*</span>
             </Label>
+            <p className="text-sm text-gray-400">
+              Be specific to get better results. Include details about your audience and what value you'll provide.
+            </p>
             <div className="relative">
-              <Target className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Target className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 id="topic"
                 value={scriptTopic}
                 onChange={(e) => setScriptTopic(e.target.value)}
-                placeholder="e.g., Best cameras for YouTube beginners"
-                className="glass-input pl-10"
+                placeholder="e.g., Best budget-friendly cameras for YouTube beginners in 2024"
+                className="glass-input pl-12 py-6 text-base"
                 disabled={generating}
               />
             </div>
-            <p className="text-xs text-gray-500">
-              Be specific - the more detail you provide, the better the script
-            </p>
+            {scriptTopic && (
+              <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                <Lightbulb className="h-3 w-3 mr-1" />
+                Great topic! This will work well
+              </Badge>
+            )}
           </div>
 
           {/* AI Features Preview */}
-          <div className="glass rounded-lg p-4">
-            <h3 className="text-white font-medium mb-3 flex items-center gap-2">
+          <div className="glass rounded-xl p-6 bg-gradient-to-br from-purple-500/5 to-pink-500/5">
+            <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
               <Zap className="h-5 w-5 text-yellow-400" />
-              Your Script Will Include
+              Your AI-Generated Script Will Include
             </h3>
-            <div className="grid md:grid-cols-2 gap-2">
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <ChevronRight className="h-4 w-4 text-purple-400" />
-                Attention-grabbing hook
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="flex items-start gap-3 text-sm text-gray-300">
+                <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                  <ChevronRight className="h-4 w-4 text-purple-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-white">Hook</p>
+                  <p className="text-xs text-gray-400">Attention-grabbing opening</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <ChevronRight className="h-4 w-4 text-purple-400" />
-                SEO-optimized title
+              <div className="flex items-start gap-3 text-sm text-gray-300">
+                <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                  <ChevronRight className="h-4 w-4 text-purple-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-white">SEO Title</p>
+                  <p className="text-xs text-gray-400">Optimized for search</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <ChevronRight className="h-4 w-4 text-purple-400" />
-                Engaging storytelling
+              <div className="flex items-start gap-3 text-sm text-gray-300">
+                <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                  <ChevronRight className="h-4 w-4 text-purple-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-white">Story Flow</p>
+                  <p className="text-xs text-gray-400">Engaging narrative arc</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <ChevronRight className="h-4 w-4 text-purple-400" />
-                Call-to-action
+              <div className="flex items-start gap-3 text-sm text-gray-300">
+                <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                  <ChevronRight className="h-4 w-4 text-purple-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-white">CTA</p>
+                  <p className="text-xs text-gray-400">Strong call-to-action</p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Generate Button */}
-          <Button
-            onClick={handleGenerateScript}
-            disabled={!scriptTopic || !selectedTemplate || generating}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
-          >
-            {generating ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating Your Script...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate My First Script
-              </>
+          <div className="space-y-3">
+            <Button
+              onClick={handleGenerateScript}
+              disabled={!scriptTopic || !selectedTemplate || generating}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 py-6 text-lg"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Generating Your Script...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  Generate Sample Script
+                </>
+              )}
+            </Button>
+
+            {/* Info message */}
+            {generating && (
+              <div className="glass rounded-lg p-3">
+                <p className="text-sm text-gray-400 text-center">
+                  Our AI is crafting your personalized script...
+                </p>
+              </div>
             )}
-          </Button>
+          </div>
 
           {/* Skip Option */}
           <div className="text-center">
@@ -223,61 +280,104 @@ export function FirstScriptStep({ userData, onComplete }) {
               onClick={handleComplete}
               className="text-gray-400 hover:text-white"
             >
-              I'll create a script later
+              Skip - I'll create my first script later
             </Button>
           </div>
         </>
       ) : (
         <>
+          {/* Success Header */}
+          <div className="text-center space-y-3">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center animate-bounce">
+                <Sparkles className="h-8 w-8 text-green-400" />
+              </div>
+            </div>
+            <h3 className="text-2xl font-bold text-white">Your Script is Ready!</h3>
+            <p className="text-gray-400">
+              This is a sample preview. In your dashboard, you'll get fully detailed scripts with research and optimization.
+            </p>
+          </div>
+
           {/* Generated Script Preview */}
-          <Card className="glass-card p-6">
-            <div className="flex items-center justify-between mb-4">
+          <Card className="glass-card p-6 border border-green-500/20">
+            <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-white">{generatedScript.title}</h3>
-              <Badge className="bg-green-500/20 text-green-400">
-                <Play className="h-3 w-3 mr-1" />
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                <Play className="h-4 w-4 mr-1" />
                 {generatedScript.estimatedLength}
               </Badge>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium text-purple-400 mb-2">Hook</h4>
-                <p className="text-gray-300 text-sm italic">"{generatedScript.hook}"</p>
+            <div className="space-y-6">
+              <div className="glass rounded-lg p-4 bg-purple-500/5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                    <Zap className="h-4 w-4 text-purple-400" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-purple-300">Hook</h4>
+                </div>
+                <p className="text-gray-300 text-sm italic leading-relaxed">
+                  "{generatedScript.hook}"
+                </p>
               </div>
 
-              <div>
-                <h4 className="text-sm font-medium text-purple-400 mb-2">Introduction</h4>
-                <p className="text-gray-300 text-sm">{generatedScript.introduction}</p>
+              <div className="glass rounded-lg p-4 bg-blue-500/5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <Video className="h-4 w-4 text-blue-400" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-blue-300">Introduction</h4>
+                </div>
+                <p className="text-gray-300 text-sm leading-relaxed">
+                  {generatedScript.introduction}
+                </p>
               </div>
 
-              <div>
-                <h4 className="text-sm font-medium text-purple-400 mb-2">Main Points</h4>
-                <ul className="space-y-1">
+              <div className="glass rounded-lg p-4 bg-pink-500/5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center">
+                    <FileText className="h-4 w-4 text-pink-400" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-pink-300">Main Points</h4>
+                </div>
+                <ul className="space-y-2">
                   {generatedScript.mainPoints.map((point, index) => (
-                    <li key={index} className="text-gray-300 text-sm flex items-start gap-2">
-                      <span className="text-purple-400">•</span>
-                      {point}
+                    <li key={index} className="text-gray-300 text-sm flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-pink-500/20 flex items-center justify-center flex-shrink-0 text-pink-400 text-xs font-bold">
+                        {index + 1}
+                      </span>
+                      <span className="leading-relaxed">{point}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div>
-                <h4 className="text-sm font-medium text-purple-400 mb-2">Conclusion</h4>
-                <p className="text-gray-300 text-sm">{generatedScript.conclusion}</p>
+              <div className="glass rounded-lg p-4 bg-green-500/5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <Target className="h-4 w-4 text-green-400" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-green-300">Conclusion & CTA</h4>
+                </div>
+                <p className="text-gray-300 text-sm leading-relaxed">
+                  {generatedScript.conclusion}
+                </p>
               </div>
             </div>
           </Card>
 
-          {/* Success Message */}
-          <div className="glass rounded-lg p-4 bg-green-500/5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
-                <FileText className="h-5 w-5 text-green-400" />
-              </div>
+          {/* Info Callout */}
+          <div className="glass rounded-xl p-5 border border-blue-500/20 bg-blue-500/5">
+            <div className="flex items-start gap-3">
+              <Lightbulb className="h-6 w-6 text-blue-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-white font-medium">Great job! Your first script is ready</p>
-                <p className="text-sm text-gray-400">You can edit and customize it anytime</p>
+                <p className="text-white font-semibold mb-1">This is just a preview!</p>
+                <p className="text-sm text-gray-300">
+                  In the full platform, you'll get detailed scripts with SEO research,
+                  competitor analysis, trending topics, and much more. Plus, scripts will
+                  be personalized to your unique voice and style.
+                </p>
               </div>
             </div>
           </div>
@@ -285,10 +385,10 @@ export function FirstScriptStep({ userData, onComplete }) {
           {/* Continue Button */}
           <Button
             onClick={handleComplete}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 py-6 text-lg"
           >
             Continue to Final Step
-            <ChevronRight className="h-4 w-4 ml-2" />
+            <ChevronRight className="h-5 w-5 ml-2" />
           </Button>
         </>
       )}
