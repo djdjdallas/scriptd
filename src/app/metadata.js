@@ -11,6 +11,16 @@ export const homepageMetadata = {
     "AI video scripts",
     "YouTube SEO tools"
   ],
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' }
+    ],
+    apple: [
+      { url: '/apple-icon.svg', type: 'image/svg+xml' }
+    ]
+  },
+  manifest: '/site.webmanifest',
   openGraph: {
     title: "GenScript - AI YouTube Script Generator | 180% Faster Growth",
     description: "Join 69M+ YouTube creators using AI. Generate viral scripts in your voice. 35% higher CTR, 5x productivity boost. Free trial available.",

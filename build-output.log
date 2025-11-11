@@ -1,0 +1,296 @@
+
+> genscript@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.0
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · clientTraceMetadata
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (190kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (108kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (139kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ⚠ Compiled with warnings in 10.4min
+
+./node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+A Node.js API is used (process.versions at line: 34) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+./node_modules/@supabase/realtime-js/dist/module/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createServerClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+
+./node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+A Node.js API is used (process.versions at line: 35) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+./node_modules/@supabase/realtime-js/dist/module/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createServerClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+
+./node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+A Node.js API is used (process.versions at line: 36) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+./node_modules/@supabase/realtime-js/dist/module/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createServerClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+
+./node_modules/@supabase/supabase-js/dist/module/index.js
+A Node.js API is used (process.version at line: 24) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createServerClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/196) ...
+   Generating static pages (1/196) 
+   Generating static pages (49/196) 
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+   Generating static pages (98/196) 
+   Generating static pages (147/196) 
+ ✓ Generating static pages (196/196)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                         Size  First Load JS
+┌ ○ /                                            10.4 kB         240 kB
+├ ○ /_not-found                                  1.16 kB         221 kB
+├ ○ /admin                                       8.96 kB         287 kB
+├ ○ /admin/analytics                             13.5 kB         422 kB
+├ ○ /admin/metrics                               3.89 kB         241 kB
+├ ○ /admin/revenue                               9.99 kB         385 kB
+├ ○ /admin/teams                                 9.69 kB         298 kB
+├ ○ /admin/users                                 11.2 kB         320 kB
+├ ○ /ai-script-writer-with-fact-checking         10.9 kB         246 kB
+├ ○ /alternatives/chatgpt                        4.72 kB         240 kB
+├ ○ /alternatives/copy-ai                        8.73 kB         247 kB
+├ ○ /alternatives/invideo-ai                     4.57 kB         240 kB
+├ ○ /alternatives/jasper-ai                      7.89 kB         241 kB
+├ ○ /alternatives/pictory                        4.95 kB         241 kB
+├ ○ /alternatives/simplified                     4.36 kB         240 kB
+├ ○ /alternatives/subscribr-ai                   3.81 kB         239 kB
+├ ○ /alternatives/tubebuddy                        11 kB         256 kB
+├ ○ /alternatives/vidiq                          9.61 kB         250 kB
+├ ○ /alternatives/writesonic                     4.14 kB         240 kB
+├ ○ /analytics                                   6.28 kB         408 kB
+├ ƒ /api/admin/collect-metrics                     626 B         220 kB
+├ ƒ /api/ai/content-analysis                       624 B         220 kB
+├ ƒ /api/ai/trends                                 625 B         220 kB
+├ ƒ /api/ai/video-ideas                            625 B         220 kB
+├ ƒ /api/analytics/page-view                       626 B         220 kB
+├ ƒ /api/beta/signup                               626 B         220 kB
+├ ƒ /api/channels                                  624 B         220 kB
+├ ƒ /api/channels/[id]                             626 B         220 kB
+├ ƒ /api/channels/[id]/analysis/latest             625 B         220 kB
+├ ƒ /api/channels/[id]/analyze                     626 B         220 kB
+├ ƒ /api/channels/[id]/analyze-sse                 626 B         220 kB
+├ ƒ /api/channels/[id]/videos                      624 B         220 kB
+├ ƒ /api/channels/cleanup-orphaned-sources         625 B         220 kB
+├ ƒ /api/channels/connect                          624 B         220 kB
+├ ƒ /api/channels/fetch-by-url                     626 B         220 kB
+├ ƒ /api/channels/growth                           626 B         220 kB
+├ ƒ /api/channels/lookup                           625 B         220 kB
+├ ƒ /api/channels/refresh-thumbnails               625 B         220 kB
+├ ƒ /api/channels/remix/analyze                    625 B         220 kB
+├ ƒ /api/channels/remix/analyze-sse                626 B         220 kB
+├ ƒ /api/channels/remix/create                     624 B         220 kB
+├ ƒ /api/channels/remix/fix-voice-profiles         624 B         220 kB
+├ ƒ /api/channels/remix/preview                    625 B         220 kB
+├ ƒ /api/channels/search                           626 B         220 kB
+├ ƒ /api/credits                                   628 B         220 kB
+├ ƒ /api/credits/check                             625 B         220 kB
+├ ƒ /api/credits/checkout                          627 B         220 kB
+├ ƒ /api/credits/purchase                          625 B         220 kB
+├ ƒ /api/credits/test-add                          625 B         220 kB
+├ ƒ /api/cron/collect-metrics                      627 B         220 kB
+├ ƒ /api/cron/process-script-jobs                  626 B         220 kB
+├ ƒ /api/debug-scripts                             624 B         220 kB
+├ ƒ /api/debug-subscription                        625 B         220 kB
+├ ƒ /api/debug-workflow-scripts                    624 B         220 kB
+├ ƒ /api/fetch-content                             623 B         220 kB
+├ ƒ /api/generate/enhanced-script                  625 B         220 kB
+├ ƒ /api/research/chat                             625 B         220 kB
+├ ƒ /api/research/sessions                         626 B         220 kB
+├ ƒ /api/research/sessions/[id]                    624 B         220 kB
+├ ƒ /api/research/sessions/[id]/messages           624 B         220 kB
+├ ƒ /api/research/sources/add                      626 B         220 kB
+├ ƒ /api/scripts                                   625 B         220 kB
+├ ƒ /api/scripts/[id]                              626 B         220 kB
+├ ƒ /api/scripts/[id]/export                       624 B         220 kB
+├ ƒ /api/scripts/[id]/history                      624 B         220 kB
+├ ƒ /api/scripts/[id]/revert/[versionId]           625 B         220 kB
+├ ƒ /api/scripts/[id]/versions                     625 B         220 kB
+├ ƒ /api/scripts/generate                          624 B         220 kB
+├ ƒ /api/scripts/generate-enhanced                 625 B         220 kB
+├ ƒ /api/scripts/recommendations                   625 B         220 kB
+├ ƒ /api/scripts/suggestions                       626 B         220 kB
+├ ƒ /api/search                                    625 B         220 kB
+├ ƒ /api/sentry-example-api                        625 B         220 kB
+├ ƒ /api/teams                                     626 B         220 kB
+├ ƒ /api/teams/[teamId]                            626 B         220 kB
+├ ƒ /api/teams/[teamId]/billing                    625 B         220 kB
+├ ƒ /api/teams/[teamId]/members                    624 B         220 kB
+├ ƒ /api/teams/[teamId]/members/[memberId]         625 B         220 kB
+├ ƒ /api/teams/invites/[token]                     625 B         220 kB
+├ ƒ /api/tools/hashtag-generator                   626 B         220 kB
+├ ƒ /api/tools/hook-generator                      625 B         220 kB
+├ ƒ /api/tools/idea-generator                      624 B         220 kB
+├ ƒ /api/tools/thumbnail-ideas                     626 B         220 kB
+├ ƒ /api/tools/title-generator                     625 B         220 kB
+├ ƒ /api/trending                                  624 B         220 kB
+├ ƒ /api/trending/action-plan                      624 B         220 kB
+├ ƒ /api/trending/action-plans                     626 B         220 kB
+├ ƒ /api/trending/action-plans/[id]                626 B         220 kB
+├ ƒ /api/trending/channel                          625 B         220 kB
+├ ƒ /api/trending/growth                           625 B         220 kB
+├ ƒ /api/trending/transfer-to-calendar             625 B         220 kB
+├ ƒ /api/trending/v2                               627 B         220 kB
+├ ƒ /api/user                                      625 B         220 kB
+├ ƒ /api/user/preferences                          626 B         220 kB
+├ ƒ /api/videos/analytics                          625 B         220 kB
+├ ƒ /api/videos/saved                              627 B         220 kB
+├ ƒ /api/voice                                     625 B         220 kB
+├ ƒ /api/voice/[id]                                626 B         220 kB
+├ ƒ /api/voice/match                               624 B         220 kB
+├ ƒ /api/voice/profiles                            624 B         220 kB
+├ ƒ /api/voice/profiles/[id]                       626 B         220 kB
+├ ƒ /api/voice/train                               626 B         220 kB
+├ ƒ /api/webhooks/stripe                           624 B         220 kB
+├ ƒ /api/workflow/ai-edit                          625 B         220 kB
+├ ƒ /api/workflow/approve-outline                  626 B         220 kB
+├ ƒ /api/workflow/export                           627 B         220 kB
+├ ƒ /api/workflow/generate-content-points          625 B         220 kB
+├ ƒ /api/workflow/generate-hooks                   626 B         220 kB
+├ ƒ /api/workflow/generate-outline                 626 B         220 kB
+├ ƒ /api/workflow/generate-script                  623 B         220 kB
+├ ƒ /api/workflow/generate-script-async            624 B         220 kB
+├ ƒ /api/workflow/generate-thumbnail               626 B         220 kB
+├ ƒ /api/workflow/generate-titles                  625 B         220 kB
+├ ƒ /api/workflow/improve-script                   625 B         220 kB
+├ ƒ /api/workflow/job-status/[jobId]               625 B         220 kB
+├ ƒ /api/workflow/research                         626 B         220 kB
+├ ƒ /api/workflow/research-async                   625 B         220 kB
+├ ƒ /api/workflow/research-status/[jobId]          626 B         220 kB
+├ ƒ /api/workflow/suggest-frame                    624 B         220 kB
+├ ƒ /api/workflow/transcript-extract               625 B         220 kB
+├ ƒ /api/workflow/transcript-search                625 B         220 kB
+├ ƒ /api/workflow/video-search                     625 B         220 kB
+├ ƒ /api/youtube/breakdown                         624 B         220 kB
+├ ƒ /api/youtube/channel                           624 B         220 kB
+├ ƒ /api/youtube/description                       626 B         220 kB
+├ ƒ /api/youtube/hooks                             626 B         220 kB
+├ ƒ /api/youtube/keywords                          626 B         220 kB
+├ ƒ /api/youtube/seo                               626 B         220 kB
+├ ƒ /api/youtube/tags                              624 B         220 kB
+├ ƒ /api/youtube/transcript                        626 B         220 kB
+├ ƒ /auth/callback                                 626 B         220 kB
+├ ƒ /auth/signout                                  623 B         220 kB
+├ ○ /beta                                        7.19 kB         302 kB
+├ ○ /billing                                     41.8 kB         284 kB
+├ ○ /calendar                                    11.7 kB         330 kB
+├ ○ /channels                                    7.89 kB         281 kB
+├ ƒ /channels/[id]                               7.17 kB         262 kB
+├ ƒ /channels/[id]/ai-insights                   12.5 kB         256 kB
+├ ƒ /channels/[id]/analyze                         936 B         255 kB
+├ ○ /channels/add                                7.75 kB         290 kB
+├ ○ /channels/connect                            9.45 kB         274 kB
+├ ○ /channels/remix                              17.1 kB         306 kB
+├ ○ /channels/remix/fix-voice                    4.14 kB         242 kB
+├ ○ /credits                                     6.94 kB         292 kB
+├ ○ /dashboard                                   9.44 kB         282 kB
+├ ● /for/[creatorType]/[competitor]-alternative    348 B         222 kB
+├   ├ /for/developers/chatgpt-alternative
+├   ├ /for/developers/jasper-alternative
+├   ├ /for/developers/writesonic-alternative
+├   └ [+22 more paths]
+├ ○ /for/business-educators                      6.96 kB         247 kB
+├ ○ /for/developers                              7.59 kB         248 kB
+├ ○ /learn/viral-hooks                           5.13 kB         237 kB
+├ ○ /learn/youtube-algorithm-2025                5.22 kB         238 kB
+├ ○ /learn/youtube-script-writing                4.85 kB         237 kB
+├ ○ /login                                       5.08 kB         287 kB
+├ ○ /onboarding                                  20.9 kB         314 kB
+├ ○ /pricing                                     8.94 kB         286 kB
+├ ○ /privacy                                     2.17 kB         232 kB
+├ ○ /pvss-viral-methodology-generator            12.4 kB         248 kB
+├ ○ /research                                    15.6 kB         259 kB
+├ ○ /research/youtube-tools                      1.16 kB         288 kB
+├ ○ /saved                                       6.48 kB         244 kB
+├ ○ /scripts                                     12.5 kB         283 kB
+├ ƒ /scripts/[id]                                 6.4 kB         250 kB
+├ ƒ /scripts/[id]/edit                           10.8 kB         282 kB
+├ ƒ /scripts/[id]/history                        1.98 kB         273 kB
+├ ○ /scripts/create                                756 B         327 kB
+├ ○ /scripts/create-manual                       4.76 kB         244 kB
+├ ƒ /scripts/create/[workflowId]                   519 B         326 kB
+├ ○ /scripts/new                                   728 B         220 kB
+├ ○ /sentry-example-page                         2.83 kB         222 kB
+├ ○ /settings                                    11.3 kB         292 kB
+├ ○ /signup                                      5.21 kB         288 kB
+├ ○ /teams                                       10.1 kB         307 kB
+├ ƒ /teams/[teamId]                              4.76 kB         319 kB
+├ ƒ /teams/[teamId]/members                      4.86 kB         326 kB
+├ ƒ /teams/[teamId]/scripts                       6.9 kB         281 kB
+├ ƒ /teams/[teamId]/settings                     8.49 kB         294 kB
+├ ○ /teams/create                                4.61 kB         279 kB
+├ ƒ /teams/invite/[token]                        5.05 kB         279 kB
+├ ○ /terms                                       2.17 kB         232 kB
+├ ○ /terms-voice-cloning                           625 B         220 kB
+├ ○ /test-credits                                4.48 kB         267 kB
+├ ○ /tools                                        8.4 kB         238 kB
+├ ○ /tools/faceless-youtube-generator            10.5 kB         249 kB
+├ ○ /tools/hashtag-generator                      6.2 kB         244 kB
+├ ○ /tools/hook-generator                        10.5 kB         275 kB
+├ ○ /tools/idea-generator                        8.58 kB         273 kB
+├ ○ /tools/length-calculator                     6.57 kB         278 kB
+├ ○ /tools/pvss-framework                        9.18 kB         246 kB
+├ ○ /tools/retention-optimizer                    8.1 kB         246 kB
+├ ○ /tools/thumbnail-ideas                       5.81 kB         252 kB
+├ ○ /tools/title-generator                       5.67 kB         254 kB
+├ ○ /tools/transcript-extraction                 9.37 kB         249 kB
+├ ○ /tools/voice-matching                        7.86 kB         239 kB
+├ ○ /tools/youtube                                 734 B         288 kB
+├ ○ /trending                                    9.73 kB         292 kB
+├ ○ /trending/action-plans                       7.64 kB         290 kB
+├ ○ /trending/analyze                            10.5 kB         250 kB
+├ ○ /trending/channels                           8.49 kB         248 kB
+├ ○ /trending/explore                            8.93 kB         248 kB
+├ ○ /trending/follow                             14.9 kB         285 kB
+├ ○ /trending/topics                             6.31 kB         246 kB
+├ ○ /voice                                       9.89 kB         294 kB
+├ ○ /voice/consent                               20.4 kB         288 kB
+├ ○ /workflows                                   5.35 kB         292 kB
+├ ○ /youtube-retention-optimization-tool         11.1 kB         247 kB
+└ ○ /youtube-script-generator-faceless-channels  8.34 kB         244 kB
++ First Load JS shared by all                     219 kB
+  ├ chunks/2186-44657174eaf3dd8f.js               124 kB
+  ├ chunks/4bd1b696-8d8cc85ca7aa3a72.js          54.4 kB
+  ├ chunks/52774a7f-7927ee24a7351b13.js          36.8 kB
+  └ other shared chunks (total)                  3.82 kB
+
+
+ƒ Middleware                                      126 kB
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+

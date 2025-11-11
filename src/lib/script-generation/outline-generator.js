@@ -140,7 +140,7 @@ Remember:
       },
       body: JSON.stringify({
         model: model,
-        max_tokens: 4096,
+        max_tokens: 16000, // Increased for comprehensive long-form outlines
         temperature: 0.3, // Lower temperature for consistent structure
         messages: [{
           role: 'user',
@@ -158,10 +158,20 @@ Remember:
     const data = await response.json();
     const outlineText = data.content?.[0]?.text || '';
 
-    // Extract JSON from response
-    const jsonMatch = outlineText.match(/\{[\s\S]*\}/);
+    // Extract JSON from response - handle markdown code blocks
+    let jsonText = outlineText;
+
+    // Remove markdown code blocks if present
+    const codeBlockMatch = outlineText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) {
+      jsonText = codeBlockMatch[1];
+    }
+
+    // Find JSON object
+    const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error('Could not parse outline JSON from response');
+      console.log('Raw response (first 1000 chars):', outlineText.substring(0, 1000));
       return null;
     }
 
@@ -180,7 +190,9 @@ Remember:
       return outline;
     } catch (parseError) {
       console.error('JSON parsing failed:', parseError);
-      console.log('Raw response:', outlineText.substring(0, 500));
+      console.log('Raw response (first 2000 chars):', outlineText.substring(0, 2000));
+      console.log('Extracted JSON (first 2000 chars):', jsonMatch[0].substring(0, 2000));
+      console.log('Extracted JSON (last 500 chars):', jsonMatch[0].substring(Math.max(0, jsonMatch[0].length - 500)));
       return null;
     }
   } catch (error) {

@@ -93,7 +93,7 @@ export function TourStep({ userData, onComplete }) {
     setCompleting(true);
     try {
       await onComplete({ completed: true });
-      toast.success('Welcome to Subscribr! You earned 5 bonus credits!');
+      toast.success('Welcome to GenScript! You earned 5 bonus credits!');
     } catch (error) {
       toast.error('Failed to complete onboarding');
     } finally {
@@ -135,7 +135,7 @@ export function TourStep({ userData, onComplete }) {
       <Card className="glass-card p-6">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Rocket className="h-5 w-5 text-purple-400" />
-          Explore Subscribr Features
+          Explore GenScript Features
         </h3>
         
         <div className="grid md:grid-cols-2 gap-3">

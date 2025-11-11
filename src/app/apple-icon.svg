@@ -1,0 +1,16 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with rounded corners -->
+  <rect width="180" height="180" rx="40" fill="#6366f1"/>
+
+  <!-- Script document -->
+  <path d="M50 40C50 35.5817 53.5817 32 58 32H118L135 49V140C135 144.418 131.418 148 127 148H58C53.5817 148 50 144.418 50 140V40Z" fill="white"/>
+
+  <!-- Folded corner -->
+  <path d="M118 32V46C118 48.2091 119.791 50 122 50H135L118 32Z" fill="#e0e7ff"/>
+
+  <!-- Script lines -->
+  <line x1="67" y1="75" x2="118" y2="75" stroke="#6366f1" stroke-width="8" stroke-linecap="round"/>
+  <line x1="67" y1="95" x2="108" y2="95" stroke="#6366f1" stroke-width="8" stroke-linecap="round"/>
+  <line x1="67" y1="115" x2="118" y2="115" stroke="#6366f1" stroke-width="8" stroke-linecap="round"/>
+  <line x1="67" y1="135" x2="98" y2="135" stroke="#6366f1" stroke-width="8" stroke-linecap="round"/>
+</svg>

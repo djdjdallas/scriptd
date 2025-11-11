@@ -22,6 +22,7 @@ const TOTAL_STEPS = 7;
 export function OnboardingContainer({ children, currentStep, onNext, onBack, onSkip }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [skipModal, setSkipModal] = useState({ isOpen: false });
   const router = useRouter();
   const supabase = createClient();
 
@@ -41,20 +42,19 @@ export function OnboardingContainer({ children, currentStep, onNext, onBack, onS
   };
 
   const handleSkipAll = async () => {
-    if (confirm('Are you sure you want to skip the onboarding? You can always access these features later.')) {
-      try {
-        const { error } = await supabase.rpc('skip_onboarding', {
-          p_user_id: user.id
-        });
+    setSkipModal({ isOpen: false });
+    try {
+      const { error } = await supabase.rpc('skip_onboarding', {
+        p_user_id: user.id
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast.success('Onboarding skipped. Welcome to GenScript!');
-        router.push('/dashboard');
-      } catch (error) {
-        console.error('Error skipping onboarding:', error);
-        toast.error('Failed to skip onboarding');
-      }
+      toast.success('Onboarding skipped. Welcome to GenScript!');
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error skipping onboarding:', error);
+      toast.error('Failed to skip onboarding');
     }
   };
 
@@ -98,7 +98,7 @@ export function OnboardingContainer({ children, currentStep, onNext, onBack, onS
           </div>
           <Button
             variant="ghost"
-            onClick={handleSkipAll}
+            onClick={() => setSkipModal({ isOpen: true })}
             className="text-gray-400 hover:text-white"
           >
             Skip Setup

@@ -174,20 +174,21 @@ export default function OnboardingPage() {
   const handleTourComplete = async (tourData) => {
     try {
       await updateProgress('tour', 7, tourData);
-      
-      // Mark onboarding as complete
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      await supabase
-        .from('users')
-        .update({
-          onboarding_completed: true,
-          onboarding_completed_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
 
-      toast.success('🎉 Welcome to Subscribr! You earned 5 bonus credits!');
-      router.push('/dashboard');
+      // Mark onboarding as complete and grant bonus credits
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data: result, error } = await supabase
+        .rpc('complete_onboarding', { p_user_id: user.id });
+
+      if (error) throw error;
+
+      if (result?.success) {
+        toast.success('🎉 Welcome to GenScript! You earned 5 bonus credits!');
+        router.push('/dashboard');
+      } else {
+        toast.error(result?.message || 'Failed to complete onboarding');
+      }
     } catch (error) {
       console.error('Error completing onboarding:', error);
       toast.error('Failed to complete onboarding');

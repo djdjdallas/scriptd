@@ -438,22 +438,19 @@ export default function VoiceTrainingPage() {
               </Button>
             </div>
 
-            {/* Audio Upload */}
-            <div className="glass p-6 rounded-xl group cursor-pointer hover:bg-white/5 transition-all">
-              <FileAudio className="h-10 w-10 text-green-400 mb-4 group-hover:scale-110 transition-transform" />
+            {/* Audio Upload - Coming Soon */}
+            <div className="glass p-6 rounded-xl group opacity-50 cursor-not-allowed relative">
+              <div className="absolute top-2 right-2 bg-purple-500/20 text-purple-300 text-xs px-2 py-1 rounded-full border border-purple-400/30">
+                Coming Soon
+              </div>
+              <FileAudio className="h-10 w-10 text-green-400 mb-4" />
               <h3 className="font-semibold text-white mb-2">Upload Audio</h3>
               <p className="text-sm text-gray-400 mb-4">
                 Direct audio samples for training
               </p>
-              <label className="glass-button text-white w-full inline-block text-center cursor-pointer">
-                <input
-                  type="file"
-                  accept="audio/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
+              <Button className="glass-button text-white w-full opacity-50 cursor-not-allowed" disabled>
                 Choose Audio
-              </label>
+              </Button>
             </div>
           </div>
 
