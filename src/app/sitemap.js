@@ -103,6 +103,34 @@ export default function sitemap() {
     });
   });
 
+  // Dynamic creator type + competitor alternative pages
+  const creatorTypes = [
+    'developers',
+    'business-educators',
+    'faceless-channels',
+    'gaming-creators',
+    'lifestyle-vloggers'
+  ];
+
+  const competitors = [
+    'chatgpt',
+    'jasper',
+    'writesonic',
+    'copy-ai',
+    'rytr'
+  ];
+
+  creatorTypes.forEach(creatorType => {
+    competitors.forEach(competitor => {
+      routes.push({
+        url: `${baseUrl}/for/${creatorType}/${competitor}-alternative`,
+        lastModified: currentDate,
+        changeFrequency: 'monthly',
+        priority: 0.75,
+      });
+    });
+  });
+
   // Special pages
   const specialPages = [
     {

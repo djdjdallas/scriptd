@@ -5,7 +5,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { TiltCard } from "@/components/ui/tilt-card";
-import { useMagnetic } from "@/hooks/useMagnetic";
 import { StatHero, AnimatedCounter } from "@/components/stats";
 import {
   ArrowRight,
@@ -15,14 +14,10 @@ import {
   FileText,
   Users,
   Globe,
-  Zap,
-  Brain,
   Mic,
   TrendingUp,
   Star,
   ChevronDown,
-  Wand2,
-  Rocket,
   Target,
   Code2,
   Palette,
@@ -31,9 +26,6 @@ import {
 
 export default function Home() {
   const heroRef = useRef(null);
-  const magneticRef1 = useMagnetic(0.3);
-  const magneticRef2 = useMagnetic(0.4);
-  const magneticRef3 = useMagnetic(0.5);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 overflow-hidden">
@@ -149,52 +141,6 @@ export default function Home() {
         ref={heroRef}
         className="relative min-h-screen flex items-center justify-center px-4 py-22"
       >
-        {/* Floating Elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div
-            ref={magneticRef1}
-            className="absolute top-20 left-10 animate-float"
-          >
-            <div className="glass-card w-20 h-20 flex items-center justify-center glitch-hover">
-              <Sparkles className="w-10 h-10 text-purple-400 neon-glow" />
-            </div>
-          </div>
-          <div
-            ref={magneticRef2}
-            className="absolute top-40 right-20 animate-float"
-            style={{ animationDelay: "2s" }}
-          >
-            <div className="glass-card w-24 h-24 flex items-center justify-center">
-              <Brain className="w-12 h-12 text-pink-400 neon-glow" />
-            </div>
-          </div>
-          <div
-            ref={magneticRef3}
-            className="absolute bottom-20 left-1/4 animate-float"
-            style={{ animationDelay: "4s" }}
-          >
-            <div className="glass-card w-16 h-16 flex items-center justify-center">
-              <Zap className="w-8 h-8 text-yellow-400 neon-glow" />
-            </div>
-          </div>
-          <div
-            className="absolute top-1/3 right-1/4 animate-float"
-            style={{ animationDelay: "6s" }}
-          >
-            <div className="glass-card w-14 h-14 flex items-center justify-center">
-              <Wand2 className="w-7 h-7 text-blue-400 neon-glow" />
-            </div>
-          </div>
-          <div
-            className="absolute bottom-1/3 left-20 animate-float"
-            style={{ animationDelay: "8s" }}
-          >
-            <div className="glass-card w-18 h-18 flex items-center justify-center">
-              <Rocket className="w-9 h-9 text-green-400 neon-glow" />
-            </div>
-          </div>
-        </div>
-
         <div className="relative z-10 max-w-5xl mx-auto text-center stagger-children">
           {/* Glowing Badge with Market Validation */}
           <div className="inline-flex items-center gap-2 glass-card px-4 py-2 mb-8 animate-glow">
