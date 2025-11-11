@@ -61,16 +61,28 @@ export default function OnboardingPage() {
   const updateProgress = async (stepName, stepNumber, data = {}) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      await supabase.rpc('update_onboarding_progress', {
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Ensure data is a valid object for JSONB
+      const safeData = data && typeof data === 'object' ? data : {};
+
+      const { error } = await supabase.rpc('update_onboarding_progress', {
         p_user_id: user.id,
         p_step_name: stepName,
         p_step_number: stepNumber,
         p_completed: true,
-        p_data: data
+        p_data: safeData
       });
+
+      if (error) {
+        throw error;
+      }
     } catch (error) {
       console.error('Error updating progress:', error);
+      throw error; // Re-throw so handlers can catch it
     }
   };
 
@@ -87,19 +99,31 @@ export default function OnboardingPage() {
   };
 
   const handleSkip = async () => {
-    const stepNames = [
-      'welcome', 'profile', 'channel', 'goals', 
-      'voice', 'first_script', 'tour'
-    ];
-    
-    await updateProgress(stepNames[currentStep - 1], currentStep, { skipped: true });
-    handleNext();
+    try {
+      const stepNames = [
+        'welcome', 'profile', 'channel', 'goals',
+        'voice', 'first_script', 'tour'
+      ];
+
+      await updateProgress(stepNames[currentStep - 1], currentStep, { skipped: true });
+      handleNext();
+    } catch (error) {
+      console.error('Error skipping step:', error);
+      toast.error('Failed to save progress, but continuing...');
+      handleNext(); // Continue anyway
+    }
   };
 
   // Step completion handlers
   const handleWelcomeComplete = async (data) => {
-    await updateProgress('welcome', 1, data);
-    handleNext();
+    try {
+      await updateProgress('welcome', 1, data || {});
+      handleNext();
+    } catch (error) {
+      console.error('Error completing welcome step:', error);
+      toast.error('Failed to save progress, but continuing...');
+      handleNext(); // Continue anyway
+    }
   };
 
   const handleProfileComplete = async (profileData) => {
@@ -136,8 +160,18 @@ export default function OnboardingPage() {
   };
 
   const handleChannelComplete = async (channelData) => {
-    await updateProgress('channel', 3, channelData);
-    handleNext();
+    try {
+      await updateProgress('channel', 3, channelData || {});
+      // Store channel data in userData for later steps
+      if (channelData && channelData.channel_id) {
+        setUserData({ ...userData, channel_id: channelData.channel_id, channel: channelData.channel });
+      }
+      handleNext();
+    } catch (error) {
+      console.error('Error completing channel step:', error);
+      toast.error('Failed to save progress, but continuing...');
+      handleNext(); // Continue anyway
+    }
   };
 
   const handleGoalsComplete = async (goalsData) => {
@@ -162,13 +196,25 @@ export default function OnboardingPage() {
   };
 
   const handleVoiceComplete = async (voiceData) => {
-    await updateProgress('voice', 5, voiceData);
-    handleNext();
+    try {
+      await updateProgress('voice', 5, voiceData || {});
+      handleNext();
+    } catch (error) {
+      console.error('Error completing voice step:', error);
+      toast.error('Failed to save progress, but continuing...');
+      handleNext(); // Continue anyway
+    }
   };
 
   const handleFirstScriptComplete = async (scriptData) => {
-    await updateProgress('first_script', 6, scriptData);
-    handleNext();
+    try {
+      await updateProgress('first_script', 6, scriptData || {});
+      handleNext();
+    } catch (error) {
+      console.error('Error completing first script step:', error);
+      toast.error('Failed to save progress, but continuing...');
+      handleNext(); // Continue anyway
+    }
   };
 
   const handleTourComplete = async (tourData) => {
