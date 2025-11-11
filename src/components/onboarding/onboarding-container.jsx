@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import {
   ChevronLeft,
@@ -154,9 +153,9 @@ export function OnboardingContainer({ children, currentStep, onNext, onBack, onS
         </div>
 
         {/* Main Content */}
-        <Card className="glass-card p-8 mb-8">
+        <div className="glass-card p-8 mb-8 rounded-lg">
           {children}
-        </Card>
+        </div>
 
         {/* Navigation */}
         <div className="flex items-center justify-between">

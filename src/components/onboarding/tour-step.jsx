@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import {
   CheckCircle,
@@ -164,7 +163,7 @@ export function TourStep({ userData, onComplete }) {
       </div>
 
       {/* Platform Features */}
-      <Card className="glass-card p-6 border border-purple-500/20">
+      <div className="glass-card p-6 border border-purple-500/20 rounded-lg">
         <h3 className="text-xl font-semibold text-white mb-2 flex items-center gap-2">
           <Rocket className="h-6 w-6 text-purple-400" />
           Explore Your Dashboard
@@ -198,7 +197,7 @@ export function TourStep({ userData, onComplete }) {
             );
           })}
         </div>
-      </Card>
+      </div>
 
       {/* Pro Tips */}
       <div className="glass rounded-xl p-6 bg-gradient-to-br from-yellow-500/5 to-orange-500/5 border border-yellow-500/20">

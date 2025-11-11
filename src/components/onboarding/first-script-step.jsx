@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import {
   FileText,
@@ -300,7 +299,7 @@ export function FirstScriptStep({ userData, onComplete }) {
           </div>
 
           {/* Generated Script Preview */}
-          <Card className="glass-card p-6 border border-green-500/20">
+          <div className="glass-card p-6 border border-green-500/20 rounded-lg">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-white">{generatedScript.title}</h3>
               <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
@@ -365,7 +364,7 @@ export function FirstScriptStep({ userData, onComplete }) {
                 </p>
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Info Callout */}
           <div className="glass rounded-xl p-5 border border-blue-500/20 bg-blue-500/5">
