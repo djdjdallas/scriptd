@@ -81,11 +81,11 @@ export function OnboardingContainer({ children, currentStep, onNext, onBack, onS
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#1a0a2e] to-[#0a0a0f]">
       {/* Background Effects */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-40 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-40 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
+        <div className="absolute top-40 left-20 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 right-40 w-64 h-64 bg-pink-500/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
       </div>
 
       <div className="container max-w-4xl mx-auto px-4 py-8">
@@ -153,7 +153,7 @@ export function OnboardingContainer({ children, currentStep, onNext, onBack, onS
         </div>
 
         {/* Main Content */}
-        <div className="glass-card p-8 mb-8 rounded-lg">
+        <div className="backdrop-blur-xl bg-gray-900/60 border-2 border-gray-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
           {children}
         </div>
 
@@ -163,10 +163,10 @@ export function OnboardingContainer({ children, currentStep, onNext, onBack, onS
             variant="outline"
             onClick={onBack}
             disabled={currentStep === 1}
-            className="glass-button text-white"
+            className="glass-button text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
-            Previous
+            <span className="text-white">Previous</span>
           </Button>
 
           <div className="flex items-center gap-2">
