@@ -1,0 +1,16 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow authenticated pages
+Disallow: /dashboard
+Disallow: /login
+Disallow: /signup
+Disallow: /onboarding
+Disallow: /admin
+Disallow: /settings
+Disallow: /billing
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://genscript.io/sitemap.xml

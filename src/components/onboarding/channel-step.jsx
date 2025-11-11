@@ -53,36 +53,80 @@ export function ChannelStep({ userData, onComplete }) {
     setError('');
 
     try {
-      // Simulate API call to connect channel
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock channel data
-      const mockChannelData = {
-        id: 'channel_123',
-        name: 'Your Awesome Channel',
-        handle: '@yourchannel',
-        subscribers: '10.5K',
-        videos: 142,
-        views: '1.2M',
-        thumbnail: '/api/placeholder/88/88',
-        verified: true
+      // Call API to connect channel
+      const response = await fetch('/api/channels/connect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: channelUrl }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.code === 'CHANNEL_LIMIT_REACHED') {
+          setError('Channel limit reached. Free users can only have 1 channel.');
+        } else if (response.status === 409) {
+          setError('This channel is already connected to your account.');
+        } else {
+          setError(data.error || 'Failed to connect channel. Please try again.');
+        }
+        toast.error(data.error || 'Connection failed');
+        return;
+      }
+
+      const channel = data.channel;
+
+      // Format channel data for display
+      const formattedChannelData = {
+        id: channel.id,
+        youtube_channel_id: channel.youtube_channel_id,
+        name: channel.title || channel.name,
+        handle: channel.handle,
+        subscribers: formatNumber(channel.subscriber_count),
+        videos: channel.video_count || 0,
+        views: formatNumber(channel.view_count),
+        thumbnail: channel.thumbnail_url,
+        verified: false // YouTube API doesn't provide this easily
       };
 
-      setChannelData(mockChannelData);
+      setChannelData(formattedChannelData);
       toast.success('Channel connected successfully!');
-      
-      // Start analyzing
-      setAnalyzing(true);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setAnalyzing(false);
-      
-      await onComplete({ channel: mockChannelData });
+
+      // Show analyzing state for voice training
+      if (channel.voice_training_status === 'queued') {
+        setAnalyzing(true);
+        toast.success('Voice training queued! This will help personalize your scripts.');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setAnalyzing(false);
+      }
+
+      await onComplete({
+        channel: formattedChannelData,
+        channel_id: channel.id,
+        voice_training_status: channel.voice_training_status
+      });
     } catch (error) {
-      setError('Failed to connect channel. Please try again.');
+      console.error('Error connecting channel:', error);
+      setError('Failed to connect channel. Please check your connection and try again.');
       toast.error('Connection failed');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to format large numbers
+  const formatNumber = (num) => {
+    if (!num) return '0';
+    const n = parseInt(num);
+    if (n >= 1000000) {
+      return (n / 1000000).toFixed(1) + 'M';
+    }
+    if (n >= 1000) {
+      return (n / 1000).toFixed(1) + 'K';
+    }
+    return n.toString();
   };
 
   const handleSkipClick = () => {
@@ -206,11 +250,23 @@ export function ChannelStep({ userData, onComplete }) {
           {/* Connected Channel */}
           <div className="glass rounded-lg p-6">
             <div className="flex items-start gap-4">
-              <img
-                src={channelData.thumbnail}
-                alt={channelData.name}
-                className="w-20 h-20 rounded-full"
-              />
+              {channelData.thumbnail ? (
+                <img
+                  src={channelData.thumbnail}
+                  alt={channelData.name}
+                  className="w-20 h-20 rounded-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div
+                className="w-20 h-20 rounded-full bg-purple-500/20 items-center justify-center text-3xl font-bold text-purple-400"
+                style={{ display: channelData.thumbnail ? 'none' : 'flex' }}
+              >
+                {channelData.name?.charAt(0) || 'C'}
+              </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-xl font-semibold text-white">
