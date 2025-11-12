@@ -132,62 +132,485 @@ CRITICAL JSON RULES:
 }
 
 /**
+ * Pre-analyze metadata to extract quantifiable patterns
+ * This helps Claude make better inferences
+ */
+function analyzeMetadataPatterns(videos) {
+  const patterns = {
+    titlePatterns: {
+      avgLength: 0,
+      capsUsage: 0,
+      questionFrequency: 0,
+      exclamationFrequency: 0,
+      emojiUsage: 0,
+      numbersInTitles: 0,
+      commonStartWords: [],
+      commonEndWords: []
+    },
+    descriptionPatterns: {
+      avgLength: 0,
+      linkFrequency: 0,
+      emojiUsage: 0,
+      personalPronounUsage: 0,
+      ctaPresence: 0
+    },
+    engagementPatterns: {
+      highPerformers: [],
+      lowPerformers: [],
+      avgEngagementRate: 0
+    },
+    contentPatterns: {
+      avgDuration: 0,
+      durationVariation: 'consistent',
+      publishingConsistency: 'regular'
+    },
+    tagPatterns: {
+      commonTags: [],
+      technicalTermFrequency: 0
+    }
+  };
+
+  if (!videos || videos.length === 0) return patterns;
+
+  // Analyze titles
+  let totalTitleLength = 0;
+  let capsCount = 0;
+  let questionCount = 0;
+  let exclamationCount = 0;
+  let emojiCount = 0;
+  let numbersCount = 0;
+  const startWords = {};
+  const endWords = {};
+
+  videos.forEach(v => {
+    const title = v.snippet?.title || '';
+    totalTitleLength += title.length;
+
+    // Count caps
+    const capsMatches = title.match(/[A-Z]/g);
+    if (capsMatches) capsCount += capsMatches.length;
+
+    // Count questions and exclamations
+    if (title.includes('?')) questionCount++;
+    if (title.includes('!')) exclamationCount++;
+
+    // Count emojis (basic detection)
+    const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+    const emojiMatches = title.match(emojiRegex);
+    if (emojiMatches) emojiCount += emojiMatches.length;
+
+    // Count numbers
+    if (/\d/.test(title)) numbersCount++;
+
+    // Track start/end words
+    const words = title.split(/\s+/);
+    if (words.length > 0) {
+      const start = words[0].toLowerCase();
+      const end = words[words.length - 1].toLowerCase();
+      startWords[start] = (startWords[start] || 0) + 1;
+      endWords[end] = (endWords[end] || 0) + 1;
+    }
+  });
+
+  patterns.titlePatterns.avgLength = Math.round(totalTitleLength / videos.length);
+  patterns.titlePatterns.capsUsage = Math.round((capsCount / (totalTitleLength || 1)) * 100);
+  patterns.titlePatterns.questionFrequency = Math.round((questionCount / videos.length) * 100);
+  patterns.titlePatterns.exclamationFrequency = Math.round((exclamationCount / videos.length) * 100);
+  patterns.titlePatterns.emojiUsage = Math.round((emojiCount / videos.length) * 100);
+  patterns.titlePatterns.numbersInTitles = Math.round((numbersCount / videos.length) * 100);
+
+  // Get top 3 start/end words
+  patterns.titlePatterns.commonStartWords = Object.entries(startWords)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([word]) => word);
+  patterns.titlePatterns.commonEndWords = Object.entries(endWords)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([word]) => word);
+
+  // Analyze descriptions
+  let totalDescLength = 0;
+  let linkCount = 0;
+  let descEmojiCount = 0;
+  let personalPronounCount = 0;
+  let ctaCount = 0;
+
+  videos.forEach(v => {
+    const desc = v.snippet?.description || '';
+    totalDescLength += desc.length;
+
+    // Count links
+    const linkMatches = desc.match(/https?:\/\//g);
+    if (linkMatches) linkCount += linkMatches.length;
+
+    // Count emojis
+    const emojiMatches = desc.match(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu);
+    if (emojiMatches) descEmojiCount += emojiMatches.length;
+
+    // Count personal pronouns
+    const pronounMatches = desc.toLowerCase().match(/\b(i|me|my|we|us|our)\b/g);
+    if (pronounMatches) personalPronounCount += pronounMatches.length;
+
+    // Check for CTA keywords
+    if (/subscribe|like|comment|share|follow|check out|link in/i.test(desc)) ctaCount++;
+  });
+
+  patterns.descriptionPatterns.avgLength = Math.round(totalDescLength / videos.length);
+  patterns.descriptionPatterns.linkFrequency = Math.round((linkCount / videos.length) * 10) / 10;
+  patterns.descriptionPatterns.emojiUsage = Math.round((descEmojiCount / videos.length) * 10) / 10;
+  patterns.descriptionPatterns.personalPronounUsage = Math.round((personalPronounCount / (totalDescLength / 100)) * 10) / 10;
+  patterns.descriptionPatterns.ctaPresence = Math.round((ctaCount / videos.length) * 100);
+
+  // Analyze engagement
+  const engagementRates = videos.map(v => {
+    const views = parseInt(v.statistics?.viewCount || 0);
+    const likes = parseInt(v.statistics?.likeCount || 0);
+    const comments = parseInt(v.statistics?.commentCount || 0);
+    const rate = views > 0 ? ((likes + comments) / views) * 100 : 0;
+    return { video: v, rate, views };
+  }).sort((a, b) => b.rate - a.rate);
+
+  patterns.engagementPatterns.highPerformers = engagementRates.slice(0, 3).map(e => ({
+    title: e.video.snippet?.title,
+    engagementRate: Math.round(e.rate * 100) / 100,
+    views: e.views
+  }));
+  patterns.engagementPatterns.lowPerformers = engagementRates.slice(-3).map(e => ({
+    title: e.video.snippet?.title,
+    engagementRate: Math.round(e.rate * 100) / 100,
+    views: e.views
+  }));
+  patterns.engagementPatterns.avgEngagementRate = Math.round((engagementRates.reduce((sum, e) => sum + e.rate, 0) / engagementRates.length) * 100) / 100;
+
+  // Analyze content patterns
+  const durations = videos.map(v => {
+    const duration = v.contentDetails?.duration || 'PT0S';
+    return parseDuration(duration);
+  }).filter(d => d > 0);
+
+  if (durations.length > 0) {
+    patterns.contentPatterns.avgDuration = Math.round(durations.reduce((a, b) => a + b, 0) / durations.length);
+    const maxDur = Math.max(...durations);
+    const minDur = Math.min(...durations);
+    patterns.contentPatterns.durationVariation = (maxDur - minDur) < 300 ? 'consistent' : 'varied';
+  }
+
+  // Analyze tags
+  const allTags = videos.flatMap(v => v.snippet?.tags || []);
+  const tagCounts = {};
+  allTags.forEach(tag => {
+    const normalized = tag.toLowerCase();
+    tagCounts[normalized] = (tagCounts[normalized] || 0) + 1;
+  });
+  patterns.tagPatterns.commonTags = Object.entries(tagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([tag]) => tag);
+
+  return patterns;
+}
+
+/**
+ * Parse ISO 8601 duration to seconds
+ */
+function parseDuration(duration) {
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return 0;
+  const hours = parseInt(match[1] || 0);
+  const minutes = parseInt(match[2] || 0);
+  const seconds = parseInt(match[3] || 0);
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+/**
+ * Generate enhanced fallback profile based on metadata patterns
+ * This provides much more depth than the old basic fallback
+ */
+function generateEnhancedMetadataFallback(metadataPatterns) {
+  // Infer tone from patterns
+  const tone = [];
+  if (metadataPatterns.titlePatterns.exclamationFrequency > 30) tone.push('energetic', 'enthusiastic');
+  else if (metadataPatterns.titlePatterns.exclamationFrequency > 10) tone.push('engaging');
+  else tone.push('professional', 'measured');
+
+  if (metadataPatterns.descriptionPatterns.personalPronounUsage > 5) tone.push('personal', 'conversational');
+  else tone.push('objective', 'informative');
+
+  // Infer style
+  const style = [];
+  if (metadataPatterns.titlePatterns.questionFrequency > 30) style.push('interrogative', 'thought-provoking');
+  if (metadataPatterns.descriptionPatterns.linkFrequency > 3) style.push('resource-rich');
+  if (metadataPatterns.titlePatterns.numbersInTitles > 40) style.push('list-based', 'structured');
+  if (metadataPatterns.descriptionPatterns.emojiUsage > 2) style.push('visual', 'expressive');
+  else style.push('text-focused', 'straightforward');
+
+  // Infer pace
+  let pace = 'moderate';
+  const avgDuration = metadataPatterns.contentPatterns.avgDuration;
+  if (avgDuration < 600) pace = 'fast';
+  else if (avgDuration > 1200) pace = 'deliberate';
+
+  // Infer energy
+  let energy = 'medium';
+  const capsUsage = metadataPatterns.titlePatterns.capsUsage;
+  const exclamationFreq = metadataPatterns.titlePatterns.exclamationFrequency;
+  if (capsUsage > 15 || exclamationFreq > 40) energy = 'high';
+  else if (capsUsage < 8 && exclamationFreq < 10) energy = 'calm';
+
+  // Infer personality
+  const personality = [];
+  if (metadataPatterns.descriptionPatterns.personalPronounUsage > 5) personality.push('relatable', 'approachable');
+  if (metadataPatterns.engagementPatterns.avgEngagementRate > 3) personality.push('engaging', 'compelling');
+  if (metadataPatterns.tagPatterns.commonTags.length > 7) personality.push('organized', 'strategic');
+  if (metadataPatterns.titlePatterns.questionFrequency > 20) personality.push('inquisitive', 'analytical');
+  if (metadataPatterns.titlePatterns.numbersInTitles > 30) personality.push('data-oriented', 'systematic');
+
+  return {
+    tone: tone.slice(0, 5),
+    style: style.slice(0, 5),
+    pace,
+    energy,
+    personality: personality.slice(0, 7),
+
+    linguisticFingerprints: {
+      openingPatterns: metadataPatterns.titlePatterns.commonStartWords,
+      transitionPhrases: ['Content flow inferred from metadata'],
+      closingPatterns: metadataPatterns.titlePatterns.commonEndWords,
+      fillerWords: {},
+      signaturePhrases: ['Patterns detected from title analysis'],
+      questionPatterns: {
+        frequency: metadataPatterns.titlePatterns.questionFrequency > 20 ? 'high' : 'moderate',
+        style: 'engaging'
+      }
+    },
+
+    narrativeStructure: {
+      storyArcPattern: metadataPatterns.contentPatterns.durationVariation === 'consistent' ? 'structured' : 'varied',
+      informationFlow: metadataPatterns.descriptionPatterns.avgLength > 500 ? 'detailed' : 'concise',
+      exampleStyle: metadataPatterns.titlePatterns.numbersInTitles > 30 ? 'data-driven' : 'narrative',
+      anecdoteUsage: {
+        frequency: metadataPatterns.descriptionPatterns.personalPronounUsage > 5 ? 'frequent' : 'occasional'
+      },
+      hookPlacement: ['title-driven', 'opening-focused']
+    },
+
+    emotionalDynamics: {
+      energyCurve: energy === 'high' ? ['energetic-start', 'sustained-energy'] : ['steady', 'professional'],
+      emotionalBeats: tone,
+      authenticityMarkers: metadataPatterns.descriptionPatterns.personalPronounUsage > 5 ? ['personal-pronouns', 'direct-address'] : ['professional-distance'],
+      passionTriggers: metadataPatterns.engagementPatterns.highPerformers.map(p => p.title),
+      vulnerabilityPattern: metadataPatterns.descriptionPatterns.personalPronounUsage > 7 ? 'open' : 'reserved'
+    },
+
+    contentPositioning: {
+      selfReferenceRate: metadataPatterns.descriptionPatterns.personalPronounUsage / 100,
+      audienceRelationship: metadataPatterns.titlePatterns.questionFrequency > 20 ? 'educator' : 'entertainer',
+      authorityStance: metadataPatterns.tagPatterns.commonTags.length > 8 ? 'expert' : 'explorer',
+      valueProposition: `${metadataPatterns.contentPatterns.avgDuration > 600 ? 'In-depth' : 'Quick'} content with ${metadataPatterns.engagementPatterns.avgEngagementRate > 3 ? 'high' : 'moderate'} engagement`
+    },
+
+    culturalReferences: {
+      exampleCategories: metadataPatterns.tagPatterns.commonTags.slice(0, 5),
+      metaphorTypes: ['Inferred from metadata patterns'],
+      currentEventsStyle: 'moderate',
+      internetCultureUsage: metadataPatterns.descriptionPatterns.emojiUsage > 2 ? 'frequent' : 'minimal',
+      formalityBalance: metadataPatterns.descriptionPatterns.personalPronounUsage > 5 ? 'casual' : 'professional'
+    },
+
+    technicalPatterns: {
+      avgWordsPerSentence: Math.round(metadataPatterns.descriptionPatterns.avgLength / 10),
+      vocabularyComplexity: metadataPatterns.tagPatterns.commonTags.some(t => t.length > 12) ? 'advanced' : 'accessible',
+      jargonUsage: {
+        frequency: metadataPatterns.tagPatterns.commonTags.length > 8 ? 'moderate' : 'low',
+        types: metadataPatterns.tagPatterns.commonTags.slice(0, 5)
+      },
+      dataPresentation: metadataPatterns.titlePatterns.numbersInTitles > 30 ? 'data-focused' : 'narrative-focused'
+    },
+
+    engagementTechniques: {
+      directAddressFrequency: metadataPatterns.descriptionPatterns.personalPronounUsage / 100,
+      pronounUsage: {
+        you: metadataPatterns.descriptionPatterns.ctaPresence,
+        we: metadataPatterns.descriptionPatterns.personalPronounUsage,
+        i: metadataPatterns.descriptionPatterns.personalPronounUsage / 2
+      },
+      ctaStyle: metadataPatterns.descriptionPatterns.ctaPresence > 70 ? 'direct' : 'subtle',
+      questionStrategy: metadataPatterns.titlePatterns.questionFrequency > 20 ? 'frequent' : 'occasional',
+      communityLanguage: metadataPatterns.descriptionPatterns.ctaPresence > 50 ? ['subscribe', 'join', 'community'] : []
+    },
+
+    pacingDynamics: {
+      speedVariations: [metadataPatterns.contentPatterns.durationVariation],
+      pausePatterns: { frequency: 'moderate' },
+      emphasisTechniques: capsUsage > 15 ? ['CAPITALIZATION', 'punctuation!!!'] : ['subtle'],
+      rhythmPreferences: metadataPatterns.contentPatterns.durationVariation === 'consistent' ? 'steady' : 'varied'
+    },
+
+    implementationNotes: {
+      titleFormula: `Avg ${metadataPatterns.titlePatterns.avgLength} chars, ${metadataPatterns.titlePatterns.questionFrequency}% questions`,
+      descriptionTemplate: `Avg ${metadataPatterns.descriptionPatterns.avgLength} chars, ${metadataPatterns.descriptionPatterns.ctaPresence}% with CTA`,
+      contentAngles: ['Identified from high-performing content'],
+      brandingElements: metadataPatterns.tagPatterns.commonTags.slice(0, 3)
+    },
+
+    confidenceScores: {
+      overall: 0.60,
+      tone: 0.65,
+      style: 0.70,
+      personality: 0.55,
+      note: 'Enhanced metadata-based fallback - using quantifiable patterns'
+    },
+
+    dos: [
+      `Use titles around ${metadataPatterns.titlePatterns.avgLength} characters`,
+      `Maintain ${metadataPatterns.contentPatterns.avgDuration / 60} minute average video length`,
+      `Include CTAs in descriptions (${metadataPatterns.descriptionPatterns.ctaPresence}% current rate)`,
+      'Focus on topics from high-performing videos',
+      'Maintain consistent publishing schedule'
+    ],
+
+    donts: [
+      'Deviate significantly from proven title patterns',
+      'Skip video descriptions or CTAs',
+      'Ignore engagement patterns from successful content',
+      'Change content duration drastically',
+      'Abandon successful topic themes'
+    ],
+
+    vocabulary: metadataPatterns.descriptionPatterns.avgLength > 500 ? 'detailed' : 'concise',
+    sentenceStructure: metadataPatterns.titlePatterns.avgLength > 60 ? 'complex' : 'direct',
+    hooks: `${metadataPatterns.titlePatterns.numbersInTitles}% use numbers, ${metadataPatterns.titlePatterns.questionFrequency}% use questions`,
+    transitions: 'Inferred from content flow patterns',
+    engagement: metadataPatterns.engagementPatterns.avgEngagementRate > 3 ? 'high' : 'moderate',
+    humor: metadataPatterns.descriptionPatterns.emojiUsage > 2 ? 'present' : 'minimal',
+    signature_phrases: metadataPatterns.titlePatterns.commonStartWords,
+    summary: `${energy} energy, ${pace} paced content with ${metadataPatterns.engagementPatterns.avgEngagementRate.toFixed(2)}% engagement rate. Strong focus on ${metadataPatterns.tagPatterns.commonTags[0] || 'diverse topics'}.`,
+
+    _metadataPatterns: metadataPatterns,
+    _generatedBy: 'enhanced-metadata-fallback'
+  };
+}
+
+/**
  * Analyze voice and style from metadata when transcripts are unavailable
- * Infers style patterns from titles, descriptions, tags, and engagement metrics
+ * ENHANCED VERSION: Extracts deep patterns from titles, descriptions, tags, and engagement metrics
+ * Returns structure similar to full transcript analysis for consistency
  */
 async function analyzeVoiceStyleFromMetadata(channelContext, videos) {
-  console.log('🎨 Inferring voice style from comprehensive metadata...');
+  console.log('🎨 Running ENHANCED metadata analysis (no transcripts available)...');
 
-  const prompt = `Analyze this YouTube channel's content style and voice based on available metadata (NO transcripts available).
+  // Pre-analyze metadata patterns for better prompting
+  const metadataPatterns = analyzeMetadataPatterns(videos);
+
+  const prompt = `You are analyzing a YouTube channel's voice and style WITHOUT transcripts. Use the metadata patterns below to create a COMPREHENSIVE voice profile.
 
 ${channelContext}
 
-Since we don't have transcripts, infer the channel's voice and style by analyzing:
-1. **Title Patterns**: What style of titles do they use? (clickbait, educational, dramatic, casual)
-2. **Description Style**: How do they write descriptions? (formal, casual, emoji-heavy, technical)
-3. **Content Topics**: What subjects do they cover and how do they frame them?
-4. **Tags & Keywords**: What language patterns emerge from their tags?
-5. **Engagement Patterns**: Which videos perform best and what do they have in common?
+ANALYZED METADATA PATTERNS:
+${JSON.stringify(metadataPatterns, null, 2)}
 
-Create a voice profile that includes:
+Create a COMPREHENSIVE voice profile that mirrors the depth of transcript-based analysis:
+
+CRITICAL: Return a structure that matches the full transcript analysis format, including:
 
 {
-  "inferredTone": ["3-5 tone descriptors based on title/description style"],
-  "contentStyle": {
-    "titleApproach": "How they craft titles (descriptive analysis)",
-    "descriptionStyle": "How they write descriptions",
-    "topicFraming": "How they frame/angle their topics",
-    "consistencyLevel": "high/medium/low based on pattern consistency"
+  "tone": ["3-5 tone descriptors inferred from title style, capitalization, punctuation"],
+  "style": ["3-5 style descriptors based on description formality, emoji usage, technical language"],
+  "pace": "fast/moderate/slow (inferred from title urgency, video length patterns)",
+  "energy": "high/medium/low (inferred from punctuation, capitalization, emoji frequency)",
+  "personality": ["5-7 personality traits evident from writing style and content patterns"],
+
+  "linguisticFingerprints": {
+    "openingPatterns": ["common title opening words/phrases"],
+    "transitionPhrases": ["inferred from title progression patterns"],
+    "closingPatterns": ["common ending patterns in titles"],
+    "fillerWords": {"estimated from description style": "frequency estimate"},
+    "signaturePhrases": ["unique recurring phrases in titles/descriptions"],
+    "questionPatterns": {"rhetorical vs engaging": "based on question marks in titles"}
   },
-  "inferredAudience": {
-    "targetDemographic": "Who this content appears targeted at",
-    "expertiseLevel": "beginner/intermediate/advanced based on language complexity",
-    "interestProfiles": ["What types of people would watch this"]
+
+  "narrativeStructure": {
+    "storyArcPattern": "inferred from title sequencing and video series patterns",
+    "informationFlow": "inferred from description organization",
+    "exampleStyle": "inferred from title references (case studies, examples, etc)",
+    "anecdoteUsage": {"frequency": "inferred from personal pronouns in descriptions"},
+    "hookPlacement": ["inferred from title structure"]
   },
-  "presentationStyle": {
-    "inferredPacing": "fast/moderate/slow based on title urgency and description length",
-    "formality": "casual/professional/mixed based on language used",
-    "emotionalTone": "excited/calm/serious/humorous inferred from titles",
-    "educationalVsEntertaining": "percentage split based on content signals"
+
+  "emotionalDynamics": {
+    "energyCurve": ["inferred from punctuation and capitalization patterns"],
+    "emotionalBeats": ["dramatic, informative, suspenseful based on title patterns"],
+    "authenticityMarkers": ["personal pronouns usage, behind-the-scenes content"],
+    "passionTriggers": ["topics with highest engagement or most enthusiastic language"],
+    "vulnerabilityPattern": "inferred from personal vs impersonal language"
   },
-  "contentPatterns": {
-    "commonThemes": ["recurring topics/themes"],
-    "clickworthinessFactors": ["what makes their titles compelling"],
-    "uniqueAngles": ["how they differentiate from typical content"],
-    "seriesOrStandalone": "do they create series or standalone content"
+
+  "contentPositioning": {
+    "selfReferenceRate": 0.0-1.0,
+    "audienceRelationship": "educator/entertainer/friend/expert based on language",
+    "authorityStance": "expert/explorer/commentator/critic",
+    "valueProposition": "what value they promise based on titles/descriptions"
   },
-  "brandVoice": {
-    "personality": ["personality traits evident from metadata"],
-    "valueProposition": "what value they promise viewers",
-    "uniquePosition": "how they position themselves in their niche"
+
+  "culturalReferences": {
+    "exampleCategories": ["pop culture, tech, history etc from title analysis"],
+    "metaphorTypes": ["inferred from descriptive language patterns"],
+    "currentEventsStyle": "frequent/occasional/rare based on trending topics",
+    "internetCultureUsage": "heavy/moderate/minimal based on memes, emoji, slang",
+    "formalityBalance": "academic/professional/casual/street based on vocabulary"
   },
-  "confidence": {
-    "overall": 0.0-1.0,
-    "note": "Lower confidence since no transcripts available, but based on solid metadata patterns"
-  }
+
+  "technicalPatterns": {
+    "avgWordsPerSentence": "estimated from description sentence structure",
+    "vocabularyComplexity": "simple/moderate/advanced based on word choice",
+    "jargonUsage": {"frequency": "high/medium/low", "types": ["domain-specific terms"]},
+    "dataPresentation": "data-heavy/balanced/story-focused"
+  },
+
+  "engagementTechniques": {
+    "directAddressFrequency": 0.0-1.0,
+    "pronounUsage": {"you": 40, "we": 30, "i": 30},
+    "ctaStyle": "aggressive/gentle/implicit based on description CTAs",
+    "questionStrategy": "frequent/moderate/rare based on question marks",
+    "communityLanguage": ["we, us, our, together, community mentions"]
+  },
+
+  "pacingDynamics": {
+    "speedVariations": ["inferred from video length variation"],
+    "pausePatterns": {"frequency": "estimated from content style"},
+    "emphasisTechniques": ["CAPS usage, punctuation!!! patterns"],
+    "rhythmPreferences": "consistent/varied based on publishing schedule"
+  },
+
+  "implementationNotes": {
+    "titleFormula": "identified pattern in title construction",
+    "descriptionTemplate": "identified structure in descriptions",
+    "contentAngles": ["unique perspectives taken on topics"],
+    "brandingElements": ["consistent elements across all content"]
+  },
+
+  "confidenceScores": {
+    "overall": 0.5-0.7,
+    "tone": 0.6-0.8,
+    "style": 0.6-0.8,
+    "personality": 0.4-0.6,
+    "note": "Metadata-based analysis - good confidence on observable patterns, lower on unobservable speech patterns"
+  },
+
+  "dos": ["3-5 actionable dos based on successful content patterns"],
+  "donts": ["3-5 donts based on avoiding unsuccessful patterns"],
+  "vocabulary": "accessible/technical/mixed description",
+  "sentenceStructure": "short/varied/complex based on descriptions",
+  "hooks": "compelling title patterns identified",
+  "transitions": "inferred content flow patterns",
+  "engagement": "high/medium/low based on metrics",
+  "humor": "frequent/occasional/rare based on language patterns",
+  "signature_phrases": ["unique recurring phrases"],
+  "summary": "2-3 sentence comprehensive summary"
 }
 
-Return ONLY valid JSON, no markdown blocks.`;
+IMPORTANT: Be thorough and specific. Use actual patterns from the metadata. This needs to be AS COMPREHENSIVE as transcript analysis.`;
 
   try {
     const response = await anthropic.messages.create({
@@ -219,26 +642,31 @@ Return ONLY valid JSON, no markdown blocks.`;
         voiceProfile = JSON.parse(jsonText);
       } catch (e2) {
         console.error('❌ Failed to parse metadata analysis:', e2.message);
-        // Return basic fallback
-        voiceProfile = {
-          inferredTone: ['engaging', 'informative'],
-          contentStyle: {
-            titleApproach: 'Unable to analyze due to parsing error',
-            consistencyLevel: 'unknown'
-          },
-          confidence: {
-            overall: 0.3,
-            note: 'Parsing failed, returning minimal profile'
-          }
-        };
+        // Return enhanced fallback using metadata patterns
+        voiceProfile = generateEnhancedMetadataFallback(metadataPatterns);
       }
     }
 
-    // Add metadata flag
+    // Add metadata flag and ensure complete structure
     voiceProfile.basedOn = 'metadata-only';
     voiceProfile.transcriptsAvailable = false;
+    voiceProfile._isMetadataOnly = true;
 
-    console.log('✅ Voice style inferred from metadata with confidence:', voiceProfile.confidence?.overall || 0.5);
+    // Ensure confidence scores exist
+    if (!voiceProfile.confidenceScores) {
+      voiceProfile.confidenceScores = {
+        overall: 0.6,
+        tone: 0.65,
+        style: 0.70,
+        personality: 0.50,
+        note: 'Metadata-based analysis - higher confidence on observable patterns'
+      };
+    }
+
+    console.log('✅ Enhanced metadata analysis completed');
+    console.log(`   - Confidence: ${voiceProfile.confidenceScores.overall}`);
+    console.log(`   - Videos analyzed: ${videos.length}`);
+    console.log(`   - Has full structure: ${!!voiceProfile.linguisticFingerprints}`);
 
     return voiceProfile;
 
@@ -763,6 +1191,121 @@ function generateDefaultEnhancedProfile() {
 }
 
 /**
+ * Merge partial transcript analysis with metadata analysis (Hybrid Mode)
+ * Prioritizes transcript-based patterns (direct observation) over metadata inferences
+ */
+function mergeTranscriptAndMetadata(transcriptAnalysis, metadataAnalysis, transcriptCount) {
+  console.log('  🔗 Merging transcript and metadata analyses...');
+
+  // Calculate confidence weights (more transcripts = higher weight for transcript data)
+  const transcriptWeight = Math.min(transcriptCount / 5, 0.8); // Max 80% at 5 transcripts
+  const metadataWeight = 1 - transcriptWeight;
+
+  console.log(`    Transcript weight: ${Math.round(transcriptWeight * 100)}%`);
+  console.log(`    Metadata weight: ${Math.round(metadataWeight * 100)}%`);
+
+  const merged = {
+    // Core voice - prefer transcript data
+    tone: transcriptAnalysis.tone || metadataAnalysis.tone,
+    style: transcriptAnalysis.style || metadataAnalysis.style,
+    pace: transcriptAnalysis.pace || metadataAnalysis.pace,
+    energy: transcriptAnalysis.energy || metadataAnalysis.energy,
+    personality: transcriptAnalysis.personality || metadataAnalysis.personality,
+
+    // Linguistic patterns - transcript only (can't infer from metadata accurately)
+    linguisticFingerprints: transcriptAnalysis.linguisticFingerprints || metadataAnalysis.linguisticFingerprints || {},
+
+    // Narrative structure - blend both
+    narrativeStructure: {
+      storyArcPattern: transcriptAnalysis.narrativeStructure?.storyArcPattern || metadataAnalysis.narrativeStructure?.storyArcPattern,
+      informationFlow: transcriptAnalysis.narrativeStructure?.informationFlow || metadataAnalysis.narrativeStructure?.informationFlow,
+      exampleStyle: transcriptAnalysis.narrativeStructure?.exampleStyle || metadataAnalysis.narrativeStructure?.exampleStyle,
+      anecdoteUsage: transcriptAnalysis.narrativeStructure?.anecdoteUsage || metadataAnalysis.narrativeStructure?.anecdoteUsage,
+      hookPlacement: transcriptAnalysis.narrativeStructure?.hookPlacement || metadataAnalysis.narrativeStructure?.hookPlacement
+    },
+
+    // Emotional dynamics - transcript preferred
+    emotionalDynamics: transcriptAnalysis.emotionalDynamics || metadataAnalysis.emotionalDynamics || {},
+
+    // Content positioning - blend
+    contentPositioning: {
+      selfReferenceRate: transcriptAnalysis.contentPositioning?.selfReferenceRate ?? metadataAnalysis.contentPositioning?.selfReferenceRate ?? 0,
+      audienceRelationship: transcriptAnalysis.contentPositioning?.audienceRelationship || metadataAnalysis.contentPositioning?.audienceRelationship,
+      authorityStance: transcriptAnalysis.contentPositioning?.authorityStance || metadataAnalysis.contentPositioning?.authorityStance,
+      valueProposition: metadataAnalysis.contentPositioning?.valueProposition || transcriptAnalysis.contentPositioning?.valueProposition // Metadata better for this
+    },
+
+    // Cultural references - blend
+    culturalReferences: {
+      exampleCategories: [...(transcriptAnalysis.culturalReferences?.exampleCategories || []), ...(metadataAnalysis.culturalReferences?.exampleCategories || [])].slice(0, 10),
+      metaphorTypes: transcriptAnalysis.culturalReferences?.metaphorTypes || metadataAnalysis.culturalReferences?.metaphorTypes,
+      currentEventsStyle: metadataAnalysis.culturalReferences?.currentEventsStyle || transcriptAnalysis.culturalReferences?.currentEventsStyle,
+      internetCultureUsage: metadataAnalysis.culturalReferences?.internetCultureUsage || transcriptAnalysis.culturalReferences?.internetCultureUsage,
+      formalityBalance: transcriptAnalysis.culturalReferences?.formalityBalance || metadataAnalysis.culturalReferences?.formalityBalance
+    },
+
+    // Technical patterns - transcript preferred
+    technicalPatterns: transcriptAnalysis.technicalPatterns || metadataAnalysis.technicalPatterns || {},
+
+    // Engagement techniques - blend
+    engagementTechniques: {
+      directAddressFrequency: transcriptAnalysis.engagementTechniques?.directAddressFrequency ?? metadataAnalysis.engagementTechniques?.directAddressFrequency ?? 0,
+      pronounUsage: transcriptAnalysis.engagementTechniques?.pronounUsage || metadataAnalysis.engagementTechniques?.pronounUsage,
+      ctaStyle: metadataAnalysis.engagementTechniques?.ctaStyle || transcriptAnalysis.engagementTechniques?.ctaStyle, // Metadata better for this
+      questionStrategy: transcriptAnalysis.engagementTechniques?.questionStrategy || metadataAnalysis.engagementTechniques?.questionStrategy,
+      communityLanguage: metadataAnalysis.engagementTechniques?.communityLanguage || transcriptAnalysis.engagementTechniques?.communityLanguage
+    },
+
+    // Pacing dynamics - transcript preferred
+    pacingDynamics: transcriptAnalysis.pacingDynamics || metadataAnalysis.pacingDynamics || {},
+
+    // Implementation notes - metadata better for quantifiable patterns
+    implementationNotes: {
+      ...metadataAnalysis.implementationNotes,
+      ...transcriptAnalysis.implementationNotes,
+      mergeNote: `Hybrid analysis: ${transcriptCount} transcripts + metadata enrichment`
+    },
+
+    // Confidence scores - blend with weights
+    confidenceScores: {
+      overall: (transcriptAnalysis.confidenceScores?.overall || 0.5) * transcriptWeight +
+               (metadataAnalysis.confidenceScores?.overall || 0.6) * metadataWeight,
+      tone: (transcriptAnalysis.confidenceScores?.tone || 0.6) * transcriptWeight +
+            (metadataAnalysis.confidenceScores?.tone || 0.65) * metadataWeight,
+      style: (transcriptAnalysis.confidenceScores?.style || 0.6) * transcriptWeight +
+             (metadataAnalysis.confidenceScores?.style || 0.70) * metadataWeight,
+      personality: (transcriptAnalysis.confidenceScores?.personality || 0.5) * transcriptWeight +
+                   (metadataAnalysis.confidenceScores?.personality || 0.55) * metadataWeight,
+      note: `Hybrid analysis with ${transcriptCount} transcripts (${Math.round(transcriptWeight * 100)}% weight) + metadata (${Math.round(metadataWeight * 100)}% weight)`
+    },
+
+    // Backwards compatibility
+    dos: transcriptAnalysis.dos || metadataAnalysis.dos,
+    donts: transcriptAnalysis.donts || metadataAnalysis.donts,
+    vocabulary: transcriptAnalysis.vocabulary || metadataAnalysis.vocabulary,
+    sentenceStructure: transcriptAnalysis.sentenceStructure || metadataAnalysis.sentenceStructure,
+    hooks: metadataAnalysis.hooks || transcriptAnalysis.hooks, // Metadata better for hooks
+    transitions: transcriptAnalysis.transitions || metadataAnalysis.transitions,
+    engagement: metadataAnalysis.engagement || transcriptAnalysis.engagement, // Metadata has engagement metrics
+    humor: transcriptAnalysis.humor || metadataAnalysis.humor,
+    signature_phrases: transcriptAnalysis.signature_phrases || metadataAnalysis.signature_phrases,
+    summary: `Hybrid analysis from ${transcriptCount} transcripts + metadata. ${transcriptAnalysis.summary || metadataAnalysis.summary}`,
+
+    // Hybrid metadata
+    _isHybrid: true,
+    _transcriptCount: transcriptCount,
+    _transcriptWeight: transcriptWeight,
+    _metadataWeight: metadataWeight,
+    _transcriptSource: transcriptAnalysis._generatedBy || 'transcript-analysis',
+    _metadataSource: metadataAnalysis._generatedBy || 'metadata-analysis'
+  };
+
+  console.log('  ✅ Merge complete - hybrid profile created');
+
+  return merged;
+}
+
+/**
  * Fetch and analyze actual transcripts from YouTube channels
  * This provides real voice analysis instead of theoretical blending
  */
@@ -821,18 +1364,26 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
       }
 
       // Fetch transcripts from videos
+      // ENHANCED: Try more videos to increase chance of getting at least 2 transcripts
       const transcripts = [];
       const analyzedVideos = [];
-      const maxTranscripts = 5; // Analyze up to 5 videos per channel for remix
-      
-      console.log(`  📝 Attempting to fetch transcripts from ${videos.length} videos...`);
-      
-      for (const video of videos) {
-        if (transcripts.length >= maxTranscripts) break;
-        
+      const idealTranscripts = 5; // Ideal for full analysis
+      const minTranscriptsForHybrid = 2; // Minimum for hybrid analysis
+      const maxVideosToTry = 20; // Try up to 20 videos to get enough transcripts
+
+      console.log(`  📝 Attempting to fetch transcripts from up to ${Math.min(videos.length, maxVideosToTry)} videos...`);
+      console.log(`  🎯 Target: ${idealTranscripts} transcripts (minimum ${minTranscriptsForHybrid} for hybrid mode)`);
+
+      for (const video of videos.slice(0, maxVideosToTry)) {
+        // Stop if we have ideal number
+        if (transcripts.length >= idealTranscripts) {
+          console.log(`  ✅ Reached ideal transcript count (${idealTranscripts})`);
+          break;
+        }
+
         try {
           const transcript = await getVideoTranscript(video.id);
-          
+
           if (transcript.hasTranscript && transcript.fullText) {
             transcripts.push(transcript.fullText);
             analyzedVideos.push({
@@ -840,7 +1391,7 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
               title: video.snippet.title,
               publishedAt: video.snippet.publishedAt
             });
-            console.log(`    ✓ Got transcript: ${video.snippet.title.substring(0, 50)}...`);
+            console.log(`    ✓ Got transcript (${transcripts.length}/${idealTranscripts}): ${video.snippet.title.substring(0, 50)}...`);
           } else {
             console.log(`    ✗ No transcript: ${video.snippet.title.substring(0, 50)}...`);
           }
@@ -849,11 +1400,13 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
         }
       }
 
-      // Analyze the transcripts if we have any
+      // Analyze based on available data
       let voiceAnalysis = null;
       let source = 'none';
-      
-      if (transcripts.length > 0) {
+
+      // DECISION TREE: Full Analysis vs Hybrid vs Metadata-Only
+      if (transcripts.length >= idealTranscripts) {
+        // FULL TRANSCRIPT ANALYSIS (5+ transcripts)
         console.log(`  🧠 Analyzing ${transcripts.length} transcripts with enhanced profiling...`);
         
         // Prepare transcript data for enhanced analysis
@@ -902,13 +1455,74 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
         source = 'youtube-transcripts';
 
         console.log(`  ✅ Successfully analyzed voice from ${transcripts.length} videos with performance metrics`);
+
+      } else if (transcripts.length >= minTranscriptsForHybrid) {
+        // HYBRID ANALYSIS (2-4 transcripts + metadata)
+        console.log(`  🔄 Using HYBRID mode: ${transcripts.length} transcripts + metadata enrichment`);
+        console.log(`  💡 This combines partial transcript data with comprehensive metadata patterns`);
+
+        // Prepare transcript data for partial analysis
+        const transcriptData = transcripts.map((text, index) => ({
+          text: text,
+          videoTitle: analyzedVideos[index]?.title || `Video ${index + 1}`
+        }));
+
+        // Run partial transcript analysis
+        const partialTranscriptAnalysis = await analyzeTranscriptVoice(transcriptData, channel.title || channel.name);
+
+        // Run enhanced metadata analysis
+        const videosToAnalyze = videos.slice(0, 15);
+        const videoTexts = videosToAnalyze.map((v, index) => {
+          const title = v.snippet?.title || '';
+          const description = v.snippet?.description?.substring(0, 500) || '';
+          const tags = v.snippet?.tags?.slice(0, 10).join(', ') || '';
+          const views = v.statistics?.viewCount || 0;
+          const likes = v.statistics?.likeCount || 0;
+          const comments = v.statistics?.commentCount || 0;
+          const engagementRate = views > 0 ? ((parseInt(likes) + parseInt(comments)) / parseInt(views) * 100).toFixed(2) : 0;
+
+          return `VIDEO ${index + 1}:
+Title: ${title}
+Description: ${description}
+Tags: ${tags}
+Performance: ${parseInt(views).toLocaleString()} views, ${engagementRate}% engagement
+---`;
+        }).join('\n\n');
+
+        const channelContext = `
+CHANNEL OVERVIEW:
+Name: ${channel.title || channel.name}
+Description: ${channel.description?.substring(0, 1000) || 'No description'}
+Total Videos: ${videosToAnalyze.length} analyzed
+Subscriber Count: ${channel.subscriber_count?.toLocaleString() || 'Unknown'}
+Transcripts Available: ${transcripts.length}
+
+CONTENT PATTERNS:
+${videoTexts}`;
+
+        const metadataAnalysis = await analyzeVoiceStyleFromMetadata(channelContext, videosToAnalyze);
+
+        // MERGE: Prioritize transcript-based patterns, fill gaps with metadata
+        voiceAnalysis = mergeTranscriptAndMetadata(partialTranscriptAnalysis, metadataAnalysis, transcripts.length);
+
+        // Add hybrid indicators
+        voiceAnalysis.analysisMethod = 'hybrid';
+        voiceAnalysis.transcriptCount = transcripts.length;
+        voiceAnalysis.metadataVideos = videosToAnalyze.length;
+        voiceAnalysis.analyzedVideos = analyzedVideos;
+
+        source = 'hybrid-analysis';
+
+        console.log(`  ✅ Hybrid analysis complete: ${transcripts.length} transcripts + ${videosToAnalyze.length} metadata sources`);
+
       } else {
-        // Enhanced fallback to comprehensive metadata analysis when transcripts unavailable
-        console.log(`  ⚠️ No transcripts available, using enhanced video metadata...`);
+        // METADATA-ONLY ANALYSIS (0 transcripts)
+        console.log(`  ⚠️ No transcripts available (tried ${maxVideosToTry} videos)`);
+        console.log(`  📊 Falling back to enhanced metadata analysis...`);
 
         // Use up to 15 videos for better pattern detection
         const videosToAnalyze = videos.slice(0, 15);
-        console.log(`  📊 Analyzing ${videosToAnalyze.length} videos using metadata...`);
+        console.log(`  📊 Analyzing ${videosToAnalyze.length} videos using enhanced metadata patterns`);
 
         // Build comprehensive metadata text including multiple data sources
         const videoTexts = videosToAnalyze.map((v, index) => {
@@ -945,7 +1559,7 @@ ${videoTexts}`;
         voiceAnalysis = await analyzeVoiceStyleFromMetadata(channelContext, videosToAnalyze);
         source = 'enhanced-metadata';
 
-        console.log(`  ✅ Completed enhanced metadata analysis`);
+        console.log(`  ✅ Completed enhanced metadata-only analysis`);
       }
 
       channelAnalyses.push({

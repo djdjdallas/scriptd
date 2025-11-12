@@ -1,5 +1,6 @@
 import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
 import { getYouTubeClient, withRateLimit, getCached, setCache } from './client.js';
+import { createClient } from '@/lib/supabase/server';
 
 export async function getVideoById(videoId) {
   const cacheKey = `video-${videoId}`;
@@ -29,40 +30,134 @@ export async function getVideoById(videoId) {
   }
 }
 
+/**
+ * Get transcript from Supabase cache
+ */
+async function getTranscriptFromCache(videoId) {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('video_transcripts_cache')
+      .select('*')
+      .eq('video_id', videoId)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    // Check if expired
+    if (new Date(data.expires_at) < new Date()) {
+      console.log(`⏰ Cached transcript for ${videoId} has expired`);
+      return null;
+    }
+
+    // Update access count and last accessed time
+    await supabase
+      .from('video_transcripts_cache')
+      .update({
+        access_count: data.access_count + 1,
+        last_accessed_at: new Date().toISOString()
+      })
+      .eq('video_id', videoId);
+
+    console.log(`✅ Cache HIT for ${videoId} (accessed ${data.access_count + 1} times)`);
+
+    return {
+      segments: data.transcript_data.segments || [],
+      fullText: data.full_text,
+      hasTranscript: data.has_transcript,
+      fromCache: true,
+      cachedAt: data.cached_at
+    };
+  } catch (error) {
+    console.error(`Error reading from transcript cache:`, error.message);
+    return null;
+  }
+}
+
+/**
+ * Save transcript to Supabase cache
+ */
+async function saveTranscriptToCache(videoId, transcriptData) {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('video_transcripts_cache')
+      .upsert({
+        video_id: videoId,
+        transcript_data: {
+          segments: transcriptData.segments
+        },
+        full_text: transcriptData.fullText,
+        has_transcript: transcriptData.hasTranscript,
+        cached_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+        access_count: 0,
+        last_accessed_at: new Date().toISOString()
+      }, {
+        onConflict: 'video_id'
+      });
+
+    if (error) {
+      console.error(`Error saving to transcript cache:`, error.message);
+    } else {
+      console.log(`💾 Cached transcript for ${videoId} (expires in 7 days)`);
+    }
+  } catch (error) {
+    console.error(`Error saving to transcript cache:`, error.message);
+  }
+}
+
 export async function getVideoTranscript(videoId) {
+  // Check in-memory cache first (fast)
   const cacheKey = `transcript-${videoId}`;
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
+  const memoryCached = getCached(cacheKey);
+  if (memoryCached) {
+    console.log(`⚡ Memory cache HIT for ${videoId}`);
+    return memoryCached;
+  }
+
+  // Check Supabase cache (persistent)
+  const dbCached = await getTranscriptFromCache(videoId);
+  if (dbCached) {
+    setCache(cacheKey, dbCached); // Also store in memory for this session
+    return dbCached;
+  }
+
+  console.log(`🔍 Cache MISS for ${videoId} - fetching from YouTube...`);
 
   try {
     let transcript = null;
     let lastError = null;
-    
+
     // The youtube-transcript package has issues with language codes
     // Try without any config first - this often works best
     try {
       console.log(`Fetching transcript for ${videoId} (default/auto-detect)...`);
       transcript = await YoutubeTranscript.fetchTranscript(videoId);
-      
+
       if (transcript && transcript.length > 0) {
         console.log(`✓ Found transcript for ${videoId} using auto-detect`);
       }
     } catch (e) {
       lastError = e;
       console.log(`Auto-detect failed for ${videoId}: ${e.message}`);
-      
+
       // Try different approaches based on error
       const attempts = [
         { config: { lang: 'en' }, name: 'lang: en' },
         { config: { country: 'US' }, name: 'country: US' },
         { config: { lang: 'en', country: 'US' }, name: 'lang: en, country: US' }
       ];
-      
+
       for (const attempt of attempts) {
         try {
           console.log(`Trying ${attempt.name} for ${videoId}...`);
           transcript = await YoutubeTranscript.fetchTranscript(videoId, attempt.config);
-          
+
           if (transcript && transcript.length > 0) {
             console.log(`✓ Found transcript for ${videoId} using ${attempt.name}`);
             break;
@@ -73,11 +168,20 @@ export async function getVideoTranscript(videoId) {
         }
       }
     }
-    
+
     if (!transcript || transcript.length === 0) {
+      // Cache negative result (no transcript) to avoid repeated failures
+      const noTranscriptResult = {
+        segments: [],
+        fullText: '',
+        hasTranscript: false,
+        error: lastError?.message || 'No transcript found'
+      };
+
+      await saveTranscriptToCache(videoId, noTranscriptResult);
       throw lastError || new Error('No transcript found');
     }
-    
+
     // Combine transcript segments into full text
     const fullText = transcript
       .map(segment => segment.text)
@@ -91,7 +195,10 @@ export async function getVideoTranscript(videoId) {
       hasTranscript: true,
     };
 
-    setCache(cacheKey, result);
+    // Save to both caches
+    setCache(cacheKey, result); // Memory cache
+    await saveTranscriptToCache(videoId, result); // DB cache
+
     return result;
   } catch (error) {
     console.error(`Error fetching transcript for ${videoId}:`, error.message);
