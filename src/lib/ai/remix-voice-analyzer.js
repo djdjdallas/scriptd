@@ -131,6 +131,137 @@ CRITICAL JSON RULES:
   return parseEnhancedVoiceAnalysis(response.content[0].text, realConfidenceScores, linguisticConsistency);
 }
 
+/**
+ * Analyze voice and style from metadata when transcripts are unavailable
+ * Infers style patterns from titles, descriptions, tags, and engagement metrics
+ */
+async function analyzeVoiceStyleFromMetadata(channelContext, videos) {
+  console.log('🎨 Inferring voice style from comprehensive metadata...');
+
+  const prompt = `Analyze this YouTube channel's content style and voice based on available metadata (NO transcripts available).
+
+${channelContext}
+
+Since we don't have transcripts, infer the channel's voice and style by analyzing:
+1. **Title Patterns**: What style of titles do they use? (clickbait, educational, dramatic, casual)
+2. **Description Style**: How do they write descriptions? (formal, casual, emoji-heavy, technical)
+3. **Content Topics**: What subjects do they cover and how do they frame them?
+4. **Tags & Keywords**: What language patterns emerge from their tags?
+5. **Engagement Patterns**: Which videos perform best and what do they have in common?
+
+Create a voice profile that includes:
+
+{
+  "inferredTone": ["3-5 tone descriptors based on title/description style"],
+  "contentStyle": {
+    "titleApproach": "How they craft titles (descriptive analysis)",
+    "descriptionStyle": "How they write descriptions",
+    "topicFraming": "How they frame/angle their topics",
+    "consistencyLevel": "high/medium/low based on pattern consistency"
+  },
+  "inferredAudience": {
+    "targetDemographic": "Who this content appears targeted at",
+    "expertiseLevel": "beginner/intermediate/advanced based on language complexity",
+    "interestProfiles": ["What types of people would watch this"]
+  },
+  "presentationStyle": {
+    "inferredPacing": "fast/moderate/slow based on title urgency and description length",
+    "formality": "casual/professional/mixed based on language used",
+    "emotionalTone": "excited/calm/serious/humorous inferred from titles",
+    "educationalVsEntertaining": "percentage split based on content signals"
+  },
+  "contentPatterns": {
+    "commonThemes": ["recurring topics/themes"],
+    "clickworthinessFactors": ["what makes their titles compelling"],
+    "uniqueAngles": ["how they differentiate from typical content"],
+    "seriesOrStandalone": "do they create series or standalone content"
+  },
+  "brandVoice": {
+    "personality": ["personality traits evident from metadata"],
+    "valueProposition": "what value they promise viewers",
+    "uniquePosition": "how they position themselves in their niche"
+  },
+  "confidence": {
+    "overall": 0.0-1.0,
+    "note": "Lower confidence since no transcripts available, but based on solid metadata patterns"
+  }
+}
+
+Return ONLY valid JSON, no markdown blocks.`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: VOICE_MODEL,
+      max_tokens: 4000,
+      temperature: 0.4,
+      system: "You are an expert content analyst who can infer creator voice and style from metadata patterns. Be specific and provide actionable insights. Return only valid JSON.",
+      messages: [{
+        role: 'user',
+        content: prompt
+      }]
+    });
+
+    const content = response.content[0].text;
+
+    // Parse response
+    let voiceProfile;
+    try {
+      // Try direct parse
+      voiceProfile = JSON.parse(content);
+    } catch (e) {
+      console.log('🔧 Repairing JSON from metadata analysis...');
+      // Extract JSON from markdown if present
+      const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
+      const jsonText = jsonMatch ? jsonMatch[1] : content;
+
+      // Try to parse
+      try {
+        voiceProfile = JSON.parse(jsonText);
+      } catch (e2) {
+        console.error('❌ Failed to parse metadata analysis:', e2.message);
+        // Return basic fallback
+        voiceProfile = {
+          inferredTone: ['engaging', 'informative'],
+          contentStyle: {
+            titleApproach: 'Unable to analyze due to parsing error',
+            consistencyLevel: 'unknown'
+          },
+          confidence: {
+            overall: 0.3,
+            note: 'Parsing failed, returning minimal profile'
+          }
+        };
+      }
+    }
+
+    // Add metadata flag
+    voiceProfile.basedOn = 'metadata-only';
+    voiceProfile.transcriptsAvailable = false;
+
+    console.log('✅ Voice style inferred from metadata with confidence:', voiceProfile.confidence?.overall || 0.5);
+
+    return voiceProfile;
+
+  } catch (error) {
+    console.error('❌ Error analyzing voice from metadata:', error.message);
+
+    // Return basic fallback on error
+    return {
+      inferredTone: ['conversational', 'engaging'],
+      contentStyle: {
+        titleApproach: 'Standard YouTube style',
+        consistencyLevel: 'unknown'
+      },
+      confidence: {
+        overall: 0.2,
+        note: 'Error occurred during analysis'
+      },
+      basedOn: 'fallback',
+      transcriptsAvailable: false
+    };
+  }
+}
+
 // Extract partial data from malformed JSON
 function extractPartialData(text) {
   const result = {};
@@ -772,14 +903,49 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
 
         console.log(`  ✅ Successfully analyzed voice from ${transcripts.length} videos with performance metrics`);
       } else {
-        // Fallback to metadata analysis if no transcripts
-        console.log(`  ⚠️ No transcripts available, using video metadata...`);
-        const videoTexts = videos.slice(0, 3).map(v => 
-          `${v.snippet.title}. ${v.snippet.description}`
-        );
-        
-        voiceAnalysis = await analyzeVoiceStyle(videoTexts);
-        source = 'metadata';
+        // Enhanced fallback to comprehensive metadata analysis when transcripts unavailable
+        console.log(`  ⚠️ No transcripts available, using enhanced video metadata...`);
+
+        // Use up to 15 videos for better pattern detection
+        const videosToAnalyze = videos.slice(0, 15);
+        console.log(`  📊 Analyzing ${videosToAnalyze.length} videos using metadata...`);
+
+        // Build comprehensive metadata text including multiple data sources
+        const videoTexts = videosToAnalyze.map((v, index) => {
+          const title = v.snippet?.title || '';
+          const description = v.snippet?.description?.substring(0, 500) || ''; // First 500 chars
+          const tags = v.snippet?.tags?.slice(0, 10).join(', ') || '';
+          const views = v.statistics?.viewCount || 0;
+          const likes = v.statistics?.likeCount || 0;
+          const comments = v.statistics?.commentCount || 0;
+
+          // Include engagement metrics to infer content style
+          const engagementRate = views > 0 ? ((parseInt(likes) + parseInt(comments)) / parseInt(views) * 100).toFixed(2) : 0;
+
+          return `VIDEO ${index + 1}:
+Title: ${title}
+Description: ${description}
+Tags: ${tags}
+Performance: ${parseInt(views).toLocaleString()} views, ${engagementRate}% engagement
+---`;
+        }).join('\n\n');
+
+        // Add channel-level context
+        const channelContext = `
+CHANNEL OVERVIEW:
+Name: ${channel.title || channel.name}
+Description: ${channel.description?.substring(0, 1000) || 'No description'}
+Total Videos: ${videosToAnalyze.length} analyzed
+Subscriber Count: ${channel.subscriber_count?.toLocaleString() || 'Unknown'}
+
+CONTENT PATTERNS:
+${videoTexts}`;
+
+        // Use enhanced metadata analysis that infers style from titles, descriptions, and patterns
+        voiceAnalysis = await analyzeVoiceStyleFromMetadata(channelContext, videosToAnalyze);
+        source = 'enhanced-metadata';
+
+        console.log(`  ✅ Completed enhanced metadata analysis`);
       }
 
       channelAnalyses.push({

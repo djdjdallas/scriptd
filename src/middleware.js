@@ -1,166 +1,144 @@
 import { NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
-import { createServerClient } from '@supabase/ssr'
 import { logger } from '@/lib/monitoring/logger'
 
 export async function middleware(request) {
-  const start = Date.now()
-  const pathname = request.nextUrl.pathname
-  const method = request.method
-  
-  // Update the session
-  let response = await updateSession(request)
+  try {
+    const start = Date.now()
+    const pathname = request.nextUrl.pathname
+    const method = request.method
 
-  // Create a Supabase client configured to use cookies
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-          })
-          response = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
-        },
-      },
+    // Protected routes
+    const protectedRoutes = ['/scripts', '/channels', '/research', '/settings', '/billing', '/dashboard', '/teams', '/admin']
+    const authRoutes = ['/login', '/signup']
+
+    // Skip middleware for auth callback
+    if (pathname.startsWith('/auth/callback')) {
+      const { response } = await updateSession(request)
+      return response
     }
-  )
 
-  // Protected routes
-  const protectedRoutes = ['/scripts', '/channels', '/research', '/settings', '/billing', '/dashboard', '/teams', '/admin']
-  const authRoutes = ['/login', '/signup']
+    // Update session and get user in one call
+    const { response, user, error } = await updateSession(request)
 
-  // Skip middleware for auth callback
-  if (pathname.startsWith('/auth/callback')) {
-    return response
-  }
+    // Add monitoring for API routes
+    if (pathname.startsWith('/api/')) {
+      const ip = request.headers.get('x-forwarded-for') || 'unknown'
 
-  // Add monitoring for API routes
-  if (pathname.startsWith('/api/')) {
-    const ip = request.headers.get('x-forwarded-for') || 'unknown'
-    
-    // Add request ID header
-    response.headers.set('X-Request-ID', crypto.randomUUID())
-    response.headers.set('X-Response-Time', `${Date.now() - start}ms`)
-    
-    // Log API requests in production
-    if (process.env.NODE_ENV === 'production') {
-      logger.info('API request', {
-        pathname,
-        method,
-        ip,
-        userAgent: request.headers.get('user-agent'),
-      })
+      // Add request ID header
+      response.headers.set('X-Request-ID', crypto.randomUUID())
+      response.headers.set('X-Response-Time', `${Date.now() - start}ms`)
+
+      // Log API requests in production
+      if (process.env.NODE_ENV === 'production') {
+        logger.info('API request', {
+          pathname,
+          method,
+          ip,
+          userAgent: request.headers.get('user-agent'),
+        })
+      }
+
+      return response
     }
-    
-    return response
-  }
 
-  // Check if the current route is protected
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
-  const isOnboardingRoute = pathname.startsWith('/onboarding')
+    // Check if the current route is protected
+    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+    const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
+    const isOnboardingRoute = pathname.startsWith('/onboarding')
 
-  // Check for Supabase auth cookies (they start with sb-)
-  const cookies = request.cookies.getAll()
-  const hasSession = cookies.some(cookie => 
-    cookie.name.startsWith('sb-') && 
-    cookie.name.includes('auth-token')
-  )
+    // Validate session
+    const hasValidSession = !!user && !error
 
-  // Redirect logic for unauthenticated users
-  if ((isProtectedRoute || isOnboardingRoute) && !hasSession) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
+    // Redirect logic for unauthenticated users
+    if ((isProtectedRoute || isOnboardingRoute) && !hasValidSession) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
 
-  // Redirect authenticated users away from auth pages
-  if (isAuthRoute && hasSession) {
+    // Redirect authenticated users away from auth pages
+    if (isAuthRoute && hasValidSession) {
+      // ONBOARDING DISABLED FOR LAUNCH - Skip onboarding checks
+      // Check if user needs onboarding
+      // try {
+      //   const { data: { user } } = await supabase.auth.getUser()
+      //
+      //   if (user) {
+      //     // Get user's onboarding status
+      //     const { data: userData } = await supabase
+      //       .from('users')
+      //       .select('onboarding_completed')
+      //       .eq('id', user.id)
+      //       .single()
+      //
+      //     // Redirect to onboarding if not completed
+      //     if (!userData?.onboarding_completed) {
+      //       return NextResponse.redirect(new URL('/onboarding', request.url))
+      //     }
+      //   }
+      // } catch (error) {
+      //   console.error('Error checking onboarding status:', error)
+      // }
+
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    // Check onboarding status for protected routes
     // ONBOARDING DISABLED FOR LAUNCH - Skip onboarding checks
-    // Check if user needs onboarding
-    // try {
-    //   const { data: { user } } = await supabase.auth.getUser()
+    // if (isProtectedRoute && hasSession && !isOnboardingRoute) {
+    //   try {
+    //     const { data: { user } } = await supabase.auth.getUser()
     //
-    //   if (user) {
-    //     // Get user's onboarding status
-    //     const { data: userData } = await supabase
-    //       .from('users')
-    //       .select('onboarding_completed')
-    //       .eq('id', user.id)
-    //       .single()
+    //     if (user) {
+    //       const { data: userData } = await supabase
+    //         .from('users')
+    //         .select('onboarding_completed')
+    //         .eq('id', user.id)
+    //         .single()
     //
-    //     // Redirect to onboarding if not completed
-    //     if (!userData?.onboarding_completed) {
-    //       return NextResponse.redirect(new URL('/onboarding', request.url))
+    //       // Redirect to onboarding if not completed (except for certain routes)
+    //       const skipOnboardingRoutes = ['/settings', '/billing']
+    //       const shouldSkipOnboarding = skipOnboardingRoutes.some(route => pathname.startsWith(route))
+    //
+    //       if (!userData?.onboarding_completed && !shouldSkipOnboarding) {
+    //         return NextResponse.redirect(new URL('/onboarding', request.url))
+    //       }
     //     }
+    //   } catch (error) {
+    //     console.error('Error checking onboarding status:', error)
     //   }
-    // } catch (error) {
-    //   console.error('Error checking onboarding status:', error)
     // }
 
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    // Prevent access to onboarding if already completed
+    // ONBOARDING DISABLED FOR LAUNCH - Redirect all onboarding attempts to dashboard
+    if (isOnboardingRoute && hasValidSession) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+    // if (isOnboardingRoute && hasSession) {
+    //   try {
+    //     const { data: { user } } = await supabase.auth.getUser()
+    //
+    //     if (user) {
+    //       const { data: userData } = await supabase
+    //         .from('users')
+    //         .select('onboarding_completed')
+    //         .eq('id', user.id)
+    //         .single()
+    //
+    //       if (userData?.onboarding_completed) {
+    //         return NextResponse.redirect(new URL('/dashboard', request.url))
+    //       }
+    //     }
+    //   } catch (error) {
+    //     console.error('Error checking onboarding status:', error)
+    //   }
+    // }
+
+    return response
+  } catch (error) {
+    console.error('[Middleware] Unexpected error:', error)
+    // Return a basic response to prevent middleware from crashing
+    return NextResponse.next()
   }
-
-  // Check onboarding status for protected routes
-  // ONBOARDING DISABLED FOR LAUNCH - Skip onboarding checks
-  // if (isProtectedRoute && hasSession && !isOnboardingRoute) {
-  //   try {
-  //     const { data: { user } } = await supabase.auth.getUser()
-  //
-  //     if (user) {
-  //       const { data: userData } = await supabase
-  //         .from('users')
-  //         .select('onboarding_completed')
-  //         .eq('id', user.id)
-  //         .single()
-  //
-  //       // Redirect to onboarding if not completed (except for certain routes)
-  //       const skipOnboardingRoutes = ['/settings', '/billing']
-  //       const shouldSkipOnboarding = skipOnboardingRoutes.some(route => pathname.startsWith(route))
-  //
-  //       if (!userData?.onboarding_completed && !shouldSkipOnboarding) {
-  //         return NextResponse.redirect(new URL('/onboarding', request.url))
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error('Error checking onboarding status:', error)
-  //   }
-  // }
-
-  // Prevent access to onboarding if already completed
-  // ONBOARDING DISABLED FOR LAUNCH - Redirect all onboarding attempts to dashboard
-  if (isOnboardingRoute && hasSession) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-  // if (isOnboardingRoute && hasSession) {
-  //   try {
-  //     const { data: { user } } = await supabase.auth.getUser()
-  //
-  //     if (user) {
-  //       const { data: userData } = await supabase
-  //         .from('users')
-  //         .select('onboarding_completed')
-  //         .eq('id', user.id)
-  //         .single()
-  //
-  //       if (userData?.onboarding_completed) {
-  //         return NextResponse.redirect(new URL('/dashboard', request.url))
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error('Error checking onboarding status:', error)
-  //   }
-  // }
-
-  return response
 }
 
 export const config = {

@@ -252,6 +252,110 @@ Format as JSON with detailed descriptions.`;
  */
 import { searchRecentCrimes, searchTrendingCases, formatResearchForClaude } from './perplexity-research.js';
 
+/**
+ * Dynamically detect what topics to research based on channel content
+ */
+function detectChannelResearchTopics(channels, config) {
+  // Collect all video titles to analyze content patterns
+  const recentVideoTitles = channels.flatMap(ch =>
+    (ch.recentVideos || []).map(v => v.title)
+  ).filter(Boolean);
+
+  const allText = [
+    ...recentVideoTitles,
+    config.description || '',
+    ...channels.map(ch => ch.description || '')
+  ].join(' ').toLowerCase();
+
+  // Comprehensive topic detection patterns
+  const topicPatterns = {
+    'true crime': {
+      keywords: ['murder', 'killer', 'crime', 'detective', 'investigation', 'case', 'criminal', 'death', 'victim'],
+      searchTopics: ['true crime cases', 'criminal investigations', 'murder cases'],
+      categories: ['true crime', 'criminal cases']
+    },
+    'financial fraud': {
+      keywords: ['fraud', 'scam', 'steal', 'heist', 'embezzle', 'money', 'million', 'billion', 'ponzi', 'scheme'],
+      searchTopics: ['fraud cases', 'financial scams', 'embezzlement'],
+      categories: ['financial fraud', 'white collar crime']
+    },
+    'technology': {
+      keywords: ['tech', 'ai', 'software', 'hack', 'cyber', 'startup', 'silicon valley', 'code', 'programming'],
+      searchTopics: ['tech industry news', 'technology breakthroughs', 'tech controversies'],
+      categories: ['technology', 'innovation']
+    },
+    'psychology': {
+      keywords: ['psychology', 'mental', 'brain', 'behavior', 'cognitive', 'therapy', 'mindset', 'emotion'],
+      searchTopics: ['psychology research', 'mental health breakthroughs', 'behavioral science'],
+      categories: ['psychology', 'mental health']
+    },
+    'business': {
+      keywords: ['business', 'entrepreneur', 'startup', 'ceo', 'company', 'corporate', 'economy', 'market'],
+      searchTopics: ['business news', 'corporate scandals', 'startup stories'],
+      categories: ['business', 'entrepreneurship']
+    },
+    'science': {
+      keywords: ['science', 'research', 'discovery', 'experiment', 'study', 'scientist', 'breakthrough'],
+      searchTopics: ['scientific discoveries', 'research breakthroughs', 'science news'],
+      categories: ['science', 'research']
+    },
+    'history': {
+      keywords: ['history', 'historical', 'ancient', 'war', 'battle', 'empire', 'civilization'],
+      searchTopics: ['historical events', 'historical mysteries', 'history documentaries'],
+      categories: ['history', 'historical events']
+    },
+    'sports': {
+      keywords: ['sport', 'athlete', 'game', 'championship', 'team', 'player', 'coach'],
+      searchTopics: ['sports controversies', 'athletic achievements', 'sports scandals'],
+      categories: ['sports', 'athletics']
+    },
+    'politics': {
+      keywords: ['politic', 'government', 'election', 'vote', 'senate', 'congress', 'law'],
+      searchTopics: ['political events', 'government scandals', 'policy changes'],
+      categories: ['politics', 'government']
+    },
+    'entertainment': {
+      keywords: ['celebrity', 'hollywood', 'movie', 'actor', 'film', 'entertainment', 'fame'],
+      searchTopics: ['entertainment news', 'celebrity stories', 'hollywood scandals'],
+      categories: ['entertainment', 'celebrities']
+    }
+  };
+
+  // Score each topic
+  const scores = {};
+  for (const [topic, topicConfig] of Object.entries(topicPatterns)) {
+    const matchCount = topicConfig.keywords.filter(kw => allText.includes(kw)).length;
+    scores[topic] = matchCount;
+  }
+
+  // Find best match
+  let bestTopic = 'general interest';
+  let bestScore = 0;
+
+  for (const [topic, score] of Object.entries(scores)) {
+    if (score > bestScore) {
+      bestScore = score;
+      bestTopic = topic;
+    }
+  }
+
+  // Get the search configuration for the detected topic
+  const topicConfig = topicPatterns[bestTopic] || {
+    searchTopics: ['trending news', 'viral stories', 'interesting events'],
+    categories: ['general', 'news']
+  };
+
+  console.log(`🎯 Detected channel topic: ${bestTopic} (score: ${bestScore})`);
+  console.log(`🔍 Will search for: ${topicConfig.searchTopics[0]}`);
+
+  return {
+    detectedTopic: bestTopic,
+    searchTopic: topicConfig.searchTopics[0],
+    category: topicConfig.categories[0],
+    confidence: bestScore
+  };
+}
+
 export async function generateRemixContentIdeas(channels, config, analysis, useFactualContent = true) {
   try {
     // Extract actual content themes from recent videos
@@ -267,14 +371,19 @@ export async function generateRemixContentIdeas(channels, config, analysis, useF
     if (useFactualContent && process.env.PERPLEXITY_API_KEY) {
       console.log('🔍 Researching real events for content ideas...');
 
+      // Dynamically detect what to search for
+      const researchConfig = detectChannelResearchTopics(channels, config);
+
       try {
         const [recentCases, trendingCases] = await Promise.all([
-          searchRecentCrimes('fraud scams', {
-            category: 'financial fraud',
+          searchRecentCrimes(researchConfig.searchTopic, {
+            category: researchConfig.category,
             dateRange: 'past 2 years',
             maxResults: 10
           }),
           searchTrendingCases({
+            topic: researchConfig.searchTopic,
+            category: researchConfig.category,
             timeframe: 'past 3 months',
             minViralScore: 70
           })
@@ -369,21 +478,24 @@ Return ONLY the JSON array, nothing else.`;
     } catch (e) {
       console.log('Failed direct JSON parse, trying to extract from markdown...');
       const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
-      if (jsonMatch) {
-        try {
-          ideas = JSON.parse(jsonMatch[1]);
-        } catch (e2) {
-          console.error('Failed to parse JSON from markdown:', e2);
-          ideas = [];
-        }
-      } else {
+      let jsonText = jsonMatch ? jsonMatch[1] : content;
+
+      // Apply comprehensive JSON repairs
+      try {
+        jsonText = repairComplexJSON(jsonText);
+        ideas = JSON.parse(jsonText);
+        console.log('✅ Successfully parsed after JSON repair');
+      } catch (e2) {
+        console.error('Failed to parse JSON from markdown:', e2.message);
         // Try to find array pattern
         const arrayMatch = content.match(/\[[\s\S]*\]/);
         if (arrayMatch) {
           try {
-            ideas = JSON.parse(arrayMatch[0]);
+            const repairedArray = repairComplexJSON(arrayMatch[0]);
+            ideas = JSON.parse(repairedArray);
+            console.log('✅ Successfully parsed array after repair');
           } catch (e3) {
-            console.error('Failed to parse array:', e3);
+            console.error('Failed to parse array:', e3.message);
             ideas = [];
           }
         } else {
@@ -515,41 +627,73 @@ Provide specific, actionable insights formatted as JSON.`;
  * Parse text response into structured data
  */
 /**
- * Comprehensive JSON repair function
+ * Comprehensive JSON repair function - handles complex nested structures
  */
-function repairJSON(jsonText) {
+function repairComplexJSON(jsonText) {
   let fixed = jsonText.trim();
 
-  // Remove empty keys (critical fix)
+  console.log('🔧 Attempting JSON repair...');
+
+  // Step 1: Remove markdown code block markers if present
+  fixed = fixed.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '');
+
+  // Step 2: Remove empty keys (critical fix)
   fixed = fixed.replace(/,?\s*""\s*:\s*"[^"]*"/g, '');
   fixed = fixed.replace(/,?\s*""\s*:\s*\{[^}]*\}/g, '');
   fixed = fixed.replace(/,?\s*""\s*:\s*\[[^\]]*\]/g, '');
 
-  // Fix unescaped quotes in string values
-  fixed = fixed.replace(
-    /"([^":\\,\[\]{}]+)":\s*"([^"]*)"/g,
-    (match, key, value) => {
-      // Don't double-escape already escaped quotes
-      if (value.includes('\\"')) return match;
-      // Escape any unescaped quotes in the value
-      let fixedValue = value.replace(/(?<!\\)"/g, '\\"');
-      return `"${key}": "${fixedValue}"`;
-    }
-  );
+  // Step 3: Fix unescaped quotes in string values (more aggressive)
+  // This is tricky - we need to be careful not to break already-valid JSON
+  const lines = fixed.split('\n');
+  const repairedLines = lines.map(line => {
+    // Match lines with key-value pairs
+    const kvMatch = line.match(/^(\s*)"([^"]+)":\s*"(.*)"\s*,?\s*$/);
+    if (kvMatch) {
+      const indent = kvMatch[1];
+      const key = kvMatch[2];
+      const value = kvMatch[3];
+      const hasComma = line.trim().endsWith(',');
 
-  // Remove trailing commas
+      // Count unescaped quotes in value
+      let fixedValue = value;
+      // Only escape quotes that aren't already escaped
+      fixedValue = fixedValue.replace(/(?<!\\)"/g, '\\"');
+
+      return `${indent}"${key}": "${fixedValue}"${hasComma ? ',' : ''}`;
+    }
+    return line;
+  });
+  fixed = repairedLines.join('\n');
+
+  // Step 4: Remove trailing commas before closing brackets/braces
   fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
 
-  // Add missing commas between properties
+  // Step 5: Add missing commas between properties
   fixed = fixed.replace(/([}\]])(\s*)("[^"]+":)/g, '$1,$2$3');
   fixed = fixed.replace(/("|\d|true|false|null)(\s+)("[^"]+":)/g, '$1,$2$3');
 
-  // Clean up double commas created by removing empty keys
+  // Step 6: Clean up double commas created by previous operations
   fixed = fixed.replace(/,\s*,/g, ',');
-  // Remove leading commas after opening braces
-  fixed = fixed.replace(/\{\s*,/g, '{');
 
+  // Step 7: Remove leading commas after opening braces/brackets
+  fixed = fixed.replace(/\{\s*,/g, '{');
+  fixed = fixed.replace(/\[\s*,/g, '[');
+
+  // Step 8: Fix missing quotes around property names
+  fixed = fixed.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
+
+  // Step 9: Ensure proper spacing
+  fixed = fixed.trim();
+
+  console.log('✅ JSON repair complete');
   return fixed;
+}
+
+/**
+ * Original JSON repair function (kept for backwards compatibility)
+ */
+function repairJSON(jsonText) {
+  return repairComplexJSON(jsonText);
 }
 
 function parseTextResponse(text) {

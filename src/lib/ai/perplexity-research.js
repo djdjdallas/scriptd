@@ -257,7 +257,9 @@ export async function getEventDetails(eventName, options = {}) {
 export async function searchTrendingCases(options = {}) {
   const {
     timeframe = 'past month',
-    minViralScore = 70
+    minViralScore = 70,
+    topic = 'newsworthy events',
+    category = 'general news'
   } = options;
 
   try {
@@ -272,7 +274,7 @@ export async function searchTrendingCases(options = {}) {
         messages: [
           {
             role: 'user',
-            content: `Find trending fraud/scam cases from the ${timeframe} that are getting significant media attention.
+            content: `Find trending ${topic} related to ${category} from the ${timeframe} that are getting significant media attention.
 
             For each case, rate its "viral potential" (0-100) based on:
             - How shocking/unusual it is

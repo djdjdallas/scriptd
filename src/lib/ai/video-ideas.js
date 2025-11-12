@@ -84,17 +84,30 @@ export async function generateFactualVideoIdeas(channelData, recentVideos, audie
 function determineContentFocus(recentVideos, niche) {
   const titles = recentVideos.slice(0, 10).map(v => v.snippet?.title?.toLowerCase() || '').join(' ');
 
-  // Analyze common themes
+  // Comprehensive category analysis (not just fraud!)
   const categories = {
-    'financial fraud': ['money', 'bank', 'fraud', 'million', 'billion', 'steal', 'scam'],
-    'crypto scams': ['crypto', 'bitcoin', 'nft', 'blockchain', 'ethereum'],
-    'tech crimes': ['hack', 'data', 'breach', 'cyber', 'online'],
-    'corporate fraud': ['ceo', 'company', 'corporation', 'business'],
-    'identity theft': ['identity', 'fake', 'impersonat'],
-    'romance scams': ['dating', 'romance', 'catfish', 'love']
+    'financial fraud': ['money', 'bank', 'fraud', 'million', 'billion', 'steal', 'scam', 'heist', 'embezzle'],
+    'crypto scams': ['crypto', 'bitcoin', 'nft', 'blockchain', 'ethereum', 'defi', 'wallet'],
+    'tech crimes': ['hack', 'data', 'breach', 'cyber', 'online', 'phishing', 'ransomware'],
+    'corporate fraud': ['ceo', 'company', 'corporation', 'business', 'executive', 'corporate'],
+    'identity theft': ['identity', 'fake', 'impersonat', 'stolen identity'],
+    'romance scams': ['dating', 'romance', 'catfish', 'love', 'relationship scam'],
+    'psychology': ['psychology', 'mental', 'brain', 'behavior', 'therapy', 'cognitive', 'mindset'],
+    'self improvement': ['improve', 'productivity', 'habits', 'motivation', 'success', 'growth'],
+    'technology': ['tech', 'ai', 'software', 'innovation', 'gadget', 'startup', 'silicon valley'],
+    'science': ['science', 'research', 'discovery', 'experiment', 'study', 'scientist'],
+    'business': ['entrepreneur', 'startup', 'marketing', 'sales', 'strategy', 'business model'],
+    'true crime': ['murder', 'killer', 'crime', 'detective', 'investigation', 'serial', 'victim'],
+    'history': ['history', 'historical', 'ancient', 'war', 'empire', 'civilization'],
+    'sports': ['sport', 'athlete', 'game', 'championship', 'team', 'player'],
+    'entertainment': ['celebrity', 'hollywood', 'movie', 'actor', 'film', 'entertainment'],
+    'gaming': ['game', 'gaming', 'esports', 'gamer', 'gameplay', 'console'],
+    'cooking': ['cook', 'recipe', 'food', 'chef', 'kitchen', 'meal'],
+    'travel': ['travel', 'trip', 'destination', 'explore', 'adventure', 'tourist'],
+    'fitness': ['fitness', 'workout', 'gym', 'exercise', 'health', 'training']
   };
 
-  let bestCategory = 'financial fraud';
+  let bestCategory = 'general interest';
   let highestScore = 0;
 
   for (const [category, keywords] of Object.entries(categories)) {
@@ -105,8 +118,13 @@ function determineContentFocus(recentVideos, niche) {
     }
   }
 
+  // If no strong match, use niche or default to general
+  if (highestScore === 0 && niche) {
+    bestCategory = niche;
+  }
+
   return {
-    topic: niche || 'fraud and scams',
+    topic: niche || bestCategory,
     category: bestCategory
   };
 }
