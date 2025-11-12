@@ -9,7 +9,6 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
-  Target,
   TrendingUp,
   DollarSign,
   Users,
