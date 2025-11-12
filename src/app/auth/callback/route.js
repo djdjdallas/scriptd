@@ -19,8 +19,9 @@ export async function GET(request) {
         .single()
 
       // Determine redirect URL
-      let redirectUrl = '/dashboard'
-      
+      // ONBOARDING DISABLED FOR LAUNCH - Always go to dashboard
+      let redirectUrl = next || '/dashboard'
+
       if (!userData) {
         // Brand new user - create user record
         await supabase
@@ -30,9 +31,10 @@ export async function GET(request) {
             email: data.user.email,
             name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
             avatar_url: data.user.user_metadata?.avatar_url,
-            onboarding_completed: false,
-            onboarding_step: 0,
-            onboarding_started_at: new Date().toISOString()
+            onboarding_completed: true, // Skip onboarding for launch
+            onboarding_step: 7, // Mark as completed
+            onboarding_started_at: new Date().toISOString(),
+            onboarding_completed_at: new Date().toISOString()
           })
 
         // Also create profile record
@@ -44,23 +46,30 @@ export async function GET(request) {
             avatar_url: data.user.user_metadata?.avatar_url
           })
 
-        // Log onboarding start event
-        await supabase
-          .from('onboarding_analytics')
-          .insert({
-            user_id: data.user.id,
-            event_type: 'started',
-            metadata: {
-              auth_provider: data.user.app_metadata?.provider || 'email',
-              referrer: request.headers.get('referer')
-            }
-          })
+        // Log onboarding skipped event (optional)
+        try {
+          await supabase
+            .from('onboarding_analytics')
+            .insert({
+              user_id: data.user.id,
+              event_type: 'abandoned',
+              metadata: {
+                auth_provider: data.user.app_metadata?.provider || 'email',
+                referrer: request.headers.get('referer'),
+                reason: 'onboarding_disabled_for_launch'
+              }
+            })
+        } catch (e) {
+          // Ignore analytics errors
+        }
 
-        redirectUrl = '/onboarding'
-      } else if (!userData.onboarding_completed) {
-        // Existing user who hasn't completed onboarding
-        redirectUrl = '/onboarding'
-      } else if (next) {
+        // redirectUrl = '/onboarding'  // DISABLED
+      }
+      // else if (!userData.onboarding_completed) {
+      //   // Existing user who hasn't completed onboarding
+      //   redirectUrl = '/onboarding'  // DISABLED
+      // }
+      else if (next) {
         // User has completed onboarding, redirect to requested page
         redirectUrl = next
       }

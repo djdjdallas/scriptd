@@ -84,75 +84,81 @@ export async function middleware(request) {
 
   // Redirect authenticated users away from auth pages
   if (isAuthRoute && hasSession) {
+    // ONBOARDING DISABLED FOR LAUNCH - Skip onboarding checks
     // Check if user needs onboarding
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (user) {
-        // Get user's onboarding status
-        const { data: userData } = await supabase
-          .from('users')
-          .select('onboarding_completed')
-          .eq('id', user.id)
-          .single()
-
-        // Redirect to onboarding if not completed
-        if (!userData?.onboarding_completed) {
-          return NextResponse.redirect(new URL('/onboarding', request.url))
-        }
-      }
-    } catch (error) {
-      console.error('Error checking onboarding status:', error)
-    }
+    // try {
+    //   const { data: { user } } = await supabase.auth.getUser()
+    //
+    //   if (user) {
+    //     // Get user's onboarding status
+    //     const { data: userData } = await supabase
+    //       .from('users')
+    //       .select('onboarding_completed')
+    //       .eq('id', user.id)
+    //       .single()
+    //
+    //     // Redirect to onboarding if not completed
+    //     if (!userData?.onboarding_completed) {
+    //       return NextResponse.redirect(new URL('/onboarding', request.url))
+    //     }
+    //   }
+    // } catch (error) {
+    //   console.error('Error checking onboarding status:', error)
+    // }
 
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   // Check onboarding status for protected routes
-  if (isProtectedRoute && hasSession && !isOnboardingRoute) {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (user) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('onboarding_completed')
-          .eq('id', user.id)
-          .single()
-
-        // Redirect to onboarding if not completed (except for certain routes)
-        const skipOnboardingRoutes = ['/settings', '/billing']
-        const shouldSkipOnboarding = skipOnboardingRoutes.some(route => pathname.startsWith(route))
-        
-        if (!userData?.onboarding_completed && !shouldSkipOnboarding) {
-          return NextResponse.redirect(new URL('/onboarding', request.url))
-        }
-      }
-    } catch (error) {
-      console.error('Error checking onboarding status:', error)
-    }
-  }
+  // ONBOARDING DISABLED FOR LAUNCH - Skip onboarding checks
+  // if (isProtectedRoute && hasSession && !isOnboardingRoute) {
+  //   try {
+  //     const { data: { user } } = await supabase.auth.getUser()
+  //
+  //     if (user) {
+  //       const { data: userData } = await supabase
+  //         .from('users')
+  //         .select('onboarding_completed')
+  //         .eq('id', user.id)
+  //         .single()
+  //
+  //       // Redirect to onboarding if not completed (except for certain routes)
+  //       const skipOnboardingRoutes = ['/settings', '/billing']
+  //       const shouldSkipOnboarding = skipOnboardingRoutes.some(route => pathname.startsWith(route))
+  //
+  //       if (!userData?.onboarding_completed && !shouldSkipOnboarding) {
+  //         return NextResponse.redirect(new URL('/onboarding', request.url))
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error checking onboarding status:', error)
+  //   }
+  // }
 
   // Prevent access to onboarding if already completed
+  // ONBOARDING DISABLED FOR LAUNCH - Redirect all onboarding attempts to dashboard
   if (isOnboardingRoute && hasSession) {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (user) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('onboarding_completed')
-          .eq('id', user.id)
-          .single()
-
-        if (userData?.onboarding_completed) {
-          return NextResponse.redirect(new URL('/dashboard', request.url))
-        }
-      }
-    } catch (error) {
-      console.error('Error checking onboarding status:', error)
-    }
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
+  // if (isOnboardingRoute && hasSession) {
+  //   try {
+  //     const { data: { user } } = await supabase.auth.getUser()
+  //
+  //     if (user) {
+  //       const { data: userData } = await supabase
+  //         .from('users')
+  //         .select('onboarding_completed')
+  //         .eq('id', user.id)
+  //         .single()
+  //
+  //       if (userData?.onboarding_completed) {
+  //         return NextResponse.redirect(new URL('/dashboard', request.url))
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error checking onboarding status:', error)
+  //   }
+  // }
 
   return response
 }
