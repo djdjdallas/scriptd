@@ -162,7 +162,21 @@ export function ChannelAnalyzer({
 
       setProgress(100);
       setAnalysisData(data);
-      toast.success("Channel analysis complete!");
+
+      // Show success with summary info
+      if (data.summary) {
+        toast.success(
+          `Analysis complete! Analyzed ${data.summary.videosAnalyzed} videos, generated ${data.summary.contentIdeasGenerated} content ideas.`,
+          { duration: 5000 }
+        );
+      } else {
+        toast.success("Channel analysis complete!");
+      }
+
+      // Reload page after short delay to show updated channel data
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (error) {
       console.error("Analysis error:", error);
       setError(error.message);
@@ -287,8 +301,45 @@ export function ChannelAnalyzer({
     );
   }
 
-  const { analytics, persona, insights, audienceAnalysis, contentIdeas } =
+  // Handle new lightweight response format (after API optimization)
+  const { analytics, persona, insights, audienceAnalysis, contentIdeas, summary } =
     analysisData || {};
+
+  // If we got a lightweight response with summary, show completion state
+  if (analysisData && summary && !analytics) {
+    return (
+      <div className="glass-card p-8">
+        <div className="text-center space-y-6">
+          <div className="flex items-center justify-center mb-4">
+            <div className="h-20 w-20 rounded-full bg-green-500/20 flex items-center justify-center">
+              <Sparkles className="h-10 w-10 text-green-400" />
+            </div>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Analysis Complete!
+            </h2>
+            <p className="text-gray-400 max-w-md mx-auto">
+              {analysisData.message}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 max-w-md mx-auto text-left">
+            <div className="glass-card p-4">
+              <p className="text-gray-400 text-sm">Videos Analyzed</p>
+              <p className="text-2xl font-bold text-white">{summary.videosAnalyzed}</p>
+            </div>
+            <div className="glass-card p-4">
+              <p className="text-gray-400 text-sm">Content Ideas</p>
+              <p className="text-2xl font-bold text-white">{summary.contentIdeasGenerated}</p>
+            </div>
+          </div>
+          <p className="text-sm text-gray-400">
+            Reloading to show updated channel data...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const formatNumber = (num) => {
     // Handle null, undefined, or non-numeric values

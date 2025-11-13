@@ -760,28 +760,26 @@ export async function POST(request, { params }) {
 
     console.log('✅ Comprehensive analysis completed and saved');
 
-    // Return comprehensive response with DEEP data
+    // Return lightweight response (full data is already saved to database)
+    // This prevents response payload size issues on Vercel
     return NextResponse.json({
-      analytics: formattedAnalytics,
-      persona: hasDeepAnalysis
-        ? (audienceData.psychographic_analysis?.persona || '')
-        : (analysis.audienceProfile?.persona || ''),
-      insights: comprehensiveInsights,
-      // Return deep audience analysis if available
-      audienceAnalysis: hasDeepAnalysis ? audienceData : (analysis.audienceProfile || {}),
-      contentIdeas: analysis.contentRecommendations || [],
-      voiceProfile: voiceProfileResult.success ? voiceProfileResult.voiceProfile : {},
-      channelIdentity: analysis.channelIdentity || {},
-      growthStrategy: analysis.growthStrategy || {},
-      competitivePositioning: analysis.competitivePositioning || {},
-      actionPlan: analysis.actionPlan || {},
+      success: true,
+      channelId: id,
       analysisId: savedAnalysis?.id,
       isComprehensive: true,
       hasDeepAnalysis: hasDeepAnalysis,
       basedOnRealData: voiceProfileResult.basedOnRealData || false,
       message: hasDeepAnalysis
         ? 'Comprehensive AI analysis with deep audience insights completed successfully'
-        : 'Comprehensive AI analysis completed successfully'
+        : 'Comprehensive AI analysis completed successfully',
+      // Include summary stats for UI feedback
+      summary: {
+        videosAnalyzed: videos.length,
+        contentIdeasGenerated: (analysis.contentRecommendations || []).length,
+        hasVoiceProfile: voiceProfileResult.success,
+        hasAudienceInsights: hasDeepAnalysis,
+        analysisDate: new Date().toISOString()
+      }
     });
 
   } catch (error) {
