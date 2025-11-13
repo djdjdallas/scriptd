@@ -176,10 +176,44 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
               solutionLength: suggestions.solution?.length
             });
 
+            // Deduct credits for frame generation
+            const creditsUsed = 1;
+            const { data: currentUser } = await supabase
+              .from('users')
+              .select('credits, bypass_credits')
+              .eq('id', user.id)
+              .single();
+
+            // Only deduct if user doesn't have bypass_credits enabled
+            if (currentUser && !currentUser.bypass_credits && currentUser.credits > 0) {
+              await supabase
+                .from('users')
+                .update({
+                  credits: currentUser.credits - creditsUsed
+                })
+                .eq('id', user.id);
+
+              // Log transaction
+              await supabase
+                .from('credits_transactions')
+                .insert({
+                  user_id: user.id,
+                  amount: -creditsUsed,
+                  type: 'usage',
+                  description: `Frame generation for: ${topic}`,
+                  metadata: {
+                    workflowId,
+                    framework: framework || 'problem-solution',
+                    sourcesUsed: sources.length
+                  }
+                });
+            }
+
             return NextResponse.json({
               suggestions,
               framework: framework || 'problem-solution',
-              sourcesUsed: sources.length
+              sourcesUsed: sources.length,
+              creditsUsed
             });
           } catch (parseError) {
             console.error('Frame parsing error:', parseError);
@@ -243,10 +277,44 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
     const selectedFramework = framework || 'problem-solution';
     const template = frameworkTemplates[selectedFramework] || frameworkTemplates['problem-solution'];
 
+    // Deduct credits for frame generation (even for template fallback)
+    const creditsUsed = 1;
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('credits, bypass_credits')
+      .eq('id', user.id)
+      .single();
+
+    // Only deduct if user doesn't have bypass_credits enabled
+    if (currentUser && !currentUser.bypass_credits && currentUser.credits > 0) {
+      await supabase
+        .from('users')
+        .update({
+          credits: currentUser.credits - creditsUsed
+        })
+        .eq('id', user.id);
+
+      // Log transaction
+      await supabase
+        .from('credits_transactions')
+        .insert({
+          user_id: user.id,
+          amount: -creditsUsed,
+          type: 'usage',
+          description: `Frame generation (template) for: ${topic}`,
+          metadata: {
+            workflowId,
+            framework: selectedFramework,
+            isTemplate: true
+          }
+        });
+    }
+
     return NextResponse.json({
       suggestions: template,
       framework: selectedFramework,
-      message: 'Using template suggestions. Configure Claude API for AI-powered suggestions.'
+      message: 'Using template suggestions. Configure Claude API for AI-powered suggestions.',
+      creditsUsed
     });
 
   } catch (error) {

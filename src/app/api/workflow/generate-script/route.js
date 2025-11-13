@@ -104,7 +104,7 @@ export async function POST(request) {
       user = authData.user;
     }
 
-    const {
+    let {
       type,
       title,
       topic,
@@ -121,6 +121,75 @@ export async function POST(request) {
       targetDuration, // Add targetDuration from summary
       workflowId // Add workflow ID to link the script
     } = await request.json();
+
+    // ⚠️ CRITICAL FIX: Format JSON audience data to prevent token limit errors
+    // If targetAudience is a large JSON object, convert it to token-efficient text format
+    if (targetAudience && typeof targetAudience === 'string') {
+      try {
+        // Try to parse if it looks like JSON
+        if (targetAudience.trim().startsWith('{')) {
+          const audienceObj = JSON.parse(targetAudience);
+
+          // Check if it's a comprehensive audience analysis object
+          if (audienceObj && (audienceObj.demographic_profile || audienceObj.psychographic_analysis)) {
+            console.log('⚠️ Detected large JSON audience object, formatting to text...');
+            console.log('Original size:', targetAudience.length, 'characters');
+
+            // Format to compact text representation
+            const sections = [];
+
+            // Demographics
+            if (audienceObj.demographic_profile) {
+              const demo = audienceObj.demographic_profile;
+              sections.push('DEMOGRAPHICS:');
+              if (demo.age_distribution) {
+                sections.push(`Age: ${Object.entries(demo.age_distribution).map(([k,v]) => `${k}=${v}`).join(', ')}`);
+              }
+              if (demo.gender_distribution) {
+                sections.push(`Gender: ${Object.entries(demo.gender_distribution).map(([k,v]) => `${k}=${v}`).join(', ')}`);
+              }
+              if (demo.geographic_distribution) {
+                sections.push(`Location: ${Object.entries(demo.geographic_distribution).map(([k,v]) => `${k}=${v}`).join(', ')}`);
+              }
+            }
+
+            // Psychographics
+            if (audienceObj.psychographic_analysis) {
+              const psycho = audienceObj.psychographic_analysis;
+              sections.push('\nPSYCHOGRAPHICS:');
+              if (psycho.core_values && psycho.core_values.length > 0) {
+                sections.push(`Values: ${psycho.core_values.join(', ')}`);
+              }
+              if (psycho.pain_points && psycho.pain_points.length > 0) {
+                sections.push(`Pain Points: ${psycho.pain_points.join(', ')}`);
+              }
+              if (psycho.aspirations && psycho.aspirations.length > 0) {
+                sections.push(`Aspirations: ${psycho.aspirations.join(', ')}`);
+              }
+            }
+
+            // Engagement drivers
+            if (audienceObj.engagement_drivers) {
+              const engage = audienceObj.engagement_drivers;
+              sections.push('\nENGAGEMENT:');
+              if (engage.comment_triggers && engage.comment_triggers.length > 0) {
+                sections.push(`Comment Triggers: ${engage.comment_triggers.join('; ')}`);
+              }
+              if (engage.sharing_motivators && engage.sharing_motivators.length > 0) {
+                sections.push(`Share Motivators: ${engage.sharing_motivators.join('; ')}`);
+              }
+            }
+
+            targetAudience = sections.join('\n');
+            console.log('✅ Formatted size:', targetAudience.length, 'characters');
+            console.log('Reduction:', Math.round((1 - targetAudience.length / JSON.stringify(audienceObj).length) * 100), '%');
+          }
+        }
+      } catch (e) {
+        // Not JSON or parsing failed, use as-is
+        console.log('Target audience is not JSON, using as-is');
+      }
+    }
 
     // Debug: Log sponsor data received
     console.log('📢 === SPONSOR DATA RECEIVED IN API ===');

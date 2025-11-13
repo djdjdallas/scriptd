@@ -108,29 +108,19 @@ export default function DashboardPage() {
         }
         scripts = scriptsResponse.data || [];
         
-        // Fetch user credits using the same method as sidebar
-        // First try RPC function for accurate balance
-        const { data: creditBalance, error: rpcError } = await supabase
-          .rpc('get_available_credit_balance', { p_user_id: user.id });
-        
-        let credits = 0;
-        
-        if (rpcError) {
-          console.error('[Dashboard] Error fetching credits via RPC:', rpcError);
-          // Fallback to direct table query
-          const userResponse = await supabase
-            .from('users')
-            .select('credits')
-            .eq('id', user.id)
-            .single();
-          
-          const userData = userResponse.data || { credits: 0 };
-          credits = userData.credits;
-          console.log('[Dashboard] Credits from users table:', credits);
-        } else {
-          credits = creditBalance || 0;
-          console.log('[Dashboard] Credits from RPC function:', credits);
+        // Fetch user credits directly from users table (same as sidebar)
+        const { data: userData, error: creditsError } = await supabase
+          .from('users')
+          .select('credits, bypass_credits')
+          .eq('id', user.id)
+          .single();
+
+        if (creditsError) {
+          console.error('[Dashboard] Error fetching credits:', creditsError);
         }
+
+        const credits = userData?.credits || 0;
+        console.log('[Dashboard] User credits:', credits, 'Bypass:', userData?.bypass_credits);
 
         // Calculate total views (use metadata if available, otherwise 0)
         const totalViews = scripts.reduce((sum, script) => {

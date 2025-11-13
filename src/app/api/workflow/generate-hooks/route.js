@@ -201,20 +201,36 @@ Return ONLY valid JSON array of exactly 8 hook objects (no markdown, no code blo
 
     const creditsUsed = 1;
 
-    // Update user credits
-    const { data: currentCredits } = await supabase
-      .from('user_credits')
-      .select('credits_used')
-      .eq('user_id', user.id)
+    // Update user credits (deduct from users.credits)
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('credits, bypass_credits')
+      .eq('id', user.id)
       .single();
 
-    // Update with incremented value
-    await supabase
-      .from('user_credits')
-      .update({
-        credits_used: (currentCredits?.credits_used || 0) + creditsUsed
-      })
-      .eq('user_id', user.id);
+    // Only deduct if user doesn't have bypass_credits enabled
+    if (currentUser && !currentUser.bypass_credits && currentUser.credits > 0) {
+      await supabase
+        .from('users')
+        .update({
+          credits: currentUser.credits - creditsUsed
+        })
+        .eq('id', user.id);
+
+      // Log transaction
+      await supabase
+        .from('credits_transactions')
+        .insert({
+          user_id: user.id,
+          amount: -creditsUsed,
+          type: 'usage',
+          description: `Hook generation for: ${title}`,
+          metadata: {
+            workflowId,
+            sourcesUsed: sources.length
+          }
+        });
+    }
 
     return NextResponse.json({
       hooks,

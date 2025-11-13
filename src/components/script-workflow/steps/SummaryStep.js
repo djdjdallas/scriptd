@@ -85,7 +85,30 @@ export default function SummaryStep() {
         setTopic(workflowData.summary.topic);
       }
       if (workflowData.summary.targetAudience && !targetAudience) {
-        setTargetAudience(workflowData.summary.targetAudience);
+        // Check if targetAudience is a JSON object that needs formatting
+        let formattedAudience = workflowData.summary.targetAudience;
+
+        // Try to detect if it's a JSON string or object
+        try {
+          let audienceObj;
+          if (typeof formattedAudience === 'string' && formattedAudience.startsWith('{')) {
+            audienceObj = JSON.parse(formattedAudience);
+          } else if (typeof formattedAudience === 'object' && formattedAudience !== null) {
+            audienceObj = formattedAudience;
+          }
+
+          // If it's an object with comprehensive audience structure, format it
+          if (audienceObj && (audienceObj.demographic_profile || audienceObj.psychographic_analysis)) {
+            console.log('[SummaryStep] Detected JSON audience object in workflowData, formatting it');
+            formattedAudience = createComprehensiveAudienceDescription(audienceObj);
+            console.log('[SummaryStep] Formatted audience length:', formattedAudience.length, 'chars');
+          }
+        } catch (e) {
+          // Not JSON, use as-is
+          console.log('[SummaryStep] Target audience is not JSON, using as-is');
+        }
+
+        setTargetAudience(formattedAudience);
       }
       if (workflowData.summary.audienceType && audienceType === 'preset') {
         setAudienceType(workflowData.summary.audienceType);

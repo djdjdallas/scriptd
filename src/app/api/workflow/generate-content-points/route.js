@@ -287,20 +287,38 @@ VALIDATION CHECKLIST:
       creditsUsed = 0; // No credits charged
     }
     
-    // Update user credits
-    const { data: currentCredits } = await supabase
-      .from('user_credits')
-      .select('credits_used')
-      .eq('user_id', user.id)
+    // Update user credits (deduct from users.credits)
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('credits, bypass_credits')
+      .eq('id', user.id)
       .single();
 
-    // Update with incremented value
-    await supabase
-      .from('user_credits')
-      .update({ 
-        credits_used: (currentCredits?.credits_used || 0) + creditsUsed
-      })
-      .eq('user_id', user.id);
+    // Only deduct if user doesn't have bypass_credits enabled and credits are being charged
+    if (creditsUsed > 0 && currentUser && !currentUser.bypass_credits && currentUser.credits > 0) {
+      await supabase
+        .from('users')
+        .update({
+          credits: currentUser.credits - creditsUsed
+        })
+        .eq('id', user.id);
+
+      // Log transaction
+      await supabase
+        .from('credits_transactions')
+        .insert({
+          user_id: user.id,
+          amount: -creditsUsed,
+          type: 'usage',
+          description: `Content points generation for: ${topic}`,
+          metadata: {
+            workflowId,
+            pointsCount: points?.length || 0,
+            targetDuration,
+            sourcesUsed: sources.length
+          }
+        });
+    }
 
     return NextResponse.json({
       points,
