@@ -103,9 +103,12 @@ Format your response as a structured JSON object.`;
 
     // Try to extract JSON from the response
     let analysis;
+    let parseMethod = 'direct';
+
     try {
       // First try direct parse
       analysis = JSON.parse(content);
+      console.log('✅ Direct JSON parse successful');
     } catch (e) {
       console.log('Initial parse failed, attempting JSON extraction and repair...');
 
@@ -117,18 +120,29 @@ Format your response as a structured JSON object.`;
       try {
         jsonText = repairJSON(jsonText);
         analysis = JSON.parse(jsonText);
+        parseMethod = 'repaired';
         console.log('✅ Successfully parsed after JSON repair');
       } catch (e2) {
-        console.error('JSON parse failed even after repair:', e2.message);
+        // Log compact error (no need for full error message)
+        console.log(`⚠️  JSON repair couldn't fix syntax error - using text fallback`);
+
         // Fallback: create structured data from text response
         analysis = parseTextResponse(content);
+        parseMethod = 'text-fallback';
+        console.log('✅ Text-based parsing complete - analysis data generated');
       }
+    }
+
+    // Add metadata about parsing method for debugging
+    if (analysis && typeof analysis === 'object') {
+      analysis._parseMethod = parseMethod;
     }
 
     return {
       success: true,
       analysis: analysis,
-      model: REMIX_MODEL
+      model: REMIX_MODEL,
+      parseMethod
     };
 
   } catch (error) {
@@ -596,22 +610,47 @@ Provide specific, actionable insights formatted as JSON.`;
     });
 
     const content = response.content[0].text;
-    
+
     let insights;
+    let parseMethod = 'direct';
+
     try {
+      // First try direct parse
       insights = JSON.parse(content);
+      console.log('✅ Direct JSON parse successful (audience insights)');
     } catch (e) {
+      console.log('Initial parse failed, attempting JSON extraction and repair (audience insights)...');
+
+      // Try to extract JSON from markdown code blocks
       const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
-      if (jsonMatch) {
-        insights = JSON.parse(jsonMatch[1]);
-      } else {
-        insights = { raw: content };
+      let jsonText = jsonMatch ? jsonMatch[1] : content;
+
+      // Apply comprehensive JSON repairs
+      try {
+        jsonText = repairJSON(jsonText);
+        insights = JSON.parse(jsonText);
+        parseMethod = 'repaired';
+        console.log('✅ Successfully parsed after JSON repair (audience insights)');
+      } catch (e2) {
+        // NEVER store raw content - parse it into structured data
+        console.log(`⚠️ JSON repair couldn't fix syntax error - using text fallback for audience insights`);
+
+        // Fallback: Parse text into structured audience data
+        insights = parseAudienceTextResponse(content);
+        parseMethod = 'text-fallback';
+        console.log('✅ Text-based parsing complete for audience insights');
       }
+    }
+
+    // Add metadata about parsing method
+    if (insights && typeof insights === 'object') {
+      insights._parseMethod = parseMethod;
     }
 
     return {
       success: true,
-      insights: insights
+      insights: insights,
+      parseMethod
     };
 
   } catch (error) {
@@ -732,6 +771,62 @@ function parseTextResponse(text) {
   });
 
   return analysis;
+}
+
+/**
+ * Parse audience insights from text response (fallback when JSON fails)
+ */
+function parseAudienceTextResponse(text) {
+  console.log('📝 Parsing audience insights from text...');
+
+  const sections = text.split(/\n\n+/);
+  const insights = {
+    demographic_profile: {},
+    psychographic_analysis: {},
+    audience_overlap: {},
+    content_consumption_patterns: {},
+    engagement_drivers: {},
+    monetization_potential: {},
+    _source: 'text-parser',
+    _note: 'Parsed from unstructured text response'
+  };
+
+  sections.forEach(section => {
+    const lower = section.toLowerCase();
+
+    if (lower.includes('demographic') || lower.includes('age') || lower.includes('gender')) {
+      // Extract demographic info
+      const lines = section.split('\n').filter(l => l.trim());
+      insights.demographic_profile = {
+        description: section,
+        keyPoints: lines.slice(0, 5).map(l => l.trim())
+      };
+    } else if (lower.includes('psychographic') || lower.includes('values') || lower.includes('lifestyle')) {
+      insights.psychographic_analysis = {
+        description: section,
+        keyTraits: section.match(/\b(value|believe|prefer|seek|want)\w*\s+[^.!?]+[.!?]/gi) || []
+      };
+    } else if (lower.includes('overlap') || lower.includes('common interest')) {
+      insights.audience_overlap = {
+        description: section,
+        commonInterests: section.match(/[-•]\s*([^:\n]+)/g) || []
+      };
+    } else if (lower.includes('consumption') || lower.includes('viewing') || lower.includes('watch')) {
+      insights.content_consumption_patterns = {
+        description: section
+      };
+    } else if (lower.includes('engagement') || lower.includes('comment') || lower.includes('share')) {
+      insights.engagement_drivers = {
+        description: section
+      };
+    } else if (lower.includes('monetization') || lower.includes('product') || lower.includes('price')) {
+      insights.monetization_potential = {
+        description: section
+      };
+    }
+  });
+
+  return insights;
 }
 
 /**

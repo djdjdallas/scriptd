@@ -616,7 +616,7 @@ export async function POST(request, { params }) {
       analysisMetadata: {
         videosAnalyzed: videos.length,
         analysisDate: new Date().toISOString(),
-        hasDeepAnalysis
+        hasDeepAnalysis: !!hasDeepAnalysis  // Convert to boolean
       }
     };
 

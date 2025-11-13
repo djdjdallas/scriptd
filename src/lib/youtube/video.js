@@ -111,6 +111,74 @@ async function saveTranscriptToCache(videoId, transcriptData) {
   }
 }
 
+/**
+ * Fetch transcript from Supadata.ai API (fallback when scraping fails)
+ * API Docs: https://docs.supadata.ai/youtube/get-transcript
+ */
+async function getTranscriptFromSupadata(videoId) {
+  const apiKey = process.env.SUPADATA_API_KEY;
+
+  if (!apiKey) {
+    console.log('⚠️ SUPADATA_API_KEY not configured - skipping API fallback');
+    return null;
+  }
+
+  try {
+    console.log(`🔄 Attempting Supadata.ai API fallback for ${videoId}...`);
+
+    const url = `https://api.supadata.ai/v1/youtube/transcript?videoId=${videoId}&text=false`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Supadata API error (${response.status}): ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    // Supadata returns: { content: [{text, offset, duration, lang}], lang, availableLangs }
+    if (!data.content || !Array.isArray(data.content)) {
+      throw new Error('Invalid Supadata API response format');
+    }
+
+    // Convert Supadata format to our format
+    const segments = data.content.map(chunk => ({
+      text: chunk.text,
+      offset: chunk.offset,
+      duration: chunk.duration
+    }));
+
+    const fullText = data.content
+      .map(chunk => chunk.text)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    console.log(`✅ Supadata API success: ${segments.length} segments, ${fullText.length} chars`);
+    console.log(`   Language: ${data.lang}, Available: ${data.availableLangs?.join(', ') || 'N/A'}`);
+
+    return {
+      segments,
+      fullText,
+      hasTranscript: true,
+      source: 'supadata-api',
+      language: data.lang,
+      availableLanguages: data.availableLangs || []
+    };
+
+  } catch (error) {
+    console.error(`❌ Supadata API fallback failed for ${videoId}:`, error.message);
+    return null;
+  }
+}
+
 export async function getVideoTranscript(videoId) {
   // Check in-memory cache first (fast)
   const cacheKey = `transcript-${videoId}`;
@@ -170,12 +238,25 @@ export async function getVideoTranscript(videoId) {
     }
 
     if (!transcript || transcript.length === 0) {
-      // Cache negative result (no transcript) to avoid repeated failures
+      // FALLBACK: Try Supadata.ai API before giving up
+      console.log(`⚠️ Scraping failed for ${videoId}, trying Supadata.ai API fallback...`);
+
+      const apiTranscript = await getTranscriptFromSupadata(videoId);
+
+      if (apiTranscript) {
+        // Success! Cache and return
+        setCache(cacheKey, apiTranscript);
+        await saveTranscriptToCache(videoId, apiTranscript);
+        return apiTranscript;
+      }
+
+      // Both scraping AND API failed - cache negative result
+      console.log(`❌ All methods failed for ${videoId} (scraping + API)`);
       const noTranscriptResult = {
         segments: [],
         fullText: '',
         hasTranscript: false,
-        error: lastError?.message || 'No transcript found'
+        error: lastError?.message || 'No transcript found (tried scraping + API)'
       };
 
       await saveTranscriptToCache(videoId, noTranscriptResult);
@@ -193,11 +274,14 @@ export async function getVideoTranscript(videoId) {
       segments: transcript,
       fullText,
       hasTranscript: true,
+      source: 'youtube-scraping' // Track that this came from scraping
     };
 
     // Save to both caches
     setCache(cacheKey, result); // Memory cache
     await saveTranscriptToCache(videoId, result); // DB cache
+
+    console.log(`✅ Scraping success: ${transcript.length} segments, ${fullText.length} chars`);
 
     return result;
   } catch (error) {
