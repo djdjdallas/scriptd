@@ -236,7 +236,24 @@ export default function SummaryStep() {
           hooks: actualProfile.hooks || basicProfile?.hooks || '',
           transitions: actualProfile.transitions || basicProfile?.transitions || '',
           engagement: actualProfile.engagement || basicProfile?.engagement || '',
-          signature_phrases: actualProfile.signature_phrases || actualProfile.signaturePhrases || basicProfile?.signaturePhrases || []
+          signature_phrases: actualProfile.signature_phrases || actualProfile.signaturePhrases || basicProfile?.signaturePhrases || [],
+          // Include comprehensive voice profile fields
+          tone: actualProfile.tone || basicProfile?.tone || [],
+          style: actualProfile.style || basicProfile?.style || [],
+          pace: actualProfile.pace || basicProfile?.pace || 'moderate',
+          energy: actualProfile.energy || basicProfile?.energy || 'medium',
+          personality: actualProfile.personality || [],
+          linguisticFingerprints: actualProfile.linguisticFingerprints || {},
+          narrativeStructure: actualProfile.narrativeStructure || {},
+          emotionalDynamics: actualProfile.emotionalDynamics || {},
+          contentPositioning: actualProfile.contentPositioning || {},
+          culturalReferences: actualProfile.culturalReferences || {},
+          technicalPatterns: actualProfile.technicalPatterns || {},
+          engagementTechniques: actualProfile.engagementTechniques || {},
+          pacingDynamics: actualProfile.pacingDynamics || {},
+          implementationNotes: actualProfile.implementationNotes || {},
+          confidenceScores: actualProfile.confidenceScores || {},
+          performanceInsights: actualProfile.performanceInsights || {}
         };
 
         // Debug logging
@@ -246,6 +263,10 @@ export default function SummaryStep() {
           hasEnhancedProfile: !!profile.enhancedProfile,
           hasMetadata: !!profile.metadata,
           basedOnRealData: profile.basedOnRealData,
+          hasLinguisticFingerprints: !!profile.linguisticFingerprints && Object.keys(profile.linguisticFingerprints).length > 0,
+          hasNarrativeStructure: !!profile.narrativeStructure && Object.keys(profile.narrativeStructure).length > 0,
+          hasEmotionalDynamics: !!profile.emotionalDynamics && Object.keys(profile.emotionalDynamics).length > 0,
+          hasPerformanceInsights: !!profile.performanceInsights && Object.keys(profile.performanceInsights).length > 0
         });
 
         return profile;
@@ -290,43 +311,77 @@ export default function SummaryStep() {
     console.log('[SummaryStep] Channel selected:', channelId);
 
     if (channel) {
-      // Try to load rich audience analysis from channel's analytics_data
+      // Try to load latest analysis from channel_analyses table
       try {
-        console.log('[SummaryStep] Loading analytics_data for channel:', channelId);
+        console.log('[SummaryStep] Loading latest analysis from channel_analyses for channel:', channelId);
 
-        // Parse analytics_data if it's a string
-        let analyticsData = channel.analytics_data;
-        if (typeof analyticsData === 'string') {
-          try {
-            analyticsData = JSON.parse(analyticsData);
-            console.log('[SummaryStep] Parsed analytics_data');
-          } catch (e) {
-            console.error('[SummaryStep] Failed to parse analytics_data:', e);
-            analyticsData = null;
+        const { data: latestAnalysis, error: analysisError } = await supabase
+          .from('channel_analyses')
+          .select('audience_persona, analytics_data')
+          .eq('channel_id', channelId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (analysisError) {
+          console.log('[SummaryStep] No analysis found in channel_analyses:', analysisError);
+        } else if (latestAnalysis) {
+          console.log('[SummaryStep] Found latest analysis');
+
+          // Parse audience_persona if it's a string
+          let audiencePersona = latestAnalysis.audience_persona;
+          if (typeof audiencePersona === 'string') {
+            try {
+              audiencePersona = JSON.parse(audiencePersona);
+              console.log('[SummaryStep] Parsed audience_persona');
+            } catch (e) {
+              console.error('[SummaryStep] Failed to parse audience_persona:', e);
+              audiencePersona = null;
+            }
+          }
+
+          console.log('[SummaryStep] Audience persona structure:', {
+            hasData: !!audiencePersona,
+            hasDemographicProfile: !!audiencePersona?.demographic_profile,
+            hasPsychographicAnalysis: !!audiencePersona?.psychographic_analysis,
+            hasContentConsumption: !!audiencePersona?.content_consumption_patterns,
+            hasMonetization: !!audiencePersona?.monetization_potential,
+            parseMethod: audiencePersona?._parseMethod
+          });
+
+          // Check if we have rich audience analysis (new comprehensive structure)
+          if (audiencePersona && (audiencePersona.demographic_profile || audiencePersona.psychographic_analysis)) {
+            console.log('[SummaryStep] ✅ Loaded comprehensive audience analysis from channel_analyses');
+            setTargetAudience(JSON.stringify(audiencePersona));
+            setAudienceType("channel");
+            toast.success("Comprehensive audience analysis loaded from your channel");
+            return;
+          }
+
+          // OLD FORMAT: Try analytics_data.audience.insights.audience_analysis (backwards compatibility)
+          let analyticsData = latestAnalysis.analytics_data;
+          if (typeof analyticsData === 'string') {
+            try {
+              analyticsData = JSON.parse(analyticsData);
+            } catch (e) {
+              analyticsData = null;
+            }
+          }
+
+          if (analyticsData?.audience?.insights?.audience_analysis) {
+            console.log('[SummaryStep] ✅ Loaded audience analysis from analytics_data (old format)');
+            setTargetAudience(JSON.stringify(analyticsData.audience.insights.audience_analysis));
+            setAudienceType("channel");
+            toast.success("Audience analysis loaded from your channel");
+            return;
           }
         }
-
-        console.log('[SummaryStep] Analytics data:', {
-          hasData: !!analyticsData,
-          hasAudience: !!analyticsData?.audience,
-          hasInsights: !!analyticsData?.audience?.insights,
-          hasAudienceAnalysis: !!analyticsData?.audience?.insights?.audience_analysis
-        });
-
-        // Check if we have rich audience analysis
-        if (analyticsData?.audience?.insights?.audience_analysis) {
-          console.log('[SummaryStep] ✅ Loaded rich audience analysis from channel');
-          setTargetAudience(JSON.stringify(analyticsData.audience.insights.audience_analysis));
-          setAudienceType("channel");
-          toast.success("Rich audience analysis loaded from your channel");
-          return;
-        }
       } catch (error) {
-        console.error("[SummaryStep] Error loading audience analysis:", error);
+        console.error("[SummaryStep] Error loading analysis from channel_analyses:", error);
       }
 
-      // Fallback to simple audience_description
-      console.log('[SummaryStep] Falling back to simple audience_description');
+      // Fallback to simple audience_description from channels table
+      console.log('[SummaryStep] Falling back to simple audience_description from channels table');
       if (channel.audience_description) {
         setTargetAudience(channel.audience_description);
         setAudienceType("channel");
@@ -715,30 +770,67 @@ export default function SummaryStep() {
                         }
 
                         // Display rich audience data summary
-                        if (audienceData?.demographic_profile) {
+                        if (audienceData?.demographic_profile || audienceData?.psychographic_analysis) {
                           return (
                             <div className="text-sm text-gray-300 space-y-2">
-                              {audienceData.demographic_profile.age_distribution && (
+                              {audienceData.demographic_profile?.age_distribution && (
                                 <div>
                                   <span className="text-purple-300 font-medium">Demographics: </span>
-                                  Primary age {Object.entries(audienceData.demographic_profile.age_distribution)
-                                    .sort((a, b) => parseInt(b[1]) - parseInt(a[1]))[0]?.[0] || 'N/A'}
-                                  , {audienceData.demographic_profile.gender_distribution?.male}% male
+                                  {(() => {
+                                    const ages = audienceData.demographic_profile.age_distribution;
+                                    const primaryAge = Object.entries(ages)
+                                      .sort((a, b) => {
+                                        const percentA = parseInt(String(a[1]).replace('%', '')) || 0;
+                                        const percentB = parseInt(String(b[1]).replace('%', '')) || 0;
+                                        return percentB - percentA;
+                                      })[0]?.[0] || 'N/A';
+                                    const malePercent = audienceData.demographic_profile.gender_distribution?.male || 'N/A';
+                                    return `Primary age ${primaryAge}, ${malePercent}% male`;
+                                  })()}
                                 </div>
                               )}
                               {audienceData.psychographic_analysis?.core_values && (
                                 <div>
                                   <span className="text-purple-300 font-medium">Values: </span>
-                                  {audienceData.psychographic_analysis.core_values.slice(0, 3).join(', ')}
+                                  {Array.isArray(audienceData.psychographic_analysis.core_values)
+                                    ? audienceData.psychographic_analysis.core_values.slice(0, 3).join(', ')
+                                    : audienceData.psychographic_analysis.core_values}
                                 </div>
                               )}
-                              {audienceData.content_consumption_patterns?.preferred_video_length?.optimal_range && (
+                              {audienceData.content_consumption_patterns?.preferred_video_length && (
                                 <div>
                                   <span className="text-purple-300 font-medium">Preferred length: </span>
-                                  {audienceData.content_consumption_patterns.preferred_video_length.optimal_range}
+                                  {(() => {
+                                    const lengthData = audienceData.content_consumption_patterns.preferred_video_length;
+                                    // Handle both new format (object with percentages) and old format (optimal_range string)
+                                    if (typeof lengthData === 'object' && !lengthData.optimal_range) {
+                                      // New format: find highest percentage category
+                                      const topLength = Object.entries(lengthData)
+                                        .filter(([key]) => !key.startsWith('_'))
+                                        .sort((a, b) => {
+                                          const percentA = parseInt(String(a[1]).replace('%', '')) || 0;
+                                          const percentB = parseInt(String(b[1]).replace('%', '')) || 0;
+                                          return percentB - percentA;
+                                        })[0];
+                                      return topLength ? `${topLength[0].replace(/_/g, ' ')} (${topLength[1]})` : 'N/A';
+                                    }
+                                    // Old format: optimal_range string
+                                    return lengthData.optimal_range || lengthData.optimal_length || 'N/A';
+                                  })()}
                                 </div>
                               )}
-                              <p className="text-xs text-gray-400 mt-2">✨ Full demographic & psychographic analysis will be used</p>
+                              {audienceData.monetization_potential?.product_categories?.high_interest && (
+                                <div>
+                                  <span className="text-purple-300 font-medium">Interests: </span>
+                                  {audienceData.monetization_potential.product_categories.high_interest.slice(0, 2).join(', ')}
+                                </div>
+                              )}
+                              {audienceData._parseMethod && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Parse method: {audienceData._parseMethod}
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-400 mt-2">✨ Full demographic & psychographic analysis will be used for script generation</p>
                             </div>
                           );
                         }
