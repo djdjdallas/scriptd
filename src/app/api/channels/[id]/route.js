@@ -286,81 +286,33 @@ export async function DELETE(request, { params }) {
       .delete()
       .eq('channel_id', id);
     if (userPrefsError) deletions.push({ table: 'user_preferences', error: userPrefsError });
-    
-    // 4. Delete script-related data (must be done before deleting scripts)
-    // First get all scripts for this channel
-    const { data: scripts } = await supabase
-      .from('scripts')
-      .select('id')
-      .eq('channel_id', id);
-    
-    if (scripts && scripts.length > 0) {
-      const scriptIds = scripts.map(s => s.id);
-      
-      // Delete all child tables that reference scripts
-      await supabase
-        .from('script_versions')
-        .delete()
-        .in('script_id', scriptIds);
-      
-      await supabase
-        .from('script_titles')
-        .delete()
-        .in('script_id', scriptIds);
-      
-      await supabase
-        .from('script_thumbnails')
-        .delete()
-        .in('script_id', scriptIds);
-      
-      await supabase
-        .from('script_research')
-        .delete()
-        .in('script_id', scriptIds);
-      
-      await supabase
-        .from('script_frames')
-        .delete()
-        .in('script_id', scriptIds);
-      
-      await supabase
-        .from('script_edits')
-        .delete()
-        .in('script_id', scriptIds);
-      
-      // Delete script comments (handle parent-child relationships)
-      await supabase
-        .from('script_comments')
-        .delete()
-        .in('script_id', scriptIds);
-      
-      await supabase
-        .from('content_calendar')
-        .delete()
-        .in('script_id', scriptIds);
-      
-      await supabase
-        .from('script_generations')
-        .delete()
-        .in('script_id', scriptIds);
-    }
-    
-    // Instead of deleting scripts, set channel_id to NULL to preserve them
+
+    // 4. Preserve scripts and all their data by just removing channel reference
+    // Instead of deleting scripts and their child tables, set channel_id to NULL
     // This allows users to keep their scripts even if they delete the channel
     const { error: scriptUpdateError } = await supabase
       .from('scripts')
       .update({ channel_id: null })
       .eq('channel_id', id);
-    
+
     if (scriptUpdateError) {
       console.error('Error updating scripts to remove channel reference:', scriptUpdateError);
+      deletions.push({ table: 'scripts', error: scriptUpdateError });
+    } else {
+      console.log(`✅ Preserved scripts for channel ${id} by setting channel_id to NULL`);
     }
-    
-    // 5. Delete remaining script generations not linked to scripts
-    await supabase
+
+    // 5. Delete script_generations that are NOT linked to any script (orphaned generations)
+    // These are typically failed/incomplete generation attempts
+    const { error: orphanedGenError } = await supabase
       .from('script_generations')
       .delete()
-      .eq('channel_id', id);
+      .eq('channel_id', id)
+      .is('script_id', null); // Only delete if not linked to a script
+
+    if (orphanedGenError) {
+      deletions.push({ table: 'script_generations (orphaned)', error: orphanedGenError });
+    }
     
     // 6. Delete remix source channels (where this channel is a source)
     await supabase

@@ -168,11 +168,12 @@ export default function SummaryStep() {
       }
 
       // Get user's channels with their voice_profile data
+      // Filter for channels that have voice_profile data (not null/empty)
       const { data: userChannels, error: channelError } = await supabase
         .from("channels")
         .select("id, name, title, voice_profile, voice_training_status")
         .eq("user_id", user.id)
-        .eq("voice_training_status", "completed"); // Only channels with completed voice training
+        .not("voice_profile", "is", null); // Only channels with voice profile data
 
       if (channelError) throw channelError;
 
