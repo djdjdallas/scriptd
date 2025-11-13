@@ -92,7 +92,29 @@ export async function POST(request) {
 
     if (insertError) {
       console.error('Error saving channel:', insertError);
-      return NextResponse.json({ error: 'Failed to save channel' }, { status: 500 });
+
+      // Handle specific error cases
+      if (insertError.code === '23505') {
+        // Unique constraint violation
+        if (insertError.message.includes('channels_youtube_channel_id_key')) {
+          return NextResponse.json({
+            error: 'This YouTube channel has already been added by another user. Run the database migration to allow multiple users to add the same channel.',
+            code: 'CHANNEL_EXISTS_GLOBALLY',
+            details: insertError.message
+          }, { status: 409 });
+        }
+        if (insertError.message.includes('channels_youtube_channel_id_user_id_key')) {
+          return NextResponse.json({
+            error: 'You have already connected this channel.',
+            code: 'CHANNEL_ALREADY_CONNECTED'
+          }, { status: 409 });
+        }
+      }
+
+      return NextResponse.json({
+        error: 'Failed to save channel',
+        details: insertError.message
+      }, { status: 500 });
     }
 
     // Queue FREE voice training automatically after channel connection
