@@ -305,6 +305,109 @@ export default function SummaryStep() {
     }
   };
 
+  // Helper function to create comprehensive but token-efficient audience description
+  // Keeps ALL important data but removes JSON bloat to save ~30-40% tokens
+  const createComprehensiveAudienceDescription = (audiencePersona) => {
+    const sections = [];
+
+    // DEMOGRAPHICS (keep full - essential for targeting)
+    if (audiencePersona.demographic_profile) {
+      const demo = audiencePersona.demographic_profile;
+      sections.push('DEMOGRAPHICS:');
+
+      if (demo.age_distribution) {
+        sections.push(`Age: ${Object.entries(demo.age_distribution).map(([k,v]) => `${k}=${v}`).join(', ')}`);
+      }
+      if (demo.gender_distribution) {
+        sections.push(`Gender: ${Object.entries(demo.gender_distribution).map(([k,v]) => `${k}=${v}`).join(', ')}`);
+      }
+      if (demo.geographic_distribution) {
+        sections.push(`Location: ${Object.entries(demo.geographic_distribution).map(([k,v]) => `${k}=${v}`).join(', ')}`);
+      }
+      if (demo.education_income?.education_level) {
+        sections.push(`Education: ${Object.entries(demo.education_income.education_level).map(([k,v]) => `${k}=${v}`).join(', ')}`);
+      }
+      if (demo.education_income?.income_brackets) {
+        sections.push(`Income: ${Object.entries(demo.education_income.income_brackets).map(([k,v]) => `${k}=${v}`).join(', ')}`);
+      }
+    }
+
+    // PSYCHOGRAPHICS (keep full - critical for script tone and messaging)
+    if (audiencePersona.psychographic_analysis) {
+      const psycho = audiencePersona.psychographic_analysis;
+      sections.push('\nPSYCHOGRAPHICS:');
+
+      if (psycho.core_values && psycho.core_values.length > 0) {
+        sections.push(`Values: ${psycho.core_values.join(', ')}`);
+      }
+      if (psycho.pain_points && psycho.pain_points.length > 0) {
+        sections.push(`Pain Points: ${psycho.pain_points.join(', ')}`);
+      }
+      if (psycho.aspirations && psycho.aspirations.length > 0) {
+        sections.push(`Aspirations: ${psycho.aspirations.join(', ')}`);
+      }
+      if (psycho.lifestyle_preferences) {
+        const life = psycho.lifestyle_preferences;
+        if (life.media_consumption) sections.push(`Media: ${life.media_consumption}`);
+        if (life.social_habits) sections.push(`Social: ${life.social_habits}`);
+        if (life.leisure_activities && life.leisure_activities.length > 0) {
+          sections.push(`Activities: ${life.leisure_activities.join(', ')}`);
+        }
+      }
+    }
+
+    // ENGAGEMENT DRIVERS (keep full - critical for hooks, retention, and virality)
+    if (audiencePersona.engagement_drivers) {
+      const engage = audiencePersona.engagement_drivers;
+      sections.push('\nENGAGEMENT TRIGGERS:');
+
+      if (engage.comment_triggers && engage.comment_triggers.length > 0) {
+        sections.push(`Comment Triggers: ${engage.comment_triggers.join('; ')}`);
+      }
+      if (engage.loyalty_builders && engage.loyalty_builders.length > 0) {
+        sections.push(`Loyalty Builders: ${engage.loyalty_builders.join('; ')}`);
+      }
+      if (engage.sharing_motivators && engage.sharing_motivators.length > 0) {
+        sections.push(`Share Motivators: ${engage.sharing_motivators.join('; ')}`);
+      }
+    }
+
+    // CONTENT CONSUMPTION (keep full - critical for pacing, length, and structure)
+    if (audiencePersona.content_consumption_patterns) {
+      const content = audiencePersona.content_consumption_patterns;
+      sections.push('\nCONTENT PREFERENCES:');
+
+      if (content.preferred_video_length) {
+        sections.push(`Video Length: ${Object.entries(content.preferred_video_length).map(([k,v]) => `${k}=${v}`).join(', ')}`);
+      }
+      if (content.viewing_behavior) {
+        const viewing = content.viewing_behavior;
+        if (viewing.completion_rate) sections.push(`Completion Rate: ${viewing.completion_rate}`);
+        if (viewing.binge_watching) sections.push(`Binge Watching: ${viewing.binge_watching}`);
+        if (viewing.return_frequency) sections.push(`Return Frequency: ${viewing.return_frequency}`);
+      }
+      if (content.platform_preferences) {
+        sections.push(`Platforms: ${Object.entries(content.platform_preferences).map(([k,v]) => `${k}=${v}`).join(', ')}`);
+      }
+    }
+
+    // AUDIENCE SEGMENTS (keep - useful for understanding different viewer types)
+    if (audiencePersona.audience_overlap?.unique_segments) {
+      sections.push('\nAUDIENCE SEGMENTS:');
+      Object.entries(audiencePersona.audience_overlap.unique_segments).forEach(([name, data]) => {
+        sections.push(`• ${name.replace(/_/g, ' ')} (${data.percentage}): ${data.characteristics.join(', ')}`);
+      });
+    }
+
+    // COMMON INTERESTS (keep - helps with content relevance)
+    if (audiencePersona.audience_overlap?.common_interests && audiencePersona.audience_overlap.common_interests.length > 0) {
+      sections.push('\nCOMMON INTERESTS:');
+      sections.push(audiencePersona.audience_overlap.common_interests.join(', '));
+    }
+
+    return sections.join('\n');
+  };
+
   const handleChannelSelect = async (channelId) => {
     setSelectedChannel(channelId);
     const channel = channels.find((c) => c.id === channelId);
@@ -353,7 +456,13 @@ export default function SummaryStep() {
           // Check if we have rich audience analysis (new comprehensive structure)
           if (audiencePersona && (audiencePersona.demographic_profile || audiencePersona.psychographic_analysis)) {
             console.log('[SummaryStep] ✅ Loaded comprehensive audience analysis from channel_analyses');
-            setTargetAudience(JSON.stringify(audiencePersona));
+
+            // Create token-efficient description that keeps ALL important data
+            const audienceDescription = createComprehensiveAudienceDescription(audiencePersona);
+            console.log('[SummaryStep] Created comprehensive audience description:', audienceDescription.substring(0, 200) + '...');
+            console.log('[SummaryStep] Description length:', audienceDescription.length, 'chars');
+
+            setTargetAudience(audienceDescription);
             setAudienceType("channel");
             toast.success("Comprehensive audience analysis loaded from your channel");
             return;
@@ -371,7 +480,21 @@ export default function SummaryStep() {
 
           if (analyticsData?.audience?.insights?.audience_analysis) {
             console.log('[SummaryStep] ✅ Loaded audience analysis from analytics_data (old format)');
-            setTargetAudience(JSON.stringify(analyticsData.audience.insights.audience_analysis));
+
+            // Try to create comprehensive description if it has the same structure
+            const oldFormatData = analyticsData.audience.insights.audience_analysis;
+            let audienceDescription;
+
+            if (oldFormatData.demographic_profile || oldFormatData.psychographic_analysis) {
+              audienceDescription = createComprehensiveAudienceDescription(oldFormatData);
+              console.log('[SummaryStep] Created description from old format, length:', audienceDescription.length, 'chars');
+            } else {
+              // Fallback for very old formats - just stringify if small enough
+              const stringified = JSON.stringify(oldFormatData);
+              audienceDescription = stringified.length < 500 ? stringified : `Audience of ${channel.title || channel.name}`;
+            }
+
+            setTargetAudience(audienceDescription);
             setAudienceType("channel");
             toast.success("Audience analysis loaded from your channel");
             return;
