@@ -139,7 +139,22 @@ export function ChannelAnalyzer({
         method: "POST",
       });
 
-      const data = await response.json();
+      // Check if response is JSON (timeout errors return HTML)
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(
+          "Analysis timeout - the operation took too long. Please try again with fewer videos or a simpler analysis."
+        );
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        throw new Error(
+          "Failed to parse analysis response. The operation may have timed out. Please try again."
+        );
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "Analysis failed");
@@ -151,7 +166,7 @@ export function ChannelAnalyzer({
     } catch (error) {
       console.error("Analysis error:", error);
       setError(error.message);
-      toast.error("Failed to analyze channel");
+      toast.error(error.message || "Failed to analyze channel");
     } finally {
       clearInterval(progressInterval);
       setIsAnalyzing(false);

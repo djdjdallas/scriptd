@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server';
 import { getChannelById, getChannelVideos } from '@/lib/youtube/channel';
 import { analyzeChannelWithClaude, generateChannelVoiceProfile } from '@/lib/ai/single-channel-analyzer';
 
+// Configure Vercel Pro timeout (800 seconds max for Pro plan)
+export const maxDuration = 800;
+
 /**
  * Detect channel type based on video titles and topics
  */
