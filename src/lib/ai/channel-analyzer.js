@@ -877,14 +877,215 @@ function generateRemixStrategy(voiceProfile, audienceProfile, synergies) {
   };
 }
 
+// NEW ENRICHMENT FUNCTIONS
+function enrichVoiceWithAudienceInsights(voiceAnalysis, audienceAnalysis, channelData) {
+  // Start with the original voice analysis
+  const enrichedVoice = { ...voiceAnalysis };
+
+  // Add signature phrases from channel keywords
+  if (!enrichedVoice.linguisticFingerprints) {
+    enrichedVoice.linguisticFingerprints = {};
+  }
+
+  enrichedVoice.linguisticFingerprints = {
+    ...enrichedVoice.linguisticFingerprints,
+    signaturePhrases: enrichedVoice.linguisticFingerprints?.signaturePhrases || [],
+    topicKeywords: extractTopicKeywords(audienceAnalysis, channelData)
+  };
+
+  // Add emotional dynamics from audience psychographics
+  if (!enrichedVoice.emotionalDynamics) {
+    enrichedVoice.emotionalDynamics = {};
+  }
+
+  enrichedVoice.emotionalDynamics = {
+    ...enrichedVoice.emotionalDynamics,
+    audience_aligned_tone: determineAudienceAlignedTone(audienceAnalysis),
+    vulnerability_required: checkVulnerabilityRequirement(audienceAnalysis),
+    validation_required: checkValidationRequirement(audienceAnalysis),
+    empathy_markers: extractEmpathyMarkers(audienceAnalysis)
+  };
+
+  // Add content positioning from audience values
+  if (!enrichedVoice.contentPositioning) {
+    enrichedVoice.contentPositioning = {};
+  }
+
+  enrichedVoice.contentPositioning = {
+    ...enrichedVoice.contentPositioning,
+    mission: extractMissionFromDescription(channelData.description),
+    core_values: audienceAnalysis.psychographics?.values || [],
+    audience_relationship: determineAudienceRelationship(audienceAnalysis),
+    value_proposition: extractValueProposition(audienceAnalysis, channelData)
+  };
+
+  // Add audience engagement drivers
+  enrichedVoice.engagementDrivers = {
+    comment_triggers: audienceAnalysis.engagement_drivers?.comment_triggers || [],
+    loyalty_builders: audienceAnalysis.engagement_drivers?.loyalty_builders || [],
+    share_motivators: audienceAnalysis.engagement_drivers?.share_motivators || []
+  };
+
+  return enrichedVoice;
+}
+
+function extractTopicKeywords(audienceAnalysis, channelData) {
+  const keywords = new Set();
+
+  // Extract from audience interests
+  if (audienceAnalysis.contentPreferences?.topicInterests) {
+    Object.keys(audienceAnalysis.contentPreferences.topicInterests).forEach(topic => {
+      keywords.add(topic.toLowerCase());
+    });
+  }
+
+  // Extract from channel topics
+  if (channelData.topics) {
+    channelData.topics.forEach(topic => {
+      keywords.add(topic.toLowerCase());
+    });
+  }
+
+  return Array.from(keywords).slice(0, 10);
+}
+
+function determineAudienceAlignedTone(audienceAnalysis) {
+  const commentTriggers = audienceAnalysis.engagement_drivers?.comment_triggers ||
+                          audienceAnalysis.behavioralPatterns?.engagementBehaviors || [];
+
+  const triggers = Array.isArray(commentTriggers) ? commentTriggers :
+                   typeof commentTriggers === 'string' ? [commentTriggers] : [];
+
+  const triggerText = triggers.join(' ').toLowerCase();
+
+  if (triggerText.includes('vulnerability') || triggerText.includes('personal')) {
+    return 'vulnerable_empathetic';
+  }
+  if (triggerText.includes('validation') || triggerText.includes('support')) {
+    return 'validating_supportive';
+  }
+  if (triggerText.includes('education') || triggerText.includes('learn')) {
+    return 'educational_supportive';
+  }
+  return 'balanced_engaging';
+}
+
+function checkVulnerabilityRequirement(audienceAnalysis) {
+  const triggers = audienceAnalysis.engagement_drivers?.comment_triggers || [];
+  const values = audienceAnalysis.psychographics?.values || [];
+
+  const triggerText = (Array.isArray(triggers) ? triggers : [triggers]).join(' ').toLowerCase();
+  const valueText = (Array.isArray(values) ? values : [values]).join(' ').toLowerCase();
+
+  return triggerText.includes('vulnerability') ||
+         triggerText.includes('personal') ||
+         valueText.includes('authentic') ||
+         valueText.includes('genuine');
+}
+
+function checkValidationRequirement(audienceAnalysis) {
+  const triggers = audienceAnalysis.engagement_drivers?.comment_triggers || [];
+  const painPoints = audienceAnalysis.psychographics?.painPoints || [];
+
+  const triggerText = (Array.isArray(triggers) ? triggers : [triggers]).join(' ').toLowerCase();
+  const painText = (Array.isArray(painPoints) ? painPoints : [painPoints]).join(' ').toLowerCase();
+
+  return triggerText.includes('validation') ||
+         triggerText.includes('understanding') ||
+         painText.includes('isolated') ||
+         painText.includes('misunderstood');
+}
+
+function extractEmpathyMarkers(audienceAnalysis) {
+  const markers = [];
+  const painPoints = audienceAnalysis.psychographics?.painPoints || [];
+
+  if (Array.isArray(painPoints)) {
+    painPoints.forEach(pain => {
+      if (typeof pain === 'string' && pain.toLowerCase().includes('struggle')) {
+        markers.push('acknowledge_struggles');
+      }
+      if (typeof pain === 'string' && pain.toLowerCase().includes('pain')) {
+        markers.push('validate_pain');
+      }
+    });
+  }
+
+  return markers.length > 0 ? markers : ['general_understanding'];
+}
+
+function extractMissionFromDescription(description) {
+  if (!description) return 'educate_and_inspire';
+
+  const lowerDesc = description.toLowerCase();
+
+  if (lowerDesc.includes('help') && lowerDesc.includes('overcome')) {
+    return 'help_overcome_challenges';
+  }
+  if (lowerDesc.includes('heal')) {
+    return 'facilitate_healing';
+  }
+  if (lowerDesc.includes('teach') || lowerDesc.includes('educate')) {
+    return 'educate_and_empower';
+  }
+  if (lowerDesc.includes('entertain')) {
+    return 'entertain_and_engage';
+  }
+  return 'inform_and_inspire';
+}
+
+function determineAudienceRelationship(audienceAnalysis) {
+  const loyaltyBuilders = audienceAnalysis.engagement_drivers?.loyalty_builders || [];
+  const values = audienceAnalysis.psychographics?.values || [];
+
+  const loyaltyText = (Array.isArray(loyaltyBuilders) ? loyaltyBuilders : [loyaltyBuilders]).join(' ').toLowerCase();
+  const valueText = (Array.isArray(values) ? values : [values]).join(' ').toLowerCase();
+
+  if (loyaltyText.includes('friend') || valueText.includes('connection')) {
+    return 'friend_and_guide';
+  }
+  if (loyaltyText.includes('non-judgmental') || loyaltyText.includes('compassion')) {
+    return 'compassionate_companion';
+  }
+  if (loyaltyText.includes('expert') || loyaltyText.includes('authority')) {
+    return 'knowledgeable_mentor';
+  }
+  return 'supportive_educator';
+}
+
+function extractValueProposition(audienceAnalysis, channelData) {
+  const aspirations = audienceAnalysis.psychographics?.aspirations || [];
+  const channelDesc = channelData.description || '';
+
+  const aspirationText = (Array.isArray(aspirations) ? aspirations : [aspirations]).join(' ').toLowerCase();
+
+  if (aspirationText.includes('heal') || aspirationText.includes('overcome')) {
+    return 'transformation_through_understanding';
+  }
+  if (aspirationText.includes('learn') || aspirationText.includes('grow')) {
+    return 'growth_through_knowledge';
+  }
+  if (aspirationText.includes('connect') || aspirationText.includes('community')) {
+    return 'connection_through_shared_experience';
+  }
+  return 'value_through_content';
+}
+
 async function storeComprehensiveAnalysis(data) {
   const { channelId, userId, channelData, voiceAnalysis, audienceAnalysis, contentPatterns } = data;
-  
-  // Update channel with enhanced voice profile
+
+  // ENRICH voice analysis with audience insights
+  const enrichedVoiceAnalysis = enrichVoiceWithAudienceInsights(
+    voiceAnalysis,
+    audienceAnalysis,
+    channelData
+  );
+
+  // Update channel with ENRICHED voice profile
   const { error: updateError } = await supabase
     .from('channels')
     .update({
-      voice_profile: voiceAnalysis,
+      voice_profile: enrichedVoiceAnalysis,  // Use enriched version
       voice_training_status: 'completed',
       last_voice_training: new Date().toISOString(),
       voice_training_progress: 100,

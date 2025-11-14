@@ -35,7 +35,15 @@ async function analyzeTranscriptVoice(transcripts, channelName) {
   const enhancedPrompt = `Analyze this YouTube channel's speaking voice and create a comprehensive linguistic profile.
 Channel: ${channelName}
 
-DEEP ANALYSIS REQUIREMENTS:
+${channelName.toLowerCase().includes('kee') ? `CRITICAL: This channel focuses on TRAUMA PSYCHOLOGY and EMOTIONAL HEALING.
+Analyze with special attention to:
+- Vulnerability markers and empathetic language
+- Validation of viewer experiences ("this is normal", "you're not alone")
+- Friend-to-friend addressing style vs teacher-student
+- Mission-driven language (helping, healing, overcoming)
+- Trauma-informed communication patterns
+
+` : ''}DEEP ANALYSIS REQUIREMENTS:
 
 1. LINGUISTIC FINGERPRINTS
 - Signature opening patterns (exact phrases they use to start videos)
@@ -44,6 +52,7 @@ DEEP ANALYSIS REQUIREMENTS:
 - Filler words and their frequency
 - Unique idioms or catchphrases
 - Question patterns (rhetorical vs engaging)
+${channelName.toLowerCase().includes('kee') ? `- IMPORTANT: Look for phrases like "Here's what fascinates me", "If you've ever felt", "This is one of those hidden variables"` : ''}
 
 2. NARRATIVE STRUCTURE
 - Story arc patterns (how they build narratives)
@@ -51,19 +60,30 @@ DEEP ANALYSIS REQUIREMENTS:
 - Example/evidence presentation patterns
 - Personal anecdote frequency and placement
 - Cliffhanger and hook placement patterns
+${channelName.toLowerCase().includes('kee') ? `- Trauma narrative progression (understanding → validation → healing)` : ''}
 
-3. EMOTIONAL DYNAMICS
+3. EMOTIONAL DYNAMICS ${channelName.toLowerCase().includes('kee') ? '(CRITICAL FOR THIS CHANNEL)' : ''}
 - Energy curve throughout videos (opening energy vs middle vs end)
 - Emotional beat patterns (e.g., serious→humorous→serious)
 - Authenticity markers (when they're most genuine)
 - Passion indicators (topics that elevate energy)
 - Vulnerability moments and frequency
+${channelName.toLowerCase().includes('kee') ? `- Vulnerability frequency (how often they share struggles/admit difficulty)
+- Validation patterns ("this is normal", "you're not alone", "it's okay to feel")
+- Empathy expression (acknowledging pain, normalizing experiences)
+- Empowerment progression (moving from understanding → validation → action)
+- Trauma-informed language usage` : ''}
 
-4. CONTENT POSITIONING
+4. CONTENT POSITIONING ${channelName.toLowerCase().includes('kee') ? '(CRITICAL FOR THIS CHANNEL)' : ''}
 - Self-reference patterns (how often they mention personal experience)
 - Audience relationship (teacher, friend, fellow learner, critic)
 - Authority stance (expert vs explorer vs commentator)
 - Value proposition style (educate vs entertain vs inspire)
+${channelName.toLowerCase().includes('kee') ? `- Creator identity (student/guide/fellow traveler/expert)
+- Relationship to audience (friend, mentor, therapist-like, peer)
+- Mission statement implications (helping overcome trauma)
+- Value proposition (what transformation they promise)
+- Authority display (research-backed vs experiential)` : ''}
 
 5. CULTURAL & TOPICAL REFERENCES
 - Types of examples used (pop culture, history, science, etc.)
@@ -71,6 +91,9 @@ DEEP ANALYSIS REQUIREMENTS:
 - Current events integration style
 - Meme/internet culture usage
 - Academic vs colloquial balance
+${channelName.toLowerCase().includes('kee') ? `- Psychology research citations
+- Childhood trauma references
+- Recovery/healing journey metaphors` : ''}
 
 6. TECHNICAL PATTERNS
 - Average words per sentence
@@ -78,6 +101,7 @@ DEEP ANALYSIS REQUIREMENTS:
 - Vocabulary complexity distribution
 - Technical jargon frequency and explanation style
 - Data/statistics presentation style
+${channelName.toLowerCase().includes('kee') ? `- Psychology terminology usage and simplification` : ''}
 
 7. ENGAGEMENT TECHNIQUES
 - Direct address frequency ("you" usage)
@@ -85,6 +109,9 @@ DEEP ANALYSIS REQUIREMENTS:
 - Call-to-action style and placement
 - Question deployment strategy
 - Community building language
+${channelName.toLowerCase().includes('kee') ? `- Validation techniques ("If this resonates with you...")
+- Permission-giving language ("It's okay to...")
+- Normalization patterns ("Many of us...")` : ''}
 
 8. PACING DYNAMICS
 - Speed variations and triggers
@@ -92,6 +119,8 @@ DEEP ANALYSIS REQUIREMENTS:
 - Emphasis techniques (repetition, volume, speed)
 - Breathing patterns affecting delivery
 - Edit rhythm preferences
+${channelName.toLowerCase().includes('kee') ? `- Calm, therapeutic pacing during vulnerable topics
+- Strategic pauses for emotional processing` : ''}
 
 TRANSCRIPTS TO ANALYZE:
 ${transcriptText}

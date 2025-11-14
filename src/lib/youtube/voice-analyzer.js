@@ -25,33 +25,44 @@ export async function analyzeVoiceStyle(transcripts) {
   // Decode HTML entities and combine all transcripts for analysis
   const decodedTranscripts = transcripts.map(t => decodeHtmlEntities(t));
   const fullText = decodedTranscripts.join(' ');
-  
+
   // Extract various voice characteristics
   const characteristics = {
     // Speaking patterns
     greetings: extractGreetings(fullText),
     catchphrases: extractCatchphrases(decodedTranscripts),  // Use decoded transcripts
     signoffs: extractSignoffs(fullText),
-    
+
     // Language style
     formality: analyzeFormality(fullText),
     enthusiasm: analyzeEnthusiasm(fullText),
     humor: analyzeHumor(fullText),
-    
+
     // Vocabulary analysis
     topWords: extractTopWords(fullText),
     technicalLevel: analyzeTechnicalLevel(fullText),
     avgSentenceLength: calculateAvgSentenceLength(fullText),
-    
+
     // Speech patterns
     pacingIndicators: analyzePacing(fullText),
     emphasisPatterns: analyzeEmphasis(fullText),
     transitionPhrases: extractTransitionPhrases(fullText),
-    
+
     // Content structure
     introPatterns: extractIntroPatterns(transcripts),
     ctaPatterns: extractCTAPatterns(fullText),
-    questionPatterns: extractQuestionPatterns(fullText)
+    questionPatterns: extractQuestionPatterns(fullText),
+
+    // NEW ENHANCED ANALYSIS
+    signature_phrases: extractSignaturePhrases(decodedTranscripts),
+    emotional_dynamics: analyzeEmotionalDynamics(fullText),
+    audience_relationship: analyzeAudienceRelationship(fullText),
+    content_positioning: {
+      vulnerability_level: analyzeEmotionalDynamics(fullText).empathy_level,
+      mission_driven: fullText.toLowerCase().includes('help') || fullText.toLowerCase().includes('overcome'),
+      educational_focus: (fullText.match(/psychology|research|study/gi) || []).length > 10,
+      trauma_informed: (fullText.match(/trauma|heal|wound|pain|struggle/gi) || []).length > 5
+    }
   };
 
   return characteristics;
@@ -90,19 +101,19 @@ function extractCatchphrases(transcripts) {
       .replace(/\[.*?\]/g, '') // Remove [music], [applause], [ __ ] etc
       .replace(/\s+/g, ' ')     // Normalize whitespace
       .trim();
-    
+
     const words = cleanedTranscript.toLowerCase().split(/\s+/);
-    
+
     // Extract n-grams
     for (let n = minPhraseLength; n <= maxPhraseLength; n++) {
       for (let i = 0; i <= words.length - n; i++) {
         const phrase = words.slice(i, i + n).join(' ');
-        
+
         // Filter out common phrases and artifacts
         if (phrase.length > 5 && // Minimum character length
             !phrase.includes('__') && // No underscores
             !phrase.includes('[') && // No brackets
-            !isCommonPhrase(phrase) && 
+            !isCommonPhrase(phrase) &&
             !containsStopWords(phrase)) {
           phraseCounts[phrase] = (phraseCounts[phrase] || 0) + 1;
         }
@@ -119,6 +130,136 @@ function extractCatchphrases(transcripts) {
     .map(([phrase]) => phrase);
 
   return catchphrases;
+}
+
+// Extract Signature Phrases from Real Transcripts - NEW FUNCTION
+function extractSignaturePhrases(transcripts) {
+  const phrases = {};
+  const targetPhrases = [
+    /here's what (fascinates|interests) me/gi,
+    /if you'?ve ever felt/gi,
+    /this is one of those/gi,
+    /let me break this down/gi,
+    /and this (is where|matters because)/gi,
+    /have you ever noticed/gi,
+    /what's happening here is/gi,
+    /the truth is/gi,
+    /here's the thing/gi,
+    /let's talk about/gi,
+    /this is why/gi,
+    /think about it/gi,
+    /imagine if/gi,
+    /what if i told you/gi
+  ];
+
+  transcripts.forEach(transcript => {
+    targetPhrases.forEach(pattern => {
+      const matches = transcript.match(pattern);
+      if (matches) {
+        matches.forEach(match => {
+          const normalized = match.toLowerCase().trim();
+          phrases[normalized] = (phrases[normalized] || 0) + 1;
+        });
+      }
+    });
+  });
+
+  return Object.entries(phrases)
+    .filter(([_, count]) => count >= 2) // Appears in 2+ videos
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([phrase]) => phrase);
+}
+
+// Analyze Emotional Dynamics - NEW FUNCTION
+function analyzeEmotionalDynamics(fullText) {
+  const vulnerabilityMarkers = ['struggle', 'pain', 'hurt', 'difficult', 'heal', 'overcome', 'trauma', 'wound', 'suffer', 'broken', 'lost', 'afraid'];
+  const validationMarkers = ['normal', 'okay', 'not alone', 'valid', 'common', 'natural', 'understand', 'feel'];
+  const empowermentMarkers = ['can', 'will', 'possible', 'growth', 'strength', 'power', 'change', 'transform', 'improve', 'better'];
+
+  const words = fullText.toLowerCase().split(/\s+/);
+  const totalWords = words.length;
+
+  const vulnerabilityFreq = words.filter(w => vulnerabilityMarkers.some(marker => w.includes(marker))).length / totalWords;
+  const validationFreq = words.filter(w => validationMarkers.some(m => w.includes(m))).length / totalWords;
+  const empowermentFreq = words.filter(w => empowermentMarkers.some(marker => w.includes(marker))).length / totalWords;
+
+  // Extract emotional vocabulary
+  const emotionalWords = words.filter(w =>
+    [...vulnerabilityMarkers, ...validationMarkers, ...empowermentMarkers].some(marker => w.includes(marker))
+  );
+
+  const wordCounts = {};
+  emotionalWords.forEach(word => {
+    wordCounts[word] = (wordCounts[word] || 0) + 1;
+  });
+
+  const topEmotionalWords = Object.entries(wordCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([word]) => word);
+
+  return {
+    empathy_level: vulnerabilityFreq > 0.015 ? 'very_high' : vulnerabilityFreq > 0.008 ? 'high' : 'moderate',
+    validation_frequency: validationFreq > 0.01 ? 'frequent' : validationFreq > 0.005 ? 'occasional' : 'rare',
+    tone_progression: determineToneProgression(vulnerabilityFreq, validationFreq, empowermentFreq),
+    emotional_vocabulary: {
+      primary: topEmotionalWords.slice(0, 5),
+      secondary: topEmotionalWords.slice(5, 10)
+    },
+    vulnerability_frequency: vulnerabilityFreq,
+    validation_ratio: validationFreq,
+    empowerment_ratio: empowermentFreq
+  };
+}
+
+function determineToneProgression(vuln, valid, empower) {
+  if (vuln > valid && vuln > empower) return 'empathetic → validating → empowering';
+  if (valid > vuln && valid > empower) return 'validating → empathetic → empowering';
+  if (empower > vuln && empower > valid) return 'empowering → validating → empathetic';
+  return 'curious → empathetic → empowering';
+}
+
+// Analyze Audience Relationship - NEW FUNCTION
+function analyzeAudienceRelationship(fullText) {
+  const words = fullText.toLowerCase();
+
+  // Count personal vs authority markers
+  const personal = (words.match(/\b(i've|i'm|my|me|i was|i felt|i remember)\b/g) || []).length;
+  const authority = (words.match(/\b(research shows|studies indicate|psychology tells us|scientists have found|experts say)\b/g) || []).length;
+  const directAddress = (words.match(/\b(you|your|you're|you've)\b/g) || []).length;
+  const inclusiveLanguage = (words.match(/\b(we|us|our|we're|let's)\b/g) || []).length;
+
+  const totalWords = words.split(/\s+/).length;
+  const personalRatio = personal / totalWords;
+  const directAddressRatio = directAddress / totalWords;
+  const inclusiveRatio = inclusiveLanguage / totalWords;
+  const authorityRatio = authority / totalWords;
+
+  return {
+    addressing_style: directAddressRatio > 0.03 ? 'friend_to_friend' : directAddressRatio > 0.02 ? 'mentor_to_mentee' : 'teacher_to_student',
+    authority_stance: authorityRatio > 0.005 ? 'expert_guide' : personalRatio > 0.02 ? 'fellow_traveler' : 'knowledgeable_friend',
+    self_disclosure: personalRatio > 0.025 ? 'very_high' : personalRatio > 0.015 ? 'high' : 'moderate',
+    relationship_type: determineRelationshipType(personalRatio, directAddressRatio, inclusiveRatio),
+    inclusivity_level: inclusiveRatio > 0.02 ? 'highly_inclusive' : inclusiveRatio > 0.01 ? 'moderately_inclusive' : 'individual_focused',
+    personal_story_frequency: personal > (totalWords * 0.02) ? 'frequent' : 'occasional'
+  };
+}
+
+function determineRelationshipType(personalRatio, directAddressRatio, inclusiveRatio) {
+  if (personalRatio > 0.02 && directAddressRatio > 0.03 && inclusiveRatio > 0.015) {
+    return 'intimate_friend';
+  }
+  if (directAddressRatio > 0.03 && inclusiveRatio > 0.01) {
+    return 'compassionate_companion';
+  }
+  if (personalRatio > 0.015 && directAddressRatio > 0.02) {
+    return 'supportive_mentor';
+  }
+  if (directAddressRatio > 0.02) {
+    return 'supportive_educator';
+  }
+  return 'knowledgeable_presenter';
 }
 
 function extractSignoffs(text) {
@@ -459,7 +600,32 @@ function getDefaultVoiceProfile() {
     transitionPhrases: [],
     introPatterns: 'standard',
     ctaPatterns: [],
-    questionPatterns: []
+    questionPatterns: [],
+    // New enhanced fields
+    signature_phrases: [],
+    emotional_dynamics: {
+      empathy_level: 'moderate',
+      validation_frequency: 'occasional',
+      tone_progression: 'curious → empathetic → empowering',
+      emotional_vocabulary: {
+        primary: [],
+        secondary: []
+      }
+    },
+    audience_relationship: {
+      addressing_style: 'teacher_to_student',
+      authority_stance: 'knowledgeable_friend',
+      self_disclosure: 'moderate',
+      relationship_type: 'supportive_educator',
+      inclusivity_level: 'moderately_inclusive',
+      personal_story_frequency: 'occasional'
+    },
+    content_positioning: {
+      vulnerability_level: 'moderate',
+      mission_driven: false,
+      educational_focus: false,
+      trauma_informed: false
+    }
   };
 }
 
