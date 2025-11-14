@@ -1128,51 +1128,42 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
             body: JSON.stringify({
               model: actualModel,
             max_tokens: (() => {
-              // Calculate tokens based on script duration
-              const minutes = Math.ceil(totalDuration / 60);
-              const estimatedScriptWords = minutes * SCRIPT_CONFIG.wordsPerMinute; // UPDATED: Use config
-
-              // Add extra words for Description (200) and Tags (100) sections
-              const estimatedTotalWords = estimatedScriptWords + 300;
-
-              // More accurate token estimation (1.5x for safety with formatting)
-              const estimatedTokens = Math.ceil(estimatedTotalWords * 1.5);
-
-              // Increased token limit for better output
-              // Claude 3 models can handle up to 8192 output tokens
+              // CRITICAL FIX: Use maximum tokens to ensure completion
               const maxTokenLimit = 8192;
 
-              if (estimatedTokens > maxTokenLimit) {
-                console.log(`Script requires ~${estimatedTokens} tokens, capping at ${maxTokenLimit}.`);
-                return maxTokenLimit;
-              }
+              const minutes = Math.ceil(totalDuration / 60);
+              const targetScriptWords = minutes * SCRIPT_CONFIG.wordsPerMinute;
 
-              // Add larger buffer to ensure completion of Tags section
-              const finalTokens = Math.min(estimatedTokens + 1500, maxTokenLimit);
-              console.log(`📊 Token allocation: ${estimatedScriptWords} script words + 300 metadata words = ${estimatedTotalWords} total words → ${finalTokens} tokens`);
+              console.log(`📊 Token allocation: Setting to MAXIMUM ${maxTokenLimit} tokens to ensure Tags section completion`);
+              console.log(`   Target script: ${targetScriptWords} words (${minutes} min × ${SCRIPT_CONFIG.wordsPerMinute} wpm)`);
+              console.log(`   ⚠️ CRITICAL: Script MUST include Description and Tags sections`);
 
-              return finalTokens; // Add larger buffer, cap at 8192
+              // Always use maximum to ensure completion
+              return maxTokenLimit;
             })(),
             temperature: 0.7,
-            system: `You are an expert YouTube scriptwriter who MUST write LONG, DETAILED, COMPLETE scripts.
+            system: `You are an expert YouTube scriptwriter who MUST complete ALL required sections.
 
-ABSOLUTE WORD COUNT REQUIREMENT:
-You MUST write AT LEAST ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words for the script content.
-This is MANDATORY. Shorter scripts will be REJECTED.
+⚠️ CRITICAL OUTPUT REQUIREMENTS - SCRIPT WILL BE REJECTED IF MISSING:
+1. Main Script: Approximately ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words (TARGET, not exceed by more than 20%)
+2. ## Description section with TIMESTAMPS
+3. ## Tags section (MANDATORY - 20+ relevant tags)
 
-CRITICAL REQUIREMENTS:
-1. Write AT LEAST ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words of script content (not counting Description/Tags)
-2. Count your words as you write - ensure you meet the minimum
-3. Write DETAILED, EXPANDED content with rich descriptions
-4. NEVER say "I'll continue", "due to length", or use [...]
-5. If the title says "7 secrets", write ALL 7 secrets in FULL DETAIL
-6. Each section should be thoroughly developed (200+ words per main point)
-7. Include specific examples, stories, and explanations
+WORD COUNT GUIDANCE:
+- Target: ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words for script content
+- Maximum: ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute * 1.2} words (do NOT exceed)
+- Prioritize completing ALL sections over excessive detail
 
-MANDATORY SECTIONS (MUST INCLUDE ALL - SCRIPT WILL BE REJECTED IF ANY ARE MISSING):
-1. Main Script Content (MINIMUM ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words - write MORE not less)
-2. ## Description (with TIMESTAMPS: section listing ALL timestamps for the video)
-3. ## Tags (MANDATORY: Write at least 20 actual, relevant tags separated by commas - NO placeholders, NO brackets, NO ellipsis)
+CRITICAL COMPLETION RULES:
+1. If approaching length limits, wrap up the script to ensure Tags section
+2. The ## Tags section is MANDATORY and MUST be the LAST section
+3. NEVER end without Tags - reduce script detail if necessary
+4. Write efficiently - quality over excessive quantity
+
+MANDATORY SECTIONS ORDER:
+1. Main Script Content (stay within word target)
+2. ## Description (brief but complete with timestamps)
+3. ## Tags (MUST BE LAST - 20+ comma-separated keywords)
 
 Example Description Format:
 ## Description
@@ -1191,11 +1182,12 @@ Example Tags Format (REQUIRED - MUST BE INCLUDED):
 ## Tags
 impostor syndrome, fake success, psychology of deception, success psychology, self doubt, confidence issues, achievement psychology, career psychology, workplace psychology, mental health awareness, psychological research, professional development, career advice, success mindset, overcoming doubt, authenticity at work, professional growth, workplace wellness, career confidence, psychological insights
 
-YOU WILL BE PENALIZED for:
-- Scripts under ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words
-- Missing or incomplete Description section
-- Missing or placeholder Tags section
-- Any continuation messages or placeholders`,
+YOU WILL BE REJECTED for:
+- Missing ## Tags section (MOST CRITICAL)
+- Missing ## Description section
+- Scripts significantly over/under target (aim for ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words ±20%)
+- Any continuation messages or placeholders
+- Not completing ALL sections due to excessive script length`,
             messages: [
               {
                 role: 'user',

@@ -42,21 +42,22 @@ function truncateSourceContent(content, maxChars = 8000) {
  * @returns {number} - Max characters per source
  */
 function calculateSourceLimit(totalSources, targetLength) {
-  // Base token budget: ~180k tokens for Claude (leaving buffer for prompt structure)
-  // Rough estimate: 1 token ≈ 4 characters
-  const totalCharBudget = 180000 * 4; // ~720k characters total budget
+  // REDUCED TOKEN BUDGET to ensure output completion
+  // Reserve more space for Claude's output (8192 tokens max)
+  // Input budget: ~100k tokens (leaving plenty for output)
+  const totalCharBudget = 100000 * 4; // ~400k characters total budget
 
-  // Reserve 200k characters for prompt structure, voice profile, etc.
-  const researchBudget = totalCharBudget - 200000; // ~520k for research
+  // Reserve 100k characters for prompt structure, voice profile, etc.
+  const researchBudget = totalCharBudget - 100000; // ~300k for research
 
   if (totalSources === 0) return 0;
 
-  // Distribute budget across sources, with minimum and maximum limits
+  // Distribute budget across sources, with stricter limits
   let perSourceLimit = Math.floor(researchBudget / totalSources);
 
-  // Set reasonable bounds
-  const MIN_PER_SOURCE = 2000;   // At least 2k chars per source
-  const MAX_PER_SOURCE = 15000;  // At most 15k chars per source
+  // Set stricter bounds to ensure completion
+  const MIN_PER_SOURCE = 1000;   // Reduced from 2k
+  const MAX_PER_SOURCE = 8000;   // Reduced from 15k
 
   perSourceLimit = Math.max(MIN_PER_SOURCE, Math.min(MAX_PER_SOURCE, perSourceLimit));
 
@@ -745,6 +746,8 @@ ABSOLUTE REQUIREMENTS:
 1. Complete EVERYTHING in this single response. No continuations.
 2. MUST include the ## Tags section with at least 15 actual tags (not placeholders!)
 3. Tags MUST be real keywords related to the topic, not generic placeholders
+4. If you're running out of space, PRIORITIZE completing Tags over script detail
+5. The ## Tags section is MANDATORY and must be the LAST thing you write
 `;
 };
 
