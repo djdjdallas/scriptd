@@ -1130,8 +1130,13 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
             max_tokens: (() => {
               // Calculate tokens based on script duration
               const minutes = Math.ceil(totalDuration / 60);
-              const estimatedWords = minutes * SCRIPT_CONFIG.wordsPerMinute; // UPDATED: Use config
-              const estimatedTokens = Math.ceil(estimatedWords * 1.33);
+              const estimatedScriptWords = minutes * SCRIPT_CONFIG.wordsPerMinute; // UPDATED: Use config
+
+              // Add extra words for Description (200) and Tags (100) sections
+              const estimatedTotalWords = estimatedScriptWords + 300;
+
+              // More accurate token estimation (1.5x for safety with formatting)
+              const estimatedTokens = Math.ceil(estimatedTotalWords * 1.5);
 
               // Increased token limit for better output
               // Claude 3 models can handle up to 8192 output tokens
@@ -1142,7 +1147,11 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
                 return maxTokenLimit;
               }
 
-              return Math.min(estimatedTokens + 1000, maxTokenLimit); // Add buffer, cap at 8192
+              // Add larger buffer to ensure completion of Tags section
+              const finalTokens = Math.min(estimatedTokens + 1500, maxTokenLimit);
+              console.log(`📊 Token allocation: ${estimatedScriptWords} script words + 300 metadata words = ${estimatedTotalWords} total words → ${finalTokens} tokens`);
+
+              return finalTokens; // Add larger buffer, cap at 8192
             })(),
             temperature: 0.7,
             system: `You are an expert YouTube scriptwriter who MUST write LONG, DETAILED, COMPLETE scripts.

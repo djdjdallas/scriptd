@@ -692,7 +692,6 @@ export default function SummaryStep() {
     { value: 600, label: "10 min", description: "In-depth guide" },
     { value: 900, label: "15 min", description: "Comprehensive lesson" },
     { value: 1200, label: "20 min", description: "Full course module" },
-    { value: 1260, label: "21 min", description: "Extended content" }, // NEW: 21 min option (free limit)
     { value: 1800, label: "30 min", description: "Deep dive content" },
     { value: 2100, label: "35 min", description: "Extended tutorial" },
     { value: 2400, label: "40 min", description: "Documentary style" },
