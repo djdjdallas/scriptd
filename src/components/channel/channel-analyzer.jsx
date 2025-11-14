@@ -150,9 +150,11 @@ export function ChannelAnalyzer({
 
       if (startData.status === 'completed') {
         // Already analyzed recently
+        clearInterval(progressInterval);
+        setIsAnalyzing(false);
         toast.success("Channel analysis is already up to date!");
         setTimeout(() => {
-          window.location.reload();
+          router.push(`/channels/${channelId}`);
         }, 1000);
         return;
       }
@@ -160,6 +162,7 @@ export function ChannelAnalyzer({
       // Show that analysis has started
       toast.info("Analysis started! This may take a few minutes...", { duration: 5000 });
 
+      // Keep isAnalyzing true to show progress bar during polling
       // Poll for completion
       let pollCount = 0;
       const maxPolls = 120; // 10 minutes max (5 seconds * 120)
@@ -178,6 +181,7 @@ export function ChannelAnalyzer({
               clearInterval(pollInterval);
               clearInterval(progressInterval);
               setProgress(100);
+              setIsAnalyzing(false); // Stop showing progress bar
 
               // Show success message
               if (statusData.summary) {
@@ -197,6 +201,7 @@ export function ChannelAnalyzer({
               // Timeout after max polls
               clearInterval(pollInterval);
               clearInterval(progressInterval);
+              setIsAnalyzing(false); // Stop showing progress bar
               throw new Error("Analysis is taking unusually long. Please refresh the page to check status.");
             }
           }
@@ -206,18 +211,13 @@ export function ChannelAnalyzer({
         }
       }, 5000); // Check every 5 seconds
 
-      // Store interval ID so we can clear it on unmount if needed
-      return () => {
-        clearInterval(pollInterval);
-        clearInterval(progressInterval);
-      };
+      // Note: intervals will be cleared when analysis completes or errors
     } catch (error) {
       console.error("Analysis error:", error);
       setError(error.message);
-      toast.error(error.message || "Failed to analyze channel");
-    } finally {
+      setIsAnalyzing(false); // Stop showing progress bar on error
       clearInterval(progressInterval);
-      setIsAnalyzing(false);
+      toast.error(error.message || "Failed to analyze channel");
     }
   };
 
