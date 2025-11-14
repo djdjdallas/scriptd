@@ -731,6 +731,15 @@ export async function POST(request, { params }) {
       console.error('Error saving analysis:', saveError);
     }
 
+    // Import the transformer
+    const { transformVoiceProfile } = await import('@/lib/ai/voice-profile-transformer');
+
+    // Transform the voice profile into clean format
+    const cleanVoiceProfile = transformVoiceProfile(voiceProfileResult.voiceProfile);
+
+    // Log the transformed profile
+    console.log('📝 Transformed Voice Profile:', JSON.stringify(cleanVoiceProfile, null, 2));
+
     // Update channel with latest analytics, voice profile, and audience description using DEEP data
     await supabase
       .from('channels')
@@ -740,8 +749,8 @@ export async function POST(request, { params }) {
         audience_description: hasDeepAnalysis
           ? formatAudienceDescription(audienceData)
           : formatAudienceDescription(analysis.audienceProfile),
-        // Store the FULL voice profile from transcript analysis
-        voice_profile: voiceProfileResult.success ? voiceProfileResult.voiceProfile : {},
+        // Store the CLEAN transformed voice profile
+        voice_profile: cleanVoiceProfile || {},
         analytics_summary: {
           performance_score: formattedAnalytics.performance.performanceScore,
           growth_potential: formattedAnalytics.performance.growthPotential,

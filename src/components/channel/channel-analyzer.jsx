@@ -189,9 +189,9 @@ export function ChannelAnalyzer({
                 toast.success("Channel analysis complete!");
               }
 
-              // Reload to show new data
+              // Navigate to the channel page to show the analysis
               setTimeout(() => {
-                window.location.reload();
+                router.push(`/channels/${channelId}`);
               }, 2000);
             } else if (pollCount >= maxPolls) {
               // Timeout after max polls
