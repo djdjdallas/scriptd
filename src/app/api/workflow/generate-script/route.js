@@ -1925,19 +1925,34 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
 
         console.log('=== RETURNING RESPONSE ===');
         console.log('Script ID being returned:', newScript?.id);
+        console.log('Script length:', script?.length);
+        console.log('Script preview:', script?.substring(0, 200) + '...');
         console.log('Credits used:', creditsUsed);
 
-        return NextResponse.json({
-          script,
-          creditsUsed,
-          scriptId: newScript?.id // Include script ID in response
-        });
+        // Ensure we're returning the script content
+        const response = {
+          script: script,
+          creditsUsed: creditsUsed,
+          scriptId: newScript?.id || null
+        };
+
+        console.log('Response object keys:', Object.keys(response));
+        console.log('Response has script:', !!response.script);
+        console.log('Response has scriptId:', !!response.scriptId);
+
+        return NextResponse.json(response);
       } catch (saveError) {
         console.error('Error saving script:', saveError);
         // Still return the script even if save fails
-        return NextResponse.json({ 
-          script,
-          creditsUsed
+        console.log('Returning script despite save error');
+        console.log('Script content available:', !!script);
+        console.log('Script length:', script?.length);
+
+        return NextResponse.json({
+          script: script,
+          creditsUsed: creditsUsed,
+          scriptId: null,
+          warning: 'Script generated successfully but save to database failed'
         });
       }
     } else {

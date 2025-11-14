@@ -60,6 +60,93 @@ export default function DraftStep() {
 
   const supabase = createClient();
 
+  // Function to load script from database
+  const loadScriptFromDatabase = async (scriptId) => {
+    try {
+      console.log(`📚 Loading script from database with ID: ${scriptId}`);
+      const { data, error } = await supabase
+        .from('scripts')
+        .select('*')
+        .eq('id', scriptId)
+        .single();
+
+      if (error) {
+        console.error('Error loading script from database:', error);
+        toast.error('Failed to load script from database');
+        return;
+      }
+
+      if (data && data.content) {
+        console.log('✅ Script loaded from database successfully');
+        setGeneratedScript(data.content);
+        updateStepData("draft", {
+          script: data.content,
+          scriptId: scriptId,
+          type: data.metadata?.type || 'full'
+        });
+        markStepComplete(8);
+        toast.success("Script loaded successfully!");
+      } else {
+        console.error('No script content found in database');
+        toast.error('Script content not found');
+      }
+    } catch (error) {
+      console.error('Exception loading script from database:', error);
+      toast.error('Failed to load script');
+    }
+  };
+
+  // Check if script already exists in workflow data on mount
+  useEffect(() => {
+    const checkExistingScript = async () => {
+      // Check if script exists in workflowData
+      if (workflowData.draft?.script) {
+        console.log("📝 Found existing script in workflow data");
+        setGeneratedScript(workflowData.draft.script);
+        return;
+      }
+
+      // Check if we have a scriptId in workflow data
+      if (workflowData.draft?.scriptId) {
+        console.log("📚 Found scriptId in workflow data, loading from database...");
+        await loadScriptFromDatabase(workflowData.draft.scriptId);
+        return;
+      }
+
+      // Check if there's a generated script in the workflow_data from database
+      if (workflowId) {
+        try {
+          const { data: workflow, error } = await supabase
+            .from('script_workflows')
+            .select('workflow_data')
+            .eq('id', workflowId)
+            .single();
+
+          if (!error && workflow?.workflow_data) {
+            // Check for generated script in workflow_data
+            if (workflow.workflow_data.generatedScript) {
+              console.log("✅ Found generated script in workflow database");
+              setGeneratedScript(workflow.workflow_data.generatedScript);
+              updateStepData("draft", {
+                script: workflow.workflow_data.generatedScript,
+                scriptId: workflow.workflow_data.scriptId,
+                type: workflow.workflow_data.script_metadata?.type || 'full'
+              });
+            } else if (workflow.workflow_data.scriptId) {
+              // Load script by ID if we have one
+              console.log("📚 Found scriptId in workflow database, loading script...");
+              await loadScriptFromDatabase(workflow.workflow_data.scriptId);
+            }
+          }
+        } catch (error) {
+          console.error("Error checking for existing script:", error);
+        }
+      }
+    };
+
+    checkExistingScript();
+  }, [workflowId]);
+
   // Load research sources directly from database to ensure we have all sources
   useEffect(() => {
     const loadResearchSources = async () => {
@@ -385,14 +472,67 @@ export default function DraftStep() {
         scriptId: responseData.scriptId,
       });
 
-      // Directly set the generated script
+      // Check if we have a warning (script generated but save failed)
+      if (responseData.warning) {
+        console.warn("⚠️ Warning from API:", responseData.warning);
+        toast.warning(responseData.warning, { duration: 5000 });
+      }
+
+      // Check if we have a script in the response
       if (responseData.script) {
+        console.log("✅ Script received, updating state...");
+        console.log("Script length:", responseData.script.length);
+        console.log("Script preview:", responseData.script.substring(0, 200));
+
         setGeneratedScript(responseData.script);
-        updateStepData("draft", { script: responseData.script, type: type });
+
+        // Update workflow data with both script and scriptId
+        updateStepData("draft", {
+          script: responseData.script,
+          scriptId: responseData.scriptId || null,
+          type: type
+        });
+
         markStepComplete(8);
-        toast.success("Script generated successfully!");
+
+        // Show appropriate success message
+        if (responseData.scriptId) {
+          toast.success("Script generated and saved successfully!");
+        } else {
+          toast.success("Script generated successfully! (Note: Database save failed - copy your script)");
+        }
+
+        // Save script to workflow database if we have workflowId but no scriptId
+        if (workflowId && !responseData.scriptId) {
+          try {
+            console.log("Attempting to save script to workflow_data as backup...");
+            const { error } = await supabase
+              .from('script_workflows')
+              .update({
+                workflow_data: {
+                  ...workflowData,
+                  generatedScript: responseData.script,
+                  script_metadata: {
+                    generated_at: new Date().toISOString(),
+                    credits_used: responseData.creditsUsed
+                  }
+                }
+              })
+              .eq('id', workflowId);
+
+            if (!error) {
+              console.log("✅ Script backed up to workflow_data");
+            }
+          } catch (backupError) {
+            console.error("Failed to backup script:", backupError);
+          }
+        }
+      } else if (responseData.scriptId) {
+        // Fallback: If we only got a scriptId, load the script from database
+        console.log("⚠️ No script in response but have scriptId, loading from database...");
+        await loadScriptFromDatabase(responseData.scriptId);
       } else {
-        throw new Error("No script returned from API");
+        throw new Error("No script or scriptId returned from API");
       }
     } catch (error) {
       console.error("Generation error full details:", {
