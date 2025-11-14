@@ -58,14 +58,16 @@ serve(async (req) => {
       )
     }
 
-    // Find newest pending job (FIFO)
-    const { data: jobs, error: fetchError } = await supabaseClient
+    // === 🚀 CONCURRENT PROCESSING: Fetch up to 3 pending jobs ===
+    const CONCURRENT_LIMIT = 3;
+
+    const { data: pendingJobs, error: fetchError } = await supabaseClient
       .from('script_generation_jobs')
       .select('*')
       .eq('status', 'pending')
       .order('priority', { ascending: false })
       .order('created_at', { ascending: false }) // NEWEST first
-      .limit(1);
+      .limit(CONCURRENT_LIMIT);
 
     if (fetchError) {
       console.error('❌ Error fetching pending jobs:', fetchError);
@@ -75,7 +77,7 @@ serve(async (req) => {
       );
     }
 
-    if (!jobs || jobs.length === 0) {
+    if (!pendingJobs || pendingJobs.length === 0) {
       console.log('✅ No pending script jobs found');
       return new Response(
         JSON.stringify({ message: 'No pending jobs', processed: 0 }),
@@ -83,27 +85,95 @@ serve(async (req) => {
       );
     }
 
-    const job = jobs[0];
-    console.log('📋 Processing job:', {
-      jobId: job.id,
-      workflowId: job.workflow_id,
-      userId: job.user_id,
-      priority: job.priority,
-      age: Math.round((Date.now() - new Date(job.created_at).getTime()) / 1000) + 's'
-    });
+    console.log(`📋 Found ${pendingJobs.length} pending job(s) to process concurrently`);
 
-    // Mark job as processing
-    await supabaseClient
-      .from('script_generation_jobs')
-      .update({
-        status: 'processing',
-        started_at: new Date().toISOString(),
-        current_step: 'initializing',
-        progress: 5
-      })
-      .eq('id', job.id);
+    // === 🔒 ATOMIC JOB CLAIMING: Prevent race conditions ===
+    // Try to claim each job atomically - only successful updates will be processed
+    const claimedJobs = [];
+    const processingMarker = `processing_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-    const params = job.generation_params;
+    for (const job of pendingJobs) {
+      const { data: updatedJob, error: claimError } = await supabaseClient
+        .from('script_generation_jobs')
+        .update({
+          status: 'processing',
+          started_at: new Date().toISOString(),
+          current_step: 'initializing',
+          progress: 5
+        })
+        .eq('id', job.id)
+        .eq('status', 'pending') // ⚡ CRITICAL: Only claim if still pending (prevents double-processing)
+        .select()
+        .single();
+
+      if (!claimError && updatedJob) {
+        console.log(`✅ Claimed job ${job.id} for processing`);
+        claimedJobs.push(updatedJob);
+      } else {
+        console.log(`⏭️  Job ${job.id} already claimed by another worker, skipping`);
+      }
+    }
+
+    if (claimedJobs.length === 0) {
+      console.log('⚠️  All jobs were claimed by other workers');
+      return new Response(
+        JSON.stringify({ message: 'All jobs already being processed', processed: 0 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`🚀 Processing ${claimedJobs.length} job(s) in parallel...`);
+
+    // === 🔄 PARALLEL PROCESSING: Process all claimed jobs concurrently ===
+    const results = await Promise.allSettled(
+      claimedJobs.map(job => processScriptJob(job, supabaseClient, startTime))
+    );
+
+    // Aggregate results
+    const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+    const failureCount = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)).length;
+
+    console.log(`✅ Batch complete: ${successCount} succeeded, ${failureCount} failed`);
+
+    return new Response(
+      JSON.stringify({
+        message: 'Batch processing complete',
+        processed: claimedJobs.length,
+        succeeded: successCount,
+        failed: failureCount,
+        results: results.map((r, i) => ({
+          jobId: claimedJobs[i].id,
+          status: r.status,
+          ...(r.status === 'fulfilled' ? r.value : { error: r.reason?.message })
+        }))
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('❌ Fatal error:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+})
+
+/**
+ * 🔨 PROCESS SINGLE SCRIPT JOB
+ * Extracted from main handler to support concurrent processing
+ */
+async function processScriptJob(job: any, supabaseClient: any, batchStartTime: number) {
+  const jobStartTime = Date.now();
+  console.log('📋 Processing job:', {
+    jobId: job.id,
+    workflowId: job.workflow_id,
+    userId: job.user_id,
+    priority: job.priority,
+    age: Math.round((Date.now() - new Date(job.created_at).getTime()) / 1000) + 's'
+  });
+
+  const params = job.generation_params;
 
     try {
       // Fetch workflow data from database
@@ -550,7 +620,7 @@ serve(async (req) => {
           progress: 100,
           current_step: 'completed',
           completed_at: new Date().toISOString(),
-          processing_time_seconds: Math.round((Date.now() - startTime) / 1000),
+          processing_time_seconds: Math.round((Date.now() - jobStartTime) / 1000),
           generated_script: generatedScript,
           script_metadata: {
             length: generatedScript.length,
@@ -561,17 +631,13 @@ serve(async (req) => {
         .eq('id', job.id);
 
       console.log('✅ Script generation job completed successfully:', job.id);
-      console.log('⏱️ Processing time:', Math.round((Date.now() - startTime) / 1000) + 's');
+      console.log('⏱️ Processing time:', Math.round((Date.now() - jobStartTime) / 1000) + 's');
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          jobId: job.id,
-          processed: 1,
-          processingTime: Math.round((Date.now() - startTime) / 1000)
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return {
+        success: true,
+        jobId: job.id,
+        processingTime: Math.round((Date.now() - jobStartTime) / 1000)
+      };
 
     } catch (scriptError) {
       console.error('❌ Script generation error:', scriptError);
@@ -598,29 +664,18 @@ serve(async (req) => {
             status: 'failed',
             error_message: scriptError.message,
             completed_at: new Date().toISOString(),
-            processing_time_seconds: Math.round((Date.now() - startTime) / 1000)
+            processing_time_seconds: Math.round((Date.now() - jobStartTime) / 1000)
           })
           .eq('id', job.id);
 
         console.log(`❌ Job ${job.id} failed after ${job.max_retries} attempts`);
       }
 
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: scriptError.message,
-          jobId: job.id,
-          shouldRetry
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return {
+        success: false,
+        error: scriptError.message,
+        jobId: job.id,
+        shouldRetry
+      };
     }
-
-  } catch (error) {
-    console.error('❌ Fatal error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-})
+}
