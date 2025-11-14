@@ -65,7 +65,8 @@ export async function searchRecentCrimes(topic, options = {}) {
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       cases = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
     } catch (e) {
-      console.error('Failed to parse Perplexity response:', e);
+      // This is a non-critical error - we can continue without real event data
+      console.log('Note: Could not parse Perplexity response, continuing with fallback content');
       cases = [];
     }
 
@@ -233,7 +234,8 @@ export async function getEventDetails(eventName, options = {}) {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       details = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
     } catch (e) {
-      console.error('Failed to parse event details:', e);
+      // Non-critical - continue without detailed event info
+      console.log('Note: Could not parse event details, using basic info');
       details = {};
     }
 

@@ -855,10 +855,10 @@ ${vp.basedOnRealData ? '✓ Based on real channel analysis' : ''}
             prompt += `\nUSAGE REQUIREMENT: Use at least ${targetUsage} different signature phrases naturally integrated into your narration.\n`;
           }
 
-          // Check basicProfile first, then fall back to voiceProfileData, then params
-          const hookStyle = basicProfile.hooks || vp.voiceProfileData?.hooks || params.hooks;
-          const transitionStyle = basicProfile.transitions || vp.voiceProfileData?.transitions || params.transitions;
-          const engagementStyle = basicProfile.engagement || vp.voiceProfileData?.engagement || params.engagement;
+          // Check basicProfile first, then fall back to voiceProfileData
+          const hookStyle = basicProfile.hooks || vp.voiceProfileData?.hooks || vp.hooks;
+          const transitionStyle = basicProfile.transitions || vp.voiceProfileData?.transitions || vp.transitions;
+          const engagementStyle = basicProfile.engagement || vp.voiceProfileData?.engagement || vp.engagement;
 
           if (hookStyle) {
             prompt += `\n🎣 OPENING HOOK STYLE (REQUIRED):\n${hookStyle}\n`;

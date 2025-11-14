@@ -735,10 +735,20 @@ export async function POST(request, { params }) {
     const { transformVoiceProfile } = await import('@/lib/ai/voice-profile-transformer');
 
     // Transform the voice profile into clean format
+    console.log('🎤 Raw voice profile keys:', Object.keys(voiceProfileResult.voiceProfile || {}));
     const cleanVoiceProfile = transformVoiceProfile(voiceProfileResult.voiceProfile);
 
     // Log the transformed profile
-    console.log('📝 Transformed Voice Profile:', JSON.stringify(cleanVoiceProfile, null, 2));
+    if (cleanVoiceProfile) {
+      console.log('📝 Transformed Voice Profile Structure:');
+      console.log('  - Tone:', cleanVoiceProfile.tone);
+      console.log('  - Style:', cleanVoiceProfile.style);
+      console.log('  - Pace:', cleanVoiceProfile.pace);
+      console.log('  - Energy:', cleanVoiceProfile.energy);
+      console.log('  - Signature phrases:', cleanVoiceProfile.signature_phrases?.length || 0);
+    } else {
+      console.log('⚠️ Voice profile transformation returned null');
+    }
 
     // Update channel with latest analytics, voice profile, and audience description using DEEP data
     await supabase
