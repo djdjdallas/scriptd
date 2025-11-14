@@ -128,55 +128,89 @@ export function ChannelAnalyzer({
   const startAnalysis = async () => {
     setIsAnalyzing(true);
     setError(null);
-    setProgress(0);
+    setProgress(10);
 
+    // Slower progress for long-running analysis
     const progressInterval = setInterval(() => {
-      setProgress((prev) => Math.min(prev + 10, 90));
-    }, 500);
+      setProgress((prev) => Math.min(prev + 2, 85));
+    }, 1000);
 
     try {
-      const response = await fetch(`/api/channels/${channelId}/analyze`, {
+      // Start analysis asynchronously
+      const startResponse = await fetch(`/api/channels/${channelId}/analyze-async`, {
         method: "POST",
       });
 
-      // Check if response is JSON (timeout errors return HTML)
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error(
-          "Analysis timeout - the operation took too long. Please try again with fewer videos or a simpler analysis."
-        );
+      if (!startResponse.ok) {
+        const errorData = await startResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to start analysis");
       }
 
-      let data;
-      try {
-        data = await response.json();
-      } catch (jsonError) {
-        throw new Error(
-          "Failed to parse analysis response. The operation may have timed out. Please try again."
-        );
+      const startData = await startResponse.json();
+
+      if (startData.status === 'completed') {
+        // Already analyzed recently
+        toast.success("Channel analysis is already up to date!");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+        return;
       }
 
-      if (!response.ok) {
-        throw new Error(data.error || "Analysis failed");
-      }
+      // Show that analysis has started
+      toast.info("Analysis started! This may take a few minutes...", { duration: 5000 });
 
-      setProgress(100);
-      setAnalysisData(data);
+      // Poll for completion
+      let pollCount = 0;
+      const maxPolls = 120; // 10 minutes max (5 seconds * 120)
 
-      // Show success with summary info
-      if (data.summary) {
-        toast.success(
-          `Analysis complete! Analyzed ${data.summary.videosAnalyzed} videos, generated ${data.summary.contentIdeasGenerated} content ideas.`,
-          { duration: 5000 }
-        );
-      } else {
-        toast.success("Channel analysis complete!");
-      }
+      const pollInterval = setInterval(async () => {
+        pollCount++;
 
-      // Reload page after short delay to show updated channel data
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+        try {
+          const statusResponse = await fetch(`/api/channels/${channelId}/analyze-status`);
+
+          if (statusResponse.ok) {
+            const statusData = await statusResponse.json();
+
+            // Check if analysis is complete
+            if (statusData.hasAnalysis && statusData.isRecent) {
+              clearInterval(pollInterval);
+              clearInterval(progressInterval);
+              setProgress(100);
+
+              // Show success message
+              if (statusData.summary) {
+                toast.success(
+                  `Analysis complete! Analyzed ${statusData.summary.videosAnalyzed} videos, generated ${statusData.summary.contentIdeasGenerated} content ideas.`,
+                  { duration: 5000 }
+                );
+              } else {
+                toast.success("Channel analysis complete!");
+              }
+
+              // Reload to show new data
+              setTimeout(() => {
+                window.location.reload();
+              }, 2000);
+            } else if (pollCount >= maxPolls) {
+              // Timeout after max polls
+              clearInterval(pollInterval);
+              clearInterval(progressInterval);
+              throw new Error("Analysis is taking unusually long. Please refresh the page to check status.");
+            }
+          }
+        } catch (pollError) {
+          console.error("Status check error:", pollError);
+          // Continue polling even if one check fails
+        }
+      }, 5000); // Check every 5 seconds
+
+      // Store interval ID so we can clear it on unmount if needed
+      return () => {
+        clearInterval(pollInterval);
+        clearInterval(progressInterval);
+      };
     } catch (error) {
       console.error("Analysis error:", error);
       setError(error.message);
