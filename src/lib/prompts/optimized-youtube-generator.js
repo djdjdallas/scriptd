@@ -4,6 +4,67 @@
  * Created: ${new Date().toISOString()}
  */
 
+/**
+ * Intelligently truncates research source content to fit within token limits
+ * @param {string} content - The full source content
+ * @param {number} maxChars - Maximum characters to include (default: 8000)
+ * @returns {object} - { content: string, wasTruncated: boolean, originalLength: number }
+ */
+function truncateSourceContent(content, maxChars = 8000) {
+  if (!content) return { content: '', wasTruncated: false, originalLength: 0 };
+
+  const originalLength = content.length;
+
+  if (originalLength <= maxChars) {
+    return { content, wasTruncated: false, originalLength };
+  }
+
+  // Truncate intelligently - keep beginning and end
+  const keepFromStart = Math.floor(maxChars * 0.7); // 70% from start
+  const keepFromEnd = Math.floor(maxChars * 0.2);   // 20% from end
+
+  const startContent = content.substring(0, keepFromStart);
+  const endContent = content.substring(originalLength - keepFromEnd);
+
+  const truncatedContent = `${startContent}\n\n... [Content truncated - ${(originalLength - maxChars).toLocaleString()} characters omitted] ...\n\n${endContent}`;
+
+  return {
+    content: truncatedContent,
+    wasTruncated: true,
+    originalLength
+  };
+}
+
+/**
+ * Calculates optimal character limits per source based on total sources
+ * @param {number} totalSources - Total number of research sources
+ * @param {number} targetLength - Script target length in minutes
+ * @returns {number} - Max characters per source
+ */
+function calculateSourceLimit(totalSources, targetLength) {
+  // Base token budget: ~180k tokens for Claude (leaving buffer for prompt structure)
+  // Rough estimate: 1 token ≈ 4 characters
+  const totalCharBudget = 180000 * 4; // ~720k characters total budget
+
+  // Reserve 200k characters for prompt structure, voice profile, etc.
+  const researchBudget = totalCharBudget - 200000; // ~520k for research
+
+  if (totalSources === 0) return 0;
+
+  // Distribute budget across sources, with minimum and maximum limits
+  let perSourceLimit = Math.floor(researchBudget / totalSources);
+
+  // Set reasonable bounds
+  const MIN_PER_SOURCE = 2000;   // At least 2k chars per source
+  const MAX_PER_SOURCE = 15000;  // At most 15k chars per source
+
+  perSourceLimit = Math.max(MIN_PER_SOURCE, Math.min(MAX_PER_SOURCE, perSourceLimit));
+
+  console.log(`📊 Source limit calculation: ${totalSources} sources → ${perSourceLimit} chars each (${(perSourceLimit * totalSources / 1000).toFixed(0)}KB total)`);
+
+  return perSourceLimit;
+}
+
 // Main generator function with enhanced fact-checking and YouTube optimization
 const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext = {}) => {
   console.log('🎬 === YOUTUBE SCRIPT GENERATOR DEBUG ===');
@@ -563,24 +624,37 @@ ${sponsor ? `
   <examples>Provide concrete examples or mini case studies</examples>
   <sources>Reference credible sources naturally in script</sources>
   <balance>Present balanced viewpoints on controversial topics</balance>
-  ${allSources.length > 0 || research?.insights ? `
+  ${(() => {
+    // Calculate optimal source limits to stay within token budget
+    const totalSources = allSources.length;
+    const sourceLimit = calculateSourceLimit(totalSources, targetLength);
+    let totalTruncated = 0;
+    let totalOriginalChars = 0;
+
+    return allSources.length > 0 || research?.insights ? `
   <research_to_include>
     ${verifiedSources.length > 0 ? `
     <verified_sources>
       ${verifiedSources.map(s => {
-        // Include full content - no truncation!
-        // Claude needs all the research to write comprehensive scripts
-        return `- ${s.source_title} (${s.source_url}): ${s.source_content || ''}`;
+        const { content, wasTruncated, originalLength } = truncateSourceContent(s.source_content, sourceLimit);
+        if (wasTruncated) totalTruncated++;
+        totalOriginalChars += originalLength;
+        return `- ${s.source_title} (${s.source_url}): ${content}`;
       }).join('\n      ')}
     </verified_sources>` : ''}
     ${starredSources.length > 0 ? `
     <important_sources>
       ${starredSources.map(s => {
-        // Include full content - no truncation!
-        // Claude needs all the research to write comprehensive scripts
-        return `- ${s.source_title} (${s.source_url}): ${s.source_content || ''}`;
+        const { content, wasTruncated, originalLength } = truncateSourceContent(s.source_content, sourceLimit);
+        if (wasTruncated) totalTruncated++;
+        totalOriginalChars += originalLength;
+        return `- ${s.source_title} (${s.source_url}): ${content}`;
       }).join('\n      ')}
     </important_sources>` : ''}
+    ${(() => {
+      console.log(`📉 Research truncation: ${totalTruncated}/${totalSources} sources truncated (${(totalOriginalChars / 1000).toFixed(0)}KB → ${(sourceLimit * totalSources / 1000).toFixed(0)}KB)`);
+      return '';
+    })()}
     ${research?.insights ? `
     <research_insights>
       ${research.insights.facts?.length > 0 ? `<key_facts>${research.insights.facts.join(' | ')}</key_facts>` : ''}
@@ -591,7 +665,8 @@ ${sponsor ? `
     ${research?.summary ? `
     <research_summary>${research.summary}</research_summary>` : ''}
     <instructions>Incorporate these research findings naturally throughout the script, citing sources where appropriate</instructions>
-  </research_to_include>` : ''}
+  </research_to_include>` : '';
+  })()}
 </content_requirements>
 
 <constraints>
@@ -924,11 +999,24 @@ const generateOptimizedScript = (options = {}) => {
       }
     };
     
+    // Estimate tokens (rough approximation: 1 token ≈ 4 characters)
+    const estimatedTokens = Math.ceil(prompt.length / 4);
+    const maxTokens = 200000;
+    const tokenUsagePercent = (estimatedTokens / maxTokens * 100).toFixed(1);
+
     console.log('\n📄 RESULT METADATA:');
-    console.log('- Prompt length:', prompt.length, 'characters');
+    console.log('- Prompt length:', prompt.length.toLocaleString(), 'characters');
+    console.log('- Estimated tokens:', estimatedTokens.toLocaleString(), '/', maxTokens.toLocaleString(), `(${tokenUsagePercent}%)`);
+    if (estimatedTokens > maxTokens) {
+      console.error('⚠️  ERROR: Prompt exceeds Claude token limit!');
+      console.error(`   Reduce research content or script length. Over by ${(estimatedTokens - maxTokens).toLocaleString()} tokens.`);
+    } else if (estimatedTokens > maxTokens * 0.9) {
+      console.warn('⚠️  WARNING: Prompt is approaching token limit (>90%)');
+    }
     console.log('- Keywords extracted:', keywords.length);
     console.log('- Title variations:', titleVariations.length);
     console.log('- Length suggestion:', lengthSuggestion);
+    console.log('═════════════════════════════════════════════════════════════');
     console.log('=== END GENERATE OPTIMIZED SCRIPT ===\n');
     
     // Add validation function if requested
@@ -996,7 +1084,18 @@ const testGenerator = () => {
 function buildScriptGenerationPrompt(topic, duration, tone, research) {
   const synthesisSource = research.sources.find(s => s.source_type === 'synthesis');
   const webSources = research.sources.filter(s => s.source_type === 'web' && s.source_content?.length > 100);
-  
+
+  // Calculate limits based on number of sources
+  const totalSources = (synthesisSource ? 1 : 0) + webSources.length;
+  const perSourceLimit = calculateSourceLimit(totalSources, duration);
+
+  // Truncate synthesis source if needed (give it more space since it's primary)
+  const synthesisLimit = perSourceLimit * 2; // Double limit for synthesis
+  const { content: truncatedSynthesis } = truncateSourceContent(
+    synthesisSource?.source_content,
+    synthesisLimit
+  );
+
   return `<role>You are an expert YouTube scriptwriter specializing in ${tone} educational content.</role>
 
 <task>
@@ -1010,18 +1109,19 @@ You have been provided with comprehensive research on this topic. The research c
 
 1. **PRIMARY SOURCE - Research Synthesis (MOST IMPORTANT)**
 This is a comprehensive analysis combining insights from multiple verified sources:
-${synthesisSource?.source_content || 'No synthesis available'}
+${truncatedSynthesis || 'No synthesis available'}
 
 ${webSources.length > 0 ? `
 2. **SUPPLEMENTARY SOURCES - Additional Context**
 These provide extra detail and specific examples to enrich the script:
-${webSources.map((source, i) => `
+${webSources.map((source, i) => {
+  const { content } = truncateSourceContent(source.source_content, perSourceLimit);
+  return `
 Source ${i + 1}: ${source.source_title || 'Web Source'}
 URL: ${source.source_url}
-Content Preview (first 1500 chars):
-${source.source_content.substring(0, 1500)}
-${source.source_content.length > 1500 ? `\n[${Math.floor((source.source_content.length - 1500) / 1000)}k more characters available in source]` : ''}
-`).join('\n')}
+Content:
+${content}`;
+}).join('\n')}
 ` : ''}
 
 **CRITICAL INSTRUCTIONS:**
