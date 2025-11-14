@@ -737,10 +737,14 @@ YOU MUST WRITE THE ENTIRE SCRIPT FROM START TO FINISH IN ONE RESPONSE.
   Relevant hashtags
   
   ## Tags
-  Write 10-15 actual tags separated by commas like: tag1, tag2, tag3
+  Write 15-20 actual, relevant tags separated by commas (MANDATORY - DO NOT SKIP THIS SECTION!)
+  Example format: youtube tips, content creation, video marketing, youtube growth, channel optimization, subscriber growth, video seo, youtube algorithm, content strategy, youtube success, engagement tips, youtube analytics, video production, youtube monetization, creator tips
 </output_format>
 
-ABSOLUTE REQUIREMENT: Complete EVERYTHING in this single response. No continuations.
+ABSOLUTE REQUIREMENTS:
+1. Complete EVERYTHING in this single response. No continuations.
+2. MUST include the ## Tags section with at least 15 actual tags (not placeholders!)
+3. Tags MUST be real keywords related to the topic, not generic placeholders
 `;
 };
 
@@ -775,7 +779,7 @@ const validateScriptOutput = (script) => {
     reasonable_length: script.length > 1000 && script.length < 50000,
     noPlaceholders: !hasPlaceholders,
     hasDescription: script.includes('## Description') && script.includes('TIMESTAMPS:'),
-    hasTags: script.includes('## Tags') && !script.includes('[10-15')
+    hasTags: /##\s*Tags/i.test(script) && script.match(/##\s*Tags\s*\n+([^\n#]+)/i)?.[1]?.split(',').length >= 10
   };
   
   const errors = [];

@@ -775,10 +775,21 @@ Track your progress as you write:
 
 ${i === chunkConfig.chunks - 1 ? `
 🎬 FINAL SECTION REQUIREMENTS:
-This is the LAST section - MUST include:
-- Complete ## Description section with timestamps for ENTIRE video (100+ words)
-- Complete ## Tags section with 20+ actual relevant tags (no placeholders)
-- Proper conclusion that wraps up all previous sections
+This is the LAST section - MUST include ALL of these AT THE END:
+
+## Description
+[Full video description with overview]
+
+TIMESTAMPS:
+[List ALL timestamps for the ENTIRE video from 0:00 to end]
+
+[Any relevant links or resources]
+
+## Tags
+[MANDATORY: Write at least 20 actual, topic-specific tags separated by commas]
+Example: topic keyword1, topic keyword2, specific term1, specific term2, industry term1, industry term2, related concept1, related concept2, niche keyword1, niche keyword2, trending term1, trending term2, search term1, search term2, target audience term1, target audience term2, content type1, content type2, year reference, location reference
+
+⚠️ CRITICAL: The ## Tags section is MANDATORY. Script will be REJECTED without it!
 ` : `
 🔗 CONTINUATION REQUIREMENTS:
 - Build naturally from previous section
@@ -1149,10 +1160,10 @@ CRITICAL REQUIREMENTS:
 6. Each section should be thoroughly developed (200+ words per main point)
 7. Include specific examples, stories, and explanations
 
-MANDATORY SECTIONS (MUST INCLUDE ALL):
+MANDATORY SECTIONS (MUST INCLUDE ALL - SCRIPT WILL BE REJECTED IF ANY ARE MISSING):
 1. Main Script Content (MINIMUM ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words - write MORE not less)
 2. ## Description (with TIMESTAMPS: section listing ALL timestamps for the video)
-3. ## Tags (20+ actual relevant tags, NO placeholders)
+3. ## Tags (MANDATORY: Write at least 20 actual, relevant tags separated by commas - NO placeholders, NO brackets, NO ellipsis)
 
 Example Description Format:
 ## Description
@@ -1167,9 +1178,9 @@ TIMESTAMPS:
 Links:
 [Any relevant links]
 
-Example Tags Format:
+Example Tags Format (REQUIRED - MUST BE INCLUDED):
 ## Tags
-keyword1, keyword2, keyword3, keyword4, keyword5, keyword6, keyword7, keyword8, keyword9, keyword10, keyword11, keyword12, keyword13, keyword14, keyword15
+impostor syndrome, fake success, psychology of deception, success psychology, self doubt, confidence issues, achievement psychology, career psychology, workplace psychology, mental health awareness, psychological research, professional development, career advice, success mindset, overcoming doubt, authenticity at work, professional growth, workplace wellness, career confidence, psychological insights
 
 YOU WILL BE PENALIZED for:
 - Scripts under ${Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute} words
@@ -1417,19 +1428,25 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
                           (script.includes('Description') && script.includes('video'));
 
     // Check tags section specifically - extract it and validate (not the whole script!)
-    const tagsMatch = script.match(/## Tags\s*\n([^\n#]+)/);
+    // More flexible regex to catch variations in formatting
+    const tagsMatch = script.match(/##\s*Tags\s*\n+([^\n#]+(?:\n[^\n#]+)*)/i);
+    const tagContent = tagsMatch ? tagsMatch[1].trim() : '';
+    const tagsList = tagContent ? tagContent.split(',').map(t => t.trim()).filter(t => t && t.length > 1) : [];
+
     const hasTags = tagsMatch &&
-                    tagsMatch[1].trim().length > 20 && // Must have actual content
-                    !tagsMatch[1].includes('[') &&      // No brackets in tags
-                    !tagsMatch[1].includes('...') &&    // No ellipsis placeholders
-                    tagsMatch[1].split(',').length >= 10; // At least 10 comma-separated tags
+                    tagContent.length > 20 && // Must have actual content
+                    !tagContent.includes('[') &&      // No brackets in tags
+                    !tagContent.includes('...') &&    // No ellipsis placeholders
+                    tagsList.length >= 10; // At least 10 real tags (lowered threshold for flexibility)
 
     // Debug logging for tags validation
     if (tagsMatch) {
-      console.log('📝 Tags section found:', tagsMatch[1].substring(0, 200));
-      console.log('   Tag count:', tagsMatch[1].split(',').length);
+      console.log('📝 Tags section found:', tagContent.substring(0, 200));
+      console.log('   Tag count:', tagsList.length);
+      console.log('   First 5 tags:', tagsList.slice(0, 5));
     } else {
       console.log('❌ No tags section found in script');
+      console.log('   Script ending preview:', script.substring(script.length - 500));
     }
 
     const wordCount = script.split(/\s+/).length;
