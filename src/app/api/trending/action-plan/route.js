@@ -46,19 +46,21 @@ export async function POST(request) {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
-      if (countError) {
-        console.error('Error checking action plan count:', countError);
-      }
+      // If there's an error checking the count OR if count >= 1, show upgrade message
+      if (countError || count >= 1) {
+        if (countError) {
+          console.error('Error checking action plan count:', countError);
+          console.log(`🚫 Unable to verify action plan count for free user ${user.id}, showing upgrade prompt`);
+        } else {
+          console.log(`🚫 Free user ${user.id} has reached action plan limit (${count} plans)`);
+        }
 
-      // If they've already generated 1 or more plans, block with upgrade message
-      if (count >= 1) {
-        console.log(`🚫 Free user ${user.id} has reached action plan limit (${count} plans)`);
         return NextResponse.json({
           error: 'Free plan limit reached',
           message: 'You\'ve used your 1 free action plan. Upgrade to generate unlimited action plans and unlock script generation!',
           showUpgrade: true,
           upgradeUrl: '/pricing',
-          existingPlanCount: count,
+          existingPlanCount: countError ? 'unknown' : count,
           benefits: [
             'Unlimited action plans',
             'Generate scripts from your plans',

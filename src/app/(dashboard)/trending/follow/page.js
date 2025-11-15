@@ -596,71 +596,76 @@ export default function FollowTrendPage() {
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="glass-card p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 animate-reveal" style={{ animationDelay: '0.1s' }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-1">Ready to start?</h3>
-            <p className="text-gray-400 text-sm leading-none">Follow this plan to ride the trend wave</p>
-          </div>
-          <div className="flex gap-3">
-            <TransferToCalendar 
-              actionPlan={actionPlan} 
-              actionPlanId={planId}
-            />
-            <Button 
-              className="glass-button text-white"
-              onClick={exportPlan}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export Plan
-            </Button>
-            <Button 
-              className="glass-button text-white"
-              onClick={() => toast.info('Reminders feature coming soon!')}
-            >
-              <Bell className="h-4 w-4 mr-2" />
-              Set Reminders
-            </Button>
-            <Button 
-              className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
-              onClick={() => toast.success('Good luck with Week 1! Start with the first task.')}
-            >
-              <Rocket className="h-4 w-4 mr-2" />
-              Start Week 1
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Strategy Overview */}
-      <div className="glass-card p-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10 animate-reveal" style={{ animationDelay: '0.2s' }}>
-        <div className="grid md:grid-cols-4 gap-6">
-          <div>
-            <p className="text-sm text-gray-400 mb-1 leading-none">Strategy</p>
-            <p className="text-lg font-bold text-white">{actionPlan.strategy}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-400 mb-1 leading-none">Timeline</p>
-            <p className="text-lg font-bold text-white">{actionPlan.timeline}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-400 mb-1 leading-none">Est. Views</p>
-            <p className="text-lg font-bold text-green-400">{actionPlan.estimatedResults.views}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-400 mb-1 leading-none">Est. Subscribers</p>
-            <p className="text-lg font-bold text-blue-400">{actionPlan.estimatedResults.subscribers}</p>
+      {/* Action Buttons - Only show when not upgrade required */}
+      {!actionPlan?.isUpgradeRequired && (
+        <div className="glass-card p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 animate-reveal" style={{ animationDelay: '0.1s' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-1">Ready to start?</h3>
+              <p className="text-gray-400 text-sm leading-none">Follow this plan to ride the trend wave</p>
+            </div>
+            <div className="flex gap-3">
+              <TransferToCalendar
+                actionPlan={actionPlan}
+                actionPlanId={planId}
+              />
+              <Button
+                className="glass-button text-white"
+                onClick={exportPlan}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Plan
+              </Button>
+              <Button
+                className="glass-button text-white"
+                onClick={() => toast.info('Reminders feature coming soon!')}
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                Set Reminders
+              </Button>
+              <Button
+                className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+                onClick={() => toast.success('Good luck with Week 1! Start with the first task.')}
+              >
+                <Rocket className="h-4 w-4 mr-2" />
+                Start Week 1
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Weekly Plan */}
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Calendar className="h-6 w-6 text-purple-400" />
-          30-Day Action Plan
-        </h2>
+      {/* Strategy Overview - Only show when not upgrade required */}
+      {!actionPlan?.isUpgradeRequired && (
+        <div className="glass-card p-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10 animate-reveal" style={{ animationDelay: '0.2s' }}>
+          <div className="grid md:grid-cols-4 gap-6">
+            <div>
+              <p className="text-sm text-gray-400 mb-1 leading-none">Strategy</p>
+              <p className="text-lg font-bold text-white">{actionPlan.strategy}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400 mb-1 leading-none">Timeline</p>
+              <p className="text-lg font-bold text-white">{actionPlan.timeline}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400 mb-1 leading-none">Est. Views</p>
+              <p className="text-lg font-bold text-green-400">{actionPlan.estimatedResults.views}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400 mb-1 leading-none">Est. Subscribers</p>
+              <p className="text-lg font-bold text-blue-400">{actionPlan.estimatedResults.subscribers}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Weekly Plan - Only show when not upgrade required */}
+      {!actionPlan?.isUpgradeRequired && (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Calendar className="h-6 w-6 text-purple-400" />
+            30-Day Action Plan
+          </h2>
         
         {actionPlan.weeklyPlan.map((week, weekIndex) => (
           <div key={week.week} className="glass-card p-6 animate-reveal" style={{ animationDelay: `${0.3 + weekIndex * 0.1}s` }}>
@@ -704,10 +709,11 @@ export default function FollowTrendPage() {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Specific Content Ideas - if available */}
-      {actionPlan.contentIdeas && actionPlan.contentIdeas.length > 0 && (
+      {!actionPlan?.isUpgradeRequired && actionPlan.contentIdeas && actionPlan.contentIdeas.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Lightbulb className="h-6 w-6 text-yellow-400" />
@@ -736,12 +742,13 @@ export default function FollowTrendPage() {
         </div>
       )}
 
-      {/* Content Templates */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-          <FileText className="h-6 w-6 text-purple-400" />
-          Content Templates
-        </h2>
+      {/* Content Templates - Only show when not upgrade required */}
+      {!actionPlan?.isUpgradeRequired && (
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <FileText className="h-6 w-6 text-purple-400" />
+            Content Templates
+          </h2>
 
         <div className="grid md:grid-cols-3 gap-4">
           {actionPlan.contentTemplates.map((template, index) => (
@@ -766,10 +773,12 @@ export default function FollowTrendPage() {
             </TiltCard>
           ))}
         </div>
-      </div>
+        </div>
+      )}
 
-      {/* Keywords & Equipment */}
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* Keywords & Equipment - Only show when not upgrade required */}
+      {!actionPlan?.isUpgradeRequired && (
+        <div className="grid md:grid-cols-2 gap-6">
         <div className="glass-card p-6">
           <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <Hash className="h-5 w-5 text-purple-400" />
@@ -798,10 +807,11 @@ export default function FollowTrendPage() {
             ))}
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Competitor Analysis - if available */}
-      {actionPlan.competitorAnalysis && (
+      {!actionPlan?.isUpgradeRequired && actionPlan.competitorAnalysis && (
         <div className="glass-card p-6">
           <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <Target className="h-5 w-5 text-purple-400" />
@@ -843,7 +853,7 @@ export default function FollowTrendPage() {
       )}
 
       {/* Monetization Strategy - if available */}
-      {actionPlan.monetizationStrategy && actionPlan.monetizationStrategy.length > 0 && (
+      {!actionPlan?.isUpgradeRequired && actionPlan.monetizationStrategy && actionPlan.monetizationStrategy.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Zap className="h-6 w-6 text-green-400" />
