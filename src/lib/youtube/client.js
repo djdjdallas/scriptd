@@ -1,8 +1,8 @@
 import { google } from 'googleapis';
 
-// Get the base URL for the referer header
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ||
-                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://scriptd.vercel.app');
+// Always use production domain for YouTube API requests
+// YouTube API keys are restricted to specific domains configured in Google Cloud Console
+const YOUTUBE_REFERER_URL = 'https://scriptd.vercel.app';
 
 // Initialize YouTube Data API v3 client
 export function getYouTubeClient() {
@@ -20,8 +20,8 @@ export function getYouTubeClient() {
 export function getRequestOptions() {
   return {
     headers: {
-      'Referer': BASE_URL,
-      'Origin': BASE_URL
+      'Referer': YOUTUBE_REFERER_URL,
+      'Origin': YOUTUBE_REFERER_URL
     }
   };
 }

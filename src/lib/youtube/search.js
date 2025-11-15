@@ -1,8 +1,8 @@
 import { google } from 'googleapis';
 
-// Get the base URL for the referer header
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ||
-                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://scriptd.vercel.app');
+// Always use production domain for YouTube API requests
+// YouTube API keys are restricted to specific domains configured in Google Cloud Console
+const YOUTUBE_REFERER_URL = 'https://scriptd.vercel.app';
 
 // Configure YouTube client
 const youtube = google.youtube({
@@ -13,8 +13,8 @@ const youtube = google.youtube({
 // Create request options with headers
 const requestOptions = {
   headers: {
-    'Referer': BASE_URL,
-    'Origin': BASE_URL
+    'Referer': YOUTUBE_REFERER_URL,
+    'Origin': YOUTUBE_REFERER_URL
   }
 };
 
