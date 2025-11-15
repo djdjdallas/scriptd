@@ -77,6 +77,7 @@ export async function searchVideos(query, options = {}) {
   if (cached) return cached;
 
   const youtube = getYouTubeClient();
+  const requestOptions = getRequestOptions();
 
   try {
     const params = {
@@ -130,6 +131,7 @@ export async function getRelatedChannels(channelId, maxResults = 10) {
   if (cached) return cached;
 
   const youtube = getYouTubeClient();
+  const requestOptions = getRequestOptions();
 
   try {
     // Search for channels that appear in the same searches
@@ -170,16 +172,17 @@ export async function getRelatedChannels(channelId, maxResults = 10) {
 
 export async function getChannelStatistics(channelIds) {
   if (!channelIds || channelIds.length === 0) return {};
-  
+
   const cacheKey = `channel-stats-${channelIds.join('-')}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
   const youtube = getYouTubeClient();
-  
+  const requestOptions = getRequestOptions();
+
   try {
     const response = await withRateLimit('channels', () =>
-      youtube.channels.list({ 
+      youtube.channels.list({
         part: ['statistics', 'snippet', 'contentDetails'],
         id: channelIds,
         maxResults: 50
@@ -257,6 +260,7 @@ export async function getRecentVideos(options = {}) {
   if (cached) return cached;
 
   const youtube = getYouTubeClient();
+  const requestOptions = getRequestOptions();
 
   try {
     // Search for recent videos with relevance and view count sorting
