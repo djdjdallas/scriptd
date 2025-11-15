@@ -427,32 +427,38 @@ export default function DashboardLayout({ children }) {
             })}
           </nav>
 
-          {/* Credits Display */}
+          {/* Credits Display Card */}
           {!(sidebarCollapsed && !sidebarHovered) && (
-            <div className="glass-card p-4 mt-auto">
-              <div className="flex items-center gap-2 mb-3 py-1">
-                <span className="text-sm text-gray-300 leading-none">Credits:</span>
-                {creditsLoading ? (
-                  <span className="text-sm font-bold text-gray-500 leading-none">
-                    ...
-                  </span>
-                ) : (
-                  <span className="text-sm font-bold text-white leading-none">
-                    {credits.toLocaleString()}
-                  </span>
-                )}
+            <div className="mt-auto pt-4 border-t border-white/10">
+              <div className="glass-card p-3 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-purple-400" />
+                    <span className="text-xs font-medium text-gray-300">Credits</span>
+                  </div>
+                  {creditsLoading ? (
+                    <span className="text-sm font-bold text-gray-500">...</span>
+                  ) : (
+                    <span className="text-sm font-bold gradient-text">
+                      {credits.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                <div className="w-full h-1.5 bg-black/30 rounded-full overflow-hidden mb-2">
+                  <div
+                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                    style={{ width: `${Math.min((credits / 1000) * 100, 100)}%` }}
+                  />
+                </div>
+                <Link href="/credits" className="block">
+                  <Button
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs py-1.5 h-auto"
+                  >
+                    Get More
+                  </Button>
+                </Link>
               </div>
-              <div className="w-full h-2 glass rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500 animate-shimmer"
-                  style={{ width: `${Math.min((credits / 1000) * 100, 100)}%` }}
-                />
-              </div>
-              <Link href="/credits">
-                <Button className="w-full mt-3 glass-button text-white text-sm">
-                  Get More Credits
-                </Button>
-              </Link>
             </div>
           )}
 
