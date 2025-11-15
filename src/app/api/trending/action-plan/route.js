@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { detectChannelNiche, findRealEvents, validateContentIdeas, enrichActionPlan } from '@/lib/ai/action-plan-enhancer';
 import { updateProgress, PROGRESS_STAGES } from '@/lib/utils/progress-tracker';
 import { extractJsonFromResponse } from '@/lib/utils/json-parser';
+import { fetchChannelRecentVideos } from '@/lib/youtube/supadata';
 
 export async function POST(request) {
   try {
@@ -173,21 +174,46 @@ Remix Channel Analysis for "${channelName}":
           channelData = data.items?.[0];
           
           if (channelData) {
-            // Get recent videos for better context
-            const uploadsPlaylistId = channelData.contentDetails?.relatedPlaylists?.uploads;
+            // Get recent videos for better context using SupaData (preferred) or YouTube API
+            const actualChannelId = channelData.id;
 
-            if (uploadsPlaylistId) {
-              const videosResponse = await fetch(
-                `https://www.googleapis.com/youtube/v3/playlistItems?` +
-                `part=snippet&` +
-                `playlistId=${uploadsPlaylistId}&` +
-                `maxResults=5&` +
-                `key=${process.env.YOUTUBE_API_KEY}`
-              );
-              
-              if (videosResponse.ok) {
-                const videosData = await videosResponse.json();
-                recentVideos = videosData.items?.map(item => item.snippet.title) || [];
+            // Try SupaData first for better data
+            if (actualChannelId) {
+              console.log('📹 Attempting to fetch videos via SupaData...');
+              const supadataVideos = await fetchChannelRecentVideos(actualChannelId, 10);
+
+              if (supadataVideos && supadataVideos.length > 0) {
+                console.log(`✅ SupaData: Fetched ${supadataVideos.length} videos`);
+                // Include both titles AND descriptions for better niche detection
+                recentVideos = supadataVideos.map(v => ({
+                  title: v.title,
+                  description: v.description?.substring(0, 200) || '', // First 200 chars
+                  viewCount: v.viewCount,
+                  publishedAt: v.publishedAt
+                }));
+              } else {
+                console.log('⚠️ SupaData returned no videos, falling back to YouTube API');
+
+                // Fallback to YouTube API
+                const uploadsPlaylistId = channelData.contentDetails?.relatedPlaylists?.uploads;
+                if (uploadsPlaylistId) {
+                  const videosResponse = await fetch(
+                    `https://www.googleapis.com/youtube/v3/playlistItems?` +
+                    `part=snippet&` +
+                    `playlistId=${uploadsPlaylistId}&` +
+                    `maxResults=5&` +
+                    `key=${process.env.YOUTUBE_API_KEY}`
+                  );
+
+                  if (videosResponse.ok) {
+                    const videosData = await videosResponse.json();
+                    recentVideos = videosData.items?.map(item => ({
+                      title: item.snippet.title,
+                      description: item.snippet.description?.substring(0, 200) || '',
+                      publishedAt: item.snippet.publishedAt
+                    })) || [];
+                  }
+                }
               }
             }
             

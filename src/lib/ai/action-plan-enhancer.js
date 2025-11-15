@@ -24,11 +24,28 @@ export async function detectChannelNiche(channelData) {
 
   const claude = getClaudeService();
 
+  // Format recent videos - handle both string array and object array formats
+  let videoContext = 'No recent videos';
+  if (recentVideos.length > 0) {
+    if (typeof recentVideos[0] === 'string') {
+      // Old format: just titles
+      videoContext = recentVideos.join('\n- ');
+    } else {
+      // New format: objects with title and description
+      videoContext = recentVideos.map((v, i) =>
+        `${i + 1}. "${v.title}"\n   ${v.description ? `Description: ${v.description}` : ''}`
+      ).join('\n\n');
+    }
+  }
+
   const prompt = `Analyze this YouTube channel and determine its EXACT niche. Be extremely specific.
 
 Channel Name: ${name}
-Description: ${description || 'No description available'}
-Recent Video Titles: ${recentVideos.length > 0 ? recentVideos.join(', ') : 'No recent videos'}
+Channel Description: ${description || 'No description available'}
+
+Recent Videos:
+${videoContext}
+
 ${subscriberCount > 0 ? `Subscribers: ${subscriberCount.toLocaleString()}` : ''}
 ${videoCount > 0 ? `Total Videos: ${videoCount}` : ''}
 
@@ -50,9 +67,15 @@ Examples of SPECIFIC niches (never generic):
 * Crime: "Hacker True Crime Stories", "Financial Fraud Documentary", "Cold Case DNA Analysis", "Prison Psychology Studies"
 * Business: "Failed Startup Autopsies", "Billionaire Psychology Analysis", "Market Crash Investigations", "Corporate Espionage Cases"
 * Education: "Neuroscience Breakthroughs", "Ancient Civilization Mysteries", "Mathematical Paradox Solutions", "Philosophy Mind Experiments"
-* Psychology: "Applied Psychology Life Lessons", "Psychological Philosophy", "Mental Health Through Philosophy", "Human Psyche Analysis", "Psychology of Letting Go", "Hidden Psychology Variables"
+* Psychology: "Practical Psychology Lessons", "Emotional Intelligence Training", "Human Behavior Analysis", "Self-Control Psychology", "Relationship Psychology", "Mental Strength Building", "Dark Psychology Explained", "Personality Types Explained", "Behavioral Science Insights", "Applied Social Psychology", "Everyday Psychology Tips"
 * Philosophy: "Stoic Life Application", "Eastern Philosophy Practice", "Philosophical Psychology", "Life Hardship Philosophy", "Modern Philosophy Application"
 * Entertainment: "Horror Movie Psychology", "Gaming Industry Scandals", "Music Theory Breakdowns", "Comedy Writing Analysis"
+
+IMPORTANT: Look at the video titles and descriptions to understand what the channel actually creates, not just the channel name!
+- If videos are about "people who never get angry", "emotional control", "confidence" → This is PRACTICAL PSYCHOLOGY or SELF-IMPROVEMENT
+- If videos reference academic conferences, Jungian theory → This is ANALYTICAL PSYCHOLOGY
+- If videos are about everyday behaviors → This is BEHAVIORAL PSYCHOLOGY
+- If videos give life advice with psychological backing → This is APPLIED PSYCHOLOGY
 
 Return in this JSON format:
 {
