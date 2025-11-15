@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 export const metadata = {
-  title: 'Join the Beta - Subscribr | AI-Powered YouTube Content Creation',
+  title: 'Join the Beta - GenScript | AI-Powered YouTube Content Creation',
   description: 'Be among the first to experience the future of YouTube content creation. Get 3 months free access and help shape our platform.',
 };
 
@@ -36,7 +36,7 @@ export default function BetaPage() {
           </Badge>
           
           <h1 className="text-4xl font-bold tracking-tight sm:text-6xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Join the Subscribr Beta Program
+            Join the GenScript Beta Program
           </h1>
           
           <p className="mt-6 text-lg leading-8 text-muted-foreground">

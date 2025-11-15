@@ -40,7 +40,7 @@ This agreement is entered into on ${format(new Date(), 'MMMM d, yyyy')} between:
 Voice Owner: ${voiceOwnerName || '[Voice Owner Name]'}
 Grantee: ${granteeName || '[Your Name]'}${granteeCompany ? ` representing ${granteeCompany}` : ''}
 
-I, ${voiceOwnerName || '[Voice Owner Name]'}, hereby grant ${granteeName || '[Your Name]'}${granteeCompany ? ` of ${granteeCompany}` : ''} permission to create a digital voice profile of my voice using Subscribr's voice cloning technology.
+I, ${voiceOwnerName || '[Voice Owner Name]'}, hereby grant ${granteeName || '[Your Name]'}${granteeCompany ? ` of ${granteeCompany}` : ''} permission to create a digital voice profile of my voice using GenScript's voice cloning technology.
 
 PURPOSE OF USE:
 ${purpose || '[Describe how the voice will be used - e.g., YouTube video narration, educational content, etc.]'}

@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Voice Cloning Terms of Service - Subscribr',
+  title: 'Voice Cloning Terms of Service - GenScript',
   description: 'Terms of Service for voice cloning and synthesis features',
 };
 
@@ -13,7 +13,7 @@ export default function VoiceCloningTerms() {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
           <p>
-            By using Subscribr&apos;s voice cloning and synthesis features (&quot;Voice Services&quot;), you agree to be bound by these 
+            By using GenScript&apos;s voice cloning and synthesis features (&quot;Voice Services&quot;), you agree to be bound by these 
             Voice Cloning Terms of Service (&quot;Voice Terms&quot;) in addition to our general Terms of Service. If you do not agree 
             to these terms, you may not use the Voice Services.
           </p>
@@ -23,7 +23,7 @@ export default function VoiceCloningTerms() {
           <h2 className="text-2xl font-semibold mb-4">2. Voice Rights and Ownership</h2>
           
           <h3 className="text-xl font-semibold mb-2">2.1 Your Voice Rights</h3>
-          <p>You retain all rights to your voice and vocal characteristics. By using the Voice Services, you grant Subscribr a limited, non-exclusive, revocable license to:</p>
+          <p>You retain all rights to your voice and vocal characteristics. By using the Voice Services, you grant GenScript a limited, non-exclusive, revocable license to:</p>
           <ul className="list-disc ml-6 mb-4">
             <li>Process and analyze your voice recordings for the purpose of creating voice profiles</li>
             <li>Generate synthetic speech using your voice profile for content you create</li>
@@ -61,9 +61,9 @@ export default function VoiceCloningTerms() {
           <h3 className="text-xl font-semibold mb-2">3.3 Consent Template</h3>
           <p>We recommend using the following consent template:</p>
           <blockquote className="border-l-4 border-primary pl-4 my-4 italic">
-            &quot;I, [Name], hereby grant [Your Name/Company] permission to create a digital voice profile of my voice 
-            using Subscribr&apos;s voice cloning technology. I understand this profile will be used to generate synthetic 
-            speech for [specific purpose]. This consent is valid from [start date] to [end date] and may be revoked 
+            &quot;I, [Name], hereby grant [Your Name/Company] permission to create a digital voice profile of my voice
+            using GenScript&apos;s voice cloning technology. I understand this profile will be used to generate synthetic
+            speech for [specific purpose]. This consent is valid from [start date] to [end date] and may be revoked
             at any time by written notice.&quot;
           </blockquote>
         </section>
@@ -103,7 +103,7 @@ export default function VoiceCloningTerms() {
             <li>Never misrepresent synthetic voice as a real person speaking</li>
           </ul>
 
-          <p>Example disclosure: &quot;This video uses AI-generated voice narration created with Subscribr.&quot;</p>
+          <p>Example disclosure: &quot;This video uses AI-generated voice narration created with GenScript.&quot;</p>
         </section>
 
         <section className="mb-8">
@@ -135,8 +135,8 @@ export default function VoiceCloningTerms() {
           <h2 className="text-2xl font-semibold mb-4">7. Intellectual Property</h2>
           
           <p>
-            Content created using Voice Services remains your intellectual property. However, you grant Subscribr 
-            a license to use anonymized voice metrics for improving our services. This does not include your actual 
+            Content created using Voice Services remains your intellectual property. However, you grant GenScript
+            a license to use anonymized voice metrics for improving our services. This does not include your actual
             voice recordings or identifiable characteristics.
           </p>
         </section>
@@ -167,7 +167,7 @@ export default function VoiceCloningTerms() {
           <h2 className="text-2xl font-semibold mb-4">9. Liability and Indemnification</h2>
           
           <p>
-            You agree to indemnify and hold Subscribr harmless from any claims arising from your use of Voice 
+            You agree to indemnify and hold GenScript harmless from any claims arising from your use of Voice
             Services, including but not limited to:
           </p>
           <ul className="list-disc ml-6 mb-4">
@@ -207,7 +207,7 @@ export default function VoiceCloningTerms() {
           
           <p>For questions about these Voice Terms or to report violations, contact us at:</p>
           <ul className="list-none ml-0 mb-4">
-            <li>Email: legal@subscribr.ai</li>
+            <li>Email: support@genscript.io</li>
             <li>Address: [Your Company Address]</li>
           </ul>
         </section>

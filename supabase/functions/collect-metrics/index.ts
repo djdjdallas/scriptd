@@ -35,7 +35,7 @@ serve(async (req) => {
     const now = new Date().toISOString()
     
     // Call your Next.js API endpoint to collect real YouTube metrics
-    const apiUrl = Deno.env.get('NEXT_PUBLIC_URL') || 'https://subscribr.ai'
+    const apiUrl = Deno.env.get('NEXT_PUBLIC_URL') || 'https://genscript.io'
     const cronSecret = Deno.env.get('CRON_SECRET') || ''
     
     try {

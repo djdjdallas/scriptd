@@ -219,6 +219,22 @@ export default function ChannelDetailPage({ params }) {
 
       if (!response.ok) {
         const errorData = await response.json();
+
+        // Handle free plan limit with special UI
+        if (errorData.showUpgrade && response.status === 403) {
+          // Show upgrade toast with action button
+          toast.dismiss();
+          toast.error(errorData.message, {
+            duration: 10000, // Show for 10 seconds
+            action: {
+              label: 'Upgrade Now',
+              onClick: () => router.push(errorData.upgradeUrl || '/pricing')
+            }
+          });
+
+          return; // Don't throw error, handle gracefully
+        }
+
         throw new Error(errorData.error || "Failed to create action plan");
       }
 

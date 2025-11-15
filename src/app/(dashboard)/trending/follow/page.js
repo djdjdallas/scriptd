@@ -463,7 +463,7 @@ export default function FollowTrendPage() {
       
       exportContent += `---\n\n`;
       exportContent += `Generated: ${new Date().toLocaleDateString()}\n`;
-      exportContent += `Source: Subscribr AI Trend Analysis\n`;
+      exportContent += `Source: GenScript AI Trend Analysis\n`;
       
       // Create blob and download
       const blob = new Blob([exportContent], { type: 'text/markdown' });

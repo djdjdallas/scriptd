@@ -4,7 +4,7 @@ import { ArrowLeft, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata = {
-  title: 'Voice Cloning Consent Form - Subscribr',
+  title: 'Voice Cloning Consent Form - GenScript',
   description: 'Generate a voice cloning consent agreement for ethical AI voice use',
 };
 

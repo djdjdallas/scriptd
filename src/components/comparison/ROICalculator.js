@@ -17,8 +17,8 @@ export default function ROICalculator() {
   const retentionIncrease = improvedRetention - currentRetention;
   const viewsIncrease = Math.round(avgViews * (retentionIncrease / 100) * 2.5); // Algorithm boost
   const revenueIncrease = Math.round((viewsIncrease * 0.002) * 30); // Estimated monthly revenue
-  const subscribrCost = 49; // Professional plan
-  const roi = Math.round(((revenueIncrease - subscribrCost) / subscribrCost) * 100);
+  const genscriptCost = 49; // Professional plan
+  const roi = Math.round(((revenueIncrease - genscriptCost) / genscriptCost) * 100);
   
   return (
     <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30">
@@ -95,11 +95,11 @@ export default function ROICalculator() {
               
               <div className="p-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold">ROI with Subscribr</span>
+                  <span className="font-semibold">ROI with GenScript</span>
                   <span className="text-2xl font-bold">{roi}%</span>
                 </div>
                 <p className="text-sm opacity-90">
-                  Invest ${subscribrCost}/mo, potentially earn ${revenueIncrease}/mo
+                  Invest ${genscriptCost}/mo, potentially earn ${revenueIncrease}/mo
                 </p>
               </div>
             </div>

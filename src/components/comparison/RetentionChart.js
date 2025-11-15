@@ -35,7 +35,7 @@ export default function RetentionChart({
           
           <div>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium">Subscribr</span>
+              <span className="text-sm font-medium">GenScript</span>
               <span className="text-sm font-bold text-purple-600">{ourRetention}% AVD</span>
             </div>
             <div className="w-full bg-purple-100 dark:bg-purple-900/30 rounded-full h-4 overflow-hidden">
@@ -56,7 +56,7 @@ export default function RetentionChart({
               </span>
             </div>
             <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-              Average improvement after switching to Subscribr
+              Average improvement after switching to GenScript
             </p>
           </div>
         </div>

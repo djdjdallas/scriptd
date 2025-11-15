@@ -248,7 +248,7 @@ export default function DeveloperContentTools() {
     <>
       {/* SEO Meta Tags */}
       <head>
-        <title>Developer Content Tools - YouTube Scripts for Programming Tutorials | Subscribr</title>
+        <title>Developer Content Tools - YouTube Scripts for Programming Tutorials | GenScript</title>
         <meta name="description" content="Create engaging programming tutorials and tech content with AI scripts designed for developers. 72% retention rates, technical accuracy guaranteed." />
         <meta name="keywords" content="developer content, programming tutorials, coding videos, tech YouTube, developer marketing, code tutorials" />
       </head>

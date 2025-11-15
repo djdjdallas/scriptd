@@ -85,7 +85,7 @@ export function BetaSignupForm() {
             </div>
             <h3 className="text-2xl font-bold">Application Submitted!</h3>
             <p className="text-muted-foreground">
-              Thank you for applying to the Subscribr beta program. We&apos;ll review your application and get back to you within 48 hours.
+              Thank you for applying to the GenScript beta program. We&apos;ll review your application and get back to you within 48 hours.
             </p>
             <p className="text-sm text-muted-foreground">
               Check your email for a confirmation message. If you don&apos;t see it, please check your spam folder.
@@ -286,14 +286,14 @@ export function BetaSignupForm() {
 
           {/* Why Join Beta */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Why Subscribr?</h3>
+            <h3 className="font-semibold text-lg">Why GenScript?</h3>
             
             <div className="space-y-2">
               <Label htmlFor="whyJoinBeta">Why do you want to join our beta? *</Label>
               <Textarea
                 id="whyJoinBeta"
                 {...register('whyJoinBeta')}
-                placeholder="What excites you about AI-powered content creation? What would you like to achieve with Subscribr?"
+                placeholder="What excites you about AI-powered content creation? What would you like to achieve with GenScript?"
                 rows={3}
               />
               {errors.whyJoinBeta && (

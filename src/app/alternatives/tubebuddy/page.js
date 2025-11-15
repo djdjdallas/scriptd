@@ -100,7 +100,7 @@ export default function TubeBuddyAlternativePage() {
       name: 'Mike Johnson',
       channel: '@GamingHub',
       subscribers: '25K',
-      quote: 'TubeBuddy was great for keywords, but I needed actual scripts. Genscript delivers exactly what I need - engaging content that keeps viewers watching.',
+      quote: 'TubeBuddy was great for keywords, but I needed actual scripts. GenScript delivers exactly what I need - engaging content that keeps viewers watching.',
       rating: 5,
       verified: true,
       metrics: { retention: 72, growth: 3.5, timeframe: '2 months' }
@@ -118,7 +118,7 @@ export default function TubeBuddyAlternativePage() {
       name: 'Ryan Chen',
       channel: '@TechTutorials',
       subscribers: '8K',
-      quote: 'I was spending hours writing scripts after doing keyword research in TubeBuddy. Now Genscript does both - but better!',
+      quote: 'I was spending hours writing scripts after doing keyword research in TubeBuddy. Now GenScript does both - but better!',
       rating: 5,
       verified: true
     }
@@ -126,12 +126,12 @@ export default function TubeBuddyAlternativePage() {
 
   const faqs = [
     {
-      question: 'How is Genscript different from TubeBuddy?',
-      answer: 'While TubeBuddy focuses on keyword research and SEO optimization, Genscript specializes in creating high-retention scripts using AI. We help you create content that not only gets discovered but keeps viewers watching until the end.'
+      question: 'How is GenScript different from TubeBuddy?',
+      answer: 'While TubeBuddy focuses on keyword research and SEO optimization, GenScript specializes in creating high-retention scripts using AI. We help you create content that not only gets discovered but keeps viewers watching until the end.'
     },
     {
-      question: 'Can I use both TubeBuddy and Genscript together?',
-      answer: 'Absolutely! Many creators use TubeBuddy for keyword research and Genscript for script generation. They complement each other perfectly. However, Genscript also includes essential SEO features, so you might find you don\'t need both.'
+      question: 'Can I use both TubeBuddy and GenScript together?',
+      answer: 'Absolutely! Many creators use TubeBuddy for keyword research and GenScript for script generation. They complement each other perfectly. However, GenScript also includes essential SEO features, so you might find you don\'t need both.'
     },
     {
       question: 'Do you have keyword research like TubeBuddy?',
@@ -154,7 +154,7 @@ export default function TubeBuddyAlternativePage() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Genscript",
+    "name": "GenScript",
     "applicationCategory": "YouTube Script Generator",
     "operatingSystem": "Web",
     "alternativeOf": {
@@ -305,7 +305,7 @@ export default function TubeBuddyAlternativePage() {
               </div>
               
               <ComparisonSection 
-                title="TubeBuddy vs Subscribr"
+                title="TubeBuddy vs GenScript"
                 subtitle="See why creators are switching from keyword research to AI-powered script generation"
                 competitor="TubeBuddy"
                 features={comparisonFeatures}
@@ -448,7 +448,7 @@ export default function TubeBuddyAlternativePage() {
                   Calculate Your Potential Return
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                  See how much you could gain by switching from TubeBuddy to Genscript
+                  See how much you could gain by switching from TubeBuddy to GenScript
                 </p>
               </div>
               
@@ -518,7 +518,7 @@ export default function TubeBuddyAlternativePage() {
             Stop Researching. Start Creating.
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            TubeBuddy shows you what to create. Genscript actually creates it for you - 
+            TubeBuddy shows you what to create. GenScript actually creates it for you -
             with {socialProofData.metrics.averageRetention}%+ retention guaranteed.
           </p>
           

@@ -122,7 +122,7 @@ export default function BusinessEducatorSuite() {
       title: 'Business Coach',
       company: 'Scale Academy',
       revenue: '$2.3M ARR',
-      quote: 'Subscribr helped me scale from 5K to 450K subscribers. My course sales increased 340% after optimizing my video scripts.',
+      quote: 'GenScript helped me scale from 5K to 450K subscribers. My course sales increased 340% after optimizing my video scripts.',
       beforeAfter: {
         before: '12% course conversion',
         after: '41% course conversion'
@@ -217,7 +217,7 @@ export default function BusinessEducatorSuite() {
     <>
       {/* SEO Meta Tags */}
       <head>
-        <title>Business Educator Suite - Professional YouTube Scripts for Course Creators | Subscribr</title>
+        <title>Business Educator Suite - Professional YouTube Scripts for Course Creators | GenScript</title>
         <meta name="description" content="Transform your business education content with AI scripts designed for course creators, consultants, and thought leaders. 68% retention, 3x conversion rates." />
         <meta name="keywords" content="business educator, course creator, YouTube scripts, business content, online education, professional videos" />
       </head>

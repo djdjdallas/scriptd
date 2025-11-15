@@ -441,7 +441,7 @@ export default function PVSSFrameworkPage() {
             Start Using The PVSS Framework Today
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Every script generated with Subscribr automatically follows the PVSS framework for maximum virality.
+            Every script generated with GenScript automatically follows the PVSS framework for maximum virality.
           </p>
           
           <div className="flex gap-4 justify-center">

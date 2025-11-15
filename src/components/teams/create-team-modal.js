@@ -194,7 +194,7 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
             <div className="space-y-2">
               <Label htmlFor="slug">Team URL Slug *</Label>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">subscribr.app/teams/</span>
+                <span className="text-sm text-muted-foreground">genscript.io/teams/</span>
                 <Input
                   id="slug"
                   placeholder="my-content-team"

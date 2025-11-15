@@ -156,7 +156,7 @@ async function fetchDirectly(url, options = {}) {
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; SubscribrBot/1.0; +https://subscribr.com/bot)',
+        'User-Agent': 'Mozilla/5.0 (compatible; GenScriptBot/1.0; +https://genscript.io/bot)',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5'
       }

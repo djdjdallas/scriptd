@@ -273,13 +273,13 @@ export default function SubscribrAIAlternative() {
               <ArrowRight className="w-8 h-8 text-green-400" />
             </div>
             <div>
-              <p className="text-gray-400 text-sm mb-2">Genscript Pro</p>
+              <p className="text-gray-400 text-sm mb-2">GenScript Pro</p>
               <p className="text-3xl font-bold text-green-400">${ourPlatform.pricing.professional}/mo</p>
             </div>
           </div>
           <div className="p-4 bg-green-500/10 rounded-lg">
             <p className="text-2xl font-bold text-green-400">
-              Save ${yearlyDifference}/year by switching to Genscript
+              Save ${yearlyDifference}/year by switching to GenScript
             </p>
           </div>
         </MarketingCard>
