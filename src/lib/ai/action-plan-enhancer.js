@@ -42,12 +42,16 @@ Channel Name Analysis Examples:
 - "Psyphoria" → Could be "Psychedelic Philosophy", "Psychology Euphoria Content", "Mind Expansion Topics"
 - "Blackfiles" → Could be "Dark Web Investigations", "Classified Document Analysis", "Hacker Case Studies"
 - "TechMystery" → Could be "Tech Crime Documentary", "Silicon Valley Investigations", "Startup Failure Analysis"
+- "Kee" → If bio mentions psychology: "Applied Psychology Lessons", "Philosophical Psychology", "Mental Health Philosophy"
+- Single names often indicate personal brand channels focused on expertise sharing
 
 Examples of SPECIFIC niches (never generic):
 * Tech: "Cybersecurity Breach Analysis", "AI Ethics Debates", "Quantum Computing Explained", "Blockchain Scam Investigations"
 * Crime: "Hacker True Crime Stories", "Financial Fraud Documentary", "Cold Case DNA Analysis", "Prison Psychology Studies"
 * Business: "Failed Startup Autopsies", "Billionaire Psychology Analysis", "Market Crash Investigations", "Corporate Espionage Cases"
 * Education: "Neuroscience Breakthroughs", "Ancient Civilization Mysteries", "Mathematical Paradox Solutions", "Philosophy Mind Experiments"
+* Psychology: "Applied Psychology Life Lessons", "Psychological Philosophy", "Mental Health Through Philosophy", "Human Psyche Analysis", "Psychology of Letting Go", "Hidden Psychology Variables"
+* Philosophy: "Stoic Life Application", "Eastern Philosophy Practice", "Philosophical Psychology", "Life Hardship Philosophy", "Modern Philosophy Application"
 * Entertainment: "Horror Movie Psychology", "Gaming Industry Scandals", "Music Theory Breakdowns", "Comedy Writing Analysis"
 
 Return in this JSON format:

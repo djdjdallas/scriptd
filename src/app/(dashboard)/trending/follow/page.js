@@ -41,6 +41,7 @@ export default function FollowTrendPage() {
   const channelId = searchParams.get('channelId') || null;
   const topic = searchParams.get('topic') || 'AI Tools & Applications';
   const planId = searchParams.get('planId') || null; // Get planId if viewing existing plan
+  const channelBio = searchParams.get('bio') ? decodeURIComponent(searchParams.get('bio')) : ''; // Get bio from URL
   const [actionPlan, setActionPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [completedSteps, setCompletedSteps] = useState(new Set());
@@ -175,13 +176,37 @@ export default function FollowTrendPage() {
           channelId,
           topic,
           sessionId, // Pass session ID for progress tracking
+          channelBio, // Pass bio for better niche detection
         }),
         signal: abortControllerRef.current?.signal, // Add abort signal
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to generate action plan');
+        const errorData = await response.json();
+
+        // Handle free plan limit with special UI
+        if (errorData.showUpgrade && response.status === 403) {
+          // Show upgrade modal or redirect
+          toast.error(errorData.message, {
+            duration: 10000, // Show for 10 seconds
+            action: {
+              label: 'Upgrade Now',
+              onClick: () => router.push(errorData.upgradeUrl || '/pricing')
+            }
+          });
+
+          // Optionally set state to show upgrade UI
+          setActionPlan({
+            isUpgradeRequired: true,
+            message: errorData.message,
+            benefits: errorData.benefits,
+            upgradeUrl: errorData.upgradeUrl
+          });
+
+          return; // Don't throw error, handle gracefully
+        }
+
+        throw new Error(errorData.error || 'Failed to generate action plan');
       }
 
       const actionPlanData = await response.json();
@@ -472,6 +497,78 @@ export default function FollowTrendPage() {
         <div className="absolute bottom-20 left-20 w-96 h-96 bg-green-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
       </div>
 
+      {/* Upgrade Required Message */}
+      {actionPlan?.isUpgradeRequired && (
+        <div className="glass-card p-8 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-2 border-yellow-500/30 animate-reveal">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-yellow-500/20 rounded-lg">
+              <Sparkles className="h-8 w-8 text-yellow-400" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-white mb-2">Free Plan Limit Reached</h2>
+              <p className="text-gray-300 mb-4">{actionPlan.message}</p>
+
+              {actionPlan.benefits && (
+                <div className="mb-4">
+                  <p className="text-white font-semibold mb-2">Upgrade to unlock:</p>
+                  <ul className="space-y-2">
+                    {actionPlan.benefits.map((benefit, index) => (
+                      <li key={index} className="flex items-center gap-2 text-gray-300">
+                        <CheckCircle className="h-5 w-5 text-green-400" />
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => router.push(actionPlan.upgradeUrl || '/pricing')}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                >
+                  <Rocket className="h-4 w-4 mr-2" />
+                  Upgrade Now
+                </Button>
+                <Button
+                  onClick={() => router.push('/trending/action-plans')}
+                  variant="outline"
+                  className="glass-button text-white"
+                >
+                  View My Action Plan
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Free Plan Success Banner */}
+      {actionPlan?.isFirstFreePlan && !actionPlan?.isUpgradeRequired && (
+        <div className="glass-card p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 border-2 border-green-500/30 animate-reveal">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-green-500/20 rounded-lg">
+              <Sparkles className="h-6 w-6 text-green-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-white mb-1">{actionPlan.planMessage}</h3>
+              {actionPlan.upgradePrompt && (
+                <div className="mt-3 flex items-center gap-3">
+                  <p className="text-gray-300 text-sm leading-none">{actionPlan.upgradePrompt.message}</p>
+                  <Button
+                    onClick={() => router.push(actionPlan.upgradePrompt.url)}
+                    size="sm"
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                  >
+                    {actionPlan.upgradePrompt.cta}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="animate-reveal">
         <Link href="/trending">
@@ -494,7 +591,7 @@ export default function FollowTrendPage() {
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold text-purple-400">{completionRate}%</div>
-            <p className="text-sm text-gray-400">Completed</p>
+            <p className="text-sm text-gray-400 leading-none">Completed</p>
           </div>
         </div>
       </div>
@@ -504,7 +601,7 @@ export default function FollowTrendPage() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-white mb-1">Ready to start?</h3>
-            <p className="text-gray-400 text-sm">Follow this plan to ride the trend wave</p>
+            <p className="text-gray-400 text-sm leading-none">Follow this plan to ride the trend wave</p>
           </div>
           <div className="flex gap-3">
             <TransferToCalendar 
@@ -540,19 +637,19 @@ export default function FollowTrendPage() {
       <div className="glass-card p-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10 animate-reveal" style={{ animationDelay: '0.2s' }}>
         <div className="grid md:grid-cols-4 gap-6">
           <div>
-            <p className="text-sm text-gray-400 mb-1">Strategy</p>
+            <p className="text-sm text-gray-400 mb-1 leading-none">Strategy</p>
             <p className="text-lg font-bold text-white">{actionPlan.strategy}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-400 mb-1">Timeline</p>
+            <p className="text-sm text-gray-400 mb-1 leading-none">Timeline</p>
             <p className="text-lg font-bold text-white">{actionPlan.timeline}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-400 mb-1">Est. Views</p>
+            <p className="text-sm text-gray-400 mb-1 leading-none">Est. Views</p>
             <p className="text-lg font-bold text-green-400">{actionPlan.estimatedResults.views}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-400 mb-1">Est. Subscribers</p>
+            <p className="text-sm text-gray-400 mb-1 leading-none">Est. Subscribers</p>
             <p className="text-lg font-bold text-blue-400">{actionPlan.estimatedResults.subscribers}</p>
           </div>
         </div>
@@ -570,11 +667,11 @@ export default function FollowTrendPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-white">Week {week.week}: {week.theme}</h3>
-                <p className="text-sm text-gray-400">Days {(week.week - 1) * 7 + 1}-{week.week * 7}</p>
+                <p className="text-sm text-gray-400 leading-none">Days {(week.week - 1) * 7 + 1}-{week.week * 7}</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">Target:</span>
-                <span className="text-sm font-bold text-green-400">
+                <span className="text-sm text-gray-400 leading-none">Target:</span>
+                <span className="text-sm font-bold text-green-400 leading-none">
                   {actionPlan.successMetrics[`week${week.week}`].views} views
                 </span>
               </div>
@@ -620,8 +717,8 @@ export default function FollowTrendPage() {
             {actionPlan.contentIdeas.map((idea, index) => (
               <div key={index} className="glass-card p-4">
                 <h4 className="text-white font-bold mb-2">{idea.title}</h4>
-                <p className="text-purple-300 text-sm mb-2">Hook: {idea.hook}</p>
-                <p className="text-gray-400 text-sm mb-2">{idea.description}</p>
+                <p className="text-purple-300 text-sm mb-2 leading-none">Hook: {idea.hook}</p>
+                <p className="text-gray-400 text-sm mb-2 leading-normal">{idea.description}</p>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-green-400">Est. {idea.estimatedViews} views</span>
                   <Button
@@ -655,7 +752,7 @@ export default function FollowTrendPage() {
                   <span className="text-xs text-gray-400">{template.duration}</span>
                 </div>
                 <h4 className="text-white font-bold mb-2">{template.type}</h4>
-                <p className="text-sm text-purple-300 mb-3">{template.title}</p>
+                <p className="text-sm text-purple-300 mb-3 leading-none">{template.title}</p>
                 <p className="text-xs text-gray-400 mb-3">{template.structure}</p>
                 <Button
                   size="sm"
@@ -680,7 +777,7 @@ export default function FollowTrendPage() {
           </h3>
           <div className="flex flex-wrap gap-2">
             {actionPlan.keywords.map((keyword, index) => (
-              <span key={index} className="glass px-3 py-1 rounded-full text-sm text-purple-300">
+              <span key={index} className="glass px-3 py-1 rounded-full text-sm text-purple-300 leading-none">
                 {keyword}
               </span>
             ))}
@@ -695,7 +792,7 @@ export default function FollowTrendPage() {
           <div className="space-y-2">
             {actionPlan.equipment.filter(e => e.essential).map((item, index) => (
               <div key={index} className="flex items-center justify-between">
-                <span className="text-sm text-gray-300">{item.item}</span>
+                <span className="text-sm text-gray-300 leading-none">{item.item}</span>
                 <span className="text-xs text-gray-400">{item.budget}</span>
               </div>
             ))}
@@ -713,30 +810,30 @@ export default function FollowTrendPage() {
           <div className="grid md:grid-cols-3 gap-4">
             {actionPlan.competitorAnalysis.topChannels && (
               <div>
-                <p className="text-sm text-gray-400 mb-2">Channels to Study:</p>
+                <p className="text-sm text-gray-400 mb-2 leading-none">Channels to Study:</p>
                 <div className="space-y-1">
                   {actionPlan.competitorAnalysis.topChannels.map((channel, i) => (
-                    <p key={i} className="text-sm text-purple-300">• {channel}</p>
+                    <p key={i} className="text-sm text-purple-300 leading-normal">• {channel}</p>
                   ))}
                 </div>
               </div>
             )}
             {actionPlan.competitorAnalysis.successFactors && (
               <div>
-                <p className="text-sm text-gray-400 mb-2">Success Factors:</p>
+                <p className="text-sm text-gray-400 mb-2 leading-none">Success Factors:</p>
                 <div className="space-y-1">
                   {actionPlan.competitorAnalysis.successFactors.map((factor, i) => (
-                    <p key={i} className="text-sm text-green-300">• {factor}</p>
+                    <p key={i} className="text-sm text-green-300 leading-normal">• {factor}</p>
                   ))}
                 </div>
               </div>
             )}
             {actionPlan.competitorAnalysis.gaps && (
               <div>
-                <p className="text-sm text-gray-400 mb-2">Opportunities:</p>
+                <p className="text-sm text-gray-400 mb-2 leading-none">Opportunities:</p>
                 <div className="space-y-1">
                   {actionPlan.competitorAnalysis.gaps.map((gap, i) => (
-                    <p key={i} className="text-sm text-yellow-300">• {gap}</p>
+                    <p key={i} className="text-sm text-yellow-300 leading-normal">• {gap}</p>
                   ))}
                 </div>
               </div>
@@ -757,7 +854,7 @@ export default function FollowTrendPage() {
               <div key={index} className="glass-card p-4">
                 <h4 className="text-white font-semibold mb-2">{method.method}</h4>
                 <p className="text-xs text-gray-400 mb-1">Timeline: {method.timeline}</p>
-                <p className="text-sm text-green-400 font-semibold">{method.potential}</p>
+                <p className="text-sm text-green-400 font-semibold leading-none">{method.potential}</p>
               </div>
             ))}
           </div>

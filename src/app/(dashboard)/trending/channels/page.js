@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { 
   Youtube, 
   Users, 
@@ -40,6 +40,7 @@ export default function AllRisingChannelsPage() {
     hasNextPage: false,
     hasPrevPage: false
   });
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     fetchAllChannels();
@@ -120,7 +121,9 @@ export default function AllRisingChannelsPage() {
 
       if (data.channels && data.channels.length > 0) {
         console.log(`📊 Found ${data.channels.length} channels, source: ${data.source}`);
-        
+
+        // Use startTransition for non-urgent state updates
+        startTransition(() => {
         // Transform YouTube search results to match trending channel format
         const transformedChannels = data.channels.map((channel, idx) => {
           console.log(`\n🎬 Processing channel ${idx + 1}:`, channel.title);
@@ -177,7 +180,8 @@ export default function AllRisingChannelsPage() {
             id: finalId, // Use YouTube ID if available
             name: channel.title,
             handle: channel.customUrl || '',
-            description: channel.description?.substring(0, 150) || '',
+            description: channel.description || '', // Keep full description for passing
+            displayDescription: channel.description?.substring(0, 150) || '', // For card display only
             thumbnail: channel.thumbnails?.high?.url || channel.thumbnails?.default?.url || '/youtube-default.svg',
             category: category,
             subscribers: formatSubscriberCount(channel.subscriberCount),
@@ -200,7 +204,8 @@ export default function AllRisingChannelsPage() {
           hasNextPage: false,
           hasPrevPage: false
         });
-        toast.success(`Found ${transformedChannels.length} channels`);
+        });
+        toast.success(`Found ${data.channels.length} channels`);
       } else {
         setChannels([]);
         toast.info('No channels found matching your search');
@@ -351,20 +356,20 @@ export default function AllRisingChannelsPage() {
                 className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
-            <Button 
-              onClick={searchYouTubeChannels} 
-              disabled={searching}
-              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
+            <Button
+              onClick={searchYouTubeChannels}
+              disabled={searching || isPending}
+              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white will-change-transform"
             >
               {searching ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Searching...
+                  <span className="leading-none">Searching...</span>
                 </>
               ) : (
                 <>
                   <Search className="mr-2 h-4 w-4" />
-                  Search YouTube
+                  <span className="leading-none">Search YouTube</span>
                 </>
               )}
             </Button>
@@ -487,8 +492,8 @@ export default function AllRisingChannelsPage() {
                   <div className="mb-2">
                     <h3 className="font-semibold text-white text-lg">{channel.name}</h3>
                     <p className="text-sm text-gray-400">{channel.handle}</p>
-                    {channel.description && (
-                      <p className="text-xs text-gray-500 mt-1">{channel.description}</p>
+                    {(channel.displayDescription || channel.description) && (
+                      <p className="text-xs text-gray-500 mt-1">{channel.displayDescription || channel.description}</p>
                     )}
                   </div>
                   
@@ -566,8 +571,8 @@ export default function AllRisingChannelsPage() {
                         Analyze
                       </Button>
                     )}
-                    <Link 
-                      href={`/trending/follow?channel=${encodeURIComponent(channel.name)}&channelId=${encodeURIComponent(channel.id)}&topic=${encodeURIComponent(channel.category || 'Content Creation')}`}
+                    <Link
+                      href={`/trending/follow?channel=${encodeURIComponent(channel.name)}&channelId=${encodeURIComponent(channel.id)}&topic=${encodeURIComponent(channel.category || 'Content Creation')}&bio=${encodeURIComponent(channel.description || '')}`}
                       className="flex-1"
                     >
                       <Button size="sm" className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 w-full text-white">

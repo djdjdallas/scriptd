@@ -7,7 +7,7 @@ import { extractJsonFromResponse } from '@/lib/utils/json-parser';
 
 export async function POST(request) {
   try {
-    const { channelName, topic, channelId, remixAnalytics, sessionId } = await request.json();
+    const { channelName, topic, channelId, remixAnalytics, sessionId, channelDescription, channelBio } = await request.json();
 
     if (!channelName || !topic) {
       return NextResponse.json(
@@ -25,6 +25,51 @@ export async function POST(request) {
         { error: 'Authentication required' },
         { status: 401 }
       );
+    }
+
+    // Check user's subscription status
+    const { data: userData } = await supabase
+      .from('users')
+      .select('subscription_tier, subscription_plan')
+      .eq('id', user.id)
+      .single();
+
+    const isFreePlan = !userData?.subscription_tier ||
+                       userData.subscription_tier === 'free' ||
+                       userData.subscription_plan === 'free';
+
+    // If free user, check if they've already generated an action plan
+    if (isFreePlan) {
+      const { count, error: countError } = await supabase
+        .from('action_plans')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (countError) {
+        console.error('Error checking action plan count:', countError);
+      }
+
+      // If they've already generated 1 or more plans, block with upgrade message
+      if (count >= 1) {
+        console.log(`🚫 Free user ${user.id} has reached action plan limit (${count} plans)`);
+        return NextResponse.json({
+          error: 'Free plan limit reached',
+          message: 'You\'ve used your 1 free action plan. Upgrade to generate unlimited action plans and unlock script generation!',
+          showUpgrade: true,
+          upgradeUrl: '/pricing',
+          existingPlanCount: count,
+          benefits: [
+            'Unlimited action plans',
+            'Generate scripts from your plans',
+            'Analyze multiple channels',
+            'Export plans to PDF',
+            'Track progress'
+          ]
+        }, { status: 403 });
+      }
+
+      // First free plan - welcome them!
+      console.log(`🎉 Generating first FREE action plan for user: ${user.id}`);
     }
 
     const claude = getClaudeService();
@@ -175,6 +220,26 @@ Actual Channel Data for "${channelData.snippet.title}":
       }
     } // End of else block (YouTube API fallback)
 
+    // FALLBACK: If no channel data was fetched and we have a provided description/bio, use it
+    if (!channelAnalytics && (channelDescription || channelBio)) {
+      const providedDescription = channelDescription || channelBio;
+      console.log('📝 Using provided channel description/bio for analysis');
+      channelAnalytics = `
+Channel Data for "${channelName}":
+- Description: ${providedDescription}
+- Channel Focus: Based on the description provided
+
+This channel appears to focus on: ${providedDescription.substring(0, 300)}`;
+    }
+
+    // If still no analytics, create minimal fallback
+    if (!channelAnalytics) {
+      channelAnalytics = `
+Channel: "${channelName}"
+- No channel data available
+- Analysis based on channel name only`;
+    }
+
     // ========================================
     // MULTI-STAGE AI ENHANCEMENT PIPELINE
     // ========================================
@@ -185,9 +250,15 @@ Actual Channel Data for "${channelData.snippet.title}":
     // STAGE 1: Detect actual channel niche using AI (ENHANCED)
     console.log('📊 Stage 1: Detecting channel niche...');
     await updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, 'Analyzing channel niche and audience...', 15);
+    // Use provided description/bio as fallback when YouTube API fails
+    const channelDescriptionToUse = channelData?.snippet?.description ||
+                                    channelDescription ||
+                                    channelBio ||
+                                    '';
+
     const nicheDetection = await detectChannelNiche({
       name: channelName,
-      description: channelData?.snippet?.description || '',
+      description: channelDescriptionToUse,
       recentVideos: recentVideos || [],
       subscriberCount: parseInt(channelData?.statistics?.subscriberCount || 0),
       viewCount: parseInt(channelData?.statistics?.viewCount || 0),
@@ -416,6 +487,18 @@ IMPORTANT: Provide complete JSON without truncation - all arrays should be fully
     actionPlan.searchProvider = searchProvider || 'none';
     actionPlan.generatedAt = new Date().toISOString();
     actionPlan.enhancementPipeline = 'multi-stage-v3'; // Updated version
+
+    // Add free plan indicator if applicable
+    if (isFreePlan) {
+      actionPlan.isFirstFreePlan = true;
+      actionPlan.planMessage = '🎉 This is your 1 FREE action plan! Upgrade to create unlimited plans and generate scripts.';
+      actionPlan.upgradePrompt = {
+        title: 'Ready to implement this plan?',
+        message: 'Generate scripts for your action plan tasks',
+        cta: 'Upgrade to Creator',
+        url: '/pricing'
+      };
+    }
 
     // Store the plan in the database
     const { error: dbError } = await supabase

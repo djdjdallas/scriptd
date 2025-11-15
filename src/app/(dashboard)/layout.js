@@ -383,7 +383,7 @@ export default function DashboardLayout({ children }) {
                       !sidebarHovered &&
                       hoveredItem === item.href && (
                         <div className="absolute left-full ml-2 px-3 py-1 glass rounded-lg whitespace-nowrap z-50">
-                          <span className="text-sm text-white">
+                          <span className="text-sm text-white leading-none">
                             {item.label}
                           </span>
                         </div>
@@ -416,7 +416,7 @@ export default function DashboardLayout({ children }) {
                                   isSubActive && "text-purple-400"
                                 )}
                               />
-                              <span className="text-sm">{subItem.label}</span>
+                              <span className="text-sm leading-none">{subItem.label}</span>
                             </Link>
                           );
                         })}
@@ -433,7 +433,7 @@ export default function DashboardLayout({ children }) {
               <div className="flex items-center gap-2 mb-3 py-1">
                 <span className="text-sm text-gray-300 leading-none">Credits:</span>
                 {creditsLoading ? (
-                  <span className="text-sm font-bold text-gray-500 animate-pulse leading-none">
+                  <span className="text-sm font-bold text-gray-500 leading-none">
                     ...
                   </span>
                 ) : (
@@ -467,7 +467,7 @@ export default function DashboardLayout({ children }) {
             >
               <LogOut className="h-4 w-4 flex-shrink-0" />
               {!(sidebarCollapsed && !sidebarHovered) && (
-                <span className="ml-2">Sign Out</span>
+                <span className="ml-2 leading-none">Sign Out</span>
               )}
             </Button>
           </div>
