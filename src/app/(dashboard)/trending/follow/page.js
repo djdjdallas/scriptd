@@ -32,6 +32,7 @@ import { TiltCard } from '@/components/ui/tilt-card';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { TransferToCalendar } from '@/components/trending/TransferToCalendar';
+import { ActionPlanLoader } from '@/components/trending/ActionPlanLoader';
 
 export default function FollowTrendPage() {
   const searchParams = useSearchParams();
@@ -43,9 +44,12 @@ export default function FollowTrendPage() {
   const [actionPlan, setActionPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [completedSteps, setCompletedSteps] = useState(new Set());
+  const [progressData, setProgressData] = useState(null);
   const isGenerating = useRef(false);
   const currentPlanKey = useRef('');
   const abortControllerRef = useRef(null);
+  const sessionIdRef = useRef(null);
+  const progressIntervalRef = useRef(null);
 
   useEffect(() => {
     console.log(`🔄 useEffect triggered for: ${channelName} (${topic})`);
@@ -127,6 +131,18 @@ export default function FollowTrendPage() {
     }
   };
 
+  const pollForProgress = async (sessionId) => {
+    try {
+      const response = await fetch(`/api/trending/action-plan-progress?sessionId=${sessionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setProgressData(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch progress:', error);
+    }
+  };
+
   const generateActionPlan = async () => {
     // Double-check we're not already loading
     if (loading && actionPlan !== null) {
@@ -135,6 +151,15 @@ export default function FollowTrendPage() {
     }
 
     setLoading(true);
+
+    // Generate session ID for progress tracking
+    const sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    sessionIdRef.current = sessionId;
+
+    // Start polling for progress
+    progressIntervalRef.current = setInterval(() => {
+      pollForProgress(sessionId);
+    }, 1000);
 
     try {
       console.log(`🎬 Generating action plan for: ${channelName} (${topic})`);
@@ -149,6 +174,7 @@ export default function FollowTrendPage() {
           channelName,
           channelId,
           topic,
+          sessionId, // Pass session ID for progress tracking
         }),
         signal: abortControllerRef.current?.signal, // Add abort signal
       });
@@ -187,15 +213,32 @@ export default function FollowTrendPage() {
       
       setActionPlan(processedPlan);
       toast.success('Action plan generated successfully!');
+
+      // Stop polling for progress
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
     } catch (error) {
       // Don't show error if request was intentionally cancelled
       if (error.name === 'AbortError') {
         console.log('⏹️ Action plan generation was cancelled');
+        // Stop polling for progress
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
         return;
       }
 
       console.error('Error generating action plan:', error);
       toast.error(error.message || 'Failed to generate action plan');
+
+      // Stop polling for progress on error
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
 
       // Set a basic fallback plan if API fails
       setActionPlan({
@@ -416,15 +459,7 @@ export default function FollowTrendPage() {
   };
 
   if (loading || !actionPlan) {
-    return (
-      <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 text-center">
-          <Rocket className="h-12 w-12 text-purple-400 animate-pulse mx-auto mb-4" />
-          <p className="text-white text-lg">Generating your action plan...</p>
-          <p className="text-gray-400 text-sm mt-2">Creating personalized strategy</p>
-        </div>
-      </div>
-    );
+    return <ActionPlanLoader channelName={channelName} topic={topic} progressData={progressData} />;
   }
 
   const completionRate = Math.round((completedSteps.size / 20) * 100); // 20 total tasks

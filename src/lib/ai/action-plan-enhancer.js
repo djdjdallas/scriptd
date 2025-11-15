@@ -24,7 +24,7 @@ export async function detectChannelNiche(channelData) {
 
   const claude = getClaudeService();
 
-  const prompt = `Analyze this YouTube channel and determine its niche with detailed categorization.
+  const prompt = `Analyze this YouTube channel and determine its EXACT niche. Be extremely specific.
 
 Channel Name: ${name}
 Description: ${description || 'No description available'}
@@ -32,25 +32,31 @@ Recent Video Titles: ${recentVideos.length > 0 ? recentVideos.join(', ') : 'No r
 ${subscriberCount > 0 ? `Subscribers: ${subscriberCount.toLocaleString()}` : ''}
 ${videoCount > 0 ? `Total Videos: ${videoCount}` : ''}
 
-Requirements:
-- Analyze the channel name, description, and video titles to understand the content pattern
-- Be hyper-specific about the content style and approach
-- Use 2-5 words maximum for each category
+CRITICAL ANALYSIS RULES:
+1. Look for specific keywords and patterns in the channel name and videos
+2. If the channel has no videos or description, analyze the name itself deeply
+3. Never return generic niches like "Content Creation" or "General"
+4. Be creative and specific based on available clues
 
-Examples by domain:
-* Tech: "Cybersecurity Investigations", "AI Product Reviews", "Programming Tutorials", "Tech Startup Analysis"
-* Crime: "Hacker True Crime", "Mystery Investigations", "Cold Case Documentary", "Forensic Analysis"
-* Business: "Startup Deep Dives", "Financial Market Analysis", "Entrepreneur Interviews", "SaaS Product Reviews"
-* Education: "Science Explainers", "History Documentary", "Math Tutorials", "Philosophy Discussions"
-* Entertainment: "Movie Commentary", "Gaming Walkthroughs", "Music Production", "Stand-up Comedy"
+Channel Name Analysis Examples:
+- "Psyphoria" → Could be "Psychedelic Philosophy", "Psychology Euphoria Content", "Mind Expansion Topics"
+- "Blackfiles" → Could be "Dark Web Investigations", "Classified Document Analysis", "Hacker Case Studies"
+- "TechMystery" → Could be "Tech Crime Documentary", "Silicon Valley Investigations", "Startup Failure Analysis"
+
+Examples of SPECIFIC niches (never generic):
+* Tech: "Cybersecurity Breach Analysis", "AI Ethics Debates", "Quantum Computing Explained", "Blockchain Scam Investigations"
+* Crime: "Hacker True Crime Stories", "Financial Fraud Documentary", "Cold Case DNA Analysis", "Prison Psychology Studies"
+* Business: "Failed Startup Autopsies", "Billionaire Psychology Analysis", "Market Crash Investigations", "Corporate Espionage Cases"
+* Education: "Neuroscience Breakthroughs", "Ancient Civilization Mysteries", "Mathematical Paradox Solutions", "Philosophy Mind Experiments"
+* Entertainment: "Horror Movie Psychology", "Gaming Industry Scandals", "Music Theory Breakdowns", "Comedy Writing Analysis"
 
 Return in this JSON format:
 {
   "broadCategory": "Technology/Crime/Business/Education/Entertainment/etc",
-  "specificNiche": "Exact specific niche (2-5 words)",
-  "subCategories": ["tag1", "tag2", "tag3"],
+  "specificNiche": "EXACT specific niche (2-5 words, NEVER generic)",
+  "subCategories": ["specific tag1", "specific tag2", "specific tag3"],
   "confidence": "high/medium/low",
-  "reasoning": "Brief 1-sentence explanation of why this niche was chosen"
+  "reasoning": "Specific explanation of the clues that led to this niche determination"
 }`;
 
   try {
@@ -277,17 +283,30 @@ export async function enrichActionPlan(actionPlan, niche) {
     for (let i = 0; i < actionPlan.contentTemplates.length; i++) {
       const template = actionPlan.contentTemplates[i];
 
-      // Only enrich if fields are missing
-      if (!template.format || !template.hook || template.format === 'undefined' || template.hook === 'undefined') {
+      // Only enrich if fields are missing or generic
+      if (!template.format || !template.hook ||
+          template.format === 'undefined' || template.hook === 'undefined' ||
+          template.format.includes('undefined') || template.hook.includes('undefined') ||
+          template.hook.length < 20 || template.format === 'Standard format') {
         try {
-          const prompt = `For this ${niche} video template, provide:
+          const prompt = `For a ${niche} YouTube channel, create compelling content for this template:
 
 Template Title: "${template.title}"
 Structure: ${template.structure || template.type || 'Standard structure'}
 
-Generate:
-1. format: The production format/style (e.g., "Documentary investigation", "Tutorial walkthrough", "Interview-based storytelling")
-2. hook: A compelling 15-second opening line to grab viewer attention
+Generate based on ${niche} style:
+1. format: A specific production style for ${niche} content
+   Examples:
+   - "Investigative documentary with evidence reveals"
+   - "Animated explainer with visual metaphors"
+   - "First-person narrative with archival footage"
+   - "Expert interview with demonstration segments"
+
+2. hook: A gripping 15-second opening line specific to ${niche}
+   Examples:
+   - "What if I told you the biggest hack in history started with a typo?"
+   - "Your brain on psychedelics looks nothing like you'd expect - let me show you"
+   - "This company lost $50 billion in 24 hours, and nobody saw it coming"
 
 Return ONLY valid JSON: { "format": "...", "hook": "..." }`;
 
@@ -319,24 +338,31 @@ Return ONLY valid JSON: { "format": "...", "hook": "..." }`;
     for (let i = 0; i < actionPlan.equipment.length; i++) {
       const item = actionPlan.equipment[i];
 
-      if (!item.purpose || item.purpose === 'undefined') {
+      if (!item.purpose || item.purpose === 'undefined' ||
+          item.purpose.includes('undefined') ||
+          item.purpose.length < 10) {
         try {
-          const prompt = `Why would a ${niche} content creator need: ${item.item}?
+          const prompt = `For a ${niche} YouTube channel, explain why "${item.item}" is needed.
 
-Answer in ONE sentence (5-15 words max). Be specific to ${niche} content creation.
+Be SPECIFIC to ${niche} content. Examples:
+- Microphone for "Hacker True Crime": "To narrate complex cybersecurity incidents and interview security experts"
+- Camera for "Psychedelic Philosophy": "To record visual discussions and consciousness-expanding presentations"
+- Lighting for "Tech Investigations": "To create dramatic reveals and highlight evidence displays"
 
-Return ONLY the purpose text, no quotes or extra formatting.`;
+Answer in ONE sentence (10-20 words). Be specific to ${niche}.
+
+Return ONLY the purpose text, no quotes.`;
 
           const purpose = await claude.generateCompletion(prompt, {
             model: 'claude-sonnet-4-5-20250929',
-            temperature: 0.3,
-            maxTokens: 50,
+            temperature: 0.5,
+            maxTokens: 100,
           });
 
-          item.purpose = purpose.trim().replace(/['"]/g, '');
+          item.purpose = purpose.trim().replace(/['"]/g, '').slice(0, 100);
         } catch (error) {
           console.warn(`⚠️ Failed to enrich equipment ${i}:`, error.message);
-          item.purpose = `Essential for ${niche} content production`;
+          item.purpose = `For professional ${niche} content production and audience engagement`;
         }
       }
     }

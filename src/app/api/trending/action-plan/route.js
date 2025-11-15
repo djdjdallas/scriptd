@@ -2,10 +2,12 @@ import { NextResponse } from 'next/server';
 import { getClaudeService } from '@/lib/ai/claude';
 import { createClient } from '@/lib/supabase/server';
 import { detectChannelNiche, findRealEvents, validateContentIdeas, enrichActionPlan } from '@/lib/ai/action-plan-enhancer';
+import { updateProgress, PROGRESS_STAGES } from '@/lib/utils/progress-tracker';
+import { extractJsonFromResponse } from '@/lib/utils/json-parser';
 
 export async function POST(request) {
   try {
-    const { channelName, topic, channelId, remixAnalytics } = await request.json();
+    const { channelName, topic, channelId, remixAnalytics, sessionId } = await request.json();
 
     if (!channelName || !topic) {
       return NextResponse.json(
@@ -178,9 +180,11 @@ Actual Channel Data for "${channelData.snippet.title}":
     // ========================================
 
     console.log('🚀 Starting multi-stage action plan generation');
+    await updateProgress(sessionId, PROGRESS_STAGES.INITIALIZING, 'Starting action plan generation...', 0);
 
     // STAGE 1: Detect actual channel niche using AI (ENHANCED)
     console.log('📊 Stage 1: Detecting channel niche...');
+    await updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, 'Analyzing channel niche and audience...', 15);
     const nicheDetection = await detectChannelNiche({
       name: channelName,
       description: channelData?.snippet?.description || '',
@@ -198,26 +202,37 @@ Actual Channel Data for "${channelData.snippet.title}":
     const reasoning = nicheDetection.reasoning || 'AI-detected niche';
 
     console.log(`✅ Detected niche: ${detectedNiche} (${confidence} confidence)`);
+    await updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, `Detected niche: ${detectedNiche}`, 25);
 
     // Use detected niche instead of generic topic where appropriate
-    const actualTopic = topic === 'Search Result' || topic === 'Content Creation' ? detectedNiche : topic;
+    // ENHANCED: Better handling of generic topics
+    const isGenericTopic = !topic || topic === 'all' || topic === 'general' ||
+                          topic === 'Search Result' || topic === 'Content Creation';
+    const actualTopic = isGenericTopic ? detectedNiche : topic;
+
+    // If still generic after niche detection, make it more specific
+    const finalTopic = actualTopic === 'Content Creation' ?
+      `${channelName} Channel Content Strategy` : actualTopic;
 
     // STAGE 2: Find real events in this niche (pass sub-categories for better search)
     console.log('🔍 Stage 2: Finding real events...');
+    await updateProgress(sessionId, PROGRESS_STAGES.RESEARCH, 'Searching for trending topics and current events...', 35);
     const { success: eventsSuccess, events: realEvents, searchProvider } = await findRealEvents(
-      detectedNiche,
+      finalTopic || detectedNiche,
       '12 months',
       subCategories
     );
 
     if (eventsSuccess && realEvents.length > 0) {
       console.log(`✅ Found ${realEvents.length} real events using ${searchProvider}`);
+      await updateProgress(sessionId, PROGRESS_STAGES.RESEARCH, `Found ${realEvents.length} trending events`, 45);
     } else {
       console.warn('⚠️ No real events found, will use AI-generated examples');
+      await updateProgress(sessionId, PROGRESS_STAGES.RESEARCH, 'Generating content ideas...', 45);
     }
 
     // Generate a comprehensive action plan using AI with real events
-    const prompt = `Create a detailed 30-day action plan for a YouTube channel named "${channelName}" to capitalize on the topic "${actualTopic}".
+    const prompt = `Create a detailed 30-day action plan for a YouTube channel named "${channelName}" to capitalize on the topic "${finalTopic}".
 
 CHANNEL CONTEXT:
 ${channelAnalytics}
@@ -233,11 +248,12 @@ ${realEvents.map((event, i) => `${i + 1}. "${event.title}" (${event.date})
 CRITICAL: Use these REAL events as the foundation for content ideas. Every video suggestion MUST reference specific events with real names, dates, and details.` : ''}
 
 IMPORTANT:
-- The channel "${channelName}" focuses on "${actualTopic}".
+- The channel "${channelName}" focuses on "${finalTopic}".
 - Make ALL content ideas specific with real names, dates, and events
 - Do NOT use generic templates like "The [X] That [Y]" without specifics
 - Base recommendations on actual channel data and real events
 - Include ALL fields completely - no placeholders or undefined values
+- Equipment purposes must be specific to ${finalTopic} content creation
 
 Please provide a comprehensive JSON response with the following structure:
 {
@@ -278,7 +294,7 @@ Please provide a comprehensive JSON response with the following structure:
   "equipment": [
     {
       "item": "Equipment name",
-      "purpose": "Why this equipment is needed for ${actualTopic} content (5-15 words)",
+      "purpose": "Why this equipment is needed for ${finalTopic} content (5-15 words)",
       "essential": true/false,
       "budget": "Price range"
     }
@@ -314,41 +330,57 @@ Please provide a comprehensive JSON response with the following structure:
   ]
 }
 
-Make the plan specific, actionable, and realistic for a channel named "${channelName}" focusing on "${actualTopic}".
+Make the plan specific, actionable, and realistic for a channel named "${channelName}" focusing on "${finalTopic}".
 Ensure all content ideas, equipment recommendations, and strategies are relevant to the specific topic area.
-Include current trends and best practices for YouTube growth in 2025 that are relevant to this specific niche.`;
+Include current trends and best practices for YouTube growth in 2025 that are relevant to this specific niche.
+IMPORTANT: Provide complete JSON without truncation - all arrays should be fully populated with the specified number of items.`;
 
     // STAGE 3: Generate action plan with enhanced prompt
     console.log('🎨 Stage 3: Generating action plan with AI...');
+    await updateProgress(sessionId, PROGRESS_STAGES.GENERATING, 'Creating personalized strategy with AI...', 55);
     const response = await claude.generateCompletion(prompt, {
       model: 'claude-sonnet-4-5-20250929',
       temperature: 0.7,
-      maxTokens: 4000, // Increased for more complete responses
+      maxTokens: 12000, // Further increased to prevent any truncation
     });
 
-    // Parse the AI response
+    // Parse the AI response with better error handling
     let actionPlan;
     try {
-      // Extract JSON from the response (in case there's extra text)
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        actionPlan = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error('No JSON found in response');
+      // Use the safer JSON parser that can handle malformed JSON
+      actionPlan = extractJsonFromResponse(response);
+
+      if (!actionPlan) {
+        throw new Error('Could not extract valid JSON from response');
+      }
+
+      // Validate that we have the essential fields
+      if (!actionPlan.weeklyPlan || !actionPlan.contentTemplates) {
+        throw new Error('Parsed JSON is missing required fields');
       }
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
-      console.error('Raw response:', response);
+      console.error('Raw response (first 500 chars):', response.substring(0, 500));
+
+      // Update progress to show error
+      await updateProgress(
+        sessionId,
+        PROGRESS_STAGES.GENERATING,
+        'Had to use fallback plan due to parsing error',
+        65
+      );
 
       // Fallback to a basic plan if parsing fails
       actionPlan = generateFallbackPlan(channelName, actualTopic);
     }
 
     console.log('✅ Action plan generated');
+    await updateProgress(sessionId, PROGRESS_STAGES.GENERATING, 'Action plan generated successfully', 70);
 
     // STAGE 4: Validate content ideas against real events
     if (realEvents && realEvents.length > 0 && actionPlan.contentIdeas) {
       console.log('✅ Stage 4: Validating content ideas...');
+      await updateProgress(sessionId, PROGRESS_STAGES.VALIDATING, 'Validating content ideas against trends...', 80);
       try {
         actionPlan.contentIdeas = await validateContentIdeas(
           actionPlan.contentIdeas,
@@ -363,6 +395,7 @@ Include current trends and best practices for YouTube growth in 2025 that are re
 
     // STAGE 5: Enrich missing fields
     console.log('🎨 Stage 5: Enriching missing fields...');
+    await updateProgress(sessionId, PROGRESS_STAGES.ENRICHING, 'Adding final touches and insights...', 90);
     try {
       actionPlan = await enrichActionPlan(actionPlan, detectedNiche);
       console.log('✅ Action plan enriched');
@@ -372,7 +405,8 @@ Include current trends and best practices for YouTube growth in 2025 that are re
 
     // Add metadata (ENHANCED with niche detection data)
     actionPlan.channel = channelName;
-    actionPlan.topic = actualTopic;
+    actionPlan.topic = finalTopic;
+    actionPlan.originalTopic = topic; // Keep original for debugging
     actionPlan.detectedNiche = detectedNiche;
     actionPlan.broadCategory = broadCategory;
     actionPlan.subCategories = subCategories;
@@ -381,7 +415,7 @@ Include current trends and best practices for YouTube growth in 2025 that are re
     actionPlan.realEventsUsed = realEvents?.length || 0;
     actionPlan.searchProvider = searchProvider || 'none';
     actionPlan.generatedAt = new Date().toISOString();
-    actionPlan.enhancementPipeline = 'multi-stage-v2';
+    actionPlan.enhancementPipeline = 'multi-stage-v3'; // Updated version
 
     // Store the plan in the database
     const { error: dbError } = await supabase
@@ -389,7 +423,7 @@ Include current trends and best practices for YouTube growth in 2025 that are re
       .insert({
         user_id: user.id,
         channel_name: channelName,
-        topic: actualTopic,
+        topic: finalTopic,
         plan_data: actionPlan,
         created_at: new Date().toISOString()
       });
@@ -403,6 +437,7 @@ Include current trends and best practices for YouTube growth in 2025 that are re
       console.log('Action plan stored successfully for channel:', channelName);
     }
 
+    await updateProgress(sessionId, PROGRESS_STAGES.COMPLETED, 'Action plan completed!', 100);
     return NextResponse.json(actionPlan);
 
   } catch (error) {
