@@ -14,24 +14,13 @@ export async function GET(request) {
     // Check authentication
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user has premium access
-    const { data: userData } = await supabase
-      .from('users')
-      .select('subscription_tier')
-      .eq('id', user.id)
-      .single();
-    
-    if (!userData?.subscription_tier || userData.subscription_tier === 'free') {
-      return NextResponse.json({ 
-        error: 'Premium feature', 
-        message: 'Channel search for remixing is a premium feature' 
-      }, { status: 403 });
-    }
+    // YouTube channel search is now available to all users (free and premium)
+    // This enables creating action plans which is a core feature
 
     // First, check our database for existing channels
     let dbQuery = supabase
