@@ -1,4 +1,4 @@
-import { getYouTubeClient, withRateLimit } from './client.js';
+import { getYouTubeClient, withRateLimit, getRequestOptions } from './client.js';
 
 /**
  * Search for a YouTube channel by name and get its channel ID
@@ -11,15 +11,16 @@ export async function findChannelIdByName(channelName) {
   
   try {
     const youtube = getYouTubeClient();
+  const requestOptions = getRequestOptions();
     
     // Search for the channel
     const searchResponse = await withRateLimit('search', () =>
-      youtube.search.list({
+      youtube.search.list({ 
         part: ['snippet'],
         q: channelName,
         type: ['channel'],
         maxResults: 5,
-      })
+       }, requestOptions)
     );
 
     if (!searchResponse.data.items || searchResponse.data.items.length === 0) {
@@ -90,10 +91,10 @@ export async function verifyChannelId(channelId, expectedName) {
     const youtube = getYouTubeClient();
     
     const response = await withRateLimit('channels', () =>
-      youtube.channels.list({
+      youtube.channels.list({ 
         part: ['snippet'],
         id: [channelId],
-      })
+       }, requestOptions)
     );
 
     if (response.data.items && response.data.items.length > 0) {

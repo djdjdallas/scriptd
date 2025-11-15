@@ -10,11 +10,11 @@ const youtube = google.youtube('v3');
 export async function getVideoTranscript(videoId) {
   try {
     // First, get video details to check for captions
-    const videoResponse = await youtube.videos.list({
+    const videoResponse = await youtube.videos.list({ 
       key: process.env.YOUTUBE_API_KEY,
       part: ['snippet', 'contentDetails'],
       id: [videoId]
-    });
+     }, requestOptions);
 
     if (!videoResponse.data.items || videoResponse.data.items.length === 0) {
       throw new Error('Video not found');
@@ -99,14 +99,14 @@ export async function getMultipleTranscripts(videoIds) {
 export async function getChannelTranscripts(channelId, maxVideos = 10) {
   try {
     // Get channel's recent videos
-    const videosResponse = await youtube.search.list({
+    const videosResponse = await youtube.search.list({ 
       key: process.env.YOUTUBE_API_KEY,
       part: ['id'],
       channelId: channelId,
       maxResults: maxVideos,
       order: 'date',
       type: 'video'
-    });
+     }, requestOptions);
 
     const videoIds = videosResponse.data.items.map(item => item.id.videoId);
     

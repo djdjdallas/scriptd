@@ -1,5 +1,5 @@
 import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
-import { getYouTubeClient, withRateLimit, getCached, setCache } from './client.js';
+import { getYouTubeClient, withRateLimit, getCached, setCache, getRequestOptions } from './client.js';
 import { createClient } from '@/lib/supabase/server';
 
 export async function getVideoById(videoId) {
@@ -8,13 +8,14 @@ export async function getVideoById(videoId) {
   if (cached) return cached;
 
   const youtube = getYouTubeClient();
+  const requestOptions = getRequestOptions();
 
   try {
     const response = await withRateLimit('videos', () =>
       youtube.videos.list({
         part: ['snippet', 'statistics', 'contentDetails'],
         id: [videoId],
-      })
+      }, requestOptions)
     );
 
     if (!response.data.items || response.data.items.length === 0) {

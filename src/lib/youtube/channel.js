@@ -1,4 +1,4 @@
-import { getYouTubeClient, withRateLimit, getCached, setCache, extractChannelId } from './client.js';
+import { getYouTubeClient, withRateLimit, getCached, setCache, extractChannelId, getRequestOptions } from './client.js';
 
 export async function getChannelByUrl(url) {
   const channelInfo = extractChannelId(url);
@@ -11,6 +11,7 @@ export async function getChannelByUrl(url) {
   if (cached) return cached;
 
   const youtube = getYouTubeClient();
+  const requestOptions = getRequestOptions();
 
   try {
     let channelId;
@@ -29,10 +30,10 @@ export async function getChannelByUrl(url) {
       try {
         console.log('Attempting direct handle lookup with forHandle parameter...');
         const handleResponse = await withRateLimit('channels', () =>
-          youtube.channels.list({
+          youtube.channels.list({ 
             part: ['snippet', 'statistics', 'contentDetails', 'brandingSettings'],
             forHandle: cleanHandle,
-          })
+           }, requestOptions)
         );
 
         if (handleResponse.data.items && handleResponse.data.items.length > 0) {
@@ -47,12 +48,12 @@ export async function getChannelByUrl(url) {
 
       // Fallback: Search for the channel
       const searchResponse = await withRateLimit('search', () =>
-        youtube.search.list({
+        youtube.search.list({ 
           part: ['snippet'],
           q: cleanHandle,
           type: ['channel'],
           maxResults: 25, // Increased to find better matches
-        })
+         }, requestOptions)
       );
 
       console.log('Search response items:', searchResponse.data.items?.length || 0);
@@ -126,10 +127,10 @@ export async function getChannelByUrl(url) {
     // Get full channel details if we don't have them already
     if (!channelData) {
       const response = await withRateLimit('channels', () =>
-        youtube.channels.list({
+        youtube.channels.list({ 
           part: ['snippet', 'statistics', 'contentDetails', 'brandingSettings'],
           id: [channelId],
-        })
+         }, requestOptions)
       );
 
       if (!response.data.items || response.data.items.length === 0) {
@@ -156,10 +157,10 @@ export async function getChannelById(channelId) {
 
   try {
     const response = await withRateLimit('channels', () =>
-      youtube.channels.list({
+      youtube.channels.list({ 
         part: ['snippet', 'statistics', 'contentDetails', 'brandingSettings'],
         id: [channelId],
-      })
+       }, requestOptions)
     );
 
     if (!response.data.items || response.data.items.length === 0) {
@@ -200,10 +201,10 @@ export async function getChannelVideos(channelId, maxResults = 50) {
 
     // Get detailed video information
     const videosResponse = await withRateLimit('videos', () =>
-      youtube.videos.list({
+      youtube.videos.list({ 
         part: ['snippet', 'statistics', 'contentDetails'],
         id: videoIds,
-      })
+       }, requestOptions)
     );
 
     const videos = videosResponse.data.items;

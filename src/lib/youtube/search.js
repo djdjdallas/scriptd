@@ -1,9 +1,22 @@
 import { google } from 'googleapis';
 
+// Get the base URL for the referer header
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ||
+                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://scriptd.vercel.app');
+
+// Configure YouTube client
 const youtube = google.youtube({
   version: 'v3',
   auth: process.env.YOUTUBE_API_KEY
 });
+
+// Create request options with headers
+const requestOptions = {
+  headers: {
+    'Referer': BASE_URL,
+    'Origin': BASE_URL
+  }
+};
 
 export async function searchYouTubeChannels({
   query,
@@ -12,14 +25,17 @@ export async function searchYouTubeChannels({
   order = 'relevance'
 }) {
   try {
-    // Search for channels
-    const searchResponse = await youtube.search.list({
-      part: ['snippet'],
-      q: query,
-      type: type,
-      maxResults: maxResults,
-      order: order
-    });
+    // Search for channels with referer header
+    const searchResponse = await youtube.search.list(
+      {
+        part: ['snippet'],
+        q: query,
+        type: type,
+        maxResults: maxResults,
+        order: order
+      },
+      requestOptions  // Pass headers as second parameter
+    );
 
     if (!searchResponse.data.items || searchResponse.data.items.length === 0) {
       return [];
@@ -34,11 +50,14 @@ export async function searchYouTubeChannels({
       return [];
     }
 
-    // Fetch detailed channel information
-    const channelsResponse = await youtube.channels.list({
-      part: ['snippet', 'statistics', 'contentDetails'],
-      id: channelIds.join(',')
-    });
+    // Fetch detailed channel information with referer header
+    const channelsResponse = await youtube.channels.list(
+      {
+        part: ['snippet', 'statistics', 'contentDetails'],
+        id: channelIds.join(',')
+      },
+      requestOptions  // Pass headers as second parameter
+    );
 
     return channelsResponse.data.items || [];
   } catch (error) {
@@ -53,10 +72,13 @@ export async function getChannelsByIds(channelIds) {
       return [];
     }
 
-    const channelsResponse = await youtube.channels.list({
-      part: ['snippet', 'statistics', 'contentDetails', 'brandingSettings'],
-      id: Array.isArray(channelIds) ? channelIds.join(',') : channelIds
-    });
+    const channelsResponse = await youtube.channels.list(
+      {
+        part: ['snippet', 'statistics', 'contentDetails', 'brandingSettings'],
+        id: Array.isArray(channelIds) ? channelIds.join(',') : channelIds
+      },
+      requestOptions  // Pass headers as second parameter
+    );
 
     return channelsResponse.data.items || [];
   } catch (error) {

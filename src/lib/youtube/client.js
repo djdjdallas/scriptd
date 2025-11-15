@@ -1,5 +1,9 @@
 import { google } from 'googleapis';
 
+// Get the base URL for the referer header
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ||
+                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://scriptd.vercel.app');
+
 // Initialize YouTube Data API v3 client
 export function getYouTubeClient() {
   if (!process.env.YOUTUBE_API_KEY) {
@@ -10,6 +14,16 @@ export function getYouTubeClient() {
     version: 'v3',
     auth: process.env.YOUTUBE_API_KEY,
   });
+}
+
+// Get request options with proper headers for YouTube API
+export function getRequestOptions() {
+  return {
+    headers: {
+      'Referer': BASE_URL,
+      'Origin': BASE_URL
+    }
+  };
 }
 
 // Rate limiting helper

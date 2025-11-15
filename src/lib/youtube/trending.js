@@ -1,4 +1,4 @@
-import { getYouTubeClient, withRateLimit, withDeduplication, getCached, setCache, clearCache } from './client.js';
+import { getYouTubeClient, withRateLimit, withDeduplication, getCached, setCache, clearCache, getRequestOptions } from './client.js';
 
 export async function getTrendingVideos(options = {}) {
   const {
@@ -12,6 +12,7 @@ export async function getTrendingVideos(options = {}) {
   if (cached) return cached;
 
   const youtube = getYouTubeClient();
+  const requestOptions = getRequestOptions();
 
   try {
     const params = {
@@ -26,7 +27,7 @@ export async function getTrendingVideos(options = {}) {
     }
 
     const response = await withRateLimit('videos', () =>
-      youtube.videos.list(params)
+      youtube.videos.list(params, requestOptions)
     );
 
     const videos = response.data.items || [];
@@ -95,7 +96,7 @@ export async function searchVideos(query, options = {}) {
     }
 
     const response = await withRateLimit('search', () =>
-      youtube.search.list(params)
+      youtube.search.list(params, requestOptions)
     );
 
     // Get detailed video information
@@ -108,10 +109,10 @@ export async function searchVideos(query, options = {}) {
     }
 
     const videosResponse = await withRateLimit('videos', () =>
-      youtube.videos.list({
+      youtube.videos.list({ 
         part: ['snippet', 'statistics', 'contentDetails'],
         id: videoIds,
-      })
+       }, requestOptions)
     );
 
     const videos = videosResponse.data.items || [];
@@ -133,12 +134,12 @@ export async function getRelatedChannels(channelId, maxResults = 10) {
   try {
     // Search for channels that appear in the same searches
     const response = await withRateLimit('search', () =>
-      youtube.search.list({
+      youtube.search.list({ 
         part: ['snippet'],
         type: ['channel'],
         maxResults: Math.min(maxResults * 2, 50),
         relevanceLanguage: 'en',
-      })
+       }, requestOptions)
     );
 
     const channelIds = response.data.items
@@ -152,10 +153,10 @@ export async function getRelatedChannels(channelId, maxResults = 10) {
 
     // Get detailed channel information
     const channelsResponse = await withRateLimit('channels', () =>
-      youtube.channels.list({
+      youtube.channels.list({ 
         part: ['snippet', 'statistics'],
         id: channelIds,
-      })
+       }, requestOptions)
     );
 
     const channels = channelsResponse.data.items || [];
@@ -178,11 +179,11 @@ export async function getChannelStatistics(channelIds) {
   
   try {
     const response = await withRateLimit('channels', () =>
-      youtube.channels.list({
+      youtube.channels.list({ 
         part: ['statistics', 'snippet', 'contentDetails'],
         id: channelIds,
         maxResults: 50
-      })
+       }, requestOptions)
     );
 
     const channelStats = {};
@@ -278,7 +279,7 @@ export async function getRecentVideos(options = {}) {
     }
 
     const response = await withRateLimit('search', () =>
-      youtube.search.list(searchParams)
+      youtube.search.list(searchParams, requestOptions)
     );
 
     // Get video IDs
@@ -292,10 +293,10 @@ export async function getRecentVideos(options = {}) {
 
     // Get detailed stats for these videos
     const videosResponse = await withRateLimit('videos', () =>
-      youtube.videos.list({
+      youtube.videos.list({ 
         part: ['snippet', 'statistics', 'contentDetails'],
         id: videoIds,
-      })
+       }, requestOptions)
     );
 
     const videos = videosResponse.data.items || [];

@@ -1,4 +1,4 @@
-import { getYouTubeClient, withRateLimit, getCached, setCache } from './client.js';
+import { getYouTubeClient, withRateLimit, getCached, setCache, getRequestOptions } from './client.js';
 
 /**
  * YouTube Video Search Service
@@ -188,6 +188,7 @@ export async function searchRelatedVideos({
     }
 
     const youtube = getYouTubeClient();
+  const requestOptions = getRequestOptions();
 
     // Search for videos
     const searchParams = {
@@ -213,7 +214,7 @@ export async function searchRelatedVideos({
 
     // Execute search with rate limiting
     const searchResponse = await withRateLimit('video-search', async () => {
-      return await youtube.search.list(searchParams);
+      return await youtube.search.list(searchParams, requestOptions);
     });
 
     const searchItems = searchResponse.data.items || [];
@@ -231,10 +232,10 @@ export async function searchRelatedVideos({
 
     // Fetch detailed video information (stats, duration, license)
     const videoDetailsResponse = await withRateLimit('video-details', async () => {
-      return await youtube.videos.list({
+      return await youtube.videos.list({ 
         part: 'snippet,contentDetails,statistics,status',
         id: videoIds.join(',')
-      });
+       }, requestOptions);
     });
 
     const videoDetails = videoDetailsResponse.data.items || [];
@@ -351,10 +352,10 @@ export async function getVideoChapters(videoId) {
 
     // Fetch video details
     const videoResponse = await withRateLimit('video-details', async () => {
-      return await youtube.videos.list({
+      return await youtube.videos.list({ 
         part: 'snippet,contentDetails',
         id: videoId
-      });
+       }, requestOptions);
     });
 
     const video = videoResponse.data.items?.[0];
@@ -472,10 +473,10 @@ export async function getVideoMetadata(videoId) {
     const youtube = getYouTubeClient();
 
     const videoResponse = await withRateLimit('video-details', async () => {
-      return await youtube.videos.list({
+      return await youtube.videos.list({ 
         part: 'snippet,contentDetails,statistics,status',
         id: videoId
-      });
+       }, requestOptions);
     });
 
     const video = videoResponse.data.items?.[0];
