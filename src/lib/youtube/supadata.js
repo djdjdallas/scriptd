@@ -23,7 +23,7 @@ export async function fetchChannelRecentVideos(channelId, maxResults = 10) {
     console.log(`📹 Fetching ${maxResults} recent videos for channel: ${channelId}`);
 
     const response = await fetch(
-      `${SUPADATA_API_URL}/youtube/videos?channel_id=${channelId}&max_results=${maxResults}&order=date`,
+      `${SUPADATA_API_URL}/youtube/videos?id=${channelId}&max_results=${maxResults}&order=date`,
       {
         headers: {
           'x-api-key': apiKey,
@@ -86,7 +86,7 @@ export async function fetchChannelInfo(channelId) {
     console.log(`📺 Fetching channel info for: ${channelId}`);
 
     const response = await fetch(
-      `${SUPADATA_API_URL}/youtube/channel?channel_id=${channelId}`,
+      `${SUPADATA_API_URL}/youtube/channel?id=${channelId}`,
       {
         headers: {
           'x-api-key': apiKey,
@@ -98,7 +98,7 @@ export async function fetchChannelInfo(channelId) {
     if (!response.ok) {
       const error = await response.text();
       console.error('❌ SupaData API error:', response.status, error);
-      console.log('   Request URL:', `${SUPADATA_API_URL}/youtube/channel?channel_id=${channelId}`);
+      console.log('   Request URL:', `${SUPADATA_API_URL}/youtube/channel?id=${channelId}`);
       console.log('   Auth header present:', !!apiKey);
       return null;
     }
