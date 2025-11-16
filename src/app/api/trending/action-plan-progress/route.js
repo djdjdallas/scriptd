@@ -1,17 +1,5 @@
 import { NextResponse } from 'next/server';
-
-// In-memory storage for progress (in production, use Redis or similar)
-const progressStore = new Map();
-
-// Clean up old progress entries after 5 minutes
-const cleanupOldProgress = () => {
-  const now = Date.now();
-  for (const [key, value] of progressStore.entries()) {
-    if (now - value.timestamp > 5 * 60 * 1000) {
-      progressStore.delete(key);
-    }
-  }
-};
+import { getProgress } from '@/lib/utils/progress-tracker';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -21,9 +9,7 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Session ID required' }, { status: 400 });
   }
 
-  cleanupOldProgress();
-
-  const progress = progressStore.get(sessionId);
+  const progress = getProgress(sessionId);
 
   if (!progress) {
     return NextResponse.json({
@@ -34,27 +20,4 @@ export async function GET(request) {
   }
 
   return NextResponse.json(progress);
-}
-
-export async function POST(request) {
-  try {
-    const { sessionId, stage, message, progress } = await request.json();
-
-    if (!sessionId) {
-      return NextResponse.json({ error: 'Session ID required' }, { status: 400 });
-    }
-
-    progressStore.set(sessionId, {
-      stage,
-      message,
-      progress,
-      timestamp: Date.now()
-    });
-
-    cleanupOldProgress();
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
 }

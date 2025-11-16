@@ -122,40 +122,25 @@ export default function AllRisingChannelsPage() {
       if (data.channels && data.channels.length > 0) {
         console.log(`📊 Found ${data.channels.length} channels, source: ${data.source}`);
 
-        // Use startTransition for non-urgent state updates
-        startTransition(() => {
         // Transform YouTube search results to match trending channel format
-        const transformedChannels = data.channels.map((channel, idx) => {
-          console.log(`\n🎬 Processing channel ${idx + 1}:`, channel.title);
-          console.log('  Raw channel object:', channel);
-          
+        // Do this OUTSIDE of startTransition to avoid blocking
+        const transformedChannels = data.channels.map((channel) => {
           // Use channelId for YouTube ID, but check if it's a valid YouTube ID
           // YouTube channel IDs typically start with 'UC' and are 24 characters long
           let youtubeChannelId = channel.channelId;
-          
-          console.log('  Initial channelId:', youtubeChannelId);
-          console.log('  Initial id:', channel.id);
-          
+
           // If channelId looks like a UUID (contains dashes), it's from the database
           // and we should check if there's a valid YouTube ID
           if (youtubeChannelId && youtubeChannelId.includes('-')) {
-            console.log('  ❌ channelId looks like UUID (has dashes), rejecting:', youtubeChannelId);
             youtubeChannelId = null;
           }
-          
+
           // Fallback to channel.id only if it looks like a YouTube ID
           if (!youtubeChannelId && channel.id && !channel.id.includes('-')) {
-            console.log('  🔄 Falling back to channel.id:', channel.id);
             youtubeChannelId = channel.id;
           }
-          
+
           const finalId = youtubeChannelId || channel.channelId || channel.id;
-          
-          console.log('  ✅ Final decision:');
-          console.log('    - youtubeChannelId:', youtubeChannelId);
-          console.log('    - finalId for component:', finalId);
-          console.log('    - Is valid YouTube ID?', !!youtubeChannelId);
-          console.log('    - Will Analyze work?', finalId && !finalId.includes('-') && !finalId.startsWith('demo') && finalId.length > 10);
           
           // Determine category from channel description or use fallback
           let category = 'Content Creation';
@@ -197,14 +182,17 @@ export default function AllRisingChannelsPage() {
           };
         });
 
-        setChannels(transformedChannels);
-        setPagination({
-          totalPages: 1,
-          totalChannels: transformedChannels.length,
-          hasNextPage: false,
-          hasPrevPage: false
+        // Use startTransition for non-urgent state updates
+        startTransition(() => {
+          setChannels(transformedChannels);
+          setPagination({
+            totalPages: 1,
+            totalChannels: transformedChannels.length,
+            hasNextPage: false,
+            hasPrevPage: false
+          });
         });
-        });
+
         toast.success(`Found ${data.channels.length} channels`);
       } else {
         setChannels([]);
@@ -452,24 +440,14 @@ export default function AllRisingChannelsPage() {
       {/* Channels Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredChannels.map((channel, index) => {
-          // Debug logging for button state
+          // Validate channel ID for Analyze button
           const hasId = !!channel.id;
           const notUndefined = channel.id !== 'undefined';
           const notDemo = !channel.id?.startsWith('demo');
           const notUUID = !channel.id?.includes('-');
           const longEnough = channel.id?.length > 10;
           const isValidForAnalyze = hasId && notUndefined && notDemo && notUUID && longEnough;
-          
-          if (searchMode) {
-            console.log(`\n🎯 Rendering channel: ${channel.name}`);
-            console.log('  Button validation:');
-            console.log(`    - Has ID: ${hasId} (${channel.id})`);
-            console.log(`    - Not 'undefined': ${notUndefined}`);
-            console.log(`    - Not demo: ${notDemo}`);
-            console.log(`    - Not UUID: ${notUUID}`);
-            console.log(`    - Length > 10: ${longEnough} (length: ${channel.id?.length})`);
-            console.log(`    - ✅ Valid for Analyze: ${isValidForAnalyze}`);
-          }
+
           return (
           <TiltCard key={channel.id || index}>
             <div className="glass-card p-6 animate-reveal" style={{ animationDelay: `${0.2 + (index % 9) * 0.05}s` }}>

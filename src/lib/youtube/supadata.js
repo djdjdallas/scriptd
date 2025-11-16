@@ -75,9 +75,12 @@ export async function fetchChannelInfo(channelId) {
   const apiKey = process.env.SUPADATA_API_KEY;
 
   if (!apiKey) {
-    console.warn('⚠️ SUPADATA_API_KEY not configured');
+    console.error('❌ SUPADATA_API_KEY environment variable is not set!');
+    console.log('   Available env vars starting with SUPA:', Object.keys(process.env).filter(k => k.startsWith('SUPA')));
     return null;
   }
+
+  console.log(`✅ SUPADATA_API_KEY is set (length: ${apiKey.length}, starts with: ${apiKey.substring(0, 4)}...)`);
 
   try {
     console.log(`📺 Fetching channel info for: ${channelId}`);
@@ -94,7 +97,9 @@ export async function fetchChannelInfo(channelId) {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('SupaData API error:', response.status, error);
+      console.error('❌ SupaData API error:', response.status, error);
+      console.log('   Request URL:', `${SUPADATA_API_URL}/youtube/channel?channel_id=${channelId}`);
+      console.log('   Auth header present:', !!apiKey);
       return null;
     }
 

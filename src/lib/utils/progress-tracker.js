@@ -1,43 +1,41 @@
 /**
  * Utility to track progress for action plan generation
+ * Uses in-memory cache to avoid server-to-server fetch issues on Vercel
  */
+
+// In-memory progress cache (persists for the lifetime of the serverless function)
+const progressCache = new Map();
 
 export async function updateProgress(sessionId, stage, message, progress) {
   if (!sessionId) return;
 
   try {
-    // Update progress via internal API
-    // Build URL differently based on environment
-    let baseUrl;
+    // Store in memory cache
+    progressCache.set(sessionId, {
+      stage,
+      message,
+      progress,
+      timestamp: Date.now()
+    });
 
-    // Check if we're on Vercel
-    if (process.env.VERCEL_URL) {
-      // Use the Vercel deployment URL
-      baseUrl = `https://${process.env.VERCEL_URL}`;
-    } else if (process.env.NEXT_PUBLIC_APP_URL) {
-      // Use the configured app URL
-      baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-    } else {
-      // Local development
-      baseUrl = 'http://localhost:3000';
+    // Clean up old sessions (older than 5 minutes)
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+    for (const [key, value] of progressCache.entries()) {
+      if (value.timestamp < fiveMinutesAgo) {
+        progressCache.delete(key);
+      }
     }
 
-    await fetch(`${baseUrl}/api/trending/action-plan-progress`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        sessionId,
-        stage,
-        message,
-        progress
-      })
-    });
+    // Log progress for debugging
+    console.log(`📊 Progress [${sessionId.substring(0, 8)}...]: ${stage} - ${message} (${progress}%)`);
   } catch (error) {
     // Don't fail the main process if progress update fails
     console.warn('Failed to update progress:', error);
   }
+}
+
+export function getProgress(sessionId) {
+  return progressCache.get(sessionId) || null;
 }
 
 export const PROGRESS_STAGES = {
