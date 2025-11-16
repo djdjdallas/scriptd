@@ -7,8 +7,20 @@ export async function updateProgress(sessionId, stage, message, progress) {
 
   try {
     // Update progress via internal API
-    // Using absolute URL for server-side calls
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Build URL differently based on environment
+    let baseUrl;
+
+    // Check if we're on Vercel
+    if (process.env.VERCEL_URL) {
+      // Use the Vercel deployment URL
+      baseUrl = `https://${process.env.VERCEL_URL}`;
+    } else if (process.env.NEXT_PUBLIC_APP_URL) {
+      // Use the configured app URL
+      baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    } else {
+      // Local development
+      baseUrl = 'http://localhost:3000';
+    }
 
     await fetch(`${baseUrl}/api/trending/action-plan-progress`, {
       method: 'POST',

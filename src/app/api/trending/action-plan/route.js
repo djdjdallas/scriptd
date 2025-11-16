@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { detectChannelNiche, findRealEvents, validateContentIdeas, enrichActionPlan } from '@/lib/ai/action-plan-enhancer';
 import { updateProgress, PROGRESS_STAGES } from '@/lib/utils/progress-tracker';
 import { extractJsonFromResponse } from '@/lib/utils/json-parser';
-import { fetchChannelRecentVideos } from '@/lib/youtube/supadata';
+import { fetchChannelRecentVideos, fetchChannelInfo } from '@/lib/youtube/supadata';
 
 export async function POST(request) {
   try {
@@ -135,123 +135,192 @@ Remix Channel Analysis for "${channelName}":
 
       channelAnalytics += `\nIMPORTANT: This is a high-quality remix channel. Generate content ideas that match the verified ideas listed above. Focus on investigative, documentary-style content with high production value and strong storytelling. The audience expects deep-dive analysis and well-researched content.`;
     }
-    // EXISTING: Fall back to YouTube API if no remix analytics
+    // EXISTING: Fall back to SupaData/YouTube API if no remix analytics
     else {
       try {
-        let apiUrl;
+        console.log(`🔍 Attempting to fetch YouTube data for channel: ${channelName} (ID: ${channelId || 'not provided'})`);
+
+        let actualChannelId = channelId;
+
+        // PRIORITY 1: Try SupaData first if we have a channel ID
         if (channelId) {
-        // Use channel ID directly
-        apiUrl = `https://www.googleapis.com/youtube/v3/channels?` +
-          `part=snippet,statistics,contentDetails&` +
-          `id=${channelId}&` +
-          `key=${process.env.YOUTUBE_API_KEY}`;
-      } else {
-        // Search for channel by name
-        const searchResponse = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?` +
-          `part=snippet&` +
-          `q=${encodeURIComponent(channelName)}&` +
-          `type=channel&` +
-          `maxResults=1&` +
-          `key=${process.env.YOUTUBE_API_KEY}`
-        );
-        
-        if (searchResponse.ok) {
-          const searchData = await searchResponse.json();
-          const foundChannelId = searchData.items?.[0]?.snippet?.channelId;
-          
-          if (foundChannelId) {
+          console.log(`🚀 PRIORITY 1: Trying SupaData with channel ID: ${channelId}`);
+          const supadataChannel = await fetchChannelInfo(channelId);
+
+          if (supadataChannel) {
+            console.log(`✅ SupaData: Successfully fetched channel "${supadataChannel.title}"`);
+            console.log(`   Subscribers: ${parseInt(supadataChannel.subscriberCount || 0).toLocaleString()}`);
+            console.log(`   Videos: ${supadataChannel.videoCount || 0}`);
+
+            // Fetch recent videos from SupaData
+            console.log('📹 Fetching recent videos via SupaData...');
+            const supadataVideos = await fetchChannelRecentVideos(channelId, 10);
+
+            if (supadataVideos && supadataVideos.length > 0) {
+              console.log(`✅ SupaData: Fetched ${supadataVideos.length} videos`);
+              recentVideos = supadataVideos.map(v => ({
+                title: v.title,
+                description: v.description?.substring(0, 200) || '',
+                viewCount: v.viewCount,
+                publishedAt: v.publishedAt
+              }));
+            }
+
+            // Build channel analytics from SupaData
+            channelAnalytics = `
+Actual Channel Data for "${supadataChannel.title}" (via SupaData):
+- Description: ${supadataChannel.description || 'No description'}
+- Subscribers: ${parseInt(supadataChannel.subscriberCount || 0).toLocaleString()}
+- Total Views: ${parseInt(supadataChannel.viewCount || 0).toLocaleString()}
+- Video Count: ${supadataChannel.videoCount || 0}
+- Channel Created: ${supadataChannel.publishedAt ? new Date(supadataChannel.publishedAt).toLocaleDateString() : 'Unknown'}
+- Average Views per Video: ${supadataChannel.videoCount ?
+  Math.round(parseInt(supadataChannel.viewCount) / parseInt(supadataChannel.videoCount)).toLocaleString() : 'N/A'}
+${recentVideos.length > 0 ? `- Recent Video Titles: ${recentVideos.slice(0, 3).map(v => v.title).join(', ')}\n` : ''}
+This channel appears to focus on: ${supadataChannel.description ?
+  supadataChannel.description.substring(0, 200) : 'content related to ' + topic}`;
+
+            // Set channelData in YouTube API format for compatibility
+            channelData = {
+              id: supadataChannel.id,
+              snippet: {
+                title: supadataChannel.title,
+                description: supadataChannel.description,
+                publishedAt: supadataChannel.publishedAt
+              },
+              statistics: {
+                subscriberCount: supadataChannel.subscriberCount,
+                viewCount: supadataChannel.viewCount,
+                videoCount: supadataChannel.videoCount
+              }
+            };
+          } else {
+            console.log('⚠️ SupaData returned no channel data, falling back to YouTube API');
+            throw new Error('SupaData fetch failed, trying YouTube API');
+          }
+        }
+
+        // PRIORITY 2: Fall back to YouTube API if SupaData failed or no channel ID
+        if (!channelData) {
+          console.log(`🔄 PRIORITY 2: Falling back to YouTube API`);
+
+          if (!process.env.YOUTUBE_API_KEY) {
+            console.warn('⚠️ YOUTUBE_API_KEY not set, skipping YouTube API calls');
+            throw new Error('YouTube API key not configured');
+          }
+
+          let apiUrl;
+          if (channelId) {
+            console.log(`📡 Using provided channel ID: ${channelId}`);
             apiUrl = `https://www.googleapis.com/youtube/v3/channels?` +
               `part=snippet,statistics,contentDetails&` +
-              `id=${foundChannelId}&` +
+              `id=${channelId}&` +
               `key=${process.env.YOUTUBE_API_KEY}`;
-          }
-        }
-      }
-      
-      if (apiUrl) {
-        const channelResponse = await fetch(apiUrl);
-        if (channelResponse.ok) {
-          const data = await channelResponse.json();
-          channelData = data.items?.[0];
-          
-          if (channelData) {
-            // Get recent videos for better context using SupaData (preferred) or YouTube API
-            const actualChannelId = channelData.id;
+          } else {
+            console.log(`🔎 Searching YouTube for channel by name: ${channelName}`);
+            const searchResponse = await fetch(
+              `https://www.googleapis.com/youtube/v3/search?` +
+              `part=snippet&` +
+              `q=${encodeURIComponent(channelName)}&` +
+              `type=channel&` +
+              `maxResults=1&` +
+              `key=${process.env.YOUTUBE_API_KEY}`
+            );
 
-            // Try SupaData first for better data
+            if (!searchResponse.ok) {
+              const errorText = await searchResponse.text();
+              console.error(`❌ YouTube search API failed (${searchResponse.status}):`, errorText);
+              throw new Error(`YouTube API search failed: ${searchResponse.status}`);
+            }
+
+            const searchData = await searchResponse.json();
+            console.log(`📊 YouTube search returned ${searchData.items?.length || 0} results`);
+
+            actualChannelId = searchData.items?.[0]?.snippet?.channelId;
+
             if (actualChannelId) {
-              console.log('📹 Attempting to fetch videos via SupaData...');
-              const supadataVideos = await fetchChannelRecentVideos(actualChannelId, 10);
+              console.log(`✅ Found channel ID from search: ${actualChannelId}`);
+              apiUrl = `https://www.googleapis.com/youtube/v3/channels?` +
+                `part=snippet,statistics,contentDetails&` +
+                `id=${actualChannelId}&` +
+                `key=${process.env.YOUTUBE_API_KEY}`;
+            } else {
+              console.warn('⚠️ No channel found in YouTube search results');
+              throw new Error('Channel not found in YouTube search');
+            }
+          }
 
-              if (supadataVideos && supadataVideos.length > 0) {
-                console.log(`✅ SupaData: Fetched ${supadataVideos.length} videos`);
-                // Include both titles AND descriptions for better niche detection
-                recentVideos = supadataVideos.map(v => ({
-                  title: v.title,
-                  description: v.description?.substring(0, 200) || '', // First 200 chars
-                  viewCount: v.viewCount,
-                  publishedAt: v.publishedAt
-                }));
-              } else {
-                console.log('⚠️ SupaData returned no videos, falling back to YouTube API');
+          if (apiUrl) {
+            console.log(`📡 Fetching channel details from YouTube API...`);
+            const channelResponse = await fetch(apiUrl);
 
-                // Fallback to YouTube API
-                const uploadsPlaylistId = channelData.contentDetails?.relatedPlaylists?.uploads;
-                if (uploadsPlaylistId) {
-                  const videosResponse = await fetch(
-                    `https://www.googleapis.com/youtube/v3/playlistItems?` +
-                    `part=snippet&` +
-                    `playlistId=${uploadsPlaylistId}&` +
-                    `maxResults=5&` +
-                    `key=${process.env.YOUTUBE_API_KEY}`
-                  );
+            if (!channelResponse.ok) {
+              const errorText = await channelResponse.text();
+              console.error(`❌ YouTube channel API failed (${channelResponse.status}):`, errorText);
+              throw new Error(`YouTube API channel fetch failed: ${channelResponse.status}`);
+            }
 
-                  if (videosResponse.ok) {
-                    const videosData = await videosResponse.json();
-                    recentVideos = videosData.items?.map(item => ({
-                      title: item.snippet.title,
-                      description: item.snippet.description?.substring(0, 200) || '',
-                      publishedAt: item.snippet.publishedAt
-                    })) || [];
-                  }
-                }
+            const data = await channelResponse.json();
+            channelData = data.items?.[0];
+
+            if (!channelData) {
+              console.warn('⚠️ YouTube API returned no channel data');
+              throw new Error('No channel data returned from YouTube API');
+            }
+
+            console.log(`✅ Successfully fetched channel data for: ${channelData.snippet?.title}`);
+            console.log(`   Subscribers: ${channelData.statistics?.subscriberCount || 'hidden'}`);
+            console.log(`   Videos: ${channelData.statistics?.videoCount || 0}`);
+
+            // Get recent videos using YouTube API
+            const uploadsPlaylistId = channelData.contentDetails?.relatedPlaylists?.uploads;
+            if (uploadsPlaylistId) {
+              const videosResponse = await fetch(
+                `https://www.googleapis.com/youtube/v3/playlistItems?` +
+                `part=snippet&` +
+                `playlistId=${uploadsPlaylistId}&` +
+                `maxResults=10&` +
+                `key=${process.env.YOUTUBE_API_KEY}`
+              );
+
+              if (videosResponse.ok) {
+                const videosData = await videosResponse.json();
+                recentVideos = videosData.items?.map(item => ({
+                  title: item.snippet.title,
+                  description: item.snippet.description?.substring(0, 200) || '',
+                  publishedAt: item.snippet.publishedAt
+                })) || [];
+                console.log(`✅ YouTube API: Fetched ${recentVideos.length} videos`);
               }
             }
-            
+
             // Build channel analytics summary
             channelAnalytics = `
-Actual Channel Data for "${channelData.snippet.title}":
-` +
-              `- Description: ${channelData.snippet.description || 'No description'}
-` +
-              `- Subscribers: ${parseInt(channelData.statistics?.subscriberCount || 0).toLocaleString()}
-` +
-              `- Total Views: ${parseInt(channelData.statistics?.viewCount || 0).toLocaleString()}
-` +
-              `- Video Count: ${channelData.statistics?.videoCount || 0}
-` +
-              `- Channel Created: ${new Date(channelData.snippet.publishedAt).toLocaleDateString()}
-` +
-              `- Average Views per Video: ${channelData.statistics?.videoCount ? 
-                Math.round(parseInt(channelData.statistics.viewCount) / parseInt(channelData.statistics.videoCount)).toLocaleString() : 'N/A'}
-` +
-              (recentVideos.length > 0 ? `- Recent Video Topics: ${recentVideos.slice(0, 3).join(', ')}\n` : '') +
-              `\nThis channel appears to focus on: ${channelData.snippet.description ? 
-                channelData.snippet.description.substring(0, 200) : 'content related to ' + topic}`;
+Actual Channel Data for "${channelData.snippet.title}" (via YouTube API):
+- Description: ${channelData.snippet.description || 'No description'}
+- Subscribers: ${parseInt(channelData.statistics?.subscriberCount || 0).toLocaleString()}
+- Total Views: ${parseInt(channelData.statistics?.viewCount || 0).toLocaleString()}
+- Video Count: ${channelData.statistics?.videoCount || 0}
+- Channel Created: ${new Date(channelData.snippet.publishedAt).toLocaleDateString()}
+- Average Views per Video: ${channelData.statistics?.videoCount ?
+  Math.round(parseInt(channelData.statistics.viewCount) / parseInt(channelData.statistics.videoCount)).toLocaleString() : 'N/A'}
+${recentVideos.length > 0 ? `- Recent Video Titles: ${recentVideos.slice(0, 3).map(v => v.title).join(', ')}\n` : ''}
+This channel appears to focus on: ${channelData.snippet.description ?
+  channelData.snippet.description.substring(0, 200) : 'content related to ' + topic}`;
           }
         }
-      }
       } catch (error) {
-        console.error('Error fetching YouTube channel data:', error);
+        console.error('❌ Error fetching YouTube channel data:', error.message);
+        console.log('⚠️ Continuing without YouTube data - will use fallback method');
         // Continue without channel data
       }
-    } // End of else block (YouTube API fallback)
+    } // End of else block (SupaData/YouTube API fallback)
 
     // FALLBACK: If no channel data was fetched and we have a provided description/bio, use it
     if (!channelAnalytics && (channelDescription || channelBio)) {
       const providedDescription = channelDescription || channelBio;
-      console.log('📝 Using provided channel description/bio for analysis');
+      console.log(`📝 Using provided channel description/bio for analysis (${providedDescription.length} chars)`);
+      console.log(`   Preview: ${providedDescription.substring(0, 100)}...`);
       channelAnalytics = `
 Channel Data for "${channelName}":
 - Description: ${providedDescription}
@@ -262,6 +331,8 @@ This channel appears to focus on: ${providedDescription.substring(0, 300)}`;
 
     // If still no analytics, create minimal fallback
     if (!channelAnalytics) {
+      console.warn(`⚠️ No channel data available for "${channelName}" - using name-only analysis`);
+      console.log('   This will result in generic recommendations. Try providing a channelId or better description.');
       channelAnalytics = `
 Channel: "${channelName}"
 - No channel data available
