@@ -26,7 +26,7 @@ export async function fetchChannelRecentVideos(channelId, maxResults = 10) {
       `${SUPADATA_API_URL}/youtube/videos?channel_id=${channelId}&max_results=${maxResults}&order=date`,
       {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'x-api-key': apiKey,
           'Content-Type': 'application/json',
         },
       }
@@ -89,7 +89,7 @@ export async function fetchChannelInfo(channelId) {
       `${SUPADATA_API_URL}/youtube/channel?channel_id=${channelId}`,
       {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'x-api-key': apiKey,
           'Content-Type': 'application/json',
         },
       }
@@ -145,7 +145,7 @@ export async function searchVideos(query, maxResults = 10) {
       `${SUPADATA_API_URL}/youtube/search?q=${encodeURIComponent(query)}&max_results=${maxResults}&type=video`,
       {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'x-api-key': apiKey,
           'Content-Type': 'application/json',
         },
       }
