@@ -56,26 +56,29 @@ CRITICAL ANALYSIS RULES:
 4. Be creative and specific based on available clues
 
 Channel Name Analysis Examples:
-- "Psyphoria" → Could be "Psychedelic Philosophy", "Psychology Euphoria Content", "Mind Expansion Topics"
-- "Blackfiles" → Could be "Dark Web Investigations", "Classified Document Analysis", "Hacker Case Studies"
-- "TechMystery" → Could be "Tech Crime Documentary", "Silicon Valley Investigations", "Startup Failure Analysis"
-- "Kee" → If bio mentions psychology: "Applied Psychology Lessons", "Philosophical Psychology", "Mental Health Philosophy"
-- Single names often indicate personal brand channels focused on expertise sharing
+- "Psyphoria" → Could be "Mind Psychology Explained", "Mental Health Tips", "Psychology Life Hacks"
+- "Blackfiles" → Could be "Mystery Investigations", "Unsolved Cases", "True Story Breakdowns"
+- "TechMystery" → Could be "Tech News Commentary", "Gadget Reviews", "Tech Drama Stories"
+- "Kee" → If bio mentions psychology: "Everyday Psychology Tips", "Life Improvement Advice", "Practical Psychology"
+- Single names often indicate personal brand channels focused on relatable, practical content sharing
 
 Examples of SPECIFIC niches (never generic):
-* Tech: "Cybersecurity Breach Analysis", "AI Ethics Debates", "Quantum Computing Explained", "Blockchain Scam Investigations"
-* Crime: "Hacker True Crime Stories", "Financial Fraud Documentary", "Cold Case DNA Analysis", "Prison Psychology Studies"
-* Business: "Failed Startup Autopsies", "Billionaire Psychology Analysis", "Market Crash Investigations", "Corporate Espionage Cases"
-* Education: "Neuroscience Breakthroughs", "Ancient Civilization Mysteries", "Mathematical Paradox Solutions", "Philosophy Mind Experiments"
-* Psychology: "Practical Psychology Lessons", "Emotional Intelligence Training", "Human Behavior Analysis", "Self-Control Psychology", "Relationship Psychology", "Mental Strength Building", "Dark Psychology Explained", "Personality Types Explained", "Behavioral Science Insights", "Applied Social Psychology", "Everyday Psychology Tips"
-* Philosophy: "Stoic Life Application", "Eastern Philosophy Practice", "Philosophical Psychology", "Life Hardship Philosophy", "Modern Philosophy Application"
-* Entertainment: "Horror Movie Psychology", "Gaming Industry Scandals", "Music Theory Breakdowns", "Comedy Writing Analysis"
+* Tech: "Tech Scam Exposés", "AI Product Reviews", "Gadget Unboxing Reviews", "Tech Drama Commentary", "Software Tutorial Guides"
+* Crime: "True Crime Stories", "Unsolved Mystery Analysis", "Scam Investigation Videos", "Crime Documentary Breakdowns"
+* Business: "Entrepreneur Success Stories", "Side Hustle Ideas", "Business Breakdown Analysis", "Company Drama Exposés", "Startup Failure Analysis"
+* Education: "Quick Learning Hacks", "Study Tips & Techniques", "Educational Explainers", "Fun Science Experiments", "History Storytelling"
+* Psychology: "Everyday Psychology Tips", "Social Skills Advice", "Dating Psychology", "Productivity Psychology", "Body Language Reads", "Confidence Building Tips", "Mental Health Awareness", "Life Advice Psychology", "Habit Formation Guide"
+* Self-Improvement: "Morning Routine Optimization", "Fitness Transformation Stories", "Mindset Shift Strategies", "Goal Achievement Methods", "Time Management Hacks"
+* Entertainment: "Movie Breakdown Analysis", "Gaming Commentary", "Pop Culture Commentary", "Celebrity Drama Analysis", "Reaction Content"
+* Documentary: "Internet Drama Investigation", "Documentary Commentary", "Social Media Exposés", "Influencer Scandal Coverage"
 
 IMPORTANT: Look at the video titles and descriptions to understand what the channel actually creates, not just the channel name!
-- If videos are about "people who never get angry", "emotional control", "confidence" → This is PRACTICAL PSYCHOLOGY or SELF-IMPROVEMENT
-- If videos reference academic conferences, Jungian theory → This is ANALYTICAL PSYCHOLOGY
-- If videos are about everyday behaviors → This is BEHAVIORAL PSYCHOLOGY
-- If videos give life advice with psychological backing → This is APPLIED PSYCHOLOGY
+- If videos are about "people who never get angry", "emotional control", "confidence" → This is "Everyday Psychology Tips" or "Self-Improvement Advice"
+- If videos give life advice with psychological backing → This is "Life Advice Psychology" or "Practical Psychology"
+- If videos are about everyday behaviors → This is "Social Psychology Tips" or "Human Behavior Insights"
+- Prefer PRACTICAL, YOUTUBE-FRIENDLY niches over academic ones
+- Avoid referencing academic conferences, scholarly theories, or university research unless the channel explicitly focuses on them
+- Default to actionable, clickable content categories that work well on YouTube
 
 Return in this JSON format:
 {
@@ -125,7 +128,7 @@ Return in this JSON format:
 Description: ${description}
 Videos: ${recentVideos.join(', ')}
 
-Return ONLY a specific 2-4 word niche category. Examples: "Cybersecurity Documentary", "Tech Reviews", "Cooking Tutorials"`;
+Return ONLY a specific 2-4 word niche category. Examples: "Fitness Motivation", "Gaming Commentary", "Cooking Tutorials", "Life Advice", "Product Reviews"`;
 
       const simpleResponse = await claude.generateCompletion(simplePrompt, {
         model: 'claude-sonnet-4-5-20250929',
@@ -183,7 +186,7 @@ export async function findRealEvents(niche, timeframe = '12 months', subCategori
     // Use AI to extract structured events from search results
     const claude = getClaudeService();
 
-    const prompt = `From these search results about ${niche}, extract 8-12 REAL, specific events that would make compelling video content.
+    const prompt = `From these search results about ${niche}, extract 8-12 REAL, specific events that would make compelling YOUTUBE video content.
 
 Search Results:
 ${JSON.stringify(searchResults.results.slice(0, 10), null, 2)}
@@ -195,7 +198,7 @@ For each event, provide:
 - date: Approximate date (YYYY-MM format)
 - description: Brief description (1-2 sentences)
 - entities: Array of specific names mentioned (companies, people, locations)
-- videoAngle: Why this would make a great video
+- videoAngle: Why this would make a great YOUTUBE video (focus on clickability and engagement)
 - estimatedViews: Realistic view potential (e.g., "50K-100K")
 
 CRITICAL: Every event MUST be:
@@ -203,6 +206,11 @@ CRITICAL: Every event MUST be:
 2. Include SPECIFIC names (no generic "The Company" or "A Person")
 3. Include approximate dates
 4. Verifiable through the sources provided
+5. Be YOUTUBE-FRIENDLY and CLICKABLE (prefer viral stories, trending topics, drama, practical tips over academic conferences)
+6. Avoid academic conferences, seminars, or scholarly symposiums UNLESS they involve major viral moments or scandals
+
+PREFER: Viral incidents, trending stories, scandals, product launches, company drama, influencer events, breakthrough discoveries with mass appeal
+AVOID: Academic conferences, university seminars, scholarly colloquia (unless they went viral or controversial)
 
 Return ONLY a JSON array of events, no other text.`;
 
@@ -323,17 +331,25 @@ Structure: ${template.structure || template.type || 'Standard structure'}
 
 Generate based on ${niche} style:
 1. format: A specific production style for ${niche} content
-   Examples:
-   - "Investigative documentary with evidence reveals"
-   - "Animated explainer with visual metaphors"
-   - "First-person narrative with archival footage"
-   - "Expert interview with demonstration segments"
+   Examples (choose what fits the niche):
+   - "Direct-to-camera talking head with engaging delivery"
+   - "Screen recording tutorial with voiceover"
+   - "Investigative documentary with evidence reveals and timeline graphics"
+   - "Reaction format with genuine personality"
+   - "List-style countdown with visual examples"
+   - "Documentary deep-dive with archival footage and interviews"
+   - "Quick-cut montage with trending music"
+   - "Simple explainer with on-screen text overlays"
 
 2. hook: A gripping 15-second opening line specific to ${niche}
-   Examples:
-   - "What if I told you the biggest hack in history started with a typo?"
-   - "Your brain on psychedelics looks nothing like you'd expect - let me show you"
-   - "This company lost $50 billion in 24 hours, and nobody saw it coming"
+   Examples (choose what fits the niche):
+   - "I tried this for 30 days and here's what actually happened"
+   - "Everyone gets this wrong - let me show you the right way"
+   - "This scam stole $50 million and nobody saw it coming"
+   - "You're probably making this mistake right now without realizing it"
+   - "What I'm about to show you will change how you see everything"
+   - "This company's collapse reveals a pattern nobody's talking about"
+   - "I can't believe this actually works - watch this"
 
 Return ONLY valid JSON: { "format": "...", "hook": "..." }`;
 
@@ -371,10 +387,13 @@ Return ONLY valid JSON: { "format": "...", "hook": "..." }`;
         try {
           const prompt = `For a ${niche} YouTube channel, explain why "${item.item}" is needed.
 
-Be SPECIFIC to ${niche} content. Examples:
-- Microphone for "Hacker True Crime": "To narrate complex cybersecurity incidents and interview security experts"
-- Camera for "Psychedelic Philosophy": "To record visual discussions and consciousness-expanding presentations"
-- Lighting for "Tech Investigations": "To create dramatic reveals and highlight evidence displays"
+Be SPECIFIC to ${niche} content. Examples (choose what fits):
+- Microphone for "Fitness Tips": "To capture clear audio for workout instructions and motivational talking-head videos"
+- Camera for "Cooking Tutorials": "To film recipe demonstrations and ingredient close-ups with good quality"
+- Microphone for "True Crime Stories": "To narrate complex investigations and create immersive documentary storytelling"
+- Lighting for "Product Reviews": "To ensure products are well-lit and visible for detailed examination"
+- Camera for "Scam Investigations": "To record evidence reveals and create professional documentary-style content"
+- Ring light for "Beauty Content": "To achieve flattering lighting for makeup tutorials and skincare routines"
 
 Answer in ONE sentence (10-20 words). Be specific to ${niche}.
 
@@ -389,7 +408,7 @@ Return ONLY the purpose text, no quotes.`;
           item.purpose = purpose.trim().replace(/['"]/g, '').slice(0, 100);
         } catch (error) {
           console.warn(`⚠️ Failed to enrich equipment ${i}:`, error.message);
-          item.purpose = `For professional ${niche} content production and audience engagement`;
+          item.purpose = `For creating engaging ${niche} content and improving video quality`;
         }
       }
     }

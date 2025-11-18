@@ -423,11 +423,17 @@ CRITICAL: Use these REAL events as the foundation for content ideas. Every video
 
 IMPORTANT:
 - The channel "${channelName}" focuses on "${finalTopic}".
+- Make ALL content ideas YOUTUBE-FRIENDLY and CLICKABLE
+- MATCH the content style to the niche: If it's scam investigations/true crime/documentaries, use investigative documentary style. If it's tutorials/self-improvement, use practical advice style. If it's commentary, use reaction/breakdown style.
+- Prefer TRENDING, VIRAL content over academic/scholarly content
+- Avoid academic conferences, university seminars, or scholarly theory unless explicitly relevant
+- Focus on PRACTICAL, ACTIONABLE content that gets views and engagement
 - Make ALL content ideas specific with real names, dates, and events
 - Do NOT use generic templates like "The [X] That [Y]" without specifics
 - Base recommendations on actual channel data and real events
 - Include ALL fields completely - no placeholders or undefined values
 - Equipment purposes must be specific to ${finalTopic} content creation
+- Think like a successful YouTuber, not an academic researcher
 
 Please provide a comprehensive JSON response with the following structure:
 {
@@ -457,7 +463,7 @@ Please provide a comprehensive JSON response with the following structure:
     {
       "type": "Video type",
       "title": "Title template with [placeholder]",
-      "format": "Production format (e.g., 'Documentary investigation', 'Tutorial walkthrough')",
+      "format": "Production format (e.g., 'Talking head', 'Documentary investigation', 'Screen recording', 'Tutorial walkthrough', 'Reaction video')",
       "hook": "Specific 15-second opening line to grab attention",
       "structure": "Hook → Section1 → Section2 → CTA",
       "duration": "Recommended duration"
