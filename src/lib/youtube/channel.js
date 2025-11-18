@@ -154,10 +154,11 @@ export async function getChannelById(channelId) {
   if (cached) return cached;
 
   const youtube = getYouTubeClient();
+  const requestOptions = getRequestOptions();
 
   try {
     const response = await withRateLimit('channels', () =>
-      youtube.channels.list({ 
+      youtube.channels.list({
         part: ['snippet', 'statistics', 'contentDetails', 'brandingSettings'],
         id: [channelId],
        }, requestOptions)
@@ -182,6 +183,7 @@ export async function getChannelVideos(channelId, maxResults = 50) {
   if (cached) return cached;
 
   const youtube = getYouTubeClient();
+  const requestOptions = getRequestOptions();
 
   try {
     // First get the uploads playlist ID
@@ -194,14 +196,14 @@ export async function getChannelVideos(channelId, maxResults = 50) {
         part: ['snippet', 'contentDetails'],
         playlistId: uploadsPlaylistId,
         maxResults: Math.min(maxResults, 50),
-      })
+      }, requestOptions)
     );
 
     const videoIds = response.data.items.map(item => item.contentDetails.videoId);
 
     // Get detailed video information
     const videosResponse = await withRateLimit('videos', () =>
-      youtube.videos.list({ 
+      youtube.videos.list({
         part: ['snippet', 'statistics', 'contentDetails'],
         id: videoIds,
        }, requestOptions)

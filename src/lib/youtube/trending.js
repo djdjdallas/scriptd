@@ -220,6 +220,7 @@ export async function getChannelRecentVideos(playlistId, maxResults = 10) {
   // Use deduplication to prevent multiple simultaneous requests
   return withDeduplication(cacheKey, async () => {
     const youtube = getYouTubeClient();
+    const requestOptions = getRequestOptions();
 
     try {
       const response = await withRateLimit('playlistItems', () =>
@@ -228,7 +229,7 @@ export async function getChannelRecentVideos(playlistId, maxResults = 10) {
           playlistId,
           maxResults: Math.min(maxResults, 50),
           order: 'date'
-        })
+        }, requestOptions)
       );
 
       const videos = response.data.items || [];
