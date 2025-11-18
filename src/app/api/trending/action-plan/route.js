@@ -152,9 +152,9 @@ Remix Channel Analysis for "${channelName}":
             console.log(`   Subscribers: ${parseInt(supadataChannel.subscriberCount || 0).toLocaleString()}`);
             console.log(`   Videos: ${supadataChannel.videoCount || 0}`);
 
-            // Fetch recent videos from SupaData
+            // Fetch recent videos from SupaData (reduced to 3 to avoid rate limits)
             console.log('📹 Fetching recent videos via SupaData...');
-            const supadataVideos = await fetchChannelRecentVideos(channelId, 10);
+            const supadataVideos = await fetchChannelRecentVideos(channelId, 3);
 
             if (supadataVideos && supadataVideos.length > 0) {
               console.log(`✅ SupaData: Fetched ${supadataVideos.length} videos`);
