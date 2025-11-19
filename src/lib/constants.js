@@ -62,10 +62,10 @@ export const LENGTH_MULTIPLIERS = {
 
 // Tier access by subscription level
 export const TIER_ACCESS_BY_SUBSCRIPTION = {
-  free: ['FAST'],
-  creator: ['FAST', 'BALANCED'],
-  professional: ['FAST', 'BALANCED', 'PREMIUM'],
-  agency: ['FAST', 'BALANCED', 'PREMIUM']
+  free: ['BALANCED'], // Free users get Professional model
+  creator: ['BALANCED'], // Professional model only
+  professional: ['BALANCED', 'PREMIUM'], // Professional & Hollywood
+  agency: ['BALANCED', 'PREMIUM'] // Professional & Hollywood
 };
 
 // Legacy AI Models (kept for backward compatibility but hidden from UI)
@@ -201,11 +201,11 @@ export const PLANS = {
     name: 'Free Trial',
     price: 0,
     credits: 50, // Doubled from 25
-    tiers: ['FAST'],
+    tiers: ['BALANCED'], // Professional model access
     features: [
       '50 free credits',
-      'Fast generation only',
-      '5-16 short scripts',
+      'Professional quality',
+      '5-33 scripts',
       'Basic export formats'
     ]
   },
@@ -215,13 +215,13 @@ export const PLANS = {
     price: 39,
     priceAnnual: 374.40, // 20% off annual discount
     credits: 300, // Doubled from 150
-    tiers: ['FAST', 'BALANCED'],
+    tiers: ['BALANCED'],
     stripeProductId: 'prod_T2icTPaTwIJuIn',
     stripePriceIdMonthly: 'price_1S6dBbPpO7oOioNRFsGAgIDg',
     stripePriceIdAnnual: 'price_1S6dBiPpO7oOioNR1S7NcBGn',
     features: [
       '300 credits/month',
-      'Fast & Professional quality',
+      'Professional quality',
       '30-100 scripts/month',
       '3 channels',
       'Voice profiles',
@@ -237,13 +237,13 @@ export const PLANS = {
     price: 79,
     priceAnnual: 758.40, // 20% off annual discount
     credits: 800, // Doubled from 400
-    tiers: ['FAST', 'BALANCED', 'PREMIUM'],
+    tiers: ['BALANCED', 'PREMIUM'],
     stripeProductId: 'prod_T2idSEslTnNrb0',
     stripePriceIdMonthly: 'price_1S6dBxPpO7oOioNRFs6EsczT',
     stripePriceIdAnnual: 'price_1S6dC3PpO7oOioNRPSgxAyXB',
     features: [
       '800 credits/month',
-      'All quality tiers',
+      'Professional & Hollywood quality',
       '80-260 scripts/month',
       '10 channels',
       'Team seats (3)',
@@ -258,13 +258,13 @@ export const PLANS = {
     price: 199,
     priceAnnual: 1910.40, // 20% off annual discount
     credits: 2000, // Doubled from 1000
-    tiers: ['FAST', 'BALANCED', 'PREMIUM'],
+    tiers: ['BALANCED', 'PREMIUM'],
     stripeProductId: 'prod_T2idmdBYHDJxBV',
     stripePriceIdMonthly: 'price_1S6dCNPpO7oOioNRqeUV4xcf',
     stripePriceIdAnnual: 'price_1S6dCTPpO7oOioNRReJ8peZ2',
     features: [
       '2000 credits/month',
-      'All quality tiers',
+      'Professional & Hollywood quality',
       '200-600+ scripts/month',
       'Unlimited channels',
       'Team seats (10)',

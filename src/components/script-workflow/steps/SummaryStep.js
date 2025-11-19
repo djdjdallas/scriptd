@@ -586,9 +586,9 @@ export default function SummaryStep() {
 
     if (!isModelAllowed(aiModel)) {
       isValid = false;
-      toast.error(`Free users can only use the Fast model. Please upgrade or select the Fast model.`, {
+      toast.error(`Upgrade to access Professional or Hollywood AI models.`, {
         action: {
-          label: 'Upgrade',
+          label: 'View Plans',
           onClick: () => window.location.href = '/pricing'
         }
       });
@@ -1050,8 +1050,7 @@ export default function SummaryStep() {
             {/* NEW: Show model selection buttons with locked state */}
             <div className="space-y-2 mb-3">
               {[
-                { value: MODEL_TIERS.FAST.actualModel, label: "Fast (1x credits)", description: "Quick generation with good quality" },
-                { value: MODEL_TIERS.BALANCED.actualModel, label: "Professional (1.5x credits)", description: "Better storytelling and flow" },
+                { value: MODEL_TIERS.BALANCED.actualModel, label: "Professional (1.5x credits)", description: "Better storytelling and flow - Recommended" },
                 { value: MODEL_TIERS.PREMIUM.actualModel, label: "Hollywood (3.5x credits)", description: "Premium quality with advanced AI" },
               ].map((model) => {
                 const isAllowed = isModelAllowed(model.value);
@@ -1103,12 +1102,12 @@ export default function SummaryStep() {
 
             {/* NEW: Show upgrade message for free users */}
             {userTier === "free" && (
-              <div className="mb-3 p-2 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-                <p className="text-xs text-orange-300 flex items-center gap-2">
-                  <Lock className="h-3 w-3" />
-                  Free users are limited to Fast model.
-                  <a href="/pricing" className="text-orange-400 hover:text-orange-300 underline ml-1">
-                    Upgrade →
+              <div className="mb-3 p-2 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                <p className="text-xs text-purple-300 flex items-center gap-2">
+                  <Sparkles className="h-3 w-3" />
+                  Upgrade to unlock Hollywood quality (3.5x more powerful).
+                  <a href="/pricing" className="text-purple-400 hover:text-purple-300 underline ml-1">
+                    View Plans →
                   </a>
                 </p>
               </div>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getChannelById, getChannelVideos } from '@/lib/youtube/channel';
 import { analyzeChannelWithClaude, generateChannelVoiceProfile } from '@/lib/ai/single-channel-analyzer';
+import { updateProgress, PROGRESS_STAGES } from '@/lib/utils/progress-tracker';
 
 // Configure Vercel Pro timeout (800 seconds max for Pro plan)
 export const maxDuration = 800;
@@ -272,12 +273,17 @@ export async function POST(request, { params }) {
   try {
     const supabase = await createClient();
     const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const sessionId = body.sessionId || `channel-${id}-${Date.now()}`;
 
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Initialize progress
+    await updateProgress(sessionId, PROGRESS_STAGES.INITIALIZING, 'Starting channel analysis...', 0);
 
     // Get channel from database
     const { data: dbChannel, error: fetchError } = await supabase
@@ -384,12 +390,16 @@ export async function POST(request, { params }) {
     console.log('🚀 Starting comprehensive channel analysis for:', dbChannel.name);
     console.log('📍 YouTube Channel ID:', dbChannel.youtube_channel_id);
 
+    await updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, 'Fetching channel data from YouTube...', 10);
+
     // Fetch fresh channel data from YouTube
     const channel = await getChannelById(dbChannel.youtube_channel_id);
 
     console.log('✅ Found YouTube channel:', channel.snippet?.title);
     console.log('📺 Channel ID:', channel.id);
     console.log('👥 Subscribers:', parseInt(channel.statistics?.subscriberCount || 0).toLocaleString());
+
+    await updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, 'Analyzing recent videos...', 20);
 
     // Fetch recent videos for analysis
     const videos = await getChannelVideos(dbChannel.youtube_channel_id, 50);
@@ -417,9 +427,13 @@ export async function POST(request, { params }) {
     };
 
     try {
+      await updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, 'Analyzing voice and style from transcripts...', 30);
+
       // Step 1: Analyze voice from transcripts (just like remix does)
       console.log('📊 Step 1: Analyzing voice from transcripts...');
       const voiceAnalyses = await analyzeChannelVoicesFromYouTube([channelForAnalysis], {});
+
+      await updateProgress(sessionId, PROGRESS_STAGES.GENERATING, 'Generating deep audience insights...', 50);
 
       // Step 2: Generate deep audience insights (just like remix does)
       console.log('📊 Step 2: Generating audience insights...');
@@ -436,6 +450,8 @@ export async function POST(request, { params }) {
         description: dbChannel.description || ''
       });
 
+      await updateProgress(sessionId, PROGRESS_STAGES.GENERATING, 'Analyzing content strategy and positioning...', 65);
+
       // Step 3: Generate comprehensive channel analysis (strengths, opportunities, etc.)
       console.log('📊 Step 3: Generating comprehensive analysis...');
       const comprehensiveAnalysis = await analyzeRemixWithClaude([channelWithContext], {
@@ -449,6 +465,8 @@ export async function POST(request, { params }) {
           audience_targeting: true
         }
       });
+
+      await updateProgress(sessionId, PROGRESS_STAGES.ENRICHING, 'Generating personalized content ideas...', 80);
 
       // Step 4: Generate content ideas with proper context including video information
       console.log('📊 Step 4: Generating content ideas...');
@@ -779,12 +797,15 @@ export async function POST(request, { params }) {
 
     console.log('✅ Comprehensive analysis completed and saved');
 
+    await updateProgress(sessionId, PROGRESS_STAGES.COMPLETED, 'Analysis complete!', 100);
+
     // Return lightweight response (full data is already saved to database)
     // This prevents response payload size issues on Vercel
     return NextResponse.json({
       success: true,
       channelId: id,
       analysisId: savedAnalysis?.id,
+      sessionId: sessionId,
       isComprehensive: true,
       hasDeepAnalysis: hasDeepAnalysis,
       basedOnRealData: voiceProfileResult.basedOnRealData || false,

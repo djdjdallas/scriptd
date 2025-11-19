@@ -41,10 +41,13 @@ export function ChannelAnalyzer({
   const router = useRouter();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
+  const [progressStage, setProgressStage] = useState('');
   const [analysisData, setAnalysisData] = useState(null);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("insights");
   const [existingAnalysis, setExistingAnalysis] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
 
   // Use channelData prop directly - no need for separate API call
   useEffect(() => {
@@ -128,17 +131,22 @@ export function ChannelAnalyzer({
   const startAnalysis = async () => {
     setIsAnalyzing(true);
     setError(null);
-    setProgress(10);
+    setProgress(0);
+    setProgressMessage('Starting analysis...');
+    setProgressStage('initializing');
 
-    // Slower progress for long-running analysis
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => Math.min(prev + 2, 85));
-    }, 1000);
+    // Generate session ID for progress tracking
+    const newSessionId = `channel-${channelId}-${Date.now()}`;
+    setSessionId(newSessionId);
 
     try {
-      // Start analysis asynchronously
-      const startResponse = await fetch(`/api/channels/${channelId}/analyze-async`, {
+      // Start analysis with session ID for progress tracking
+      const startResponse = await fetch(`/api/channels/${channelId}/analyze`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ sessionId: newSessionId }),
       });
 
       if (!startResponse.ok) {
@@ -148,75 +156,54 @@ export function ChannelAnalyzer({
 
       const startData = await startResponse.json();
 
-      if (startData.status === 'completed') {
-        // Already analyzed recently
-        clearInterval(progressInterval);
-        setIsAnalyzing(false);
-        toast.success("Channel analysis is already up to date!");
-        setTimeout(() => {
-          router.push(`/channels/${channelId}`);
-        }, 1000);
-        return;
-      }
-
-      // Show that analysis has started
-      toast.info("Analysis started! This may take a few minutes...", { duration: 5000 });
-
-      // Keep isAnalyzing true to show progress bar during polling
-      // Poll for completion
-      let pollCount = 0;
-      const maxPolls = 120; // 10 minutes max (5 seconds * 120)
-
-      const pollInterval = setInterval(async () => {
-        pollCount++;
-
+      // Poll for progress updates
+      const progressInterval = setInterval(async () => {
         try {
-          const statusResponse = await fetch(`/api/channels/${channelId}/analyze-status`);
+          const progressResponse = await fetch(
+            `/api/channels/${channelId}/analyze-progress?sessionId=${newSessionId}`
+          );
 
-          if (statusResponse.ok) {
-            const statusData = await statusResponse.json();
+          if (progressResponse.ok) {
+            const progressData = await progressResponse.json();
 
-            // Check if analysis is complete
-            if (statusData.hasAnalysis && statusData.isRecent) {
-              clearInterval(pollInterval);
+            setProgress(progressData.progress || 0);
+            setProgressMessage(progressData.message || '');
+            setProgressStage(progressData.stage || '');
+
+            // Check if complete
+            if (progressData.stage === 'completed' || progressData.progress >= 100) {
               clearInterval(progressInterval);
               setProgress(100);
-              setIsAnalyzing(false); // Stop showing progress bar
+              setIsAnalyzing(false);
 
-              // Show success message
-              if (statusData.summary) {
-                toast.success(
-                  `Analysis complete! Analyzed ${statusData.summary.videosAnalyzed} videos, generated ${statusData.summary.contentIdeasGenerated} content ideas.`,
-                  { duration: 5000 }
-                );
-              } else {
-                toast.success("Channel analysis complete!");
-              }
+              toast.success("Channel analysis complete!", { duration: 3000 });
 
-              // Navigate to the channel page to show the analysis
+              // Navigate to channel page
               setTimeout(() => {
                 router.push(`/channels/${channelId}`);
               }, 2000);
-            } else if (pollCount >= maxPolls) {
-              // Timeout after max polls
-              clearInterval(pollInterval);
-              clearInterval(progressInterval);
-              setIsAnalyzing(false); // Stop showing progress bar
-              throw new Error("Analysis is taking unusually long. Please refresh the page to check status.");
             }
           }
         } catch (pollError) {
-          console.error("Status check error:", pollError);
+          console.error("Progress poll error:", pollError);
           // Continue polling even if one check fails
         }
-      }, 5000); // Check every 5 seconds
+      }, 1000); // Poll every second for smooth progress updates
 
-      // Note: intervals will be cleared when analysis completes or errors
+      // Set a maximum timeout (10 minutes)
+      setTimeout(() => {
+        if (isAnalyzing) {
+          clearInterval(progressInterval);
+          setIsAnalyzing(false);
+          setError("Analysis timed out. Please try again.");
+          toast.error("Analysis took too long. Please try again.");
+        }
+      }, 600000);
+
     } catch (error) {
       console.error("Analysis error:", error);
       setError(error.message);
-      setIsAnalyzing(false); // Stop showing progress bar on error
-      clearInterval(progressInterval);
+      setIsAnalyzing(false);
       toast.error(error.message || "Failed to analyze channel");
     }
   };
@@ -318,16 +305,9 @@ export function ChannelAnalyzer({
 
             <div className="text-center">
               <p className="text-white font-medium mb-2">
-                {progress < 30 && "Fetching channel data..."}
-                {progress >= 30 &&
-                  progress < 60 &&
-                  "Analyzing video content..."}
-                {progress >= 60 &&
-                  progress < 90 &&
-                  "Generating audience insights..."}
-                {progress >= 90 && "Finalizing analysis..."}
+                {progressMessage || "Analyzing your channel..."}
               </p>
-              <p className="text-gray-400 text-sm">{progress}% complete</p>
+              <p className="text-gray-400 text-sm">{Math.round(progress)}% complete</p>
             </div>
           </div>
         </div>
