@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { ServerCreditManager } from '@/lib/credits/server-manager';
 
 export async function POST(request) {
   try {
@@ -180,33 +181,38 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
             const creditsUsed = 1;
             const { data: currentUser } = await supabase
               .from('users')
-              .select('credits, bypass_credits')
+              .select('bypass_credits')
               .eq('id', user.id)
               .single();
 
             // Only deduct if user doesn't have bypass_credits enabled
-            if (currentUser && !currentUser.bypass_credits && currentUser.credits > 0) {
-              await supabase
-                .from('users')
-                .update({
-                  credits: currentUser.credits - creditsUsed
-                })
-                .eq('id', user.id);
+            if (!currentUser?.bypass_credits) {
+              const deductionResult = await ServerCreditManager.deductCredits(
+                supabase,
+                user.id,
+                'FRAME_GENERATION',
+                {
+                  calculatedCost: creditsUsed,
+                  workflowId,
+                  framework: framework || 'problem-solution',
+                  sourcesUsed: sources.length,
+                  topic
+                }
+              );
 
-              // Log transaction
-              await supabase
-                .from('credits_transactions')
-                .insert({
-                  user_id: user.id,
-                  amount: -creditsUsed,
-                  type: 'usage',
-                  description: `Frame generation for: ${topic}`,
-                  metadata: {
-                    workflowId,
-                    framework: framework || 'problem-solution',
-                    sourcesUsed: sources.length
-                  }
-                });
+              if (!deductionResult.success) {
+                console.error('Failed to deduct credits:', deductionResult.error);
+                return NextResponse.json(
+                  {
+                    error: deductionResult.error || 'Failed to deduct credits',
+                    required: deductionResult.required,
+                    balance: deductionResult.balance
+                  },
+                  { status: 402 }
+                );
+              }
+
+              console.log('✅ Credits deducted:', deductionResult);
             }
 
             return NextResponse.json({
@@ -281,33 +287,38 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
     const creditsUsed = 1;
     const { data: currentUser } = await supabase
       .from('users')
-      .select('credits, bypass_credits')
+      .select('bypass_credits')
       .eq('id', user.id)
       .single();
 
     // Only deduct if user doesn't have bypass_credits enabled
-    if (currentUser && !currentUser.bypass_credits && currentUser.credits > 0) {
-      await supabase
-        .from('users')
-        .update({
-          credits: currentUser.credits - creditsUsed
-        })
-        .eq('id', user.id);
+    if (!currentUser?.bypass_credits) {
+      const deductionResult = await ServerCreditManager.deductCredits(
+        supabase,
+        user.id,
+        'FRAME_GENERATION',
+        {
+          calculatedCost: creditsUsed,
+          workflowId,
+          framework: selectedFramework,
+          isTemplate: true,
+          topic
+        }
+      );
 
-      // Log transaction
-      await supabase
-        .from('credits_transactions')
-        .insert({
-          user_id: user.id,
-          amount: -creditsUsed,
-          type: 'usage',
-          description: `Frame generation (template) for: ${topic}`,
-          metadata: {
-            workflowId,
-            framework: selectedFramework,
-            isTemplate: true
-          }
-        });
+      if (!deductionResult.success) {
+        console.error('Failed to deduct credits (template fallback):', deductionResult.error);
+        return NextResponse.json(
+          {
+            error: deductionResult.error || 'Failed to deduct credits',
+            required: deductionResult.required,
+            balance: deductionResult.balance
+          },
+          { status: 402 }
+        );
+      }
+
+      console.log('✅ Credits deducted (template):', deductionResult);
     }
 
     return NextResponse.json({

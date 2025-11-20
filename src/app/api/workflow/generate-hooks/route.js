@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateStructuredData } from '@/lib/ai/aiService';
 import Anthropic from '@anthropic-ai/sdk';
+import { ServerCreditManager } from '@/lib/credits/server-manager';
 
 // Fallback function using Claude API directly
 async function generateHooksFallback(prompt) {
@@ -201,35 +202,40 @@ Return ONLY valid JSON array of exactly 8 hook objects (no markdown, no code blo
 
     const creditsUsed = 1;
 
-    // Update user credits (deduct from users.credits)
+    // Check bypass_credits flag
     const { data: currentUser } = await supabase
       .from('users')
-      .select('credits, bypass_credits')
+      .select('bypass_credits')
       .eq('id', user.id)
       .single();
 
     // Only deduct if user doesn't have bypass_credits enabled
-    if (currentUser && !currentUser.bypass_credits && currentUser.credits > 0) {
-      await supabase
-        .from('users')
-        .update({
-          credits: currentUser.credits - creditsUsed
-        })
-        .eq('id', user.id);
+    if (!currentUser?.bypass_credits) {
+      const deductionResult = await ServerCreditManager.deductCredits(
+        supabase,
+        user.id,
+        'HOOK_GENERATION',
+        {
+          calculatedCost: creditsUsed,
+          workflowId,
+          sourcesUsed: sources.length,
+          title
+        }
+      );
 
-      // Log transaction
-      await supabase
-        .from('credits_transactions')
-        .insert({
-          user_id: user.id,
-          amount: -creditsUsed,
-          type: 'usage',
-          description: `Hook generation for: ${title}`,
-          metadata: {
-            workflowId,
-            sourcesUsed: sources.length
-          }
-        });
+      if (!deductionResult.success) {
+        console.error('Failed to deduct credits:', deductionResult.error);
+        return NextResponse.json(
+          {
+            error: deductionResult.error || 'Failed to deduct credits',
+            required: deductionResult.required,
+            balance: deductionResult.balance
+          },
+          { status: 402 }
+        );
+      }
+
+      console.log('✅ Credits deducted:', deductionResult);
     }
 
     return NextResponse.json({

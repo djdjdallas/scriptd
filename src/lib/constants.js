@@ -191,7 +191,14 @@ export const CREDIT_COSTS = {
   TREND_ANALYSIS: 3,
   VOICE_TRAINING: 10,
   EXPORT_PDF: 0,  // File exports are now free
-  EXPORT_DOCX: 0  // File exports are now free
+  EXPORT_DOCX: 0,  // File exports are now free
+  // Workflow-specific features
+  HOOK_GENERATION: 1,
+  FRAME_GENERATION: 1,
+  CONTENT_POINTS_GENERATION: 1,
+  TITLE_GENERATION: 1,
+  OUTLINE_GENERATION: 2,
+  RESEARCH_SESSION: 2
 };
 
 // Subscription Plans - Doubled credits, new pricing
