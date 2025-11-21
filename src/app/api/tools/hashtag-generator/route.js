@@ -55,7 +55,7 @@ Example: youtube2025 | medium | 85 | true`;
 
     const response = await ai.generateText({
       prompt,
-      model: AI_MODELS.CLAUDE_3_HAIKU,
+      model: AI_MODELS.CLAUDE_3_HAIKU, // Uses FAST_MODEL (claude-3-5-haiku-20241022)
       temperature: 0.7,
       maxTokens: 600
     });

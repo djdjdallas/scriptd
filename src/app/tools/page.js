@@ -197,7 +197,7 @@ const tools = [
       "Pattern enforcement",
       "95%+ accuracy",
     ],
-    href: "/tools/voice-matching",
+    href: "/signup",
     category: "content",
     popularity: 5,
     gradient: "from-violet-500/10 to-indigo-500/10",

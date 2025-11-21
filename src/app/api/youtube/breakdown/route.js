@@ -1,4 +1,11 @@
 import { NextResponse } from 'next/server';
+import { google } from 'googleapis';
+import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
+
+const youtube = google.youtube({
+  version: 'v3',
+  auth: process.env.YOUTUBE_API_KEY
+});
 
 export async function POST(request) {
   try {
@@ -13,7 +20,7 @@ export async function POST(request) {
 
     // Extract video ID from URL
     const videoId = extractVideoId(videoUrl);
-    
+
     if (!videoId) {
       return NextResponse.json(
         { error: 'Invalid YouTube URL' },
@@ -21,10 +28,32 @@ export async function POST(request) {
       );
     }
 
-    // In a real implementation, this would use YouTube Data API
-    // For now, we'll generate mock analysis data
-    
-    const analysis = generateVideoAnalysis(videoId);
+    // Fetch real video data from YouTube Data API
+    const videoResponse = await youtube.videos.list({
+      part: ['snippet', 'statistics', 'contentDetails'],
+      id: [videoId]
+    });
+
+    if (!videoResponse.data.items || videoResponse.data.items.length === 0) {
+      return NextResponse.json(
+        { error: 'Video not found' },
+        { status: 404 }
+      );
+    }
+
+    const videoData = videoResponse.data.items[0];
+
+    // Fetch transcript for content analysis
+    let transcript = null;
+    try {
+      const transcriptData = await YoutubeTranscript.fetchTranscript(videoId);
+      transcript = transcriptData.map(entry => entry.text).join(' ');
+    } catch (error) {
+      console.log('No transcript available for analysis');
+    }
+
+    // Analyze the video structure
+    const analysis = await analyzeVideoStructure(videoData, transcript);
 
     return NextResponse.json({
       success: true,
@@ -36,7 +65,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Video breakdown error:', error);
     return NextResponse.json(
-      { error: 'Failed to analyze video' },
+      { error: 'Failed to analyze video', details: error.message },
       { status: 500 }
     );
   }
@@ -48,103 +77,66 @@ function extractVideoId(url) {
   return match ? match[1] : null;
 }
 
-function generateVideoAnalysis(videoId) {
-  // Generate realistic mock data for video analysis
-  const titles = [
-    "How to Make Perfect Sourdough Bread at Home",
-    "10 Minute Morning Workout - No Equipment Needed",
-    "Master These 5 Photography Techniques",
-    "Complete Guide to Starting a Garden",
-    "The Ultimate Productivity System",
-    "Learn JavaScript in 20 Minutes",
-    "DIY Home Organization Hacks",
-    "Beginner's Guide to Investing"
-  ];
-  
-  const channels = [
-    "Master Baker Pro",
-    "Fitness with Sarah",
-    "Photo Academy",
-    "Green Thumb Garden",
-    "Productive Life",
-    "Code Academy",
-    "Home & Life",
-    "Money Matters"
-  ];
-  
-  const randomTitle = titles[Math.floor(Math.random() * titles.length)];
-  const randomChannel = channels[Math.floor(Math.random() * channels.length)];
-  
-  // Generate realistic metrics
-  const viewCount = Math.floor(Math.random() * 5000000) + 100000; // 100K to 5M views
-  const likeCount = Math.floor(viewCount * (0.02 + Math.random() * 0.08)); // 2-10% like rate
-  const commentCount = Math.floor(viewCount * (0.001 + Math.random() * 0.004)); // 0.1-0.5% comment rate
-  const duration = `${Math.floor(Math.random() * 20) + 5}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`;
-  
-  // Generate content structure
-  const structures = [
-    [
-      { section: "Hook", duration: "0:00-0:15", description: "Strong opening question about common problem" },
-      { section: "Problem Setup", duration: "0:15-1:30", description: "Explain the pain point viewers face" },
-      { section: "Solution Overview", duration: "1:30-3:00", description: "Preview what they'll learn" },
-      { section: "Main Content", duration: "3:00-12:00", description: "Step-by-step tutorial content" },
-      { section: "Recap & CTA", duration: "12:00-15:32", description: "Summary and subscribe call-to-action" }
-    ],
-    [
-      { section: "Introduction", duration: "0:00-0:30", description: "Welcome and video preview" },
-      { section: "Context", duration: "0:30-2:00", description: "Background information and setup" },
-      { section: "Core Teaching", duration: "2:00-8:00", description: "Main educational content" },
-      { section: "Examples", duration: "8:00-10:30", description: "Practical demonstrations" },
-      { section: "Conclusion", duration: "10:30-12:00", description: "Wrap-up and next steps" }
-    ],
-    [
-      { section: "Hook", duration: "0:00-0:20", description: "Attention-grabbing opening statement" },
-      { section: "Story Setup", duration: "0:20-2:00", description: "Personal story or case study" },
-      { section: "Method Reveal", duration: "2:00-6:00", description: "Show the technique or solution" },
-      { section: "Deep Dive", duration: "6:00-11:00", description: "Detailed explanation and tips" },
-      { section: "Call to Action", duration: "11:00-13:00", description: "Engagement and subscription request" }
-    ]
-  ];
-  
-  const randomStructure = structures[Math.floor(Math.random() * structures.length)];
-  
-  // Generate insights
-  const insightTemplates = [
-    "Strong hook with relatable problem",
-    "Clear step-by-step structure",
-    "Visual demonstrations throughout",
-    "Strong call-to-action placement",
-    "Good pacing and engagement",
-    "Effective use of storytelling",
-    "Clear value proposition",
-    "Professional production quality",
-    "Authentic presenter style",
-    "Well-structured content flow",
-    "Good use of examples",
-    "Engaging visual elements"
-  ];
-  
-  const selectedInsights = insightTemplates
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 4);
-  
+async function analyzeVideoStructure(videoData, transcript) {
+  const { snippet, statistics, contentDetails } = videoData;
+
+  // Parse duration (ISO 8601 format to readable)
+  const duration = parseDuration(contentDetails.duration);
+
+  // Calculate engagement rate
+  const views = parseInt(statistics.viewCount) || 0;
+  const likes = parseInt(statistics.likeCount) || 0;
+  const comments = parseInt(statistics.commentCount) || 0;
+  const engagementRate = views > 0 ? ((likes / views) * 100).toFixed(1) : '0.0';
+
+  // Analyze content structure based on transcript (if available)
+  let structure = [];
+  if (transcript) {
+    structure = analyzeContentStructure(transcript, duration);
+  } else {
+    structure = [
+      { section: "Introduction", duration: "0:00-0:30", description: "Video opening" },
+      { section: "Main Content", duration: "0:30-" + formatSeconds(duration - 30), description: "Core video content" },
+      { section: "Conclusion", duration: formatSeconds(duration - 30) + "-" + formatSeconds(duration), description: "Video closing" }
+    ];
+  }
+
+  // Generate insights based on actual metrics
+  const insights = generateInsights(statistics, snippet, duration);
+
   return {
-    title: randomTitle,
-    channel: randomChannel,
-    views: formatNumber(viewCount),
-    likes: formatNumber(likeCount),
-    comments: formatNumber(commentCount),
-    duration: duration,
-    engagement: ((likeCount / viewCount) * 100).toFixed(1),
-    structure: randomStructure,
-    insights: selectedInsights,
-    metrics: {
-      viewVelocity: generateViewVelocity(),
-      averageViewDuration: generateAverageViewDuration(duration),
-      clickThroughRate: (Math.random() * 8 + 2).toFixed(1), // 2-10% CTR
-      retention: Math.floor(Math.random() * 30 + 60) // 60-90% retention
-    }
+    title: snippet.title,
+    channel: snippet.channelTitle,
+    views: formatNumber(views),
+    likes: formatNumber(likes),
+    comments: formatNumber(comments),
+    duration: formatSeconds(duration),
+    engagement: engagementRate,
+    structure,
+    insights,
+    publishedAt: new Date(snippet.publishedAt).toLocaleDateString(),
+    description: snippet.description?.substring(0, 200) + '...' || 'No description available'
   };
+}
+
+function parseDuration(isoDuration) {
+  // Parse ISO 8601 duration (e.g., PT1H2M10S)
+  const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  const hours = parseInt(match[1]) || 0;
+  const minutes = parseInt(match[2]) || 0;
+  const seconds = parseInt(match[3]) || 0;
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+function formatSeconds(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+  return `${minutes}:${String(secs).padStart(2, '0')}`;
 }
 
 function formatNumber(num) {
@@ -156,20 +148,74 @@ function formatNumber(num) {
   return num.toString();
 }
 
-function generateViewVelocity() {
-  const velocities = ['High', 'Medium', 'Low'];
-  return velocities[Math.floor(Math.random() * velocities.length)];
+function analyzeContentStructure(transcript, totalDuration) {
+  // Simple heuristic-based structure analysis
+  const wordCount = transcript.split(' ').length;
+  const wordsPerSecond = wordCount / totalDuration;
+
+  // Estimate sections based on typical YouTube video structure
+  const hookEnd = Math.min(30, totalDuration * 0.05);
+  const mainContentStart = hookEnd;
+  const mainContentEnd = totalDuration * 0.85;
+  const ctaStart = mainContentEnd;
+
+  return [
+    {
+      section: "Hook",
+      duration: `0:00-${formatSeconds(hookEnd)}`,
+      description: "Opening hook to capture attention"
+    },
+    {
+      section: "Main Content",
+      duration: `${formatSeconds(mainContentStart)}-${formatSeconds(mainContentEnd)}`,
+      description: "Core content delivery"
+    },
+    {
+      section: "Call to Action",
+      duration: `${formatSeconds(ctaStart)}-${formatSeconds(totalDuration)}`,
+      description: "Closing remarks and engagement request"
+    }
+  ];
 }
 
-function generateAverageViewDuration(duration) {
-  // Parse duration and calculate realistic average view duration (usually 40-70% of total)
-  const [minutes, seconds] = duration.split(':').map(Number);
-  const totalSeconds = minutes * 60 + seconds;
-  const avgPercentage = 0.4 + Math.random() * 0.3; // 40-70%
-  const avgSeconds = Math.floor(totalSeconds * avgPercentage);
-  
-  const avgMinutes = Math.floor(avgSeconds / 60);
-  const remainingSeconds = avgSeconds % 60;
-  
-  return `${avgMinutes}:${String(remainingSeconds).padStart(2, '0')}`;
+function generateInsights(statistics, snippet, duration) {
+  const insights = [];
+  const views = parseInt(statistics.viewCount) || 0;
+  const likes = parseInt(statistics.likeCount) || 0;
+  const comments = parseInt(statistics.commentCount) || 0;
+
+  // Engagement insights
+  const likeRate = views > 0 ? (likes / views) * 100 : 0;
+  if (likeRate > 5) {
+    insights.push("Very high engagement rate suggests quality content");
+  } else if (likeRate > 2) {
+    insights.push("Good engagement rate with audience");
+  }
+
+  // Comment insights
+  const commentRate = views > 0 ? (comments / views) * 100 : 0;
+  if (commentRate > 0.5) {
+    insights.push("High comment activity indicates strong community engagement");
+  }
+
+  // Duration insights
+  if (duration < 300) {
+    insights.push("Short-form content optimized for quick consumption");
+  } else if (duration > 600) {
+    insights.push("Long-form content with in-depth coverage");
+  }
+
+  // Title insights
+  if (snippet.title.length < 50) {
+    insights.push("Concise, focused title");
+  }
+
+  // View count insights
+  if (views > 1000000) {
+    insights.push("Viral performance with massive reach");
+  } else if (views > 100000) {
+    insights.push("Strong performance with significant reach");
+  }
+
+  return insights.slice(0, 5);
 }

@@ -745,18 +745,25 @@ function TitleGeneratorTool() {
 
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const mockTitles = [
-        { text: "How to Make Perfect Sourdough Bread (Even If You're a Complete Beginner)", score: 9.5 },
-        { text: "The Ultimate Sourdough Guide: From Starter to Perfect Loaf", score: 9.2 },
-        { text: "5 Sourdough Mistakes That Are Ruining Your Bread (And How to Fix Them)", score: 9.0 },
-        { text: "Perfect Sourdough Bread Recipe: Professional Results at Home", score: 8.8 },
-        { text: "Why Your Sourdough Isn't Rising (And the Simple Fix)", score: 8.5 }
-      ];
-      
-      setTitles(mockTitles);
+      const response = await fetch('/api/youtube/titles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: topic.trim(),
+          keywords: keywords.trim(),
+          style
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate titles');
+      }
+
+      const data = await response.json();
+      setTitles(data.titles);
+
     } catch (error) {
+      console.error('Title generation error:', error);
       toast({
         title: "Generation Failed",
         description: "Failed to generate titles. Please try again.",
@@ -1043,45 +1050,57 @@ function ThumbnailGrabberTool() {
 
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Extract video ID for demo purposes
-      const videoId = 'dQw4w9WgXcQ'; // Mock video ID
-      
-      const mockThumbnails = [
-        { 
-          quality: 'Max Resolution', 
+      // Extract real video ID from URL
+      const videoId = extractVideoId(videoUrl);
+
+      if (!videoId) {
+        toast({
+          title: "Invalid URL",
+          description: "Please enter a valid YouTube video URL",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      const realThumbnails = [
+        {
+          quality: 'Max Resolution',
           url: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
           dimensions: '1280×720',
           size: '~200KB'
         },
-        { 
-          quality: 'Standard Definition', 
+        {
+          quality: 'Standard Definition',
           url: `https://img.youtube.com/vi/${videoId}/sddefault.jpg`,
           dimensions: '640×480',
           size: '~80KB'
         },
-        { 
-          quality: 'High Quality', 
+        {
+          quality: 'High Quality',
           url: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
           dimensions: '480×360',
           size: '~50KB'
         },
-        { 
-          quality: 'Medium Quality', 
+        {
+          quality: 'Medium Quality',
           url: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
           dimensions: '320×180',
           size: '~20KB'
         },
-        { 
-          quality: 'Default', 
+        {
+          quality: 'Default',
           url: `https://img.youtube.com/vi/${videoId}/default.jpg`,
           dimensions: '120×90',
           size: '~8KB'
         }
       ];
-      
-      setThumbnails(mockThumbnails);
+
+      setThumbnails(realThumbnails);
+      toast({
+        title: "Success!",
+        description: "Thumbnails loaded successfully"
+      });
     } catch (error) {
       toast({
         title: "Grab Failed",
@@ -1091,6 +1110,13 @@ function ThumbnailGrabberTool() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to extract video ID from YouTube URL
+  const extractVideoId = (url) => {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
   };
 
   const downloadThumbnail = async (thumbnail) => {

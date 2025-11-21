@@ -346,10 +346,10 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="max-w-3xl mx-auto">
             {/* Subscription Plans Estimates */}
             <div>
-              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <h3 className="text-xl font-semibold text-white mb-4 flex items-center justify-center gap-2">
                 <Sparkles className="h-5 w-5 text-purple-400" />
                 Monthly Subscriptions
               </h3>
@@ -405,60 +405,6 @@ export default function PricingPage() {
                               ? "∞"
                               : premiumEstimates.range}{" "}
                             scripts
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Credit Packages Estimates */}
-            <div>
-              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <Coins className="h-5 w-5 text-yellow-400" />
-                One-Time Credit Packages
-              </h3>
-              <div className="space-y-3">
-                {Object.values(CREDIT_PACKAGES).map((pkg) => {
-                  const fastEstimates = getScriptEstimates(pkg.credits, "FAST");
-                  const balancedEstimates = getScriptEstimates(
-                    pkg.credits,
-                    "BALANCED"
-                  );
-                  const premiumEstimates = getScriptEstimates(
-                    pkg.credits,
-                    "PREMIUM"
-                  );
-
-                  return (
-                    <div key={pkg.id} className="glass p-4 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-white">
-                          {pkg.credits} Credits
-                        </span>
-                        <Badge className="glass text-yellow-300">
-                          {formatPrice(pkg.price)}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 text-sm">
-                        <div className="text-center">
-                          <p className="text-gray-400">⚡ Fast</p>
-                          <p className="text-white font-bold">
-                            {fastEstimates.range} scripts
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-gray-400">⭐ Professional</p>
-                          <p className="text-white font-bold">
-                            {balancedEstimates.range} scripts
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-gray-400">💎 Premium</p>
-                          <p className="text-white font-bold">
-                            {premiumEstimates.range} scripts
                           </p>
                         </div>
                       </div>

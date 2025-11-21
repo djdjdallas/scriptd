@@ -67,7 +67,7 @@ TRENDING: [true/false]
 
     const response = await ai.generateText({
       prompt,
-      model: AI_MODELS.CLAUDE_3_HAIKU,
+      model: AI_MODELS.CLAUDE_3_HAIKU, // Uses FAST_MODEL (claude-3-5-haiku-20241022)
       temperature: 0.8,
       maxTokens: 1200
     });
