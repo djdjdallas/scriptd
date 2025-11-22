@@ -37,7 +37,6 @@ export const POST = createApiHandler(async (request) => {
         },
       ],
       mode: 'subscription',
-      allow_promotion_codes: true,
       success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?success=true&plan=${planId}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/pricing?canceled=true`,
       metadata: {
@@ -55,11 +54,13 @@ export const POST = createApiHandler(async (request) => {
       },
     };
 
-    // Add coupon if launch special is enabled and provided
+    // Add coupon if launch special is enabled, otherwise allow manual promotion codes
     if (LAUNCH_CONFIG.enabled && coupon) {
       checkoutParams.discounts = [{
         coupon: coupon,
       }];
+    } else {
+      checkoutParams.allow_promotion_codes = true;
     }
 
     // Create Stripe checkout session
