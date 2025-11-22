@@ -198,7 +198,10 @@ export const CREDIT_COSTS = {
   CONTENT_POINTS_GENERATION: 1,
   TITLE_GENERATION: 1,
   OUTLINE_GENERATION: 2,
-  RESEARCH_SESSION: 2
+  RESEARCH_SESSION: 2,
+  // Additional features
+  VIDEO_IDEAS: 2,
+  THUMBNAIL_IDEAS: 1
 };
 
 // Subscription Plans - Doubled credits, new pricing

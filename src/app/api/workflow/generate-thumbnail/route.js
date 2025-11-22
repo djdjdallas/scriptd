@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateWithAI } from '@/lib/ai/aiService';
 import Anthropic from '@anthropic-ai/sdk';
+import { ServerCreditManager } from '@/lib/credits/server-manager';
 
 // Fallback function using Claude API directly
 async function generateThumbnailFallback(prompt) {
@@ -86,21 +87,21 @@ Make it eye-catching, clickable, and relevant to the content.`;
     }
 
     const creditsUsed = 1;
-    
-    // Update user credits
-    const { data: currentCredits } = await supabase
-      .from('user_credits')
-      .select('credits_used')
-      .eq('user_id', user.id)
-      .single();
 
-    // Update with incremented value
-    await supabase
-      .from('user_credits')
-      .update({ 
-        credits_used: (currentCredits?.credits_used || 0) + creditsUsed
-      })
-      .eq('user_id', user.id);
+    // Deduct credits using ServerCreditManager
+    const creditResult = await ServerCreditManager.deductCredits(
+      supabase,
+      user.id,
+      'THUMBNAIL_IDEAS',
+      { title, topic } // Add metadata for tracking
+    );
+
+    if (!creditResult.success) {
+      return NextResponse.json(
+        { error: creditResult.error || 'Insufficient credits' },
+        { status: 402 }
+      );
+    }
 
     return NextResponse.json({ 
       concept,

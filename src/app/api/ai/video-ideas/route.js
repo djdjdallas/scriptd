@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateVideoIdeasWithAI, generateFactualVideoIdeas } from '@/lib/ai/video-ideas';
 import { getChannelVideos } from '@/lib/youtube/channel';
+import { ServerCreditManager } from '@/lib/credits/server-manager';
 
 export async function POST(request) {
   try {
@@ -83,18 +84,19 @@ export async function POST(request) {
           created_at: new Date().toISOString()
         });
       
-      // Deduct credits
-      const { data: userData } = await supabase
-        .from('users')
-        .select('credits')
-        .eq('id', user.id)
-        .single();
-      
-      if (userData && userData.credits >= 2) {
-        await supabase
-          .from('users')
-          .update({ credits: userData.credits - 2 })
-          .eq('id', user.id);
+      // Deduct credits using ServerCreditManager
+      const creditResult = await ServerCreditManager.deductCredits(
+        supabase,
+        user.id,
+        'VIDEO_IDEAS',
+        { channelId } // Add metadata for tracking
+      );
+
+      if (!creditResult.success) {
+        return NextResponse.json(
+          { error: creditResult.error || 'Insufficient credits' },
+          { status: 402 }
+        );
       }
     }
     

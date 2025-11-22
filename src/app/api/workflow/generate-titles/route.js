@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { ServerCreditManager } from '@/lib/credits/server-manager';
 
 // Helper function to generate fallback titles
 function generateFallbackTitles(topic, keywords) {
@@ -110,20 +111,20 @@ Return ONLY a JSON array of exactly 10 title objects with this structure:
       // No Claude API key, use fallback
       titles = generateFallbackTitles(topic, keywords);
     }
-    // Update user credits
-    const { data: currentCredits } = await supabase
-      .from('user_credits')
-      .select('credits_used')
-      .eq('user_id', user.id)
-      .single();
+    // Deduct credits using ServerCreditManager
+    const creditResult = await ServerCreditManager.deductCredits(
+      supabase,
+      user.id,
+      'TITLE_GENERATION',
+      { workflowId: topic } // Add metadata for tracking
+    );
 
-    // Update with incremented value
-    await supabase
-      .from('user_credits')
-      .update({ 
-        credits_used: (currentCredits?.credits_used || 0) + creditsUsed
-      })
-      .eq('user_id', user.id);
+    if (!creditResult.success) {
+      return NextResponse.json(
+        { error: creditResult.error || 'Insufficient credits' },
+        { status: 402 }
+      );
+    }
 
     return NextResponse.json({ 
       titles,
