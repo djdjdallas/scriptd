@@ -1,22 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { PLANS, LAUNCH_CONFIG } from '@/lib/constants';
 import stripe from '@/lib/stripe';
 
-export async function POST(request) {
-  try {
+export const POST = createApiHandler(async (request) => {
     // Get user from session
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const { user, supabase } = await getAuthenticatedUser();
 
     // Parse request body
     const { planId, billingPeriod, coupon, metadata } = await request.json();
@@ -24,10 +14,7 @@ export async function POST(request) {
     // Validate plan
     const plan = PLANS[planId.toUpperCase()];
     if (!plan || plan.id === 'free') {
-      return NextResponse.json(
-        { error: 'Invalid plan' },
-        { status: 400 }
-      );
+      throw new ApiError('Invalid plan', 400);
     }
 
     // Get the appropriate price ID
@@ -36,10 +23,7 @@ export async function POST(request) {
       : plan.stripePriceIdMonthly;
 
     if (!priceId) {
-      return NextResponse.json(
-        { error: 'Price not configured' },
-        { status: 400 }
-      );
+      throw new ApiError('Price not configured', 400);
     }
 
     // Build checkout session parameters
@@ -81,15 +65,8 @@ export async function POST(request) {
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create(checkoutParams);
 
-    return NextResponse.json({
+    return {
       sessionId: session.id,
       url: session.url,
-    });
-  } catch (error) {
-    console.error('Checkout session error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create checkout session' },
-      { status: 500 }
-    );
-  }
-}
+    };
+});
