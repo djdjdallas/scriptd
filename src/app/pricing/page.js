@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -10,6 +10,7 @@ import {
   MODEL_TIERS,
   calculateScriptCost,
   CREDIT_COSTS,
+  LAUNCH_CONFIG,
 } from "@/lib/constants";
 import { getScriptEstimates } from "@/lib/subscription-helpers";
 import { loadStripe } from "@stripe/stripe-js";
@@ -38,6 +39,8 @@ import {
   Clock,
   Calculator,
   FileText,
+  AlertCircle,
+  Timer,
 } from "lucide-react";
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -49,6 +52,77 @@ export default function PricingPage() {
   const [billingPeriod, setBillingPeriod] = useState("monthly");
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [spotsRemaining, setSpotsRemaining] = useState(LAUNCH_CONFIG.remainingSpots);
+  const [countdown, setCountdown] = useState("");
+  const [currentTickerMessage, setCurrentTickerMessage] = useState(0);
+  const [showExitPopup, setShowExitPopup] = useState(false);
+
+  // Countdown Timer Effect
+  useEffect(() => {
+    if (!LAUNCH_CONFIG.enabled) return;
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const distance = LAUNCH_CONFIG.endDate - now;
+
+      if (distance < 0) {
+        setCountdown("EXPIRED");
+        return;
+      }
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+
+      setCountdown(`${days}d ${hours}h ${minutes}m`);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Spots Remaining Effect
+  useEffect(() => {
+    if (!LAUNCH_CONFIG.enabled) return;
+
+    const interval = setInterval(() => {
+      setSpotsRemaining(prev => {
+        if (prev > 10 && Math.random() > 0.7) {
+          return prev - 1;
+        }
+        return prev;
+      });
+    }, 300000); // Every 5 minutes
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Social Proof Ticker Effect
+  useEffect(() => {
+    if (!LAUNCH_CONFIG.enabled) return;
+
+    const interval = setInterval(() => {
+      setCurrentTickerMessage(prev => (prev + 1) % LAUNCH_CONFIG.socialProofNames.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Exit Intent Detection
+  useEffect(() => {
+    if (!LAUNCH_CONFIG.enabled) return;
+
+    const handleMouseOut = (e) => {
+      if (e.clientY < 10 && !localStorage.getItem('exitShown')) {
+        setShowExitPopup(true);
+        localStorage.setItem('exitShown', 'true');
+      }
+    };
+
+    document.addEventListener('mouseout', handleMouseOut);
+    return () => document.removeEventListener('mouseout', handleMouseOut);
+  }, []);
 
   const handleSubscribe = async (planId) => {
     setLoading(true);
@@ -71,6 +145,13 @@ export default function PricingPage() {
         body: JSON.stringify({
           planId,
           billingPeriod,
+          ...(LAUNCH_CONFIG.enabled && {
+            coupon: LAUNCH_CONFIG.couponCode,
+            metadata: {
+              launch_customer: true,
+              claimed_spot: spotsRemaining
+            }
+          })
         }),
       });
 
@@ -109,6 +190,16 @@ export default function PricingPage() {
     }).format(price);
   };
 
+  const calculateDiscountedPrice = (price) => {
+    if (!LAUNCH_CONFIG.enabled) return price;
+    return price * (1 - LAUNCH_CONFIG.discountPercent / 100);
+  };
+
+  const calculateSavings = (price) => {
+    if (!LAUNCH_CONFIG.enabled) return 0;
+    return price * (LAUNCH_CONFIG.discountPercent / 100) * LAUNCH_CONFIG.discountMonths;
+  };
+
   const plans = Object.values(PLANS); // Show all plans including FREE
 
   return (
@@ -123,8 +214,25 @@ export default function PricingPage() {
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
       </div>
 
+      {/* Launch Header Banner */}
+      {LAUNCH_CONFIG.enabled && (
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 text-center sticky top-0 z-50">
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <span className="animate-pulse">🚀</span>
+            <span className="font-bold">LAUNCH WEEK SPECIAL:</span>
+            <span>50% OFF ALL PLANS for First 100 Creators</span>
+            <span className="font-mono bg-black/20 px-2 py-1 rounded">
+              <span id="spotsRemaining">{spotsRemaining}</span>/100 Spots Left
+            </span>
+            <span className="text-sm opacity-90">
+              Ends in: <span id="countdown">{countdown}</span>
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
-      <nav className="glass border-b border-white/10 sticky top-0 z-50">
+      <nav className="glass border-b border-white/10 sticky top-12 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2">
@@ -153,7 +261,7 @@ export default function PricingPage() {
         <div className="inline-flex items-center justify-center glass px-4 py-2 rounded-full mb-6">
           <Sparkles className="h-4 w-4 mr-2 text-yellow-400 animate-pulse" />
           <span className="text-purple-300 font-medium">
-            Simple, Transparent Pricing
+            {LAUNCH_CONFIG.enabled ? "Limited Time Launch Special" : "Simple, Transparent Pricing"}
           </span>
         </div>
         <h1 className="text-5xl md:text-6xl font-bold gradient-text mb-4">
@@ -165,6 +273,35 @@ export default function PricingPage() {
           not hours.
         </p>
       </div>
+
+      {/* Urgency Section */}
+      {LAUNCH_CONFIG.enabled && (
+        <div className="text-center mb-8 px-4">
+          <h2 className="text-3xl font-bold mb-4 text-white">
+            🎉 Launch Week Special - Limited Time Only
+          </h2>
+          <div className="flex justify-center gap-8 mb-4 flex-wrap">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-purple-400" id="spotsCount">
+                {spotsRemaining}
+              </div>
+              <div className="text-sm text-gray-400">Spots Remaining</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-purple-400">50%</div>
+              <div className="text-sm text-gray-400">Off All Plans</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-purple-400">3</div>
+              <div className="text-sm text-gray-400">Months Savings</div>
+            </div>
+          </div>
+          <p className="text-gray-300 max-w-2xl mx-auto">
+            Join the first 100 creators and lock in founder pricing.
+            After 3 months, continue at regular price or cancel anytime.
+          </p>
+        </div>
+      )}
 
       {/* Billing Toggle */}
       <div
@@ -208,10 +345,12 @@ export default function PricingPage() {
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map((plan, index) => {
-            const price =
+            const basePrice =
               billingPeriod === "annual"
                 ? (plan.priceAnnual || plan.price * 12) / 12
                 : plan.price;
+            const discountedPrice = calculateDiscountedPrice(basePrice);
+            const savings = calculateSavings(basePrice);
             const isPopular = plan.popular || plan.id === "creator";
 
             return (
@@ -250,16 +389,50 @@ export default function PricingPage() {
                       )}
                     </div>
 
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-bold gradient-text">
-                        {formatPrice(price)}
-                      </span>
-                      <span className="text-gray-400">
-                        /{billingPeriod === "annual" ? "mo" : "month"}
-                      </span>
+                    {/* Price Section with Launch Discount */}
+                    <div className="mb-4">
+                      {LAUNCH_CONFIG.enabled && plan.price > 0 ? (
+                        <>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-gray-400 line-through text-xl">
+                              {formatPrice(basePrice)}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-4xl font-bold gradient-text">
+                              {formatPrice(discountedPrice)}
+                            </span>
+                            <span className="text-gray-400">
+                              /{billingPeriod === "annual" ? "mo" : "month"}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-400 mt-1">
+                            for {LAUNCH_CONFIG.discountMonths} months
+                          </div>
+                          <Badge className="bg-green-500/20 text-green-300 border-green-400 mt-2">
+                            Save {formatPrice(savings)}
+                          </Badge>
+                          <div className="text-xs text-gray-500 mt-2">
+                            Then {formatPrice(basePrice)}/month after discount
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-4xl font-bold gradient-text">
+                              {plan.price === 0 ? "Free" : formatPrice(basePrice)}
+                            </span>
+                            {plan.price > 0 && (
+                              <span className="text-gray-400">
+                                /{billingPeriod === "annual" ? "mo" : "month"}
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
 
-                    {billingPeriod === "annual" && plan.priceAnnual && (
+                    {billingPeriod === "annual" && plan.priceAnnual && !LAUNCH_CONFIG.enabled && (
                       <p className="text-sm text-gray-500 mt-1">
                         ${plan.priceAnnual.toFixed(2)} billed annually
                       </p>
@@ -304,11 +477,16 @@ export default function PricingPage() {
                         </>
                       ) : (
                         <>
-                          {plan.id === "free" ? "Start Free" : "Get Started"}
+                          {plan.id === "free" ? "Start Free" : "Start Free Trial"}
                           <ArrowRight className="h-4 w-4 ml-2" />
                         </>
                       )}
                     </Button>
+                    {LAUNCH_CONFIG.enabled && plan.price > 0 && (
+                      <p className="text-xs text-center text-purple-300 mt-2">
+                        Code {LAUNCH_CONFIG.displayCode} auto-applied
+                      </p>
+                    )}
 
                     <ul className="mt-6 space-y-3">
                       {plan.features.map((feature, index) => (
@@ -327,6 +505,22 @@ export default function PricingPage() {
           })}
         </div>
       </div>
+
+      {/* Social Proof Ticker */}
+      {LAUNCH_CONFIG.enabled && (
+        <div className="max-w-4xl mx-auto px-4 mb-12">
+          <div className="glass-card p-4 rounded-lg">
+            <div className="text-center text-sm text-gray-400 mb-2">
+              🔥 Recent Signups
+            </div>
+            <div id="socialProofTicker" className="text-center text-white">
+              <div className="animate-pulse">
+                {LAUNCH_CONFIG.socialProofNames[currentTickerMessage]} just claimed spot #{LAUNCH_CONFIG.totalSpots - spotsRemaining + 1}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Script Generation Calculator */}
       <div className="max-w-7xl mx-auto px-4 mb-20">
@@ -426,100 +620,6 @@ export default function PricingPage() {
           </Alert>
         </div>
       </div>
-
-      {/* Credit Packages - Coming Soon */}
-      {/* <div className="max-w-7xl mx-auto px-4 py-20 border-t border-white/10 relative">
-        <div className="text-center mb-12 animate-reveal opacity-50">
-          <h2 className="text-3xl font-bold text-gray-500 mb-4 flex items-center justify-center gap-3">
-            <CreditCard className="h-8 w-8 text-gray-600" />
-            Need More Scripts?
-            <Sparkles className="h-6 w-6 text-gray-600" />
-          </h2>
-          <p className="text-gray-500">
-            Purchase script credits anytime. No subscription required.
-          </p>
-          <div className="mt-4">
-            <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-400 text-lg px-4 py-2">
-              <Clock className="h-4 w-4 mr-2 inline" />
-              Coming Soon
-            </Badge>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto opacity-30 pointer-events-none">
-          {Object.values(CREDIT_PACKAGES).map((pkg, index) => {
-            const iconMap = {
-              starter: Zap,
-              popular: Gem,
-              bulk: Crown,
-            };
-            const Icon = iconMap[pkg.id.toLowerCase()] || CreditCard;
-            const colorMap = {
-              starter: "from-blue-500/20",
-              popular: "from-purple-500/20",
-              bulk: "from-yellow-500/20",
-            };
-
-            return (
-              <div key={pkg.id}>
-                <div
-                  className={`glass-card h-full relative overflow-visible grayscale animate-reveal`}
-                  style={{ animationDelay: `${0.6 + index * 0.1}s` }}
-                >
-                  {pkg.badge && (
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 glass px-4 py-1 rounded-full z-10 whitespace-nowrap bg-gray-500/20 border border-gray-600/50">
-                      <span className="text-xs text-gray-400 font-semibold">
-                        {pkg.badge}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="p-6 pt-12 text-center">
-                    <div
-                      className={`w-16 h-16 glass rounded-xl flex items-center justify-center mx-auto mb-4 bg-gradient-to-br from-gray-500/20 to-transparent`}
-                    >
-                      <Icon className="h-8 w-8 text-gray-500" />
-                    </div>
-
-                    <h3 className="text-xl font-semibold text-gray-500 mb-2">
-                      {pkg.name}
-                    </h3>
-
-                    <div className="mb-2">
-                      <p className="text-3xl font-bold text-gray-500">
-                        {formatPrice(pkg.price)}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {pkg.credits} credits
-                      </p>
-                    </div>
-
-                    <div className="mb-2 glass p-2 rounded-lg">
-                      <p className="text-sm text-gray-500 font-medium">
-                        {pkg.scripts}
-                      </p>
-                    </div>
-
-                    <div className="mb-4">
-                      <Badge className="glass text-xs text-gray-500">
-                        {pkg.savings}
-                      </Badge>
-                    </div>
-
-                    <Button
-                      className="w-full glass-button text-gray-500 cursor-not-allowed"
-                      disabled
-                    >
-                      Coming Soon
-                      <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div> */}
 
       {/* Competitor Comparison */}
       <div className="max-w-7xl mx-auto px-4 py-20 border-t border-white/10">
@@ -659,55 +759,6 @@ export default function PricingPage() {
         </div>
       </div>
 
-      {/* Credit Usage Guide */}
-      {/* <div className="max-w-7xl mx-auto px-4 py-20 border-t border-white/10">
-        <div className="text-center mb-12 animate-reveal">
-          <h2 className="text-3xl font-bold text-white mb-4 flex items-center justify-center gap-3">
-            <Star className="h-8 w-8 text-yellow-400" />
-            Credit Usage Guide
-          </h2>
-          <p className="text-gray-300">
-            Different features use different amounts of credits
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Object.entries(CREDIT_COSTS).map(([feature, costs], index) => (
-            <div 
-              key={feature} 
-              className="glass-card p-6 animate-reveal"
-              style={{ animationDelay: `${0.9 + index * 0.1}s` }}
-            >
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-purple-400" />
-                {feature.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
-              </h3>
-              <div className="space-y-2">
-                {typeof costs === "object" ? (
-                  Object.entries(costs).slice(0, 3).map(([model, cost]) => (
-                    <div key={model} className="flex justify-between items-center glass p-3 rounded-lg">
-                      <span className="text-sm text-gray-300">
-                        {model.split("-").slice(0, 2).join(" ").toUpperCase()}
-                      </span>
-                      <Badge className="glass text-xs text-gray-300">
-                        {cost} credits
-                      </Badge>
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex justify-between items-center glass p-3 rounded-lg">
-                    <span className="text-gray-300">Per use</span>
-                    <Badge className="glass text-gray-300">
-                      {costs} credits
-                    </Badge>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div> */}
-
       {/* FAQ Section */}
       <div className="max-w-4xl mx-auto px-4 py-20 border-t border-white/10">
         <h2 className="text-3xl font-bold text-white text-center mb-12 animate-reveal">
@@ -789,6 +840,41 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
+
+      {/* Exit Intent Popup */}
+      {showExitPopup && LAUNCH_CONFIG.enabled && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 p-8 rounded-lg max-w-md glass-card">
+            <h3 className="text-2xl font-bold mb-4 text-white">
+              Wait! Don't Miss 50% Off 🎁
+            </h3>
+            <p className="mb-4 text-gray-300">
+              This launch special expires in {countdown} and only{" "}
+              {spotsRemaining} spots remain!
+            </p>
+            <div className="bg-yellow-900/30 p-4 rounded mb-4 glass">
+              <p className="font-bold text-yellow-300">You're about to miss:</p>
+              <ul className="text-sm mt-2 text-gray-300">
+                <li>• Save up to $298.50 over 3 months</li>
+                <li>• Join exclusive Founders Club</li>
+                <li>• Lock in lowest price ever</li>
+              </ul>
+            </div>
+            <Button
+              onClick={() => setShowExitPopup(false)}
+              className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white mb-2"
+            >
+              Claim My 50% Discount
+            </Button>
+            <Button
+              onClick={() => setShowExitPopup(false)}
+              className="w-full text-gray-500 hover:text-gray-300"
+            >
+              No thanks, I'll pay full price
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

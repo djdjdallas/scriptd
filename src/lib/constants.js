@@ -204,6 +204,27 @@ export const CREDIT_COSTS = {
   THUMBNAIL_IDEAS: 1
 };
 
+// LAUNCH SPECIAL CONFIGURATION
+export const LAUNCH_CONFIG = {
+  enabled: true, // Toggle this to enable/disable launch special
+  endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+  totalSpots: 100,
+  remainingSpots: 73,
+  couponCode: 'VzW0o77F',
+  displayCode: 'LAUNCH50',
+  discountPercent: 50,
+  discountMonths: 3,
+  socialProofNames: [
+    'Sarah from @TechReviews',
+    'Mike from @CreatorHub',
+    'Jessica from @DesignDaily',
+    'Alex from @YouTubeGrowth',
+    'Emma from @ContentCreator',
+    'Ryan from @TechTutorials',
+    'Sofia from @LifestyleVlogs'
+  ]
+};
+
 // Subscription Plans - Doubled credits, new pricing
 export const PLANS = {
   FREE: {
