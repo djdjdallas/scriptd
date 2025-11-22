@@ -204,16 +204,43 @@ export const CREDIT_COSTS = {
   THUMBNAIL_IDEAS: 1
 };
 
+// STRIPE COUPONS CONFIGURATION
+export const STRIPE_COUPONS = {
+  LAUNCH50: {
+    stripeId: 'VzW0o77F',
+    displayName: 'LAUNCH50',
+    discount: 50,
+    duration: 'repeating',
+    durationMonths: 3,
+    description: 'Launch Week - First 100 Creators'
+  },
+  EARLYBIRD30: {
+    stripeId: '538iTuD7',
+    displayName: 'EARLYBIRD30',
+    discount: 30,
+    duration: 'repeating',
+    durationMonths: 2,
+    description: 'Extended Launch Special'
+  },
+  ANNUAL20: {
+    stripeId: 'HijCr2NA',
+    displayName: 'ANNUAL20',
+    discount: 20,
+    duration: 'once',
+    description: 'Annual Plan Special'
+  }
+};
+
 // LAUNCH SPECIAL CONFIGURATION
 export const LAUNCH_CONFIG = {
-  enabled: true, // Toggle this to enable/disable launch special
+  enabled: true, // Launch special is now active!
   endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
   totalSpots: 100,
   remainingSpots: 73,
-  couponCode: 'VzW0o77F',
-  displayCode: 'LAUNCH50',
-  discountPercent: 50,
-  discountMonths: 3,
+  couponCode: STRIPE_COUPONS.LAUNCH50.stripeId, // Using PRIMARY LAUNCH COUPON
+  displayCode: STRIPE_COUPONS.LAUNCH50.displayName,
+  discountPercent: STRIPE_COUPONS.LAUNCH50.discount,
+  discountMonths: STRIPE_COUPONS.LAUNCH50.durationMonths,
   socialProofNames: [
     'Sarah from @TechReviews',
     'Mike from @CreatorHub',

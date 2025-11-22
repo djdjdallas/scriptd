@@ -26,6 +26,10 @@ export const POST = createApiHandler(async (request) => {
       throw new ApiError('Price not configured', 400);
     }
 
+    // Get the base URL for redirects
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
     // Build checkout session parameters
     const checkoutParams = {
       customer_email: user.email,
@@ -37,8 +41,8 @@ export const POST = createApiHandler(async (request) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?success=true&plan=${planId}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/pricing?canceled=true`,
+      success_url: `${baseUrl}/dashboard?success=true&plan=${planId}`,
+      cancel_url: `${baseUrl}/pricing?canceled=true`,
       metadata: {
         user_id: user.id,
         plan_id: planId,
@@ -56,15 +60,38 @@ export const POST = createApiHandler(async (request) => {
 
     // Add coupon if launch special is enabled, otherwise allow manual promotion codes
     if (LAUNCH_CONFIG.enabled && coupon) {
-      checkoutParams.discounts = [{
-        coupon: coupon,
-      }];
+      // Try to apply the coupon, but if it fails, continue without it
+      try {
+        // First verify the coupon exists
+        const couponCheck = await stripe.coupons.retrieve(coupon);
+        if (couponCheck && couponCheck.valid) {
+          checkoutParams.discounts = [{
+            coupon: coupon,
+          }];
+        } else {
+          console.warn(`Coupon ${coupon} is not valid, continuing without discount`);
+          checkoutParams.allow_promotion_codes = true;
+        }
+      } catch (couponError) {
+        // If coupon doesn't exist or there's an error, continue without it
+        console.warn('Coupon error:', couponError.message);
+        checkoutParams.allow_promotion_codes = true;
+      }
     } else {
       checkoutParams.allow_promotion_codes = true;
     }
 
     // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create(checkoutParams);
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create(checkoutParams);
+    } catch (stripeError) {
+      console.error('Stripe session creation error:', stripeError);
+      throw new ApiError(
+        `Failed to create checkout session: ${stripeError.message}`,
+        500
+      );
+    }
 
     return {
       sessionId: session.id,
