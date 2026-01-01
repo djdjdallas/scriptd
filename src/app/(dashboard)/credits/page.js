@@ -27,6 +27,7 @@ import {
   Star,
   ShoppingCart,
 } from "lucide-react";
+import posthog from "posthog-js";
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -89,8 +90,8 @@ export default function CreditsPage() {
         setCurrentCredits(balance || 0);
 
       }
-    } catch (error) {
-      console.error("Error fetching credits data:", error);
+    } catch {
+      // Failed to fetch credits - handled silently
     } finally {
       setLoading(false);
     }
@@ -99,6 +100,11 @@ export default function CreditsPage() {
   const handlePurchase = async (packageId) => {
     setPurchasing(true);
     setSelectedPackage(packageId);
+
+    // Get package details for tracking
+    const selectedPkg = Object.values(CREDIT_PACKAGES).find(
+      (pkg) => pkg.id === packageId
+    );
 
     try {
       const response = await fetch("/api/credits/checkout", {
@@ -114,6 +120,16 @@ export default function CreditsPage() {
       if (!response.ok) {
         throw new Error(data.error || "Failed to create checkout session");
       }
+
+      // Capture credit purchase initiated event
+      posthog.capture("credit_purchase_initiated", {
+        package_id: packageId,
+        package_name: selectedPkg?.name,
+        credits: selectedPkg?.credits,
+        price: selectedPkg?.price,
+        is_first_purchase: isFirstPurchase,
+        current_balance: currentCredits,
+      });
 
       // Redirect to Stripe Checkout
       if (!stripePromise) {
@@ -131,7 +147,7 @@ export default function CreditsPage() {
         throw error;
       }
     } catch (error) {
-      console.error("Purchase error:", error);
+      posthog.captureException(error);
       toast({
         title: "Purchase Failed",
         description: error.message || "Failed to process purchase",

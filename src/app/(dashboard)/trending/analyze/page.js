@@ -235,8 +235,9 @@ export default function AnalyzeChannelPage() {
               <Button 
                 className="glass-button text-white"
                 onClick={() => {
-                  toast.success(`Now tracking ${channelData?.name || channelName}`);
-                  // TODO: Implement actual tracking functionality
+                  toast.info('Channel tracking coming soon! You\'ll be able to get alerts when this channel posts new content.', {
+                    duration: 4000
+                  });
                 }}
               >
                 <Bell className="h-4 w-4 mr-2" />

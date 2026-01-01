@@ -37,13 +37,18 @@ export async function POST(request) {
         result
       });
     } catch (supabaseError) {
-      console.log('Falling back to API endpoint:', supabaseError);
-      
       // Option 2: Fall back to calling the cron endpoint
+      if (!process.env.CRON_SECRET) {
+        return NextResponse.json(
+          { error: 'CRON_SECRET environment variable is not configured' },
+          { status: 500 }
+        );
+      }
+
       const cronUrl = new URL('/api/cron/collect-metrics', request.url);
       const response = await fetch(cronUrl, {
         headers: {
-          'Authorization': `Bearer ${process.env.CRON_SECRET || 'default-secret'}`
+          'Authorization': `Bearer ${process.env.CRON_SECRET}`
         }
       });
       
@@ -64,7 +69,6 @@ export async function POST(request) {
     }
     
   } catch (error) {
-    console.error('Error triggering metrics collection:', error);
     return NextResponse.json(
       { error: 'Failed to trigger metrics collection', details: error.message },
       { status: 500 }

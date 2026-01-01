@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { validateRequest } from '@/lib/api/validation';
 import { withRateLimit } from '@/lib/api/rate-limit';
 import { ApiError } from '@/lib/api/errors';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 // Validation schema for beta signup
 const betaSignupSchema = {
@@ -73,8 +74,8 @@ export async function POST(request) {
         const cIndex = pathParts.indexOf('c');
         channelId = pathParts[cIndex + 1];
       }
-    } catch (error) {
-      console.error('Error parsing channel URL:', error);
+    } catch {
+      // Channel ID extraction failed - continue without it
     }
 
     // Calculate application score (for prioritization)
@@ -149,19 +150,27 @@ export async function POST(request) {
       });
 
     if (insertError) {
-      console.error('Beta signup error:', insertError);
       throw new ApiError('Failed to submit application', 500);
     }
 
     // Send confirmation email (implement this with your email service)
     // await sendBetaConfirmationEmail(data.email, data.name);
 
-    // Log to analytics (if implemented)
-    // await trackEvent('beta_signup', { 
-    //   channel_size: data.subscriberCount,
-    //   content_type: data.contentType,
-    //   score,
-    // });
+    // Track beta signup event in PostHog
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: data.email, // Use email as distinct ID for anonymous users
+      event: 'beta_signup_submitted',
+      properties: {
+        channel_size: data.subscriberCount,
+        content_type: data.contentType,
+        monthly_videos: data.monthlyVideos,
+        hours_per_video: data.hoursPerVideo,
+        application_score: score,
+        spots_remaining: spotsRemaining - 1,
+      }
+    });
+    await posthog.shutdown();
 
     return NextResponse.json({
       success: true,
@@ -170,8 +179,6 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Beta signup error:', error);
-    
     if (error instanceof ApiError) {
       return NextResponse.json(
         { error: error.message },
@@ -204,9 +211,7 @@ export async function GET(request) {
       isClosed: spotsRemaining === 0,
     });
 
-  } catch (error) {
-    console.error('Beta status check error:', error);
-    
+  } catch {
     return NextResponse.json(
       { error: 'Failed to check beta status' },
       { status: 500 }

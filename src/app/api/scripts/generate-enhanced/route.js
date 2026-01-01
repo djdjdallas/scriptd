@@ -9,6 +9,7 @@ import { generateEnhancedScript, createChainPrompts, predictScriptPerformance } 
 import { CREDIT_COSTS, AI_MODELS } from '@/lib/constants';
 import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
 import { checkUpgradeRequirement, getTierDisplayName } from '@/lib/subscription-helpers';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 // POST /api/scripts/generate-enhanced
 export const POST = createApiHandler(async (req) => {
@@ -293,6 +294,27 @@ export const POST = createApiHandler(async (req) => {
           }
         });
     }
+
+    // Track script generation event in PostHog
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: user.id,
+      event: 'script_generated',
+      properties: {
+        script_id: script.id,
+        script_type: validated.type,
+        script_length: validated.length,
+        tone: validated.tone,
+        platform: validated.platform,
+        model: validated.model,
+        credits_used: creditDeduction.bypassed ? 0 : creditCost,
+        credits_bypassed: creditDeduction.bypassed,
+        used_voice_profile: !!validated.voiceProfileId,
+        used_chain_prompting: validated.useChainPrompting,
+        subscription_tier: userTier,
+      }
+    });
+    await posthog.shutdown();
 
     return NextResponse.json({
       scriptId: script.id,

@@ -88,16 +88,6 @@ export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Debug: Track component lifecycle
-  useEffect(() => {
-    console.log(`[DashboardLayout] Mounted at ${new Date().toISOString()}`);
-    console.log(`[DashboardLayout] Current path: ${pathname}`);
-
-    return () => {
-      console.log("[DashboardLayout] Unmounting");
-    };
-  }, []); // Empty dependency - only mount once
-
   useEffect(() => {
     // IMPORTANT: Let middleware handle auth
     // This component just needs to get the current user for display
@@ -105,7 +95,6 @@ export default function DashboardLayout({ children }) {
       // Prevent multiple simultaneous checks
       if (!loading) return;
 
-      console.log("[DashboardLayout] Checking current user");
       const supabase = createClient();
 
       try {
@@ -114,18 +103,11 @@ export default function DashboardLayout({ children }) {
           error,
         } = await supabase.auth.getUser();
 
-        if (error) {
-          console.error("[DashboardLayout] Error getting user:", error);
-          // Don't redirect here - let middleware handle it
-          // The middleware will redirect to login if needed
-        }
-
-        console.log(
-          `[DashboardLayout] User: ${user?.email || "not authenticated"}`
-        );
+        // Don't redirect here - let middleware handle it
+        // The middleware will redirect to login if needed
         setUser(user);
       } catch (error) {
-        console.error("[DashboardLayout] Unexpected error:", error);
+        // Silent fail - middleware handles auth
       } finally {
         setLoading(false);
       }
@@ -135,9 +117,7 @@ export default function DashboardLayout({ children }) {
   }, []); // Only run once on mount
 
   useEffect(() => {
-    // Fetch credits when user is available
     if (user) {
-      console.log("[DashboardLayout] Fetching credits for user:", user.email);
       fetchCredits();
     }
   }, [user]);
@@ -145,11 +125,9 @@ export default function DashboardLayout({ children }) {
   // Add auth timeout - redirect if stuck on "Authenticating..." for too long
   useEffect(() => {
     if (!loading && !user) {
-      console.log("[DashboardLayout] No user after loading - starting 10s timeout");
       const timeout = setTimeout(() => {
-        console.log("[DashboardLayout] Auth timeout - redirecting to login");
         router.push('/login?error=auth_timeout&message=Authentication timed out. Please try signing in again.');
-      }, 10000); // 10 seconds
+      }, 10000);
 
       return () => clearTimeout(timeout);
     }
@@ -161,17 +139,12 @@ export default function DashboardLayout({ children }) {
     setCreditsLoading(true);
     try {
       const supabase = createClient();
-      // Get credit balance using the RPC function
       const { data: balance, error: rpcError } = await supabase.rpc(
         "get_available_credit_balance",
         { p_user_id: user.id }
       );
 
       if (rpcError) {
-        console.error(
-          "[DashboardLayout] RPC error fetching credits:",
-          rpcError
-        );
         // Fallback to fetch from users table
         const { data: userData } = await supabase
           .from("users")
@@ -180,34 +153,10 @@ export default function DashboardLayout({ children }) {
           .single();
 
         setCredits(userData?.credits || 0);
-        console.log(
-          "[DashboardLayout] Credits from users table (fallback):",
-          userData?.credits || 0
-        );
       } else {
         setCredits(balance || 0);
-        console.log(
-          "[DashboardLayout] Credits from RPC (includes subscription/transactions):",
-          balance || 0
-        );
-
-        // Also fetch raw credits for comparison
-        const { data: userData } = await supabase
-          .from("users")
-          .select("credits, subscription_tier")
-          .eq("id", user.id)
-          .single();
-
-        if (userData && userData.credits !== balance) {
-          console.log("[DashboardLayout] Credit discrepancy detected:");
-          console.log("  - Raw credits in users table:", userData.credits);
-          console.log("  - Calculated balance (RPC):", balance);
-          console.log("  - Difference:", balance - userData.credits);
-          console.log("  - Subscription tier:", userData.subscription_tier);
-        }
       }
     } catch (error) {
-      console.error("[DashboardLayout] Error fetching credits:", error);
       setCredits(0);
     } finally {
       setCreditsLoading(false);
@@ -215,18 +164,13 @@ export default function DashboardLayout({ children }) {
   };
 
   const handleSignOut = async () => {
-    console.log("[DashboardLayout] Signing out");
     const supabase = createClient();
 
     try {
       await supabase.auth.signOut();
-      // The auth provider or middleware will handle the redirect
-      console.log("[DashboardLayout] Sign out successful");
-
-      // Use router.push instead of window.location for smoother navigation
       router.push("/login");
     } catch (error) {
-      console.error("[DashboardLayout] Sign out error:", error);
+      // Silent fail - user will see they're still logged in
     }
   };
 
@@ -244,8 +188,6 @@ export default function DashboardLayout({ children }) {
 
   // If no user after loading, show a message (middleware will redirect if needed)
   if (!loading && !user) {
-    console.log("[DashboardLayout] No user found after loading");
-    // Don't render the dashboard, middleware will redirect
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center">
         <div className="glass-card p-8">

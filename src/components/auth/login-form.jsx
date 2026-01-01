@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
+import posthog from 'posthog-js'
 
 export function LoginForm() {
   const [email, setEmail] = useState('')
@@ -29,22 +30,33 @@ export function LoginForm() {
       })
 
       if (error) {
-        console.error('Login error:', error)
+        posthog.captureException(error);
         toast.error(error.message)
         return
       }
 
       if (data?.user) {
-        console.log('Login successful, user:', data.user.email)
         toast.success('Welcome back!')
-        
+
+        // Identify user in PostHog using their user ID as distinct ID
+        posthog.identify(data.user.id, {
+          email: data.user.email,
+          name: data.user.user_metadata?.full_name,
+        });
+
+        // Capture login event
+        posthog.capture('user_logged_in', {
+          method: 'email',
+          email: data.user.email,
+        });
+
         // Force a hard navigation to ensure middleware runs
         window.location.href = '/scripts'
       } else {
         toast.error('Login failed - no user data returned')
       }
     } catch (error) {
-      console.error('Unexpected error:', error)
+      posthog.captureException(error);
       toast.error('Something went wrong. Please try again.')
     } finally {
       setIsLoading(false)
@@ -53,6 +65,11 @@ export function LoginForm() {
 
   const handleGoogleLogin = async () => {
     try {
+      // Capture Google login attempt
+      posthog.capture('user_logged_in', {
+        method: 'google',
+      });
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -62,9 +79,11 @@ export function LoginForm() {
 
       if (error) {
         toast.error(error.message)
+        posthog.captureException(error);
       }
     } catch (error) {
       toast.error('Failed to sign in with Google')
+      posthog.captureException(error);
     }
   }
 

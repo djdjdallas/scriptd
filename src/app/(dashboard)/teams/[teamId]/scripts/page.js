@@ -72,33 +72,8 @@ export default function TeamScriptsPage() {
       }
       setTeam(teamData);
 
-      // TODO: Load team scripts from your existing scripts system
-      // This would integrate with your scripts table, filtering by team_id
-      // For now, using mock data to show the UI structure
-      setScripts([
-        {
-          id: '1',
-          title: 'How to Create Engaging YouTube Content',
-          description: 'A comprehensive guide for content creators',
-          status: 'draft',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          updated_at: new Date(Date.now() - 3600000).toISOString(),
-          author: { name: 'John Doe', email: 'john@example.com' },
-          word_count: 1250,
-          collaborators: 3,
-        },
-        {
-          id: '2',
-          title: '10 YouTube Trends for 2024',
-          description: 'Staying ahead of the curve',
-          status: 'published',
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          updated_at: new Date(Date.now() - 7200000).toISOString(),
-          author: { name: 'Jane Smith', email: 'jane@example.com' },
-          word_count: 850,
-          collaborators: 2,
-        },
-      ]);
+      // Team scripts feature is coming soon - show empty state
+      setScripts([]);
 
     } catch (err) {
       setError(err.message || 'Failed to load team scripts');
@@ -276,22 +251,22 @@ export default function TeamScriptsPage() {
       {filteredScripts.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
+            <div className="mb-4">
+              <Badge variant="secondary" className="text-sm px-3 py-1">
+                Coming Soon
+              </Badge>
+            </div>
             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchQuery ? 'No scripts found' : 'No scripts yet'}
+              Team Scripts Coming Soon
             </h3>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              {searchQuery 
-                ? `No scripts match "${searchQuery}". Try adjusting your search terms.`
-                : 'Create your first team script to start collaborating on YouTube content.'
-              }
+              We&apos;re working on team script collaboration features.
+              Soon you&apos;ll be able to create, share, and collaborate on scripts with your team.
             </p>
-            {!searchQuery && userPermissions.canCreateScripts && (
-              <Button onClick={handleCreateScript}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create First Script
-              </Button>
-            )}
+            <p className="text-sm text-muted-foreground">
+              In the meantime, you can create individual scripts from the Scripts page.
+            </p>
           </CardContent>
         </Card>
       ) : (

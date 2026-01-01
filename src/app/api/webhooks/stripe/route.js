@@ -6,6 +6,36 @@ import { getStripeService } from '@/lib/stripe/client';
 import { createServiceClient } from '@/lib/supabase/service';
 import { PLANS, CREDIT_PACKAGES } from '@/lib/constants';
 import { emailService } from '@/lib/email/email-service';
+import { getPostHogClient } from '@/lib/posthog-server';
+import { logger } from '@/lib/monitoring/logger';
+
+// Check if webhook event was already processed (idempotency)
+async function isEventProcessed(supabase, eventId) {
+  const { data } = await supabase
+    .from('processed_webhook_events')
+    .select('id')
+    .eq('event_id', eventId)
+    .single();
+  return !!data;
+}
+
+// Mark event as processed
+async function markEventProcessed(supabase, eventId, eventType) {
+  try {
+    await supabase
+      .from('processed_webhook_events')
+      .insert({
+        event_id: eventId,
+        event_type: eventType,
+        processed_at: new Date().toISOString()
+      });
+  } catch (error) {
+    // Ignore duplicate key errors (race condition protection)
+    if (!error.message?.includes('duplicate')) {
+      logger.error('Failed to mark event as processed', { eventId, error: error.message });
+    }
+  }
+}
 
 // Map Stripe price IDs to credit amounts and tiers
 const PRICE_TO_CREDITS = {
@@ -39,9 +69,18 @@ export async function POST(req) {
     );
   }
 
+  const supabase = createServiceClient();
+
   try {
     const stripeService = getStripeService();
     const event = await stripeService.handleWebhook(body, signature);
+
+    // Idempotency check - prevent duplicate processing
+    const alreadyProcessed = await isEventProcessed(supabase, event.id);
+    if (alreadyProcessed) {
+      logger.info('Webhook event already processed, skipping', { eventId: event.id, eventType: event.type });
+      return NextResponse.json({ received: true, skipped: true });
+    }
 
     // Handle different event types
     switch (event.type) {
@@ -67,16 +106,21 @@ export async function POST(req) {
         break;
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        logger.info('Unhandled webhook event type', { eventType: event.type });
     }
+
+    // Mark event as processed after successful handling
+    await markEventProcessed(supabase, event.id, event.type);
 
     return NextResponse.json({ received: true });
 
   } catch (error) {
-    console.error('Webhook error:', error);
+    logger.error('Webhook error', { error: error.message, stack: error.stack });
+    // Return 400 for signature validation errors, 500 for processing errors
+    const statusCode = error.message?.includes('signature') ? 400 : 500;
     return NextResponse.json(
       { error: error.message },
-      { status: 400 }
+      { status: statusCode }
     );
   }
 }
@@ -140,13 +184,13 @@ async function handleCheckoutComplete(session) {
           }
         });
 
-      console.log(`Team ${teamId} upgraded to ${planTier} plan`);
+      logger.info('Team subscription upgraded', { teamId, planTier });
       return;
     }
   }
 
   if (!userId) {
-    console.error('No user ID in checkout session metadata');
+    logger.warn('No user ID in checkout session metadata');
     return;
   }
 
@@ -167,9 +211,9 @@ async function handleCheckoutComplete(session) {
     const credits = priceInfo.credits;
     const discountAmount = parseInt(metadata?.discountAmount || 0);
     const promoCode = metadata?.promoCode || null;
-    
+
     // Add credits with expiry using our database function
-    await supabase.rpc('add_credits_with_expiry', {
+    const { error: creditError } = await supabase.rpc('add_credits_with_expiry', {
       p_user_id: userId,
       p_amount: credits,
       p_stripe_payment_intent_id: payment_intent,
@@ -179,8 +223,13 @@ async function handleCheckoutComplete(session) {
       p_expires_in_months: 12
     });
 
+    if (creditError) {
+      logger.error('Failed to add credits via RPC', { userId, credits, error: creditError.message });
+      throw new Error(`Failed to add credits: ${creditError.message}`);
+    }
+
     // Record purchase history
-    await supabase
+    const { error: historyError } = await supabase
       .from('credit_purchase_history')
       .insert({
         user_id: userId,
@@ -193,7 +242,27 @@ async function handleCheckoutComplete(session) {
         purchase_number: 0 // Will be set by the database function
       });
 
-    console.log(`Credit purchase completed: ${credits} credits for user ${userId}`);
+    if (historyError) {
+      logger.warn('Failed to record purchase history', { userId, error: historyError.message });
+    }
+
+    logger.info('Credit purchase completed', { userId, credits, priceId });
+
+    // Track checkout completed event in PostHog
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: userId,
+      event: 'checkout_completed',
+      properties: {
+        purchase_type: 'credits',
+        credits_purchased: credits,
+        amount_paid: amount_total / 100,
+        currency: currency,
+        price_id: priceId,
+        discount_applied: discountAmount > 0,
+      }
+    });
+    await posthog.shutdown();
   }
   // Legacy metadata-based handling (backward compatibility)
   else if (metadata?.packageId) {
@@ -206,7 +275,7 @@ async function handleCheckoutComplete(session) {
     
     if (creditPackage) {
       // Add credits with expiry using our database function
-      await supabase.rpc('add_credits_with_expiry', {
+      const { error: creditError } = await supabase.rpc('add_credits_with_expiry', {
         p_user_id: userId,
         p_amount: credits,
         p_stripe_payment_intent_id: payment_intent,
@@ -216,8 +285,13 @@ async function handleCheckoutComplete(session) {
         p_expires_in_months: 12
       });
 
+      if (creditError) {
+        logger.error('Failed to add credits via RPC (legacy)', { userId, credits, error: creditError.message });
+        throw new Error(`Failed to add credits: ${creditError.message}`);
+      }
+
       // Record purchase history
-      await supabase
+      const { error: historyError } = await supabase
         .from('credit_purchase_history')
         .insert({
           user_id: userId,
@@ -230,13 +304,16 @@ async function handleCheckoutComplete(session) {
           purchase_number: 0 // Will be set by the database function
         });
 
-      console.log(`Credit purchase completed: ${credits} credits for user ${userId}`);
+      if (historyError) {
+        logger.warn('Failed to record purchase history (legacy)', { userId, error: historyError.message });
+      }
+
+      logger.info('Credit purchase completed (legacy)', { userId, credits, packageId: metadata.packageId });
     }
   }
   // Handle subscription checkout
   else if (metadata.type === 'subscription') {
-    // Existing subscription logic would go here
-    console.log('Subscription checkout completed');
+    logger.info('Subscription checkout completed', { userId });
   }
 }
 
@@ -280,12 +357,12 @@ async function handleSubscriptionUpdate(subscription) {
       .update({ max_members: maxMembers })
       .eq('id', teamId);
 
-    console.log(`Team ${teamId} subscription updated to ${planTier}`);
+    logger.info('Team subscription updated', { teamId, planTier });
     return;
   }
 
   if (!userId) {
-    console.error('No user ID in subscription');
+    logger.warn('No user ID in subscription metadata');
     return;
   }
 
@@ -347,7 +424,7 @@ async function handleSubscriptionUpdate(subscription) {
         }
       });
     
-    console.log(`Granted ${credits} credits to user ${userId} for ${planId} subscription`);
+    logger.info('Subscription credits granted', { userId, credits, planId });
   }
 }
 
@@ -384,12 +461,12 @@ async function handleSubscriptionDeleted(subscription) {
         }
       });
 
-    console.log(`Team ${teamId} subscription cancelled, downgraded to free tier`);
+    logger.info('Team subscription cancelled', { teamId });
     return;
   }
 
   if (!userId) {
-    console.error('No user ID in subscription');
+    logger.warn('No user ID in subscription metadata');
     return;
   }
 
@@ -404,6 +481,18 @@ async function handleSubscriptionDeleted(subscription) {
       billing_interval: null
     })
     .eq('id', userId);
+
+  // Track subscription cancelled event in PostHog
+  const posthog = getPostHogClient();
+  posthog.capture({
+    distinctId: userId,
+    event: 'subscription_cancelled',
+    properties: {
+      previous_tier: metadata?.planTier || 'unknown',
+      subscription_id: subscription.id,
+    }
+  });
+  await posthog.shutdown();
 }
 
 // Handle successful invoice payment
@@ -418,7 +507,7 @@ async function handleInvoicePaymentSucceeded(invoice) {
 
   // This is for recurring subscription payments
   // Credits are already granted in subscription update
-  console.log('Invoice payment succeeded:', invoice.id);
+  logger.info('Invoice payment succeeded', { invoiceId: invoice.id });
 }
 
 // Handle failed invoice payment
@@ -451,6 +540,19 @@ async function handleInvoicePaymentFailed(invoice) {
       nextAttemptDate: next_payment_attempt ? new Date(next_payment_attempt * 1000) : null
     });
 
-    console.log('Payment failed notification sent to:', user.email);
+    // Track payment failed event in PostHog
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: user.id,
+      event: 'payment_failed',
+      properties: {
+        subscription_id: subscription,
+        error_message: invoice.last_payment_error?.message,
+        next_retry_date: next_payment_attempt ? new Date(next_payment_attempt * 1000).toISOString() : null,
+      }
+    });
+    await posthog.shutdown();
+
+    logger.info('Payment failed notification sent', { email: user.email });
   }
 }

@@ -39,28 +39,30 @@ export async function logCreditUsage(userId, feature, amount, metadata = {}) {
 
 // Check if feature should bypass credits
 export function shouldBypassCredits(feature, userId) {
-  // Add bypass logic here
-  // For example:
-  // - Development environment
-  // - Specific user IDs
-  // - Certain features during beta
-  
-  if (process.env.NODE_ENV === 'development') {
-    return true;
+  // IMPORTANT: Credit bypass is controlled by explicit environment variables only.
+  // Never bypass based on NODE_ENV to prevent accidental production bypasses.
+
+  // Check explicit bypass flag (must be set intentionally)
+  if (process.env.ENABLE_CREDIT_BYPASS === 'true') {
+    // Only in explicit bypass mode AND for allowed users
+    const bypassUsers = process.env.CREDIT_BYPASS_USER_IDS?.split(',') || [];
+    if (bypassUsers.includes(userId)) {
+      return true;
+    }
   }
-  
-  // Beta features that don't require credits
-  const betaFeatures = ['VOICE_TRAINING', 'VOICE_MATCHING'];
+
+  // Beta features that don't require credits (controlled via env)
+  const betaFeatures = (process.env.BETA_FREE_FEATURES || '').split(',').filter(Boolean);
   if (betaFeatures.includes(feature)) {
     return true;
   }
-  
-  // Admin users
-  const adminUsers = process.env.ADMIN_USER_IDS?.split(',') || [];
+
+  // Admin users (explicit list only)
+  const adminUsers = process.env.ADMIN_USER_IDS?.split(',').filter(Boolean) || [];
   if (adminUsers.includes(userId)) {
     return true;
   }
-  
+
   return false;
 }
 

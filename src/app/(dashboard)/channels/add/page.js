@@ -27,6 +27,7 @@ import {
   Plus,
   Loader2
 } from 'lucide-react';
+import posthog from 'posthog-js';
 
 export default function AddChannelPage() {
   const router = useRouter();
@@ -62,15 +63,9 @@ export default function AddChannelPage() {
         .single();
       
       setUserData(data);
-      
-      // Debug logging
-      console.log('User data from DB:', data);
-      console.log('Subscription tier:', data?.subscription_tier);
-      
+
       // Check if premium based on subscription_tier (not 'free')
       const isPremiumUser = data?.subscription_tier && data.subscription_tier !== 'free';
-      console.log('Is premium user?', isPremiumUser);
-      
       setIsPremium(isPremiumUser);
     }
     
@@ -163,6 +158,15 @@ export default function AddChannelPage() {
 
       if (error) throw error;
 
+      // Capture channel created event
+      posthog.capture('channel_created', {
+        channel_type: 'custom',
+        channel_title: channelTitle,
+        has_youtube_url: !!youtubeUrl,
+        existing_channels_count: existingChannelsCount,
+        is_premium: isPremium,
+      });
+
       toast({
         title: "Channel Created!",
         description: "Your custom channel has been created successfully"
@@ -170,7 +174,7 @@ export default function AddChannelPage() {
 
       router.push(`/channels/${data.id}`);
     } catch (error) {
-      console.error('Error creating channel:', error);
+      posthog.captureException(error);
       toast({
         title: "Error",
         description: "Failed to create channel. Please try again.",
@@ -404,8 +408,15 @@ My content: Quick tutorials on productivity tools, coding shortcuts, and time ma
                 </div>
               </div>
 
-              <Link href="/pricing">
-                <Button 
+              <Link href="/pricing" onClick={() => {
+                  // Capture upgrade CTA click
+                  posthog.capture('upgrade_cta_clicked', {
+                    source: 'channels_add_page',
+                    feature: 'remix_channel',
+                    current_tier: userData?.subscription_tier || 'free',
+                  });
+                }}>
+                <Button
                   className="glass-button bg-gradient-to-r from-yellow-500/50 to-orange-500/50 text-white"
                   size="lg"
                 >

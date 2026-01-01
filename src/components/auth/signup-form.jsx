@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
+import posthog from 'posthog-js'
 
 export function SignupForm() {
   const [email, setEmail] = useState('')
@@ -57,10 +58,25 @@ export function SignupForm() {
         return
       }
 
+      // Identify user in PostHog using their user ID as distinct ID
+      if (data?.user) {
+        posthog.identify(data.user.id, {
+          email: data.user.email,
+          name: name,
+        });
+
+        // Capture signup event
+        posthog.capture('user_signed_up', {
+          method: 'email',
+          email: data.user.email,
+        });
+      }
+
       toast.success('Check your email to confirm your account!')
       router.push('/login')
     } catch (error) {
       toast.error('Something went wrong. Please try again.')
+      posthog.captureException(error);
     } finally {
       setIsLoading(false)
     }
@@ -68,6 +84,11 @@ export function SignupForm() {
 
   const handleGoogleSignup = async () => {
     try {
+      // Capture Google signup attempt
+      posthog.capture('user_signed_up', {
+        method: 'google',
+      });
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -77,9 +98,11 @@ export function SignupForm() {
 
       if (error) {
         toast.error(error.message)
+        posthog.captureException(error);
       }
     } catch (error) {
       toast.error('Failed to sign up with Google')
+      posthog.captureException(error);
     }
   }
 

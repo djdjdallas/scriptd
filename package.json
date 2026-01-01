@@ -35,6 +35,7 @@
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.55.0",
     "@tanstack/react-query": "^5.85.5",
+    "@vercel/kv": "^3.0.0",
     "cheerio": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -50,6 +51,8 @@
     "next-themes": "^0.4.6",
     "openai": "^4.104.0",
     "pdfkit": "^0.17.1",
+    "posthog-js": "^1.237.3",
+    "posthog-node": "^4.0.0",
     "puppeteer": "^24.17.0",
     "react": "19.1.0",
     "react-day-picker": "^9.9.0",
@@ -65,7 +68,6 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.28.1",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
     "autoprefixer": "^10.4.21",

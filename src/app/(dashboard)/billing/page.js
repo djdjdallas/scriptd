@@ -17,9 +17,13 @@ import {
   Plus
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { PLANS, CREDIT_COSTS } from '@/lib/constants';
+import { PLANS, CREDIT_COSTS, MODEL_TIERS } from '@/lib/constants';
 import { CREDIT_PACKAGES } from '@/lib/stripe/client';
+
+// Constants for billing display
+const MAX_CREDITS_FOR_PROGRESS = 500; // Used for progress bar visualization
 import { formatDistanceToNow } from 'date-fns';
+import posthog from 'posthog-js';
 
 export default function BillingPage() {
   const { toast } = useToast();
@@ -60,9 +64,16 @@ export default function BillingPage() {
       if (response.ok) {
         const data = await response.json();
         setCreditData(data);
+
+        // Capture subscription plan viewed event
+        posthog.capture('subscription_plan_viewed', {
+          current_plan: data.subscription?.plan || 'free',
+          subscription_status: data.subscription?.status || 'inactive',
+          credit_balance: data.balance,
+        });
       }
     } catch (error) {
-      console.error('Failed to fetch credit data:', error);
+      posthog.captureException(error);
       toast({
         title: "Error",
         description: "Failed to load billing information",
@@ -92,7 +103,7 @@ export default function BillingPage() {
       window.location.href = data.url;
 
     } catch (error) {
-      console.error('Purchase error:', error);
+      posthog.captureException(error);
       toast({
         title: "Purchase Failed",
         description: "Failed to start checkout process",
@@ -116,7 +127,7 @@ export default function BillingPage() {
       window.location.href = data.url;
 
     } catch (error) {
-      console.error('Portal error:', error);
+      posthog.captureException(error);
       toast({
         title: "Error",
         description: "Failed to open billing portal",
@@ -134,7 +145,8 @@ export default function BillingPage() {
   }
 
   const currentPlan = PLANS[creditData.subscription.plan?.toUpperCase()] || PLANS.FREE;
-  const creditPercentage = Math.min(100, (creditData.balance / 500) * 100);
+  const creditPercentage = Math.min(100, (creditData.balance / MAX_CREDITS_FOR_PROGRESS) * 100);
+  const avgScriptCost = MODEL_TIERS.BALANCED.baseCredits; // Use the most common tier
 
   return (
     <div className="space-y-8">
@@ -166,7 +178,7 @@ export default function BillingPage() {
                   Approximately
                 </p>
                 <p className="text-lg font-medium">
-                  {Math.floor(creditData.balance / CREDIT_COSTS.SCRIPT_GENERATION.GPT4_TURBO)} scripts
+                  {Math.floor(creditData.balance / avgScriptCost)} scripts
                 </p>
               </div>
             </div>
@@ -176,15 +188,15 @@ export default function BillingPage() {
             <div className="grid grid-cols-3 gap-4 pt-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Scripts</p>
-                <p className="font-medium">3-15 credits</p>
+                <p className="font-medium">{MODEL_TIERS.FAST.baseCredits}-{MODEL_TIERS.PREMIUM.baseCredits} credits</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Research</p>
-                <p className="font-medium">1 credit/message</p>
+                <p className="font-medium">{CREDIT_COSTS.RESEARCH_CHAT} credit/message</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Exports</p>
-                <p className="font-medium">2 credits</p>
+                <p className="font-medium">Free</p>
               </div>
             </div>
           </div>
