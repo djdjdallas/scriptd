@@ -12,11 +12,8 @@ import Anthropic from '@anthropic-ai/sdk';
  * @returns {Promise<Object>} Verification results with accuracy metrics
  */
 export async function verifyFacts(scriptContent, researchSources) {
-  console.log('🔍 Starting fact verification...');
-
   // Extract factual claims from the script
   const claims = await extractClaims(scriptContent);
-  console.log(`  📊 Extracted ${claims.length} factual claims`);
 
   // Prepare source content for verification
   const sourceContent = prepareSourceContent(researchSources);
@@ -25,7 +22,6 @@ export async function verifyFacts(scriptContent, researchSources) {
   const verifiedClaims = [];
   for (let i = 0; i < claims.length; i++) {
     const claim = claims[i];
-    console.log(`  ✓ Verifying claim ${i + 1}/${claims.length}: "${claim.text.substring(0, 50)}..."`);
 
     const verification = await verifyClaim(claim, sourceContent, researchSources);
     verifiedClaims.push({
@@ -35,22 +31,12 @@ export async function verifyFacts(scriptContent, researchSources) {
 
     // Log issues
     if (!verification.supported) {
-      console.warn(`  ⚠️ Unsupported claim: "${claim.text}"`);
-      if (verification.correction) {
-        console.log(`  💡 Suggested correction: "${verification.correction}"`);
-      }
+      console.warn(`Unsupported claim: "${claim.text}"`);
     }
   }
 
   // Calculate metrics
   const metrics = calculateVerificationMetrics(verifiedClaims);
-
-  console.log('📊 Fact verification complete:', {
-    accuracy: `${(metrics.accuracy * 100).toFixed(1)}%`,
-    verified: metrics.supportedCount,
-    unverified: metrics.unsupportedCount,
-    corrected: metrics.correctionsCount
-  });
 
   return {
     claims: verifiedClaims,
@@ -315,8 +301,6 @@ function groupByType(claims) {
 export function autoCorrectFacts(scriptContent, corrections) {
   let correctedScript = scriptContent;
 
-  console.log(`📝 Applying ${corrections.length} fact corrections...`);
-
   for (const correction of corrections) {
     // Use exact string replacement
     if (correctedScript.includes(correction.original)) {
@@ -324,7 +308,6 @@ export function autoCorrectFacts(scriptContent, corrections) {
         correction.original,
         correction.correction
       );
-      console.log(`  ✓ Corrected: "${correction.original.substring(0, 50)}..."`);
     }
   }
 

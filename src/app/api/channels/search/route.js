@@ -50,9 +50,7 @@ export async function GET(request) {
 
     // If we have results from database, return them (even if less than 10)
     if (dbChannels && dbChannels.length > 0) {
-      console.log('Found channels in database:', dbChannels.length);
       const mappedChannels = dbChannels.map(channel => {
-        console.log(`DB Channel: ${channel.title || channel.name}, DB ID: ${channel.id}, YouTube ID: ${channel.youtube_channel_id}`);
         return {
           id: channel.id,
           channelId: channel.youtube_channel_id,
@@ -111,12 +109,10 @@ export async function GET(request) {
         }
 
         // Add YouTube channels that aren't already in our list
-        console.log('YouTube API returned', youtubeChannels.length, 'channels');
         youtubeChannels.forEach(channel => {
           // YouTube channels.list API returns channel ID directly as 'id'
           const ytChannelId = channel.id;
-          console.log(`YouTube Channel: ${channel.snippet.title}, ID: ${ytChannelId}`);
-          
+
           if (ytChannelId && !seenChannelIds.has(ytChannelId)) {
             // Apply subscriber filters if provided
             const subs = parseInt(channel.statistics?.subscriberCount || 0);

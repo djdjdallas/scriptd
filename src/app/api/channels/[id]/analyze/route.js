@@ -264,8 +264,6 @@ function generateFallbackIdeas(channelType, channelName, recentTopics = []) {
     suggestedApproach: `Present in ${channelName}'s unique style focusing on ${channelType} audience interests`
   }));
 
-  console.log(`🎯 Generated ${contextualizedIdeas.length} fallback ideas for ${channelType} channel`);
-
   return contextualizedIdeas;
 }
 
@@ -387,24 +385,15 @@ export async function POST(request, { params }) {
     }
 
     // === NEW: Comprehensive Analysis for Regular Channels ===
-    console.log('🚀 Starting comprehensive channel analysis for:', dbChannel.name);
-    console.log('📍 YouTube Channel ID:', dbChannel.youtube_channel_id);
-
     await updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, 'Fetching channel data from YouTube...', 10);
 
     // Fetch fresh channel data from YouTube
     const channel = await getChannelById(dbChannel.youtube_channel_id);
 
-    console.log('✅ Found YouTube channel:', channel.snippet?.title);
-    console.log('📺 Channel ID:', channel.id);
-    console.log('👥 Subscribers:', parseInt(channel.statistics?.subscriberCount || 0).toLocaleString());
-
     await updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, 'Analyzing recent videos...', 20);
 
     // Fetch recent videos for analysis
     const videos = await getChannelVideos(dbChannel.youtube_channel_id, 50);
-
-    console.log(`📊 Analyzing channel with ${videos.length} videos`);
 
     // Use the SAME comprehensive analysis system as remix channels
     const { analyzeChannelVoicesFromYouTube } = await import('@/lib/ai/remix-voice-analyzer');
@@ -413,8 +402,6 @@ export async function POST(request, { params }) {
       generateRemixContentIdeas,
       analyzeRemixWithClaude
     } = await import('@/lib/ai/remix-analyzer');
-
-    console.log('🎯 Running deep analysis with transcript-based voice profiling...');
 
     // Prepare channel data in the format expected by the remix analyzer
     const channelForAnalysis = {
@@ -430,13 +417,11 @@ export async function POST(request, { params }) {
       await updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, 'Analyzing voice and style from transcripts...', 30);
 
       // Step 1: Analyze voice from transcripts (just like remix does)
-      console.log('📊 Step 1: Analyzing voice from transcripts...');
       const voiceAnalyses = await analyzeChannelVoicesFromYouTube([channelForAnalysis], {});
 
       await updateProgress(sessionId, PROGRESS_STAGES.GENERATING, 'Generating deep audience insights...', 50);
 
       // Step 2: Generate deep audience insights (just like remix does)
-      console.log('📊 Step 2: Generating audience insights...');
       // Include video information for better audience analysis
       const channelWithContext = {
         ...channelForAnalysis,
@@ -453,7 +438,6 @@ export async function POST(request, { params }) {
       await updateProgress(sessionId, PROGRESS_STAGES.GENERATING, 'Analyzing content strategy and positioning...', 65);
 
       // Step 3: Generate comprehensive channel analysis (strengths, opportunities, etc.)
-      console.log('📊 Step 3: Generating comprehensive analysis...');
       const comprehensiveAnalysis = await analyzeRemixWithClaude([channelWithContext], {
         name: dbChannel.name,
         description: dbChannel.description || channel.snippet?.description || '',
@@ -469,7 +453,6 @@ export async function POST(request, { params }) {
       await updateProgress(sessionId, PROGRESS_STAGES.ENRICHING, 'Generating personalized content ideas...', 80);
 
       // Step 4: Generate content ideas with proper context including video information
-      console.log('📊 Step 4: Generating content ideas...');
       // Add video information to the channel data for better content generation
       const channelWithVideos = {
         ...channelForAnalysis,
@@ -489,15 +472,6 @@ export async function POST(request, { params }) {
         },
         comprehensiveAnalysis?.analysis || {}
       );
-
-      // Debug: Log content ideas generation result
-      console.log('💡 Content Ideas Generated:', {
-        success: contentIdeas?.success,
-        ideasCount: contentIdeas?.ideas?.length || 0,
-        firstIdea: contentIdeas?.ideas?.[0]?.title || 'none'
-      });
-
-      console.log('✅ Deep analysis completed successfully');
 
       // Use the rich remix-style analysis
       var claudeAnalysis = {
@@ -523,15 +497,12 @@ export async function POST(request, { params }) {
 
       // If content ideas are empty, generate intelligent fallback ideas
       if (!claudeAnalysis.analysis.contentRecommendations || claudeAnalysis.analysis.contentRecommendations.length === 0) {
-        console.log('⚠️ No content ideas generated, creating intelligent fallback based on channel analysis');
-
         // Analyze recent video titles to understand content type
         const recentTitles = videos.slice(0, 10).map(v => v.snippet?.title?.toLowerCase() || '').join(' ');
         const recentTopics = videos.slice(0, 5).map(v => v.snippet?.title || '').filter(Boolean);
 
         // Detect channel type based on content patterns
         const channelType = detectChannelType(recentTitles, recentTopics);
-        console.log(`📊 Detected channel type: ${channelType}`);
 
         // Generate appropriate fallback ideas based on detected type
         claudeAnalysis.analysis.contentRecommendations = generateFallbackIdeas(
@@ -546,9 +517,7 @@ export async function POST(request, { params }) {
         voiceProfile: voiceAnalyses[0]?.voiceAnalysis || {},
         basedOnRealData: voiceAnalyses[0]?.source === 'youtube-transcripts'
       };
-    } catch (deepAnalysisError) {
-      console.warn('⚠️ Deep analysis failed, falling back to basic analysis:', deepAnalysisError.message);
-      console.error('Deep analysis error details:', deepAnalysisError);
+    } catch {
       // Fallback to basic analysis
       var claudeAnalysis = await analyzeChannelWithClaude(channel, videos, dbChannel);
       var voiceProfileResult = await generateChannelVoiceProfile(channel, videos);
@@ -556,13 +525,6 @@ export async function POST(request, { params }) {
 
     // Extract analysis sections
     const analysis = claudeAnalysis.analysis;
-
-    // Debug: Log content recommendations
-    console.log('📝 Content Recommendations Check:', {
-      hasContentRecommendations: !!analysis?.contentRecommendations,
-      recommendationsCount: analysis?.contentRecommendations?.length || 0,
-      firstRecommendation: analysis?.contentRecommendations?.[0] || 'none'
-    });
 
     // Check if we have remix-style deep analysis with audience_analysis
     const hasDeepAnalysis = analysis.audience_analysis;
@@ -753,20 +715,7 @@ export async function POST(request, { params }) {
     const { transformVoiceProfile } = await import('@/lib/ai/voice-profile-transformer');
 
     // Transform the voice profile into clean format
-    console.log('🎤 Raw voice profile keys:', Object.keys(voiceProfileResult.voiceProfile || {}));
     const cleanVoiceProfile = transformVoiceProfile(voiceProfileResult.voiceProfile);
-
-    // Log the transformed profile
-    if (cleanVoiceProfile) {
-      console.log('📝 Transformed Voice Profile Structure:');
-      console.log('  - Tone:', cleanVoiceProfile.tone);
-      console.log('  - Style:', cleanVoiceProfile.style);
-      console.log('  - Pace:', cleanVoiceProfile.pace);
-      console.log('  - Energy:', cleanVoiceProfile.energy);
-      console.log('  - Signature phrases:', cleanVoiceProfile.signature_phrases?.length || 0);
-    } else {
-      console.log('⚠️ Voice profile transformation returned null');
-    }
 
     // Update channel with latest analytics, voice profile, and audience description using DEEP data
     await supabase
@@ -794,8 +743,6 @@ export async function POST(request, { params }) {
       })
       .eq('id', id)
       .eq('user_id', user.id);
-
-    console.log('✅ Comprehensive analysis completed and saved');
 
     await updateProgress(sessionId, PROGRESS_STAGES.COMPLETED, 'Analysis complete!', 100);
 

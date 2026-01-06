@@ -11,10 +11,6 @@ export async function POST(request) {
   try {
     const { channelIds, channels: providedChannels, config } = await request.json();
 
-    console.log('Received channelIds:', channelIds);
-    console.log('Number of channelIds:', channelIds?.length);
-    console.log('Received channel data:', providedChannels?.length, 'channels');
-
     // Check authentication
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -38,8 +34,7 @@ export async function POST(request) {
 
     // Validate that we have channels
     if (!providedChannels || !Array.isArray(providedChannels) || providedChannels.length < 2) {
-      console.log('Invalid provided channels:', providedChannels?.length || 0);
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'At least 2 channels required for remixing',
         details: `Received ${providedChannels?.length || 0} channels`
       }, { status: 400 });
@@ -50,7 +45,6 @@ export async function POST(request) {
     
     for (const providedChannel of providedChannels) {
       if (!providedChannel) {
-        console.log('Skipping empty channel');
         continue;
       }
 
@@ -60,13 +54,6 @@ export async function POST(request) {
                        providedChannel.youtube_channel_id ||
                        providedChannel.youtubeChannelId ||
                        providedChannel.channel_id;
-
-      console.log('Processing channel:', {
-        title: providedChannel.title,
-        hasId: !!providedChannel.id,
-        hasChannelId: !!providedChannel.channelId,
-        extractedId: channelId
-      });
 
       // If we have an ID, try to fetch from database
       let dbChannel = null;
@@ -121,9 +108,7 @@ export async function POST(request) {
         // CRITICAL: Reject channels without YouTube IDs to prevent wrong channel selection
         if (!ytChannelId) {
           const channelTitle = providedChannel.title || providedChannel.name || 'Unknown';
-          console.error(`❌ Channel "${channelTitle}" is missing YouTube channel ID`);
-          console.error('Channel data:', providedChannel);
-          
+
           // Do NOT attempt to lookup by name - this causes wrong channels to be selected
           return NextResponse.json({ 
             error: 'Invalid channel data',
@@ -148,8 +133,6 @@ export async function POST(request) {
       }
     }
 
-    console.log(`Found ${channels.length} channels in database`);
-
     if (channels.length < 2) {
       return NextResponse.json({ 
         error: 'At least 2 valid channels required for remixing',
@@ -157,19 +140,13 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    // Log the channels being passed to voice analysis
-    console.log(`Analyzing ${channels.length} channels:`, 
-      channels.map(ch => `${ch.title || ch.name} (${ch.youtube_channel_id || ch.channelId || 'no ID'})`).join(', '));
-    
     // Use Claude to analyze the remix combination
-    console.log('Analyzing remix with Claude (Sonnet Model)...');
     const claudeAnalysis = await analyzeRemixWithClaude(channels, config);
     
     let analysis;
     if (claudeAnalysis.success) {
       analysis = claudeAnalysis.analysis;
     } else {
-      console.log('Claude analysis failed, using fallback');
       analysis = claudeAnalysis.fallback;
     }
 
@@ -177,12 +154,8 @@ export async function POST(request) {
     let voiceProfile = null;
     let voiceAnalysisMetadata = null;
     if (config.elements.voice_style) {
-      console.log('🎤 Starting enhanced voice profile generation...');
-      console.log('This will analyze actual YouTube videos from source channels.');
-      console.log('Process may take 30-60 seconds for thorough analysis...\n');
-      
       const voiceResult = await generateRemixVoiceProfile(channels, config);
-      
+
       if (voiceResult.success) {
         voiceProfile = voiceResult.voiceProfile;
         voiceAnalysisMetadata = {
@@ -190,12 +163,7 @@ export async function POST(request) {
           channelsAnalyzed: voiceResult.channelAnalyses?.length || 0,
           totalVideosAnalyzed: voiceResult.voiceProfile?.metadata?.totalVideosAnalyzed || 0
         };
-        
-        console.log(`✅ Voice profile created successfully!`);
-        console.log(`   - Based on real data: ${voiceResult.basedOnRealData}`);
-        console.log(`   - Videos analyzed: ${voiceAnalysisMetadata.totalVideosAnalyzed}`);
       } else {
-        console.log('⚠️ Using fallback voice profile');
         voiceProfile = {
           tone: ['engaging', 'authentic', 'dynamic'],
           style: ['conversational', 'informative'],
@@ -206,12 +174,10 @@ export async function POST(request) {
     }
 
     // Generate audience insights with Claude
-    console.log('Generating audience insights with Claude...');
     const audienceResult = await generateAudienceInsights(channels, config);
     const audienceInsights = audienceResult.success ? audienceResult.insights : null;
 
     // Generate content ideas with Claude
-    console.log('Generating content ideas with Claude...');
     const contentResult = await generateRemixContentIdeas(channels, config, analysis);
     const contentIdeas = contentResult.success ? contentResult.ideas : [];
 

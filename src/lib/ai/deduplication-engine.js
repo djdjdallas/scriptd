@@ -19,8 +19,6 @@ export function analyzeRepetition(scriptContent, options = {}) {
     ...options
   };
 
-  console.log('🔍 Analyzing content repetition...');
-
   // Split into sections
   const sections = splitIntoSections(scriptContent);
 
@@ -38,12 +36,6 @@ export function analyzeRepetition(scriptContent, options = {}) {
 
   // Generate suggestions
   const suggestions = generateDeduplicationSuggestions(analysis, config.maxRepetitions);
-
-  console.log('📊 Repetition analysis complete:', {
-    totalRepetitions: metrics.totalRepetitions,
-    uniqueItems: metrics.uniqueItems,
-    worstOffenders: metrics.worstOffenders.slice(0, 3)
-  });
 
   return {
     analysis,
@@ -531,8 +523,6 @@ export function applyDeduplication(scriptContent, suggestions, options = {}) {
   let modifiedScript = scriptContent;
   let changeLog = [];
 
-  console.log(`📝 Applying ${suggestions.length} deduplication suggestions...`);
-
   suggestions.forEach(suggestion => {
     if (suggestion.priority === 'high' || config.autoReplace) {
       const change = applySingleSuggestion(modifiedScript, suggestion, config);
@@ -542,8 +532,6 @@ export function applyDeduplication(scriptContent, suggestions, options = {}) {
       }
     }
   });
-
-  console.log(`  ✓ Applied ${changeLog.length} deduplication changes`);
 
   return {
     content: modifiedScript,

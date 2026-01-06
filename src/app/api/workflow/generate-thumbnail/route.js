@@ -22,9 +22,8 @@ async function generateThumbnailFallback(prompt) {
     });
     
     return response.content[0].text;
-  } catch (error) {
-    console.error('Claude API fallback error:', error);
-    throw error;
+  } catch (err) {
+    throw err;
   }
 }
 
@@ -62,7 +61,6 @@ Make it eye-catching, clickable, and relevant to the content.`;
     try {
       response = await generateWithAI(prompt, 'claude-3-haiku');
     } catch (error) {
-      console.log('Primary AI service failed, trying fallback:', error.message);
       response = await generateThumbnailFallback(prompt);
     }
     

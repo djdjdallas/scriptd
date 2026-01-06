@@ -18,8 +18,6 @@ export async function POST(request) {
     requestData = await request.json();
     const { title, type, targetAudience, tone, length, existingPoints } = requestData;
 
-    console.log('Generating recommendations for:', { title, type, targetAudience, tone, length });
-
     if (!title || !type) {
       return NextResponse.json({ 
         error: 'Title and type are required' 
@@ -71,8 +69,7 @@ Return ONLY a JSON array of 5-7 specific content points as strings. Each point s
     });
 
     const responseText = response.content[0].text;
-    console.log('Claude response:', responseText);
-    
+
     // Try to parse the response as JSON
     let recommendations;
     try {
@@ -84,8 +81,7 @@ Return ONLY a JSON array of 5-7 specific content points as strings. Each point s
         // Try parsing the whole response
         recommendations = JSON.parse(responseText);
       }
-    } catch (parseError) {
-      console.log('Failed to parse as JSON, extracting lines:', parseError.message);
+    } catch {
       // If parsing fails, try to extract bullet points or lines
       recommendations = responseText
         .split('\n')
@@ -99,8 +95,6 @@ Return ONLY a JSON array of 5-7 specific content points as strings. Each point s
     if (!Array.isArray(recommendations)) {
       recommendations = [recommendations].flat().filter(r => r && typeof r === 'string');
     }
-
-    console.log('Final recommendations:', recommendations);
 
     return NextResponse.json({
       recommendations: recommendations.slice(0, 7), // Limit to 7 recommendations

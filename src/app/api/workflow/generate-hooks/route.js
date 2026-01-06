@@ -71,10 +71,9 @@ export async function POST(request) {
 
         if (workflowResearch && workflowResearch.length > 0) {
           sources = workflowResearch;
-          console.log(`✅ Loaded ${sources.length} research sources for hook generation`);
         }
-      } catch (error) {
-        console.warn('Could not load research sources:', error);
+      } catch {
+        // Could not load research sources, continue without them
       }
     }
 
@@ -185,7 +184,6 @@ Return ONLY valid JSON array of exactly 8 hook objects (no markdown, no code blo
       // Try primary AI service first
       hooks = await generateStructuredData(prompt, 'claude-3-haiku');
     } catch (error) {
-      console.log('Primary AI service failed, trying Sonnet 4.5 fallback:', error.message);
       hooks = await generateHooksFallback(prompt);
     }
 
@@ -193,12 +191,6 @@ Return ONLY valid JSON array of exactly 8 hook objects (no markdown, no code blo
     if (!Array.isArray(hooks) || hooks.length === 0) {
       throw new Error('No hooks generated');
     }
-
-    console.log('✅ Hooks generated with research context:', {
-      hooksCount: hooks.length,
-      sourcesUsed: sources.length,
-      hasResearch: sources.length > 0
-    });
 
     const creditsUsed = 1;
 
@@ -224,7 +216,6 @@ Return ONLY valid JSON array of exactly 8 hook objects (no markdown, no code blo
       );
 
       if (!deductionResult.success) {
-        console.error('Failed to deduct credits:', deductionResult.error);
         return NextResponse.json(
           {
             error: deductionResult.error || 'Failed to deduct credits',
@@ -234,8 +225,6 @@ Return ONLY valid JSON array of exactly 8 hook objects (no markdown, no code blo
           { status: 402 }
         );
       }
-
-      console.log('✅ Credits deducted:', deductionResult);
     }
 
     return NextResponse.json({

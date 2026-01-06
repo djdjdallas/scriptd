@@ -26,11 +26,7 @@ export async function POST(request) {
     
     // Check if channel has enhanced voice profile
     const hasEnhancedProfile = channel.voice_profile?.linguisticFingerprints;
-    
-    if (!hasEnhancedProfile) {
-      console.log(`Channel ${channelId} missing enhanced profile, will use defaults`);
-    }
-    
+
     // Generate script with enhanced voice patterns
     const scriptResult = await generateScriptWithEnhancedVoice(channel, topic, {
       tier,

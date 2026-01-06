@@ -70,8 +70,6 @@ export async function POST(request) {
           trends || []
         );
 
-    console.log(`Generated ${useFactualGeneration ? 'factual' : 'creative'} video ideas`);
-    
     // Track usage if successful
     if (ideas.success) {
       await supabase

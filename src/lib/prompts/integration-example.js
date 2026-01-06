@@ -44,8 +44,7 @@ async function handleScriptGeneration(req, res) {
       }
     });
     
-  } catch (error) {
-    console.error('Script generation error:', error);
+  } catch {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -276,22 +275,18 @@ module.exports = {
 
 // Quick test example
 if (require.main === module) {
-  console.log("Testing integration examples...\n");
-  
   // Test the workflow
   const workflow = new YouTubeScriptWorkflow({
     tone: 'professional',
     audience: 'tech enthusiasts'
   });
-  
+
   workflow.generatePrompt("The Rise of AI in 2025", 10)
-    .then(result => {
-      console.log("✅ Prompt generated successfully");
-      console.log("Keywords:", result.metadata.keywords);
-      console.log("Title suggestions:", workflow.getTitleSuggestions().map(t => t.title));
-      console.log("SEO metadata:", workflow.getSEOMetadata());
+    .then(() => {
+      workflow.getTitleSuggestions();
+      workflow.getSEOMetadata();
     })
     .catch(error => {
-      console.error("❌ Error:", error.message);
+      console.error("Error:", error.message);
     });
 }

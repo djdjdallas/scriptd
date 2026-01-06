@@ -46,9 +46,7 @@ export async function fetchWebContent(url, options = {}) {
         if (jinaResult.success) {
           return jinaResult;
         }
-        console.warn(`⚠️ Jina fetch failed for ${url}, trying fallback`);
-      } catch (jinaError) {
-        console.warn(`⚠️ Jina error for ${url}:`, jinaError.message);
+      } catch {
       }
     }
 
@@ -292,14 +290,9 @@ export async function fetchMultipleUrls(urls, options = {}) {
   const total = urls.length;
   let completed = 0;
 
-  console.log(`📚 Fetching content from ${total} URLs (max ${maxConcurrent} concurrent)...`);
-
   // Process in batches to avoid overwhelming the service
   for (let i = 0; i < urls.length; i += maxConcurrent) {
     const batch = urls.slice(i, i + maxConcurrent);
-    const batchStartTime = Date.now();
-
-    console.log(`  📦 Batch ${Math.floor(i / maxConcurrent) + 1}: Processing ${batch.length} URLs...`);
 
     const promises = batch.map(url =>
       fetchWebContent(url, {
@@ -316,10 +309,6 @@ export async function fetchMultipleUrls(urls, options = {}) {
     );
 
     const batchResults = await Promise.allSettled(promises);
-    const batchDuration = Date.now() - batchStartTime;
-
-    let successCount = 0;
-    let failCount = 0;
 
     batchResults.forEach((result) => {
       if (result.status === 'fulfilled') {
@@ -328,28 +317,10 @@ export async function fetchMultipleUrls(urls, options = {}) {
         // Only include if it has substantial content
         if (fetchResult.success && fetchResult.wordCount >= minWordCount) {
           results.push(fetchResult);
-          successCount++;
-        } else {
-          failCount++;
-          if (!fetchResult.success) {
-            console.warn(`    ⚠️ Failed: ${fetchResult.url} - ${fetchResult.error}`);
-          } else {
-            console.warn(`    ⚠️ Too short: ${fetchResult.url} - ${fetchResult.wordCount} words`);
-          }
         }
-      } else {
-        failCount++;
-        console.error(`    ❌ Promise rejected:`, result.reason);
       }
     });
-
-    console.log(`  ✅ Batch complete: ${successCount} success, ${failCount} failed (${batchDuration}ms)`);
   }
-
-  const totalWords = results.reduce((sum, r) => sum + r.wordCount, 0);
-  const avgWords = results.length > 0 ? Math.round(totalWords / results.length) : 0;
-
-  console.log(`📊 Fetch complete: ${results.length}/${total} URLs (${totalWords.toLocaleString()} words, avg ${avgWords} words/source)`);
 
   return results;
 }
@@ -387,7 +358,6 @@ export async function fetchWithRetry(url, options = {}) {
       }
 
       if (attempt <= maxRetries) {
-        console.log(`  🔄 Retry ${attempt}/${maxRetries} for ${url} after ${retryDelay}ms...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
       }
 

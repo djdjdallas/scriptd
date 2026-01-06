@@ -1,4 +1,5 @@
 export const homepageMetadata = {
+  metadataBase: new URL("https://genscript.io"),
   title: "GenScript - AI YouTube Script Generator | 180% Faster Growth",
   description: "Join 69M+ YouTube creators using AI. Generate viral scripts, boost CTR by 35%, and achieve 5x productivity. Trusted by 2,500+ creators. Start free.",
   keywords: [

@@ -56,8 +56,6 @@ function calculateCreditsForDuration(durationInSeconds, model = 'claude-3-5-haik
 // Removed fallback script generator - now we return errors instead of generating bad templates
 
 export async function POST(request) {
-  console.log('🚀 === SCRIPT GENERATION API CALLED ===');
-
   try {
     // Check for Edge Function authentication FIRST
     const edgeFunctionUserId = request.headers.get('X-User-Id');
@@ -73,10 +71,6 @@ export async function POST(request) {
       const expectedSecret = process.env.EDGE_FUNCTION_SECRET || 'gpM1FDtEM2RXDu6pXQa0dMOWGiP4F3hlmhWVQWUmV2o=';
 
       if (edgeFunctionSecret === expectedSecret) {
-        console.log('✅ Edge Function authentication successful');
-        console.log('   User ID:', edgeFunctionUserId);
-        console.log('   Job ID:', edgeFunctionJobId);
-
         // Create a user object with the ID from the Edge Function
         user = { id: edgeFunctionUserId };
 
@@ -88,9 +82,7 @@ export async function POST(request) {
           process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         );
       } else {
-        console.error('❌ Edge Function authentication failed: Invalid secret');
-        console.error('   Expected:', expectedSecret);
-        console.error('   Received:', edgeFunctionSecret);
+        console.error('Edge Function authentication failed: Invalid secret');
         return NextResponse.json({ error: 'Unauthorized', details: 'Invalid Edge Function secret' }, { status: 401 });
       }
     } else {
@@ -122,7 +114,7 @@ export async function POST(request) {
       workflowId // Add workflow ID to link the script
     } = await request.json();
 
-    // ⚠️ CRITICAL FIX: Format JSON audience data to prevent token limit errors
+    // Format JSON audience data to prevent token limit errors
     // If targetAudience is a large JSON object, convert it to token-efficient text format
     if (targetAudience && typeof targetAudience === 'string') {
       try {
@@ -132,9 +124,6 @@ export async function POST(request) {
 
           // Check if it's a comprehensive audience analysis object
           if (audienceObj && (audienceObj.demographic_profile || audienceObj.psychographic_analysis)) {
-            console.log('⚠️ Detected large JSON audience object, formatting to text...');
-            console.log('Original size:', targetAudience.length, 'characters');
-
             // Format to compact text representation
             const sections = [];
 
@@ -181,28 +170,12 @@ export async function POST(request) {
             }
 
             targetAudience = sections.join('\n');
-            console.log('✅ Formatted size:', targetAudience.length, 'characters');
-            console.log('Reduction:', Math.round((1 - targetAudience.length / JSON.stringify(audienceObj).length) * 100), '%');
           }
         }
       } catch (e) {
         // Not JSON or parsing failed, use as-is
-        console.log('Target audience is not JSON, using as-is');
       }
     }
-
-    // Debug: Log sponsor data received
-    console.log('📢 === SPONSOR DATA RECEIVED IN API ===');
-    console.log('Sponsor data:', {
-      hasSponsor: !!sponsor,
-      sponsorName: sponsor?.sponsor_name,
-      sponsorProduct: sponsor?.sponsor_product,
-      sponsorCTA: sponsor?.sponsor_cta,
-      placement: sponsor?.placement_preference,
-      duration: sponsor?.sponsor_duration,
-      keyPointsCount: sponsor?.sponsor_key_points?.length || 0,
-      fullSponsor: sponsor
-    });
 
     // Get user tier from database
     const { data: userProfile } = await supabase
@@ -221,7 +194,6 @@ export async function POST(request) {
     const accessCheck = validateUserAccess(user.id, userTier, durationMinutes, model);
 
     if (!accessCheck.allowed) {
-      console.log(`❌ Access denied for user ${user.id} (tier: ${accessCheck.normalizedTier}):`, accessCheck.errors);
       return NextResponse.json({
         error: 'Access denied',
         details: accessCheck.errors,
@@ -229,51 +201,19 @@ export async function POST(request) {
         limits: accessCheck.limits,
       }, { status: 403 });
     }
-
-    console.log(`✅ Access granted for user ${user.id} (tier: ${accessCheck.normalizedTier})`);
     // ===== END NEW CODE =====
 
     // Check if user has bypass_credits enabled (already fetched with userProfile)
     const bypassCredits = userProfile?.bypass_credits || process.env.BYPASS_CREDIT_CHECKS === 'true';
 
-    // Debug: Log what research data we received
-    console.log('=== RESEARCH DATA RECEIVED ===');
-    // Log research metadata without overwhelming source_content
-    const researchSummary = research?.sources?.map(source => ({
-      id: source.id,
-      type: source.source_type,
-      url: source.source_url?.substring(0, 60) + '...',
-      title: source.source_title?.substring(0, 80),
-      contentLength: source.source_content?.length || 0,
-      hasContent: !!source.source_content,
-      relevance: source.relevance,
-      verified: source.fact_check_status === 'verified'
-    }));
-    console.log('Research data received:', {
-      hasResearch: !!research,
-      sourcesCount: research?.sources?.length || 0,
-      sources: researchSummary?.slice(0, 3) // Log first 3 sources metadata only
-    });
-
     // SKIP ContentFetcher for web sources - Claude already fetched everything!
     if (research?.sources && research.sources.length > 0) {
-      console.log('📊 === VALIDATING RESEARCH CONTENT ===');
-      console.log('Research provider:', research.provider || 'unknown');
-
       // Only use ContentFetcher for uploaded documents (not web sources)
       const uploadedDocs = research.sources.filter(s =>
         s.source_type === 'document' || s.source_type === 'upload'
       );
 
-      const webSources = research.sources.filter(s =>
-        s.source_type === 'web' || s.source_type === 'synthesis'
-      );
-
-      console.log(`Web sources (already fetched by Claude): ${webSources.length}`);
-      console.log(`Uploaded documents (need processing): ${uploadedDocs.length}`);
-
       if (uploadedDocs.length > 0) {
-        console.log(`📄 Processing ${uploadedDocs.length} uploaded documents with ContentFetcher`);
         try {
           const fetcher = new ContentFetcher(1500);
           // Note: processUploadedDocuments method would need to be implemented
@@ -291,25 +231,19 @@ export async function POST(request) {
 
           // If research was saved to database, update it with processed documents
           if (research.id && processedDocs.length > 0) {
-            console.log('📝 Updating research in database with processed documents');
             const { error: updateError } = await supabase
               .from('script_research')
               .update({ sources: research.sources })
               .eq('id', research.id);
 
-            if (updateError) {
-              console.error('Failed to update research with processed documents:', updateError);
-            } else {
+            if (!updateError) {
               // Verify the update
-              const verifiedSources = await fetcher.verifyDatabaseUpdate(supabase, research.id);
-              console.log('✅ Research sources verified in database');
+              await fetcher.verifyDatabaseUpdate(supabase, research.id);
             }
           }
         } catch (error) {
-          console.error('Document processing failed, continuing:', error);
+          // Document processing failed, continuing
         }
-      } else {
-        console.log('✅ No document processing needed - all content already fetched by Claude');
       }
     }
 
@@ -319,7 +253,6 @@ export async function POST(request) {
     // Perform additional research if no sources provided
     let enhancedResearch = research;
     if ((!verifiedSources.length && !starredSources.length) && (title || topic)) {
-      console.log('No research sources provided, performing automatic research...');
       const autoResearch = await ResearchService.performResearch({
         query: title || topic,
         topic: topic,
@@ -383,41 +316,14 @@ export async function POST(request) {
           : 0
       };
 
-      console.log('📊 === CONTENT QUALITY VALIDATION ===');
-      console.log('Stats:', stats);
-
       // Enhanced word count analysis
       const totalWords = sources.reduce((sum, s) => {
         const content = s.source_content || '';
         return sum + content.split(/\s+/).filter(w => w.length > 0).length;
       }, 0);
 
-      console.log('\n=== WORD COUNT ANALYSIS ===');
-      console.log(`Total Words in Research: ${totalWords.toLocaleString()}`);
-      console.log(`Average Words per Source: ${Math.round(totalWords / sources.length)}`);
-
-      // Per-source breakdown
-      console.log('\n=== PER-SOURCE BREAKDOWN ===');
-      sources.forEach((source, idx) => {
-        const content = source.source_content || '';
-        const wordCount = content.split(/\s+/).filter(w => w.length > 0).length;
-        console.log(`Source ${idx + 1}: ${source.source_title || source.source_url}`);
-        console.log(`  Length: ${content.length} chars | ${wordCount} words`);
-        console.log(`  Preview: "${content.substring(0, 100)}..."`);
-        if (content.length < 500) {
-          console.warn(`  ⚠️ WARNING: Very short content (${content.length} chars)`);
-        }
-      });
-
       // Calculate research depth vs target
       const targetMinutes = Math.ceil(duration / 60);
-      const estimatedMinutes = totalWords / 150; // 150 words per minute speech
-      const researchRatio = estimatedMinutes / targetMinutes;
-
-      console.log('\n=== RESEARCH ADEQUACY ===');
-      console.log(`Target Script: ${targetMinutes} minutes`);
-      console.log(`Research Content: ${estimatedMinutes.toFixed(1)} minutes worth`);
-      console.log(`Ratio: ${researchRatio.toFixed(2)}x (${researchRatio >= 2 ? '✅ Good' : researchRatio >= 1 ? '⚠️ Adequate' : '❌ Too Thin'})`);
 
       // Check for high-quality research that bypasses word count requirements
       const hasSynthesis = sources.some(s => s.source_type === 'synthesis');
@@ -425,21 +331,6 @@ export async function POST(request) {
       const starredSources = sources.filter(s => s.is_starred);
 
       const hasQualityResearch = hasSynthesis && (verifiedSources.length >= 2 || starredSources.length >= 2);
-
-      if (hasQualityResearch) {
-        console.log('\n✅ === QUALITY BYPASS ACTIVATED ===');
-        console.log(`Has synthesis: ${hasSynthesis}`);
-        console.log(`Verified sources: ${verifiedSources.length}`);
-        console.log(`Starred sources: ${starredSources.length}`);
-        console.log('Skipping strict word count validation due to high-quality research');
-      } else if (totalWords < 1000) {
-        console.error('\n❌ CRITICAL: Research content is TOO THIN (<1000 words)');
-        console.error('   Claude will struggle to generate quality content from this.');
-        console.error('   Expected: At least 2000+ words of research for quality scripts');
-      } else if (totalWords < targetMinutes * 100) {
-        console.warn(`\n⚠️ WARNING: Research (${totalWords} words) may be thin for ${targetMinutes}-min script`);
-        console.warn(`   Recommend: At least ${targetMinutes * 100} words for best results`);
-      }
 
       // Quality thresholds - UPDATED to properly handle web search + Perplexity sources
       const MIN_SUBSTANTIVE_SOURCES = 3; // Sources with real content (synthesis or 500+ chars)
@@ -499,24 +390,13 @@ export async function POST(request) {
         return content.includes('Source found via web search. Page last updated:') && content.length < 100;
       };
 
-      const originalCount = research.sources.length;
       research.sources = research.sources.filter(s =>
         s.source_content &&
         s.source_content.length > 200 && // Must have at least 200 chars
         !isWebSearchSnippet(s)
       );
 
-      console.log(`🧹 Filtered research sources: ${originalCount} → ${research.sources.length} (removed ${originalCount - research.sources.length} empty/snippet sources)`);
-
       if (!validation.isValid) {
-        console.error('❌ Content quality validation failed:', validation.errors);
-        console.log('Source details:', research.sources.map(s => ({
-          title: s.source_title,
-          url: s.source_url,
-          contentLength: s.source_content?.length || 0,
-          fetchStatus: s.fetch_status
-        })));
-
         // Return error WITHOUT charging credits
         return NextResponse.json({
           error: 'Insufficient content for script generation',
@@ -530,10 +410,6 @@ export async function POST(request) {
           }))
         }, { status: 422 }); // 422 Unprocessable Entity
       }
-
-      console.log('✅ Content quality validation passed');
-    } else {
-      console.warn('⚠️ No research sources provided, relying on auto-generation');
     }
 
     // Use targetDuration from summary if available, otherwise calculate from content points
@@ -542,8 +418,6 @@ export async function POST(request) {
 
     // ENHANCED RESEARCH VALIDATION FOR 35+ MINUTE SCRIPTS
     if (totalMinutes >= 35 && research?.sources && research.sources.length > 0) {
-      console.log('📊 === ENHANCED RESEARCH VALIDATION (35+ MIN) ===');
-
       const { validateResearchForDuration, calculateResearchScore } =
         require('@/lib/script-generation/research-validator');
 
@@ -558,10 +432,6 @@ export async function POST(request) {
       );
 
       if (!researchValidation.isAdequate) {
-        console.error('❌ Insufficient research for long-form content (35+ minutes)');
-        console.error('Current:', researchValidation.current);
-        console.error('Required:', researchValidation.requirements);
-
         return NextResponse.json({
           error: 'Insufficient research for long-form content',
           details: `Your ${totalMinutes}-minute script requires more comprehensive research to maintain quality throughout.`,
@@ -572,10 +442,6 @@ export async function POST(request) {
           adequacyPercent: Math.round(researchValidation.adequacyPercent)
         }, { status: 422 }); // 422 Unprocessable Entity
       }
-
-      console.log(`✅ Research validation passed for ${totalMinutes}-minute script`);
-      console.log(`   Adequacy: ${Math.round(researchValidation.adequacyPercent)}%`);
-      console.log(`   Score: ${researchValidation.score.toFixed(2)}`);
     }
 
     let script = '';
@@ -608,8 +474,6 @@ export async function POST(request) {
         })();
 
         if (needsChunking) {
-          console.log(`Using chunked generation for ${totalMinutes}-minute script (${chunkConfig.chunks} chunks)`);
-
           // Store all content points for chunk-specific distribution
           const allContentPoints = contentPoints?.points || [];
           const pointsPerChunk = Math.ceil(allContentPoints.length / chunkConfig.chunks);
@@ -617,7 +481,6 @@ export async function POST(request) {
           // GENERATE COMPREHENSIVE OUTLINE for 30+ minute scripts
           let comprehensiveOutline = null;
           if (totalMinutes >= 30) {
-            console.log('📝 Generating comprehensive outline for entire video (30+ minutes)...');
             comprehensiveOutline = await generateComprehensiveOutline({
               title,
               topic,
@@ -633,37 +496,19 @@ export async function POST(request) {
             });
 
             if (comprehensiveOutline) {
-              console.log('✅ Comprehensive outline generated successfully');
-              // Save outline for debugging
-              const outlineLog = JSON.stringify(comprehensiveOutline, null, 2);
-              console.log('📋 Outline structure:', outlineLog.substring(0, 500) + '...');
-
               // PRE-GENERATION VALIDATION: Ensure outline matches expectations
               const expectedTopics = allContentPoints.map(p => p.title || p.name || '').filter(t => t);
-              const preValidation = validateOutlineBeforeGeneration(
+              validateOutlineBeforeGeneration(
                 comprehensiveOutline,
                 title,
                 expectedTopics
               );
-
-              if (!preValidation.passed) {
-                console.error('❌ Outline validation failed:');
-                preValidation.issues.forEach(issue => {
-                  console.error(`  ${issue.severity === 'critical' ? '🚨' : '⚠️'} ${issue.message}`);
-                });
-                // Continue anyway but log the issues
-              } else {
-                console.log('✅ Outline passed pre-generation validation');
-              }
-            } else {
-              console.log('⚠️ Outline generation failed, falling back to content plan');
             }
           }
 
           // GENERATE CONTENT PLAN as fallback for <30 min or if outline fails
           let contentPlan = null;
           if (!comprehensiveOutline && allContentPoints.length > 0) {
-            console.log('📋 Creating content distribution plan...');
             contentPlan = await generateContentPlan({
               title,
               topic,
@@ -673,12 +518,6 @@ export async function POST(request) {
               apiKey: process.env.ANTHROPIC_API_KEY,
               model: actualModel
             });
-
-            if (contentPlan && contentPlan.chunks) {
-              console.log('✅ Content plan created with explicit chunk assignments');
-            } else {
-              console.log('⚠️ Content planning failed, using mechanical distribution');
-            }
           }
 
           // Generate chunks with full context
@@ -700,21 +539,14 @@ export async function POST(request) {
           });
 
           const scriptChunks = [];
-          
-          for (let i = 0; i < chunkPrompts.length; i++) {
-            console.log(`Generating chunk ${i + 1}/${chunkPrompts.length}...`);
 
+          for (let i = 0; i < chunkPrompts.length; i++) {
             let chunkScript = '';
             let retryCount = 0;
-            const maxRetries = SCRIPT_CONFIG.maxRetries; // UPDATED: Use config (1 instead of 2)
+            const maxRetries = SCRIPT_CONFIG.maxRetries;
 
-            // Calculate per-chunk minimum with 10% buffer to account for:
-            // 1. Stitching losses (headers/meta-commentary removed)
-            // 2. Ensuring final script exceeds 80% target even after trimming
-            // Do NOT apply quality bypass here - that's only for final validation
+            // Calculate per-chunk minimum with 10% buffer
             const minWordsPerChunk = Math.ceil((totalMinutes / chunkConfig.chunks) * SCRIPT_CONFIG.wordsPerMinute * 1.10);
-
-            console.log(`📊 Chunk targets: ${minWordsPerChunk} words per chunk (${totalMinutes / chunkConfig.chunks} min × ${SCRIPT_CONFIG.wordsPerMinute} WPM × 1.10 buffer)`);
 
             // Retry loop for short chunks
             while (retryCount <= maxRetries) {
@@ -813,9 +645,8 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
                 if (chunkScript) {
                   // Check word count
                   let wordCount = chunkScript.split(/\s+/).length;
-                  console.log(`Chunk ${i + 1} word count: ${wordCount} (min: ${minWordsPerChunk})`);
 
-                  // IMPROVED: Multi-tier retry strategy for short chunks
+                  // Multi-tier retry strategy for short chunks
                   if (wordCount < minWordsPerChunk && retryCount <= maxRetries) {
                     // Calculate chunk-specific content points (not all points!)
                     const chunkSpecificPoints = allContentPoints.slice(
@@ -825,8 +656,6 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
 
                     // Attempt 1 (retryCount = 0): Intelligent expansion with 120% target
                     if (retryCount === 0) {
-                      console.log(`📝 Chunk ${i + 1} short (${wordCount}/${minWordsPerChunk}), attempting intelligent expansion (120% target)...`);
-
                       try {
                         // Create chunk info for expansion
                         const chunkInfo = {
@@ -852,11 +681,9 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
                         if (expandedChunk && expandedChunk !== chunkScript) {
                           chunkScript = expandedChunk;
                           wordCount = chunkScript.split(/\s+/).length;
-                          console.log(`✅ Chunk ${i + 1} expanded to ${wordCount} words (${Math.round((wordCount / minWordsPerChunk) * 100)}% of target)`);
 
                           // If still short, try second expansion
                           if (wordCount < minWordsPerChunk) {
-                            console.log(`📝 Still short, trying second expansion (150% target)...`);
                             const secondExpansion = await expandShortScript(
                               chunkScript,
                               chunkSpecificPoints,
@@ -870,14 +697,11 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
                             if (secondExpansion && secondExpansion !== chunkScript) {
                               chunkScript = secondExpansion;
                               wordCount = chunkScript.split(/\s+/).length;
-                              console.log(`✅ Second expansion: ${wordCount} words (${Math.round((wordCount / minWordsPerChunk) * 100)}% of target)`);
                             }
                           }
-                        } else {
-                          console.warn(`⚠️ Expansion didn't add content`);
                         }
                       } catch (expansionError) {
-                        console.error(`❌ Expansion failed for chunk ${i + 1}:`, expansionError.message);
+                        // Expansion failed, continue with original
                       }
                     }
 
@@ -885,10 +709,7 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
                     if (wordCount < minWordsPerChunk && retryCount < maxRetries) {
                       // If we're at 85% or more after expansion, accept it rather than retrying
                       const percentComplete = (wordCount / minWordsPerChunk) * 100;
-                      if (percentComplete >= 85) {
-                        console.log(`Chunk ${i + 1} at ${Math.round(percentComplete)}% after expansion - accepting to avoid regression`);
-                      } else {
-                        console.warn(`Chunk ${i + 1} still short (${wordCount}/${minWordsPerChunk} words) after ${retryCount === 0 ? 'expansion attempts' : 'previous retry'}, doing blind retry ${retryCount + 1}/${maxRetries}...`);
+                      if (percentComplete < 85) {
                         retryCount++;
                         continue; // Retry the chunk from scratch
                       }
@@ -902,7 +723,6 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
                   const minimumAcceptableWords = Math.floor(minWordsPerChunk * threshold);
 
                   if (wordCount < minimumAcceptableWords) {
-                    console.error(`❌ Chunk ${i + 1} rejected: ${wordCount} words (${Math.round((wordCount / minWordsPerChunk) * 100)}%) is below ${Math.round(threshold * 100)}% threshold (${minimumAcceptableWords} words minimum)`);
                     return NextResponse.json(
                       {
                         error: 'Script chunk too short',
@@ -955,23 +775,7 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
                     }
                   }
 
-                  // If violations found, log warning but don't reject (yet) - just track for analysis
-                  if (forbiddenTopics.length > 0) {
-                    console.warn(`⚠️ BOUNDARY VIOLATIONS in Chunk ${i + 1}:`);
-                    forbiddenTopics.forEach(violation => {
-                      console.warn(`  - "${violation.topic}" belongs to ${violation.belongsTo}`);
-                    });
-                    console.warn(`  Total violations: ${forbiddenTopics.length}`);
-
-                    // For now, just log - in future we could reject and retry if violations are severe
-                    // if (forbiddenTopics.some(v => v.severity === 'high')) {
-                    //   console.error(`❌ Chunk ${i + 1} rejected due to boundary violations`);
-                    //   retryCount++;
-                    //   continue;
-                    // }
-                  } else {
-                    console.log(`✅ Chunk ${i + 1} passed content boundary validation`);
-                  }
+                  // Boundary violations are tracked but don't reject
 
                   // OUTLINE VALIDATION: If we have a comprehensive outline, validate against it
                   if (comprehensiveOutline) {
@@ -982,33 +786,20 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
                     );
 
                     if (!outlineValidation.passed) {
-                      console.error(`❌ Chunk ${i + 1} FAILED outline validation!`);
-
                       // Critical failures require retry
                       if (outlineValidation.severity === 'critical' && retryCount < maxRetries) {
-                        console.error('🚨 Critical topic mismatch - chunk wrote about wrong topics!');
-                        console.error('Issues:', outlineValidation.issues);
                         retryCount++;
-                        console.log(`Retrying chunk ${i + 1} with stronger enforcement (attempt ${retryCount + 1})...`);
                         continue; // Retry the chunk
                       }
-
-                      // Log warnings but continue
-                      console.warn('⚠️ Outline validation warnings:', outlineValidation.issues);
-                    } else {
-                      console.log(`✅ Chunk ${i + 1} passed outline validation`);
                     }
                   }
 
                   // Chunk meets minimum threshold, add it
                   scriptChunks.push(chunkScript);
-                  console.log(`✅ Chunk ${i + 1} accepted with ${wordCount} words (${Math.round((wordCount / minWordsPerChunk) * 100)}% of target)`);
                   break; // Exit retry loop
                 } else {
-                  console.error(`Empty response for chunk ${i + 1}`);
                   if (retryCount < maxRetries) {
                     retryCount++;
-                    console.log(`Retrying chunk ${i + 1} (attempt ${retryCount + 1})...`);
                     continue;
                   }
                   return NextResponse.json(
@@ -1021,11 +812,8 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
                   );
                 }
               } else {
-                const errorText = await chunkResponse.text();
-                console.error(`Failed to generate chunk ${i + 1}:`, errorText);
                 if (retryCount < maxRetries) {
                   retryCount++;
-                  console.log(`Retrying chunk ${i + 1} due to API error (attempt ${retryCount + 1})...`);
                   continue;
                 }
                 return NextResponse.json(
@@ -1048,17 +836,6 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
             const finalValidation = validateCompleteScript(script, comprehensiveOutline);
 
             if (!finalValidation.passed) {
-              console.error('❌ Final script validation failed - missing required topics!');
-              finalValidation.overallIssues.forEach(issue => {
-                console.error(`  🚨 ${issue.message}`);
-              });
-
-              // Log coverage report
-              console.log('\n📊 Topic Coverage Report:');
-              Object.entries(finalValidation.topicCoverage).forEach(([topic, found]) => {
-                console.log(`  ${found ? '✅' : '❌'} ${topic}`);
-              });
-
               // Return error if critical topics are missing
               const missingCount = finalValidation.overallIssues.filter(i => i.type === 'missing_topic').length;
               if (missingCount > 0) {
@@ -1069,16 +846,12 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
                   retry: true
                 }, { status: 500 });
               }
-            } else {
-              console.log('✅ Final script passed complete outline validation');
             }
           }
 
           // Validate completeness - strict 80% minimum required
           const validation = LongFormScriptHandler.validateCompleteness(script, totalMinutes, SCRIPT_CONFIG.wordsPerMinute);
           if (!validation.isValid) {
-            console.warn('Script validation issues:', validation.issues);
-
             // STRICT: Always require 80% minimum word count, even with quality research
             // EXCEPTION: If deduplication removed content and we're close (>75%), allow it
             const deduplicationGrace = script.includes('removed duplicate') ||
@@ -1103,9 +876,7 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
             }
 
             // Quality research can only bypass minor issues (missing description/timestamps)
-            if (hasQualityResearch && (validation.hasPlaceholders || !validation.hasDescription || !validation.hasTimestamps)) {
-              console.log('⚠️ Minor validation issues detected, but proceeding due to quality research (length and tags are OK)');
-            } else if (!hasQualityResearch) {
+            if (!hasQualityResearch && (validation.hasPlaceholders || !validation.hasDescription || !validation.hasTimestamps)) {
               // Without quality research, all validation must pass
               return NextResponse.json({
                 error: 'Script generation incomplete',
@@ -1114,10 +885,9 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
               }, { status: 500 });
             }
           }
-          
+
         } else {
           // Single generation for shorter scripts
-          console.log(`Using single generation for ${totalMinutes}-minute script`);
           const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {
@@ -1127,20 +897,7 @@ Example: topic keyword1, topic keyword2, specific term1, specific term2, industr
             },
             body: JSON.stringify({
               model: actualModel,
-            max_tokens: (() => {
-              // CRITICAL FIX: Use maximum tokens to ensure completion
-              const maxTokenLimit = 8192;
-
-              const minutes = Math.ceil(totalDuration / 60);
-              const targetScriptWords = minutes * SCRIPT_CONFIG.wordsPerMinute;
-
-              console.log(`📊 Token allocation: Setting to MAXIMUM ${maxTokenLimit} tokens to ensure Tags section completion`);
-              console.log(`   Target script: ${targetScriptWords} words (${minutes} min × ${SCRIPT_CONFIG.wordsPerMinute} wpm)`);
-              console.log(`   ⚠️ CRITICAL: Script MUST include Description and Tags sections`);
-
-              // Always use maximum to ensure completion
-              return maxTokenLimit;
-            })(),
+            max_tokens: 8192,
             temperature: 0.7,
             system: `You are an expert YouTube scriptwriter who MUST complete ALL required sections.
 
@@ -1192,16 +949,6 @@ YOU WILL BE REJECTED for:
               {
                 role: 'user',
                 content: (() => {
-                  console.log('\n📝 === CALLING OPTIMIZED PROMPT GENERATOR ===');
-                  console.log('Voice Profile provided:', !!voiceProfile);
-                  console.log('Target Audience provided:', !!targetAudience);
-                  if (voiceProfile) {
-                    console.log('Voice Profile name:', voiceProfile.profile_name || voiceProfile.name || 'Unknown');
-                  }
-                  if (targetAudience) {
-                    console.log('Target Audience value:', targetAudience);
-                  }
-
                   // Use optimized generator for better prompts with full workflow context
                   const optimizedResult = generateOptimizedScript({
                     topic: title,
@@ -1220,10 +967,6 @@ YOU WILL BE REJECTED for:
                     tone: tone
                   });
 
-                  console.log('✅ Optimized prompt generator completed');
-                  console.log('Result has error:', !!optimizedResult.error);
-                  console.log('Result has prompt:', !!optimizedResult.prompt);
-                  
                   if (optimizedResult.error) {
                     // Fallback to original prompt if error
                     return `Create a ${type === 'outline' ? 'detailed outline' : 'complete script'} for a YouTube video.
@@ -1341,7 +1084,6 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
             script = claudeData.content?.[0]?.text || '';
             
             if (!script) {
-              console.error('Empty Claude response - no script generated');
               return NextResponse.json(
                 {
                   error: 'Script generation failed',
@@ -1366,14 +1108,7 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
               /Would you like me to continue/i
             ];
             
-            const hasIssues = continuationPatterns.some(pattern => pattern.test(script));
-            if (hasIssues) {
-              console.error('❌ Script contains continuation/placeholder text - regenerating may be needed');
-              // Could potentially trigger a regeneration here
-            }
           } else {
-            const errorText = await claudeResponse.text();
-            console.error('Claude API error response:', errorText);
             return NextResponse.json(
               {
                 error: 'Script generation failed',
@@ -1397,7 +1132,6 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       }
     } else {
       // No Claude API key
-      console.error('No Claude API key configured');
       return NextResponse.json(
         {
           error: 'Configuration error',
@@ -1409,11 +1143,8 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
     }
 
     // Validate script before charging credits
-    console.log('=== VALIDATING GENERATED SCRIPT ===');
-
     // Basic validation
     if (!script || script.length < 100) {
-      console.error('Script validation failed: Too short or empty');
       return NextResponse.json(
         {
           error: 'Script generation failed',
@@ -1440,29 +1171,9 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
                     !tagContent.includes('...') &&    // No ellipsis placeholders
                     tagsList.length >= 10; // At least 10 real tags (lowered threshold for flexibility)
 
-    // Debug logging for tags validation
-    if (tagsMatch) {
-      console.log('📝 Tags section found:', tagContent.substring(0, 200));
-      console.log('   Tag count:', tagsList.length);
-      console.log('   First 5 tags:', tagsList.slice(0, 5));
-    } else {
-      console.log('❌ No tags section found in script');
-      console.log('   Script ending preview:', script.substring(script.length - 500));
-    }
-
     const wordCount = script.split(/\s+/).length;
-    const expectedWords = Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute; // UPDATED: Use config
-    const percentComplete = Math.round((wordCount / expectedWords) * 100); // Calculate here, before using it
-
-    // More detailed validation logging
-    console.log('Script validation details:', {
-      wordCount,
-      expectedWords,
-      percentComplete,
-      hasDescription,
-      hasTags,
-      scriptLength: script.length
-    });
+    const expectedWords = Math.ceil(totalDuration / 60) * SCRIPT_CONFIG.wordsPerMinute;
+    const percentComplete = Math.round((wordCount / expectedWords) * 100);
 
     // Check for placeholder patterns - be more specific to avoid false positives
     const placeholderPatterns = [
@@ -1478,7 +1189,6 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
     const hasPlaceholders = placeholderPatterns.some(pattern => pattern.test(script));
 
     if (hasPlaceholders) {
-      console.error('Script validation failed: Contains placeholder text');
       return NextResponse.json(
         {
           error: 'Script generation incomplete',
@@ -1509,50 +1219,15 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       'Let\'s': (script.match(/Let's (?:examine|look|explore)/gi) || []).length,
       'Moving on': (script.match(/Moving on/gi) || []).length
     };
-    const hasRepetitiveTransitions = Object.entries(transitionOveruse).some(([phrase, count]) => {
-      if (count > 2) {
-        console.warn(`⚠️ Overused transition: "${phrase}" appears ${count} times`);
-        return true;
-      }
-      return false;
-    });
+    const hasRepetitiveTransitions = Object.entries(transitionOveruse).some(([phrase, count]) => count > 2);
 
-    // Log enhanced validation details
-    console.log('Enhanced quality checks:', {
-      hasHumanElements,
-      visualCueCount: visualCueMatches.length,
-      requiredVisuals: Math.floor(totalDuration / 90),
-      hasEnoughVisuals,
-      transitionOveruse,
-      hasRepetitiveTransitions
-    });
-
-    // Warn about quality issues but don't fail (these are improvements, not requirements)
-    if (!hasHumanElements) {
-      console.warn('⚠️ Script lacks human elements (quotes, expert opinions, personal impact)');
-    }
-    if (!hasEnoughVisuals) {
-      console.warn(`⚠️ Script has insufficient visual cues (${visualCueMatches.length} found, ${Math.floor(totalDuration / 90)} recommended)`);
-    }
-    if (hasRepetitiveTransitions) {
-      console.warn('⚠️ Script has repetitive transitions');
-    }
-
-    // UPDATED: Stricter thresholds - minimum 80% even with quality research
+    // Stricter thresholds - minimum 80% even with quality research
     const minWordThreshold = 0.80; // Always require 80% minimum
 
     // Quality bypass now requires BOTH quality research AND adequate length
     const qualityBypassActive = hasQualityResearch && percentComplete >= 80;
 
-    // Log quality bypass if active
-    if (qualityBypassActive) {
-      console.log(`✅ Quality bypass active: Accepting ${percentComplete}% (${wordCount}/${expectedWords} words) with high-quality research (${verifiedSources.length} verified, ${starredSources.length} starred sources)`);
-    }
-
     if (wordCount < expectedWords * minWordThreshold) {
-      console.error(`Script validation failed: Too short (${wordCount}/${expectedWords} words, ${percentComplete}% complete)`);
-      console.error(`Required threshold: ${Math.round(minWordThreshold * 100)}% (${Math.floor(expectedWords * minWordThreshold)} words)`);
-      console.error(`Has quality research: ${hasQualityResearch} (verified: ${verifiedSources.length}, starred: ${starredSources.length})`);
       return NextResponse.json(
         {
           error: 'Script generation incomplete',
@@ -1565,7 +1240,6 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
 
     // Tags section is now REQUIRED - no bypass
     if (!hasTags) {
-      console.error('Script validation failed: Missing required tags section');
       return NextResponse.json(
         {
           error: 'Script generation incomplete',
@@ -1578,7 +1252,6 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
 
     // Description is required but can be bypassed with quality research
     if (!hasDescription && !hasQualityResearch) {
-      console.error('Script validation failed: Missing required description section');
       return NextResponse.json(
         {
           error: 'Script generation incomplete',
@@ -1587,30 +1260,12 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
         },
         { status: 500 }
       );
-    } else if (!hasDescription && hasQualityResearch) {
-      console.warn('⚠️ Script missing description, but proceeding due to quality research');
     }
-
-    console.log('✅ Script validation passed:', {
-      wordCount,
-      expectedWords,
-      hasDescription,
-      hasTags,
-      hasPlaceholders: false
-    });
 
     // Handle credit deduction AFTER validation
     let deductResult = { success: true, cost: 0 };
 
     if (!bypassCredits) {
-      // Log credit calculation details
-      console.log('Credit calculation:', {
-        totalDuration,
-        model,
-        creditsUsed,
-        userId: user.id
-      });
-
       // Deduct credits using ServerCreditManager
       deductResult = await ServerCreditManager.deductCredits(
         supabase,
@@ -1623,10 +1278,7 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
         }
       );
 
-      console.log('Deduct result:', deductResult);
-
       if (!deductResult.success) {
-        console.error('Credit deduction failed:', deductResult);
         return NextResponse.json(
           {
             error: deductResult.error || 'Insufficient credits',
@@ -1636,35 +1288,25 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           { status: 402 }
         );
       }
-    } else {
-      console.log('Credits bypassed for user:', user.id);
     }
 
     // Get user's channel if it exists (now optional for scripts)
     let channelId = null;
-    
+
     // Try to get user's existing channel, but it's no longer required
     const { data: userChannel, error: channelError } = await supabase
       .from('channels')
       .select('id')
       .eq('user_id', user.id)
       .limit(1)
-      .maybeSingle(); // Use maybeSingle() instead of single() to avoid error when no channel exists
-    
+      .maybeSingle();
+
     if (userChannel?.id) {
       channelId = userChannel.id;
-      console.log('Using existing channel with ID:', channelId);
-    } else {
-      // No channel found - that's OK now, scripts can exist without a channel
-      console.log('No channel found for user, proceeding without channel (script will be channel-independent)');
     }
 
     // Save the script to the database (channel is now optional)
-    console.log('=== SCRIPT SAVE DEBUG ===');
-    console.log('Has channelId:', !!channelId, channelId);
-    console.log('Has script:', !!script, script?.substring(0, 100));
-    
-    if (script) {  // Only require script content, not channel
+    if (script) {
       try {
         // Extract title from script if not provided
         const scriptTitle = title || topic || 'Untitled Script';
@@ -1679,8 +1321,6 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           const words = topic.toLowerCase().split(/\s+/).filter(word => word.length > 3);
           tags.push(...words.slice(0, 5));
         }
-
-        console.log('Attempting to save script with title:', scriptTitle);
 
         // Create the script record (with optional channel_id)
         const { data: newScript, error: scriptError } = await supabase
@@ -1712,60 +1352,16 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           .single();
 
         if (scriptError) {
-          console.error('❌ Error saving script to database:', scriptError);
-          console.error('Script save failed with data:', {
-            channel_id: channelId,
-            user_id: user.id,
-            title: scriptTitle,
-            hasContent: !!script
-          });
-          // Don't fail the request if save fails, just log it
-          
-          // IMPORTANT: If script save fails, newScript will be null
-          // so research sources won't be saved either
-        } else if (!newScript || !newScript.id) {
-          console.error('❌ Script save returned no data or no ID!');
-          console.error('newScript value:', newScript);
-        } else {
-          console.log('✅ Script saved to database with ID:', newScript.id);
-          
+          console.error('Error saving script to database:', scriptError);
+          // Don't fail the request if save fails
+        } else if (newScript?.id) {
           // Save research sources to script_research table
-          // Use enhancedResearch if available (includes auto-generated sources), otherwise use original research
           const researchToSave = enhancedResearch || research;
-          
-          console.log('=== RESEARCH SAVE DEBUG ===');
-          console.log('Has newScript.id:', !!newScript?.id, newScript?.id);
-          console.log('Research to save:', {
-            hasResearch: !!researchToSave,
-            hasSources: !!researchToSave?.sources,
-            sourcesLength: researchToSave?.sources?.length || 0,
-            firstSource: researchToSave?.sources?.[0]
-          });
-          
+
           if (newScript.id && researchToSave?.sources && researchToSave.sources.length > 0) {
             try {
-              console.log('Attempting to save research sources for script:', newScript.id);
-              console.log('Research sources available:', researchToSave.sources.length);
-              console.log('Research is auto-generated:', !!enhancedResearch?.autoGenerated);
-              
-              // Use all sources from research (already selected by user or auto-generated)
               const sourcesToSave = researchToSave.sources;
-              
-              console.log('Sources to save:', sourcesToSave.map(s => ({
-                title: s.source_title,
-                url: s.source_url,
-                status: s.fact_check_status,
-                contentLength: s.source_content?.length || 0
-              })));
-              
-              // Log content status for debugging
-              const contentStats = {
-                total: sourcesToSave.length,
-                withContent: sourcesToSave.filter(s => s.source_content && s.source_content.length > 0).length,
-                substantialContent: sourcesToSave.filter(s => s.source_content && s.source_content.length > 100).length
-              };
-              console.log('📊 Content statistics before save:', contentStats);
-              
+
               // Prepare research data for script_research table
               const scriptResearchId = crypto.randomUUID();
               const scriptResearchData = {
@@ -1794,60 +1390,33 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
                   })) : null  // Use null if no fact checks
                 // Don't set created_at, let the database handle it
               };
-              
-              console.log('Inserting script research data:', {
-                id: scriptResearchData.id,
-                script_id: scriptResearchData.script_id,
-                sources_count: scriptResearchData.sources.length,
-                fact_checks_count: scriptResearchData.fact_checks.length
-              });
-              
-              // Log full data being inserted for debugging
-              console.log('Full script_research data to insert:', JSON.stringify(scriptResearchData, null, 2));
-              
+
               const { data: insertedData, error: researchError } = await supabase
                 .from('script_research')
                 .insert(scriptResearchData)
                 .select();
               
               if (researchError) {
-                console.error('❌ Error saving script research:', researchError);
-                console.error('Error details:', {
-                  message: researchError.message,
-                  details: researchError.details,
-                  hint: researchError.hint,
-                  code: researchError.code
-                });
-                console.error('Research data that failed:', JSON.stringify(scriptResearchData, null, 2));
-                
-                // Try alternative approach - save with minimal data to see what works
-                console.log('Attempting minimal save...');
+                console.error('Error saving script research:', researchError);
+
+                // Try alternative approach - save with minimal data
                 const minimalData = {
                   id: scriptResearchId,
                   script_id: newScript.id,
-                  sources: JSON.stringify(sourcesToSave), // Try as JSON string
+                  sources: JSON.stringify(sourcesToSave),
                   fact_checks: null
                 };
-                
-                const { data: minimalInsert, error: minimalError } = await supabase
+
+                await supabase
                   .from('script_research')
                   .insert(minimalData)
                   .select();
-                  
-                if (minimalError) {
-                  console.error('❌ Minimal save also failed:', minimalError);
-                } else {
-                  console.log('✅ Minimal save succeeded:', minimalInsert);
-                }
-              } else {
-                console.log(`✅ Successfully saved ${sourcesToSave.length} research sources to script_research table`);
-                console.log('Inserted data:', insertedData);
               }
-              
+
               // Also save individual sources if they came from enhancedResearch (auto-generated)
               if (enhancedResearch?.autoGenerated && enhancedResearch?.summary) {
                 // Save research summary as metadata
-                const { error: updateError } = await supabase
+                await supabase
                   .from('scripts')
                   .update({
                     metadata: {
@@ -1857,31 +1426,17 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
                     }
                   })
                   .eq('id', newScript.id);
-                  
-                if (updateError) {
-                  console.error('Error updating script with research summary:', updateError);
-                }
               }
             } catch (researchSaveError) {
-              console.error('❌ Exception while saving research sources:', researchSaveError);
-              console.error('Stack trace:', researchSaveError.stack);
+              console.error('Exception while saving research sources:', researchSaveError);
               // Don't fail the main request
             }
-          } else {
-            console.log('⚠️ Not saving research sources because:', {
-              hasScriptId: !!newScript?.id,
-              hasResearchToSave: !!researchToSave,
-              hasSources: !!researchToSave?.sources,
-              sourcesLength: researchToSave?.sources?.length || 0
-            });
           }
         }
 
         // Also save script to workflow_data if workflowId was provided
         if (workflowId && newScript?.id) {
           try {
-            console.log('Updating workflow_data with generated script...');
-
             // Get current workflow data
             const { data: currentWorkflow } = await supabase
               .from('script_workflows')
@@ -1914,8 +1469,6 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
 
             if (workflowUpdateError) {
               console.error('Error updating workflow_data:', workflowUpdateError);
-            } else {
-              console.log('✅ Script saved to workflow_data');
             }
           } catch (workflowError) {
             console.error('Exception updating workflow:', workflowError);
@@ -1923,31 +1476,14 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           }
         }
 
-        console.log('=== RETURNING RESPONSE ===');
-        console.log('Script ID being returned:', newScript?.id);
-        console.log('Script length:', script?.length);
-        console.log('Script preview:', script?.substring(0, 200) + '...');
-        console.log('Credits used:', creditsUsed);
-
-        // Ensure we're returning the script content
-        const response = {
+        return NextResponse.json({
           script: script,
           creditsUsed: creditsUsed,
           scriptId: newScript?.id || null
-        };
-
-        console.log('Response object keys:', Object.keys(response));
-        console.log('Response has script:', !!response.script);
-        console.log('Response has scriptId:', !!response.scriptId);
-
-        return NextResponse.json(response);
+        });
       } catch (saveError) {
         console.error('Error saving script:', saveError);
         // Still return the script even if save fails
-        console.log('Returning script despite save error');
-        console.log('Script content available:', !!script);
-        console.log('Script length:', script?.length);
-
         return NextResponse.json({
           script: script,
           creditsUsed: creditsUsed,
@@ -1957,10 +1493,6 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       }
     } else {
       // No script generated
-      console.warn('Script not generated:', { 
-        hasScript: !!script 
-      });
-      
       return NextResponse.json({ 
         script: script || '',
         creditsUsed,

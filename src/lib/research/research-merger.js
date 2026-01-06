@@ -17,8 +17,6 @@ async function mergeResearchSources(webResearch, userDocuments, options = {}) {
     maxSources = 50
   } = options;
 
-  console.log(`📚 Merging research: ${webResearch.length} web sources + ${userDocuments.length} documents`);
-
   // 1. Extract and normalize all sources
   const webSources = normalizeWebSources(webResearch);
   const docSources = normalizeDocumentSources(userDocuments);
@@ -27,7 +25,6 @@ async function mergeResearchSources(webResearch, userDocuments, options = {}) {
   let duplicates = [];
   if (removeDuplicates) {
     duplicates = findDuplicateContent(webSources, docSources);
-    console.log(`🔍 Found ${duplicates.length} potential duplicates`);
   }
 
   // 3. Merge and deduplicate
@@ -49,8 +46,6 @@ async function mergeResearchSources(webResearch, userDocuments, options = {}) {
 
   // 7. Generate statistics
   const stats = generateMergeStats(webSources, docSources, duplicates, final);
-
-  console.log(`✅ Merge complete: ${final.length} sources (removed ${duplicates.length} duplicates)`);
 
   return {
     sources: final,
@@ -237,8 +232,6 @@ function deduplicateAndMerge(webSources, docSources, duplicates, options) {
   // Filter out duplicates
   const filteredWeb = webSources.filter(s => !idsToRemove.has(s.id));
   const filteredDocs = docSources.filter(s => !idsToRemove.has(s.id));
-
-  console.log(`Filtered: ${webSources.length - filteredWeb.length} web sources, ${docSources.length - filteredDocs.length} documents`);
 
   // Merge arrays
   if (prioritizeDocuments) {

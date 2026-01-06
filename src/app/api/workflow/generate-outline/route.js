@@ -23,8 +23,6 @@ export async function POST(request) {
       tone
     } = body;
 
-    console.log(`📝 Generating outline for workflow ${workflowId} (${Math.ceil(targetDuration / 60)} minutes)`);
-
     // Validate required fields
     if (!workflowId || !title || !topic || !targetDuration) {
       return NextResponse.json({
@@ -67,11 +65,8 @@ export async function POST(request) {
       }, { status: 500 });
     }
 
-    console.log(`📚 Found ${research?.length || 0} research sources`);
-
     // Calculate research score
     const researchScore = calculateResearchScore(research || []);
-    console.log(`📊 Research score: ${researchScore.overallScore}`);
 
     // Validate research adequacy
     const hasUserDocuments = research?.some(r => r.source_type === 'document') || false;
@@ -80,12 +75,6 @@ export async function POST(request) {
       totalMinutes,
       hasUserDocuments
     );
-
-    console.log(`✅ Research validation:`, {
-      isAdequate: validation.isAdequate,
-      score: validation.score,
-      gaps: validation.gaps.length
-    });
 
     // If research is insufficient, return error with recommendations
     if (!validation.isAdequate) {
@@ -101,8 +90,6 @@ export async function POST(request) {
     const chunkCount = totalMinutes <= 40 ? 3 : totalMinutes <= 50 ? 4 : 5;
 
     // Generate comprehensive outline
-    console.log(`🎯 Generating outline with ${chunkCount} chunks...`);
-
     const outline = await generateComprehensiveOutline({
       title,
       topic,
@@ -163,8 +150,6 @@ export async function POST(request) {
         error: 'Failed to save outline to database'
       }, { status: 500 });
     }
-
-    console.log(`✅ Outline saved with ID: ${savedOutline.id}`);
 
     // Return success response
     return NextResponse.json({

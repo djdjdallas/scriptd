@@ -69,9 +69,6 @@ export async function runQualityGates(scriptContent, researchSources, config = {
   const settings = { ...QUALITY_GATES_CONFIG, ...config };
   let improvedScript = scriptContent;
 
-  console.log('🚦 Starting Quality Gates Pipeline...');
-  console.log('═'.repeat(60));
-
   const results = {
     original: scriptContent,
     improved: scriptContent,
@@ -84,21 +81,13 @@ export async function runQualityGates(scriptContent, researchSources, config = {
 
   // Stage 1: Fact Checking
   if (settings.factChecking.enabled) {
-    console.log('\n📌 Stage 1: Fact Verification');
-    console.log('─'.repeat(40));
-
     const factResults = await verifyFacts(improvedScript, researchSources);
     results.stages.factChecking = factResults;
 
     if (factResults.metrics.accuracy < settings.factChecking.minAccuracy) {
-      console.log(`  ⚠️ Low accuracy: ${(factResults.metrics.accuracy * 100).toFixed(1)}%`);
-
       if (settings.factChecking.autoCorrect && factResults.corrections.length > 0) {
         improvedScript = autoCorrectFacts(improvedScript, factResults.corrections);
-        console.log(`  ✅ Applied ${factResults.corrections.length} fact corrections`);
       }
-    } else {
-      console.log(`  ✅ Fact accuracy: ${(factResults.metrics.accuracy * 100).toFixed(1)}%`);
     }
 
     results.metrics.factAccuracy = factResults.metrics.accuracy;
@@ -106,24 +95,16 @@ export async function runQualityGates(scriptContent, researchSources, config = {
 
   // Stage 2: Deduplication
   if (settings.deduplication.enabled) {
-    console.log('\n📌 Stage 2: Content Deduplication');
-    console.log('─'.repeat(40));
-
     const deduplicationResults = analyzeRepetition(improvedScript);
     results.stages.deduplication = deduplicationResults;
 
     const highPrioritySuggestions = deduplicationResults.suggestions.filter(s => s.priority === 'high');
 
     if (highPrioritySuggestions.length > 0) {
-      console.log(`  ⚠️ Found ${deduplicationResults.metrics.totalRepetitions} repetitions`);
-
       if (settings.deduplication.autoRemove) {
         const deduped = applyDeduplication(improvedScript, highPrioritySuggestions);
         improvedScript = deduped.content;
-        console.log(`  ✅ Removed ${deduped.changeLog.length} repetitions`);
       }
-    } else {
-      console.log(`  ✅ Minimal repetition detected`);
     }
 
     results.metrics.repetitionScore = deduplicationResults.metrics.totalRepetitions;
@@ -131,22 +112,14 @@ export async function runQualityGates(scriptContent, researchSources, config = {
 
   // Stage 3: Visual Feasibility
   if (settings.visualFeasibility.enabled) {
-    console.log('\n📌 Stage 3: Visual Feasibility Check');
-    console.log('─'.repeat(40));
-
     const visualResults = checkVisualFeasibility(improvedScript);
     results.stages.visualFeasibility = visualResults;
 
     if (visualResults.metrics.impossibleCount > 0) {
-      console.log(`  ⚠️ Found ${visualResults.metrics.impossibleCount} impossible visuals`);
-
       if (settings.visualFeasibility.autoReplace) {
         const corrected = applyVisualCorrections(improvedScript, visualResults.suggestions);
         improvedScript = corrected.content;
-        console.log(`  ✅ Replaced ${corrected.changeLog.length} impossible visuals`);
       }
-    } else {
-      console.log(`  ✅ All visuals are producible`);
     }
 
     results.metrics.visualFeasibility = visualResults.metrics.overallFeasibility;
@@ -155,9 +128,6 @@ export async function runQualityGates(scriptContent, researchSources, config = {
 
   // Stage 4: Length Optimization
   if (settings.lengthOptimization.enabled) {
-    console.log('\n📌 Stage 4: Length Optimization');
-    console.log('─'.repeat(40));
-
     const lengthResults = optimizeScriptLength(
       improvedScript,
       settings.lengthOptimization.targetMinutes,
@@ -170,14 +140,9 @@ export async function runQualityGates(scriptContent, researchSources, config = {
     ) / settings.lengthOptimization.targetMinutes;
 
     if (variance > settings.lengthOptimization.allowedVariance) {
-      console.log(`  ⚠️ Length variance: ${(variance * 100).toFixed(1)}% from target`);
-
       if (settings.lengthOptimization.autoOptimize) {
         improvedScript = lengthResults.content;
-        console.log(`  ✅ Optimized length to ${lengthResults.finalMetrics.minutes.toFixed(1)} minutes`);
       }
-    } else {
-      console.log(`  ✅ Length within target: ${lengthResults.finalMetrics.minutes.toFixed(1)} minutes`);
     }
 
     results.metrics.lengthVariance = variance;
@@ -186,23 +151,16 @@ export async function runQualityGates(scriptContent, researchSources, config = {
 
   // Stage 5: Technical Consistency
   if (settings.technicalConsistency.enabled) {
-    console.log('\n📌 Stage 5: Technical Consistency');
-    console.log('─'.repeat(40));
-
     const consistencyResults = analyzeTechnicalConsistency(improvedScript, settings.technicalConsistency);
     results.stages.technicalConsistency = consistencyResults;
 
     if (consistencyResults.metrics.consistencyScore < 0.7) {
-      console.log(`  ⚠️ Low consistency: ${(consistencyResults.metrics.consistencyScore * 100).toFixed(1)}%`);
-
       if (settings.technicalConsistency.autoNormalize) {
         const normalized = applyNormalization(improvedScript, consistencyResults.suggestions);
         if (!normalized.requiresRewrite) {
           improvedScript = normalized.content;
         }
       }
-    } else {
-      console.log(`  ✅ Technical consistency: ${(consistencyResults.metrics.consistencyScore * 100).toFixed(1)}%`);
     }
 
     results.metrics.technicalConsistency = consistencyResults.metrics.consistencyScore;
@@ -215,10 +173,6 @@ export async function runQualityGates(scriptContent, researchSources, config = {
 
   // Generate comprehensive report
   results.report = generateQualityReport(results, settings);
-
-  console.log('\n' + '═'.repeat(60));
-  console.log(`🎯 Overall Quality Score: ${(results.score * 100).toFixed(1)}%`);
-  console.log(`${results.passed ? '✅ PASSED' : '❌ FAILED'} Quality Gates`);
 
   return results;
 }
@@ -298,7 +252,7 @@ function generateQualityReport(results, settings) {
   // Executive Summary
   report += '## Executive Summary\n';
   report += `- **Overall Score:** ${(results.score * 100).toFixed(1)}%\n`;
-  report += `- **Status:** ${results.passed ? '✅ PASSED' : '❌ FAILED'}\n`;
+  report += `- **Status:** ${results.passed ? 'PASSED' : 'FAILED'}\n`;
   report += `- **Original Length:** ${results.original.length} characters\n`;
   report += `- **Improved Length:** ${results.improved.length} characters\n`;
   report += `- **Improvements Made:** ${countImprovements(results)} changes\n\n`;

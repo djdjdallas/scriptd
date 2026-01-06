@@ -33,13 +33,11 @@ const CONTENT_PRIORITY = {
 export function optimizeScriptLength(scriptContent, targetMinutes = 30, options = {}) {
   const config = {
     speakingRate: 'normal',
-    allowedVariance: 0.1,  // Allow ±10% of target
+    allowedVariance: 0.1,  // Allow +/-10% of target
     preserveStructure: true,
     prioritizeContent: true,
     ...options
   };
-
-  console.log(`📏 Optimizing script length for ${targetMinutes} minutes...`);
 
   // Calculate current length
   const currentMetrics = calculateDuration(scriptContent, config.speakingRate);
@@ -48,16 +46,12 @@ export function optimizeScriptLength(scriptContent, targetMinutes = 30, options 
   // Check if optimization is needed
   const variance = Math.abs(currentMetrics.wordCount - targetWords) / targetWords;
 
-  console.log(`  📊 Current: ${currentMetrics.minutes.toFixed(1)} min (${currentMetrics.wordCount} words)`);
-  console.log(`  🎯 Target: ${targetMinutes} min (${targetWords} words)`);
-  console.log(`  📈 Variance: ${(variance * 100).toFixed(1)}%`);
-
   if (variance <= config.allowedVariance) {
-    console.log('  ✅ Script length is within acceptable range');
     return {
       optimized: false,
       content: scriptContent,
       metrics: currentMetrics,
+      finalMetrics: currentMetrics,
       suggestions: []
     };
   }
@@ -85,8 +79,6 @@ export function optimizeScriptLength(scriptContent, targetMinutes = 30, options 
   }
 
   const finalMetrics = calculateDuration(optimizedContent, config.speakingRate);
-
-  console.log(`  ✨ Optimized: ${finalMetrics.minutes.toFixed(1)} min (${finalMetrics.wordCount} words)`);
 
   return {
     optimized: true,
@@ -359,16 +351,16 @@ function identifyExpandableAreas(section) {
 
   // Check for incomplete descriptions
   const briefDescriptions = section.content.match(/[A-Z][^.!?]{10,30}[.!?]/g) || [];
-  const tooBreif = briefDescriptions.filter(desc => {
+  const tooBrief = briefDescriptions.filter(desc => {
     return !desc.includes(',') && !desc.includes('and') && !desc.includes('but');
   });
 
-  if (tooBreif.length > 0) {
-    potential += tooBreif.length * 15; // ~15 words to expand each
+  if (tooBrief.length > 0) {
+    potential += tooBrief.length * 15; // ~15 words to expand each
     suggestions.push({
       type: 'brief_descriptions',
-      count: tooBreif.length,
-      potentialWords: tooBreif.length * 15
+      count: tooBrief.length,
+      potentialWords: tooBrief.length * 15
     });
   }
 
@@ -384,41 +376,39 @@ function generateOptimizationSuggestions(sections, analysis, currentMetrics, tar
 
   if (strategy === 'trim') {
     // Need to cut content
-    console.log(`  ✂️ Need to cut approximately ${wordDiff} words`);
-
     // Sort sections by priority (lowest first for cutting)
     const cuttableSections = analysis
       .filter(a => a.priority < CONTENT_PRIORITY.CRITICAL)
       .sort((a, b) => a.priority - b.priority);
 
-    let wordsTocut = wordDiff;
+    let wordsToCut = wordDiff;
 
     // First pass: Remove low-priority content
     cuttableSections.forEach(section => {
-      if (wordsTocut <= 0) return;
+      if (wordsToCut <= 0) return;
 
       section.suggestions.cuts.forEach(cut => {
-        if (wordsTocut <= 0) return;
+        if (wordsToCut <= 0) return;
 
         suggestions.push({
           type: 'cut',
           sectionIndex: section.sectionIndex,
           target: cut.type,
-          words: Math.min(cut.words, wordsTocut),
+          words: Math.min(cut.words, wordsToCut),
           priority: section.priority < CONTENT_PRIORITY.MEDIUM ? 'high' : 'medium',
           description: generateCutDescription(cut)
         });
 
-        wordsTocut -= cut.words;
+        wordsToCut -= cut.words;
       });
     });
 
     // Second pass: Trim verbose sections
-    if (wordsTocut > 0) {
+    if (wordsToCut > 0) {
       sections
         .filter(s => s.wordCount > 200)
         .forEach(section => {
-          const trimAmount = Math.min(section.wordCount * 0.2, wordsTocut);
+          const trimAmount = Math.min(section.wordCount * 0.2, wordsToCut);
           if (trimAmount > 10) {
             suggestions.push({
               type: 'trim',
@@ -428,14 +418,12 @@ function generateOptimizationSuggestions(sections, analysis, currentMetrics, tar
               priority: 'low',
               description: `Trim verbose content in section ${section.index + 1}`
             });
-            wordsTocut -= trimAmount;
+            wordsToCut -= trimAmount;
           }
         });
     }
   } else {
     // Need to expand content
-    console.log(`  📝 Need to add approximately ${wordDiff} words`);
-
     const expandableSections = analysis
       .filter(a => a.expandableWords > 0)
       .sort((a, b) => b.priority - a.priority);
@@ -500,8 +488,6 @@ export function applyOptimizations(scriptContent, suggestions, config = {}) {
   let optimized = scriptContent;
   let appliedCount = 0;
 
-  console.log(`📝 Applying ${suggestions.length} optimization suggestions...`);
-
   // Group suggestions by type
   const cuts = suggestions.filter(s => s.type === 'cut' || s.type === 'trim');
   const expansions = suggestions.filter(s => s.type === 'expand');
@@ -547,8 +533,6 @@ export function applyOptimizations(scriptContent, suggestions, config = {}) {
       // This would need more sophisticated logic to insert at the right location
     });
   }
-
-  console.log(`  ✓ Applied ${appliedCount} optimizations`);
 
   return optimized;
 }
@@ -606,16 +590,16 @@ function generateOptimizationReport(originalMetrics, finalMetrics, suggestions, 
 
   report += '\n## Recommendations\n';
   if (variance < 0.05) {
-    report += '✅ Script length is optimal for target duration\n';
+    report += 'Script length is optimal for target duration\n';
   } else if (variance < 0.1) {
-    report += '✅ Script length is within acceptable range\n';
+    report += 'Script length is within acceptable range\n';
   } else if (finalMetrics.wordCount > targetMinutes * SPEAKING_RATES.normal) {
-    report += '⚠️ Script is too long. Consider:\n';
+    report += 'Script is too long. Consider:\n';
     report += '- Removing redundant information\n';
     report += '- Cutting low-priority sections\n';
     report += '- Simplifying verbose language\n';
   } else {
-    report += '⚠️ Script is too short. Consider:\n';
+    report += 'Script is too short. Consider:\n';
     report += '- Adding more context to key points\n';
     report += '- Including additional examples\n';
     report += '- Expanding technical explanations\n';

@@ -91,8 +91,6 @@ export async function POST(request) {
       .single();
 
     if (insertError) {
-      console.error('Error saving channel:', insertError);
-
       // Handle specific error cases
       if (insertError.code === '23505') {
         // Unique constraint violation
@@ -119,7 +117,6 @@ export async function POST(request) {
 
     // Queue FREE voice training automatically after channel connection
     try {
-      console.log(`Queueing FREE voice training for channel ${channel.id}`);
       const jobId = await queueVoiceTraining({
         channelId: channel.id,
         userId: user.id,
@@ -131,24 +128,22 @@ export async function POST(request) {
           isFree: true
         }
       });
-      
-      console.log(`Voice training job queued successfully (FREE): ${jobId}`);
-      
+
       // Update channel with training status
       await supabase
         .from('channels')
-        .update({ 
+        .update({
           voice_training_status: 'queued',
-          voice_training_job_id: jobId 
+          voice_training_job_id: jobId
         })
         .eq('id', channel.id);
-        
+
       channel.voice_training_status = 'queued';
       channel.voice_training_job_id = jobId;
-      
+
     } catch (voiceError) {
       // Don't fail channel connection if voice training fails to queue
-      console.error('Failed to queue voice training (non-critical):', voiceError);
+      console.error('Failed to queue voice training:', voiceError);
     }
 
     return NextResponse.json({ 
@@ -162,7 +157,7 @@ export async function POST(request) {
       }
     });
   } catch (error) {
-    console.error('Error connecting channel:', error);
+    console.error('Channel connection error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to connect channel' },
       { status: 500 }

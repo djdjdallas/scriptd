@@ -34,16 +34,7 @@ export async function POST(request) {
     const body = await request.json();
     const { url } = body;
 
-    // Enhanced logging for debugging
-    console.log('📥 Fetch-content API called:', {
-      url,
-      hasUrl: !!url,
-      urlType: typeof url,
-      bodyKeys: Object.keys(body)
-    });
-
     if (!url) {
-      console.error('❌ No URL provided in request body');
       return NextResponse.json({
         error: 'URL is required',
         details: 'Request body must include a "url" field',
@@ -53,7 +44,6 @@ export async function POST(request) {
 
     // Skip fetching for special URLs
     if (url.startsWith('#')) {
-      console.log(`⏭️ Skipping special URL: ${url}`);
       return NextResponse.json({
         content: '',
         success: true,
@@ -65,16 +55,12 @@ export async function POST(request) {
     // Validate URL format
     try {
       new URL(url);
-    } catch (urlError) {
-      console.error(`❌ Invalid URL format: ${url}`, urlError.message);
+    } catch {
       return NextResponse.json({
         error: 'Invalid URL format',
-        details: `The provided URL is not valid: ${url}`,
-        message: urlError.message
+        details: `The provided URL is not valid: ${url}`
       }, { status: 400 });
     }
-
-    console.log(`📥 Valid URL, proceeding to fetch content from: ${url}`);
     
     try {
       // Use the WebScraper to fetch content with timeout
@@ -96,9 +82,8 @@ export async function POST(request) {
 
       // Check if we got meaningful content
       const contentLength = scrapedData.content?.length || 0;
-      
+
       if (contentLength < 100) {
-        console.warn(`⚠️ Limited content from ${url}: ${contentLength} chars`);
         return NextResponse.json({
           content: scrapedData.content || '',
           metadata: scrapedData.metadata,

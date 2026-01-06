@@ -20,7 +20,6 @@ export async function fetchChannelRecentVideos(channelId, maxResults = 10) {
   }
 
   try {
-    console.log(`📹 Fetching ${maxResults} recent videos for channel: ${channelId}`);
 
     const response = await fetch(
       `${SUPADATA_API_URL}/youtube/videos?id=${channelId}&max_results=${maxResults}&order=date`,
@@ -44,8 +43,6 @@ export async function fetchChannelRecentVideos(channelId, maxResults = 10) {
       console.warn('No videos returned from SupaData');
       return [];
     }
-
-    console.log(`✅ Fetched ${data.videos.length} videos from SupaData`);
 
     // Transform to simplified format
     return data.videos.map(video => ({
@@ -75,15 +72,11 @@ export async function fetchChannelInfo(channelId) {
   const apiKey = process.env.SUPADATA_API_KEY;
 
   if (!apiKey) {
-    console.error('❌ SUPADATA_API_KEY environment variable is not set!');
-    console.log('   Available env vars starting with SUPA:', Object.keys(process.env).filter(k => k.startsWith('SUPA')));
+    console.error('SUPADATA_API_KEY environment variable is not set');
     return null;
   }
 
-  console.log(`✅ SUPADATA_API_KEY is set (length: ${apiKey.length}, starts with: ${apiKey.substring(0, 4)}...)`);
-
   try {
-    console.log(`📺 Fetching channel info for: ${channelId}`);
 
     const response = await fetch(
       `${SUPADATA_API_URL}/youtube/channel?id=${channelId}`,
@@ -97,14 +90,11 @@ export async function fetchChannelInfo(channelId) {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('❌ SupaData API error:', response.status, error);
-      console.log('   Request URL:', `${SUPADATA_API_URL}/youtube/channel?id=${channelId}`);
-      console.log('   Auth header present:', !!apiKey);
+      console.error('SupaData API error:', response.status, error);
       return null;
     }
 
     const data = await response.json();
-    console.log(`✅ Fetched channel info from SupaData`);
 
     return {
       id: data.id || data.channel_id || channelId,
@@ -139,7 +129,6 @@ export async function searchVideos(query, maxResults = 10) {
   }
 
   try {
-    console.log(`🔍 Searching videos for: "${query}"`);
 
     const response = await fetch(
       `${SUPADATA_API_URL}/youtube/search?q=${encodeURIComponent(query)}&max_results=${maxResults}&type=video`,
@@ -158,7 +147,6 @@ export async function searchVideos(query, maxResults = 10) {
     }
 
     const data = await response.json();
-    console.log(`✅ Found ${data.videos?.length || 0} videos`);
 
     return data.videos || [];
 

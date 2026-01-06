@@ -64,8 +64,6 @@ export async function POST(request) {
       );
     }
 
-    console.log(`[API] Transcript extraction request: video="${rawVideoId}", workflow=${workflowId}`);
-
     // Extract clean video ID from URL or ID
     const videoId = extractVideoId(rawVideoId);
 
@@ -104,7 +102,6 @@ export async function POST(request) {
     let transcriptDbId = null;
     if (workflowId) {
       try {
-        console.log(`[API] Saving transcript to workflow_video_transcripts for workflow ${workflowId}`);
 
         const supabase = createServiceClient();
 
@@ -149,14 +146,11 @@ export async function POST(request) {
           .single();
 
         if (error) {
-          console.error('[API] Error saving transcript to database:', error);
-          // Don't fail the request, just log the error
+          // Don't fail the request, just continue
         } else {
-          console.log(`[API] Transcript saved successfully with ID: ${data.id}`);
           transcriptDbId = data.id;
         }
-      } catch (dbError) {
-        console.error('[API] Database error:', dbError);
+      } catch {
         // Continue even if database save fails
       }
     }
@@ -199,8 +193,6 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('[API] Transcript extraction error:', error);
-
     // Provide user-friendly error messages
     let errorMessage = 'Failed to extract transcript';
     let statusCode = 500;

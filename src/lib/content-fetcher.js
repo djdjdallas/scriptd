@@ -17,11 +17,8 @@ export class ContentFetcher {
     );
 
     if (sourcesToFetch.length === 0) {
-      console.log('✅ All sources already have content');
       return sources;
     }
-
-    console.log(`📥 Fetching content for ${sourcesToFetch.length}/${sources.length} sources`);
 
     const contentPromises = sourcesToFetch.map(source => {
       // CRITICAL FIX: Use source_url instead of url
@@ -30,7 +27,6 @@ export class ContentFetcher {
       // Validate URL before attempting to fetch
       const validation = isValidAndFetchableUrl(url);
       if (!validation.valid) {
-        console.log(`⏭️ Skipping unfetchable URL: ${url} - ${validation.reason}`);
         return Promise.resolve({
           skipped: true,
           content: '',
@@ -38,7 +34,6 @@ export class ContentFetcher {
         });
       }
 
-      console.log(`🔍 Preparing to fetch valid URL: ${url}`);
       return this.fetchWithRetry(url, 2);
     });
 
@@ -60,12 +55,9 @@ export class ContentFetcher {
           source_content: result.value.content.substring(0, this.maxChars),
           fetch_status: result.value.partial ? 'partial' : 'complete'
         };
-        console.log(`✅ Enriched: ${url?.substring(0, 50)}... (${result.value.content.length} chars)`);
         return enrichedSource;
       }
 
-      console.warn(`⚠️ Failed to fetch: ${url}`,
-        result.status === 'rejected' ? result.reason : 'No content');
       return {
         ...source,
         fetch_status: 'failed',
@@ -73,35 +65,24 @@ export class ContentFetcher {
       };
     });
 
-    const stats = this.getEnrichmentStats(enriched);
-    console.log(`📊 Enrichment stats:`, stats);
-
-    if (stats.totalContentSize > 15000) {
-      console.warn('⚠️ Large context detected, may impact AI performance');
-    }
-
     return enriched;
   }
 
   async fetchWithRetry(url, retries = 2) {
     // Early validation
     if (!url) {
-      console.error('❌ No URL provided to fetchWithRetry');
       throw new Error('URL is required for content fetching');
     }
 
     // Skip special URLs
     if (url.startsWith('#')) {
-      console.log(`⏭️ Skipping special URL: ${url}`);
       return { content: '', skipped: true, message: 'Internal reference - no fetch needed' };
     }
 
-    console.log(`🔍 Starting fetch for: ${url}`);
     let lastError;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        console.log(`📡 Attempt ${attempt + 1}/${retries + 1} for: ${url}`);
 
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
@@ -125,16 +106,9 @@ export class ContentFetcher {
           let errorBody = '';
           try {
             errorBody = await response.text();
-          } catch (e) {
+          } catch {
             errorBody = 'Unable to read error response';
           }
-
-          console.error(`❌ HTTP ${response.status} for ${url}:`, {
-            status: response.status,
-            statusText: response.statusText,
-            errorBody: errorBody.substring(0, 500),
-            attempt: attempt + 1
-          });
 
           throw new Error(`HTTP ${response.status}: ${errorBody.substring(0, 200)}`);
         }
@@ -142,36 +116,25 @@ export class ContentFetcher {
         const data = await response.json();
 
         if (data.success || data.content) {
-          console.log(`✅ Successfully fetched ${url}: ${data.content?.length || 0} chars`);
           return data;
         }
 
-        console.warn(`⚠️ No content returned for ${url}:`, data.message);
         throw new Error(data.message || 'No content returned');
 
       } catch (error) {
         lastError = error;
 
         if (error.name === 'AbortError') {
-          console.error(`⏱️ Timeout for ${url} after 10 seconds`);
           lastError = new Error(`Request timeout for ${url}`);
-        } else {
-          console.error(`❌ Fetch error for ${url}:`, {
-            name: error.name,
-            message: error.message,
-            attempt: attempt + 1
-          });
         }
 
         if (attempt < retries) {
           const delay = 1000 * Math.pow(2, attempt); // Exponential backoff
-          console.log(`⏳ Waiting ${delay}ms before retry ${attempt + 2}/${retries + 1} for ${url}`);
           await new Promise(r => setTimeout(r, delay));
         }
       }
     }
 
-    console.error(`❌ All attempts failed for ${url}:`, lastError.message);
     throw lastError;
   }
 
@@ -210,9 +173,6 @@ export class ContentFetcher {
       throw new Error(`Failed to verify content update: ${verifyError?.message}`);
     }
 
-    const stats = this.getEnrichmentStats(verification.sources);
-    console.log('✅ Database update verified:', stats);
-
     return verification.sources;
   }
 
@@ -223,9 +183,6 @@ export class ContentFetcher {
    * @returns {Array} Documents with extracted content
    */
   async processUploadedDocuments(documents) {
-    console.log(`📄 Processing ${documents.length} uploaded documents...`);
-    console.warn('⚠️ processUploadedDocuments is not fully implemented yet');
-
     // For now, just pass through to enrichSources
     // In the future, this would handle PDF extraction, DOCX parsing, etc.
     return this.enrichSources(documents);

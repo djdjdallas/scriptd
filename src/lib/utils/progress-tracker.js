@@ -26,8 +26,6 @@ export async function updateProgress(sessionId, stage, message, progress) {
       }
     }
 
-    // Log progress for debugging
-    console.log(`📊 Progress [${sessionId.substring(0, 8)}...]: ${stage} - ${message} (${progress}%)`);
   } catch (error) {
     // Don't fail the main process if progress update fails
     console.warn('Failed to update progress:', error);

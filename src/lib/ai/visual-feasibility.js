@@ -97,11 +97,8 @@ const ALTERNATIVE_SUGGESTIONS = {
  * @returns {Object} Feasibility analysis results
  */
 export function checkVisualFeasibility(scriptContent) {
-  console.log('🎬 Checking visual feasibility...');
-
   // Extract visual requests from script
   const visualRequests = extractVisualRequests(scriptContent);
-  console.log(`  📊 Found ${visualRequests.length} visual requests`);
 
   // Analyze each visual request
   const analysis = visualRequests.map(request => analyzeVisualRequest(request));
@@ -111,13 +108,6 @@ export function checkVisualFeasibility(scriptContent) {
 
   // Generate suggestions for problematic visuals
   const suggestions = generateVisualSuggestions(analysis);
-
-  console.log('📊 Visual feasibility check complete:', {
-    total: visualRequests.length,
-    feasible: metrics.feasibleCount,
-    problematic: metrics.impossibleCount,
-    feasibilityRate: `${(metrics.overallFeasibility * 100).toFixed(1)}%`
-  });
 
   return {
     requests: analysis,
@@ -520,8 +510,6 @@ export function applyVisualCorrections(scriptContent, suggestions) {
   let correctedScript = scriptContent;
   let changeLog = [];
 
-  console.log(`🎬 Applying ${suggestions.length} visual corrections...`);
-
   suggestions.forEach(suggestion => {
     if (suggestion.priority === 'high' && suggestion.alternatives.length > 0) {
       // Replace impossible visuals with first alternative
@@ -535,12 +523,9 @@ export function applyVisualCorrections(scriptContent, suggestions) {
           replacement: suggestion.alternatives[0],
           reason: 'Impossible visual replaced'
         });
-        console.log(`  ✓ Replaced: "${suggestion.original.substring(0, 30)}..."`);
       }
     }
   });
-
-  console.log(`  ✓ Applied ${changeLog.length} visual corrections`);
 
   return {
     content: correctedScript,

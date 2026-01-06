@@ -176,14 +176,12 @@ export async function searchRelatedVideos({
   license = 'any',
   regionCode = 'US'
 }) {
-  console.log(`[VideoSearch] Searching for: "${topic}" (max: ${maxResults}, duration: ${duration || 'any'}, license: ${license})`);
 
   try {
     // Check cache first
     const cacheKey = `video-search:${topic}:${maxResults}:${duration}:${order}:${license}`;
     const cached = getCached(cacheKey);
     if (cached) {
-      console.log('[VideoSearch] Returning cached results');
       return cached;
     }
 
@@ -317,7 +315,6 @@ export async function searchRelatedVideos({
     // Cache results
     setCache(cacheKey, result);
 
-    console.log(`[VideoSearch] Found ${videos.length} videos`);
     return result;
 
   } catch (error) {
@@ -338,7 +335,6 @@ export async function searchRelatedVideos({
  * @returns {Promise<{success: boolean, chapters: Array, copyrightWarning: string}>}
  */
 export async function getVideoChapters(videoId) {
-  console.log(`[VideoSearch] Fetching chapters for video: ${videoId}`);
 
   try {
     // Check cache
@@ -401,7 +397,6 @@ export async function getVideoChapters(videoId) {
  * @returns {Array<{videoId, videoTitle, chapter, timestamp, referenceType, attributionRequired}>}
  */
 export async function getSuggestedReferences(videos, maxReferences = 5) {
-  console.log(`[VideoSearch] Generating reference suggestions from ${videos.length} videos`);
 
   const references = [];
 
@@ -444,7 +439,6 @@ export async function getSuggestedReferences(videos, maxReferences = 5) {
  * @returns {Promise<{success: boolean, videos: Array}>}
  */
 export async function searchCreativeCommonsVideos(options) {
-  console.log('[VideoSearch] Searching for Creative Commons videos');
 
   return await searchRelatedVideos({
     ...options,
@@ -460,7 +454,6 @@ export async function searchCreativeCommonsVideos(options) {
  * @returns {Promise<{success: boolean, video: Object}>}
  */
 export async function getVideoMetadata(videoId) {
-  console.log(`[VideoSearch] Fetching metadata for video: ${videoId}`);
 
   try {
     // Check cache

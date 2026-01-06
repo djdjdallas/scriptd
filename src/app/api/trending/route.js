@@ -496,8 +496,6 @@ export async function GET(request) {
         console.error('Error fetching channels from database:', dbChannelsError);
       }
       
-      console.log('Database channels found:', dbChannels?.length || 0);
-      
       // If no channels in database, use demo data
       const channelsToUse = dbChannels && dbChannels.length > 0 ? dbChannels : [
         { id: 'demo1', youtube_channel_id: 'demo1', name: 'TechReview Pro', title: 'TechReview Pro', 

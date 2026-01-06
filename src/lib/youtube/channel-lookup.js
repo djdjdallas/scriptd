@@ -7,7 +7,6 @@ import { getYouTubeClient, withRateLimit, getRequestOptions } from './client.js'
 export async function findChannelIdByName(channelName) {
   if (!channelName) return null;
   
-  console.log(`🔍 Searching YouTube for channel: "${channelName}"`);
   
   try {
     const youtube = getYouTubeClient();
@@ -24,7 +23,6 @@ export async function findChannelIdByName(channelName) {
     );
 
     if (!searchResponse.data.items || searchResponse.data.items.length === 0) {
-      console.log(`  ❌ No channels found for: "${channelName}"`);
       return null;
     }
 
@@ -52,12 +50,9 @@ export async function findChannelIdByName(channelName) {
     // If still no match, use the first result as best guess
     if (!channel) {
       channel = searchResponse.data.items[0];
-      console.log(`  ⚠️ No exact match, using best guess: "${channel.snippet.title}"`);
     }
 
     const channelId = channel.snippet.channelId;
-    console.log(`  ✅ Found channel ID for "${channelName}": ${channelId}`);
-    
     return channelId;
 
   } catch (error) {

@@ -68,7 +68,6 @@ const pendingRequests = new Map();
 export async function withDeduplication(key, fn) {
   // If there's already a pending request for this key, wait for it
   if (pendingRequests.has(key)) {
-    console.log(`[Deduplication] Waiting for existing request: ${key}`);
     return pendingRequests.get(key);
   }
 
@@ -175,11 +174,9 @@ export function extractChannelId(url) {
     const match = fullMatch ? cleanUrl.match(regex) : cleanUrl.match(regex);
     if (match) {
       const value = match[fullMatch ? 0 : 1];
-      console.log(`Extracted ${type}: ${value} from URL: ${cleanUrl}`);
       return { type, value: fullMatch && type === 'id' ? value : value.replace('@', '') };
     }
   }
 
-  console.error('Could not extract channel ID from URL:', cleanUrl);
   return null;
 }

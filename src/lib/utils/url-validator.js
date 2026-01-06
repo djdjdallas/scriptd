@@ -121,14 +121,6 @@ export function filterFetchableSources(sources) {
     }
   }
 
-  // Log summary
-  console.log(`🔍 URL filtering results:`, {
-    total: sources.length,
-    fetchable: results.fetchable.length,
-    skipped: results.skipped.length,
-    skippedReasons: results.skipped.map(s => s.skipReason)
-  });
-
   return results;
 }
 

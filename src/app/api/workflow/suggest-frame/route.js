@@ -29,10 +29,9 @@ export async function POST(request) {
 
         if (workflowResearch && workflowResearch.length > 0) {
           sources = workflowResearch;
-          console.log(`✅ Loaded ${sources.length} research sources for frame generation`);
         }
-      } catch (error) {
-        console.warn('Could not load research sources:', error);
+      } catch {
+        /* ignored */
       }
     }
 
@@ -170,13 +169,6 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
 
             const suggestions = JSON.parse(content);
 
-            console.log('✅ Frame generated with research context:', {
-              sourcesUsed: sources.length,
-              framework: framework || 'problem-solution',
-              problemLength: suggestions.problem?.length,
-              solutionLength: suggestions.solution?.length
-            });
-
             // Deduct credits for frame generation
             const creditsUsed = 1;
             const { data: currentUser } = await supabase
@@ -201,7 +193,6 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
               );
 
               if (!deductionResult.success) {
-                console.error('Failed to deduct credits:', deductionResult.error);
                 return NextResponse.json(
                   {
                     error: deductionResult.error || 'Failed to deduct credits',
@@ -211,8 +202,6 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
                   { status: 402 }
                 );
               }
-
-              console.log('✅ Credits deducted:', deductionResult);
             }
 
             return NextResponse.json({
@@ -307,7 +296,6 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
       );
 
       if (!deductionResult.success) {
-        console.error('Failed to deduct credits (template fallback):', deductionResult.error);
         return NextResponse.json(
           {
             error: deductionResult.error || 'Failed to deduct credits',
@@ -317,8 +305,6 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
           { status: 402 }
         );
       }
-
-      console.log('✅ Credits deducted (template):', deductionResult);
     }
 
     return NextResponse.json({

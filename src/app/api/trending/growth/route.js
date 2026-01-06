@@ -23,7 +23,7 @@ export async function GET(request) {
         .limit(limit * 2);
       
       if (topicsError) {
-        console.error('Error fetching topics:', topicsError);
+        /* ignored */
       } else if (recentTopics && recentTopics.length > 0) {
         // Group by topic and calculate growth
         const topicGroups = {};
@@ -48,8 +48,6 @@ export async function GET(request) {
               growthRate = null; // Will be handled in UI as "New"
             }
             
-            console.log(`Topic: ${topicName}, Records: ${records.length}, Latest: ${latestScore}, Previous: ${previousScore}, Growth: ${growthRate}`);
-            
             return {
               topic_name: topicName,
               category: records[0]?.category || 'unknown',
@@ -66,8 +64,8 @@ export async function GET(request) {
           })
           .slice(0, limit);
       }
-    } catch (err) {
-      console.error('Error processing topics:', err);
+    } catch {
+      /* ignored */
     }
     
     try {
@@ -79,7 +77,7 @@ export async function GET(request) {
         .limit(limit * 2);
       
       if (channelsError) {
-        console.error('Error fetching channels:', channelsError);
+        /* ignored */
       } else if (recentChannels && recentChannels.length > 0) {
         // Group by channel and calculate growth
         const channelGroups = {};
@@ -121,8 +119,8 @@ export async function GET(request) {
           })
           .slice(0, limit);
       }
-    } catch (err) {
-      console.error('Error processing channels:', err);
+    } catch {
+      /* ignored */
     }
 
     // Calculate historical growth trends from topics history
@@ -133,7 +131,7 @@ export async function GET(request) {
       .limit(100);
 
     if (histError) {
-      console.error('Error fetching historical data:', histError);
+      /* ignored */
     }
 
     // Process data for charts
@@ -141,13 +139,6 @@ export async function GET(request) {
 
     const avgTopicGrowth = calculateAvgGrowth(topicsWithGrowth || []);
     const avgChannelGrowth = calculateAvgChannelGrowth(channelsWithGrowth || []);
-    
-    console.log('Growth Summary:', {
-      topicsCount: topicsWithGrowth?.length || 0,
-      channelsCount: channelsWithGrowth?.length || 0,
-      avgTopicGrowth,
-      avgChannelGrowth
-    });
 
     return NextResponse.json({
       success: true,
@@ -163,7 +154,6 @@ export async function GET(request) {
       }
     });
   } catch (error) {
-    console.error('Error fetching growth metrics:', error);
     return NextResponse.json(
       { error: 'Failed to fetch growth metrics', details: error.message },
       { status: 500 }

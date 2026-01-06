@@ -150,9 +150,6 @@ export async function POST(request) {
                 if (newChannel && !createError) {
                   dbId = newChannel.id;
                   tempSourceChannelIds.push(dbId); // Track for cleanup
-                  console.log('Created temporary source channel in database:', sourceChannel.title, dbId);
-                } else {
-                  console.error('Failed to create channel:', createError);
                 }
               }
             }
@@ -178,8 +175,6 @@ export async function POST(request) {
             dbId: dbId,
             channelKey: sourceChannel.id || sourceChannel.channelId || sourceChannel.youtube_channel_id
           });
-        } else {
-          console.error('Could not find or create database ID for channel:', sourceChannel);
         }
       }
       
@@ -235,7 +230,6 @@ export async function POST(request) {
         .insert(sourceEntries);
 
       if (sourcesError) {
-        console.error('Error creating source channel entries:', sourcesError);
         // Non-critical error, continue
       }
 
@@ -254,7 +248,6 @@ export async function POST(request) {
           });
 
         if (analysisError) {
-          console.error('Error creating analysis entry:', analysisError);
           // Non-critical error, continue
         }
       }
@@ -286,10 +279,7 @@ export async function POST(request) {
           });
 
         if (voiceError) {
-          console.error('Error creating voice profile entry:', voiceError);
           // Non-critical error, continue - the voice profile is still in channels table
-        } else {
-          console.log('Voice profile created successfully for remix channel');
         }
       }
 
@@ -300,18 +290,10 @@ export async function POST(request) {
 
       // Cleanup: Delete temporary source channels that were created
       if (tempSourceChannelIds.length > 0) {
-        console.log('Cleaning up temporary source channels:', tempSourceChannelIds);
-        const { error: deleteError } = await supabase
+        await supabase
           .from('channels')
           .delete()
           .in('id', tempSourceChannelIds);
-
-        if (deleteError) {
-          console.error('Error cleaning up temporary source channels:', deleteError);
-          // Non-critical error, continue
-        } else {
-          console.log(`Successfully deleted ${tempSourceChannelIds.length} temporary source channels`);
-        }
       }
 
       return NextResponse.json({
@@ -332,7 +314,6 @@ export async function POST(request) {
 
       // Also cleanup any temporary source channels created
       if (tempSourceChannelIds.length > 0) {
-        console.log('Cleaning up temporary source channels after error:', tempSourceChannelIds);
         await supabase
           .from('channels')
           .delete()
@@ -343,7 +324,6 @@ export async function POST(request) {
     }
 
   } catch (error) {
-    console.error('Remix creation error:', error);
     return NextResponse.json(
       { error: 'Failed to create remix channel', details: error.message },
       { status: 500 }
@@ -386,8 +366,7 @@ async function generateInitialContentIdeas(channelId, analysisData, supabase) {
       })
       .eq('id', channelId);
 
-  } catch (error) {
-    console.error('Error generating content ideas:', error);
+  } catch {
     // Non-critical error, don't fail the main operation
   }
 }

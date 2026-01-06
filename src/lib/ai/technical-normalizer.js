@@ -88,13 +88,11 @@ const TECHNICAL_VOCABULARY = {
 export function analyzeTechnicalConsistency(scriptContent, options = {}) {
   const config = {
     targetLevel: 'INTERMEDIATE',
-    allowedVariance: 1,  // Allow ±1 level variation
+    allowedVariance: 1,  // Allow +/-1 level variation
     domain: 'general',
     normalizeTerms: true,
     ...options
   };
-
-  console.log('🔬 Analyzing technical consistency...');
 
   // Split into paragraphs for analysis
   const paragraphs = splitIntoParagraphs(scriptContent);
@@ -116,12 +114,6 @@ export function analyzeTechnicalConsistency(scriptContent, options = {}) {
 
   // Generate normalization suggestions
   const suggestions = generateNormalizationSuggestions(analysis, issues, config);
-
-  console.log('📊 Technical consistency analysis complete:', {
-    averageComplexity: metrics.averageLevel.toFixed(1),
-    variance: metrics.variance.toFixed(2),
-    consistencyScore: `${(metrics.consistencyScore * 100).toFixed(1)}%`
-  });
 
   return {
     analysis,
@@ -509,9 +501,7 @@ function identifyComplexTerms(para, targetLevel) {
           complexTerms.push({
             term,
             currentLevel: level,
-            suggestion: findSimpler
-
-Alternative(term, targetLevel, domain)
+            suggestion: findSimplerAlternative(term, targetLevel, domain)
           });
         }
       });
@@ -589,7 +579,7 @@ function generateConsistencyReport(metrics, issues, suggestions) {
     if (complexIssues.length > 0) {
       report += `### Too Complex (${complexIssues.length} paragraphs)\n`;
       complexIssues.forEach(issue => {
-        report += `- Paragraph ${issue.paragraphIndex + 1}: ${issue.currentLevel} → ${issue.targetLevel}\n`;
+        report += `- Paragraph ${issue.paragraphIndex + 1}: ${issue.currentLevel} -> ${issue.targetLevel}\n`;
       });
       report += '\n';
     }
@@ -597,7 +587,7 @@ function generateConsistencyReport(metrics, issues, suggestions) {
     if (simpleIssues.length > 0) {
       report += `### Too Simple (${simpleIssues.length} paragraphs)\n`;
       simpleIssues.forEach(issue => {
-        report += `- Paragraph ${issue.paragraphIndex + 1}: ${issue.currentLevel} → ${issue.targetLevel}\n`;
+        report += `- Paragraph ${issue.paragraphIndex + 1}: ${issue.currentLevel} -> ${issue.targetLevel}\n`;
       });
       report += '\n';
     }
@@ -605,7 +595,7 @@ function generateConsistencyReport(metrics, issues, suggestions) {
     if (jumpIssues.length > 0) {
       report += `### Sudden Jumps (${jumpIssues.length} occurrences)\n`;
       jumpIssues.forEach(issue => {
-        report += `- Between paragraphs ${issue.paragraphIndex} and ${issue.paragraphIndex + 1}: ${issue.from} → ${issue.to}\n`;
+        report += `- Between paragraphs ${issue.paragraphIndex} and ${issue.paragraphIndex + 1}: ${issue.from} -> ${issue.to}\n`;
       });
       report += '\n';
     }
@@ -659,8 +649,6 @@ export function applyNormalization(scriptContent, suggestions, options = {}) {
       });
     }
   });
-
-  console.log(`📝 Marked ${markers.length} sections for normalization`);
 
   return {
     content: normalized,

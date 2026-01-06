@@ -187,8 +187,6 @@ function identifyKeyTimestamps(segments) {
  * Main function to extract and analyze YouTube video transcript
  */
 export async function extractTranscript(videoId) {
-  console.log('🎬 Extracting transcript for video:', videoId);
-
   try {
     // Extract the video ID if a URL was provided
     const cleanVideoId = extractVideoId(videoId);
@@ -197,16 +195,12 @@ export async function extractTranscript(videoId) {
       throw new Error('Invalid video ID or URL');
     }
 
-    console.log('📝 Fetching transcript from YouTube...');
-
     // Fetch transcript using youtube-transcript library
     const transcriptData = await YoutubeTranscript.fetchTranscript(cleanVideoId);
 
     if (!transcriptData || transcriptData.length === 0) {
       throw new Error('No transcript available for this video');
     }
-
-    console.log(`✅ Retrieved ${transcriptData.length} transcript segments`);
 
     // Process transcript segments
     const segments = transcriptData.map(item => ({
@@ -230,12 +224,6 @@ export async function extractTranscript(videoId) {
     const keyPhrases = extractKeyPhrases(fullText);
     const hookAnalysis = analyzeHook(segments);
     const timestamps = identifyKeyTimestamps(segments);
-
-    console.log('📊 Analysis complete:', {
-      wordCount,
-      topics: mainTopics.length,
-      timestamps: timestamps.length
-    });
 
     return {
       success: true,

@@ -61,18 +61,11 @@ function calculateSourceLimit(totalSources, targetLength) {
 
   perSourceLimit = Math.max(MIN_PER_SOURCE, Math.min(MAX_PER_SOURCE, perSourceLimit));
 
-  console.log(`📊 Source limit calculation: ${totalSources} sources → ${perSourceLimit} chars each (${(perSourceLimit * totalSources / 1000).toFixed(0)}KB total)`);
-
   return perSourceLimit;
 }
 
 // Main generator function with enhanced fact-checking and YouTube optimization
 const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext = {}) => {
-  console.log('🎬 === YOUTUBE SCRIPT GENERATOR DEBUG ===');
-  console.log('Topic:', topic);
-  console.log('Target Length:', targetLength, 'minutes');
-  console.log('Workflow Context Keys:', Object.keys(workflowContext));
-  
   // Input validation
   if (!topic || typeof topic !== 'string') {
     throw new Error('Topic is required and must be a string');
@@ -94,190 +87,12 @@ const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext =
     tone = 'professional',
     sponsor = null
   } = workflowContext;
-  
-  console.log('📋 WORKFLOW CONTEXT EXTRACTED:');
-  console.log('- Frame provided:', !!frame && Object.keys(frame).length > 0);
-  console.log('- Hook provided:', !!hook);
-  console.log('- Content Points:', contentPoints?.points?.length || 0);
-  console.log('- Research provided:', !!research && Object.keys(research).length > 0);
-  console.log('- Voice Profile:', voiceProfile?.name || 'None');
-  console.log('- Thumbnail:', !!thumbnail);
-  console.log('- Target Audience:', targetAudience || 'None specified');
-  console.log('- Tone:', tone);
-
-  // NEW: Detailed target audience logging
-  console.log('\n');
-  console.log('═════════════════════════════════════════════════════════════');
-  console.log('👥 TARGET AUDIENCE DETAILS:');
-  console.log('═════════════════════════════════════════════════════════════');
-  if (targetAudience) {
-    console.log('Full audience description being sent to Claude:');
-    console.log('"' + targetAudience + '"');
-    console.log('Character count:', targetAudience.length);
-    console.log('Will appear in prompt as: <audience>' + targetAudience + '</audience>');
-  } else {
-    console.log('No target audience specified - will use default: "General audience interested in the topic"');
-  }
-  console.log('═════════════════════════════════════════════════════════════');
-
-  // Force flush to ensure logs appear
-  if (process.stdout && typeof process.stdout.write === 'function') {
-    process.stdout.write('');
-  }
 
   // Process research sources
-  console.log('\n🔬 PROCESSING RESEARCH SOURCES:');
-  console.log('Total sources received:', research?.sources?.length || 0);
-  
   const verifiedSources = research?.sources?.filter(s => s.fact_check_status === 'verified') || [];
   const starredSources = research?.sources?.filter(s => s.is_starred) || [];
   const allSources = [...verifiedSources, ...starredSources];
-  
-  console.log('- Verified sources:', verifiedSources.length);
-  console.log('- Starred sources:', starredSources.length);
-  console.log('- All sources to use:', allSources.length);
-  
-  if (verifiedSources.length > 0) {
-    console.log('Verified source titles:', verifiedSources.map(s => s.source_title));
-  }
-  if (starredSources.length > 0) {
-    console.log('Starred source titles:', starredSources.map(s => s.source_title));
-  }
-  
-  // Log research insights if available
-  if (research?.insights) {
-    console.log('\n📊 RESEARCH INSIGHTS:');
-    console.log('- Facts:', research.insights.facts?.length || 0);
-    console.log('- Statistics:', research.insights.statistics?.length || 0);
-    console.log('- Trends:', research.insights.trends?.length || 0);
-    console.log('- Perspectives:', research.insights.perspectives?.length || 0);
-  }
-  
-  if (research?.summary) {
-    console.log('\n📝 RESEARCH SUMMARY:');
-    console.log(research.summary.substring(0, 200) + '...');
-  }
 
-  // Extract comprehensive voice profile details
-  console.log('\n');
-  console.log('═════════════════════════════════════════════════════════════');
-  console.log('🎤 PROCESSING VOICE PROFILE:');
-  console.log('═════════════════════════════════════════════════════════════');
-
-  if (voiceProfile) {
-    console.log('Voice profile structure keys:', Object.keys(voiceProfile));
-    console.log('Voice profile name:', voiceProfile.profile_name || voiceProfile.name);
-
-    // Log basic characteristics in detail
-    if (voiceProfile.basic || voiceProfile.training_data?.basic) {
-      const basic = voiceProfile.basic || voiceProfile.training_data?.basic;
-      console.log('\n📝 BASIC CHARACTERISTICS BEING SENT TO CLAUDE:');
-      console.log('  Pace:', basic?.pace || 'not set');
-      console.log('  Energy:', basic?.energy || 'not set');
-      console.log('  Tone:', Array.isArray(basic?.tone) ? basic.tone.join(', ') : (basic?.tone || 'not set'));
-      console.log('  Style:', Array.isArray(basic?.style) ? basic.style.join(', ') : (basic?.style || 'not set'));
-      console.log('  Personality:', Array.isArray(basic?.personality) ? basic.personality.join(', ') : (basic?.personality || 'not set'));
-      console.log('  Vocabulary:', basic?.vocabulary || 'not set');
-      console.log('  Transitions:', basic?.transitions || 'not set');
-      console.log('  Humor:', basic?.humor || 'not set');
-      console.log('  Hooks:', basic?.hooks || 'not set');
-
-      console.log('\n✅ DOS (Must Do):');
-      if (basic?.dos && basic.dos.length > 0) {
-        basic.dos.forEach((item, i) => console.log(`  ${i + 1}. ${item}`));
-      } else {
-        console.log('  (None specified - will use default)');
-      }
-
-      console.log('\n❌ DONTS (Must Avoid):');
-      if (basic?.donts && basic.donts.length > 0) {
-        basic.donts.forEach((item, i) => console.log(`  ${i + 1}. ${item}`));
-      } else {
-        console.log('  (None specified - will use default)');
-      }
-
-      console.log('\n💬 SIGNATURE PHRASES:');
-      if (basic?.signature_phrases && basic.signature_phrases.length > 0) {
-        basic.signature_phrases.forEach((phrase, i) => console.log(`  ${i + 1}. "${phrase}"`));
-      } else {
-        console.log('  (None specified)');
-      }
-    }
-
-    // Log enhanced characteristics in detail
-    if (voiceProfile.enhanced || voiceProfile.training_data?.enhanced) {
-      const enhanced = voiceProfile.enhanced || voiceProfile.training_data?.enhanced;
-      console.log('\n🎯 ENHANCED CHARACTERISTICS BEING SENT TO CLAUDE:');
-
-      // Pacing Dynamics
-      if (enhanced?.pacingDynamics) {
-        console.log('\n  📊 Pacing Dynamics:');
-        console.log('    Pause Patterns:', enhanced.pacingDynamics.pausePatterns?.frequency || 'not set');
-        console.log('    Speed Variations:', Array.isArray(enhanced.pacingDynamics.speedVariations)
-          ? enhanced.pacingDynamics.speedVariations.join(', ')
-          : 'not set');
-        console.log('    Emphasis Techniques:', Array.isArray(enhanced.pacingDynamics.emphasisTechniques)
-          ? enhanced.pacingDynamics.emphasisTechniques.join(', ')
-          : 'not set');
-      }
-
-      // Engagement Techniques
-      if (enhanced?.engagementTechniques) {
-        console.log('\n  🎪 Engagement Techniques:');
-        console.log('    CTA Style:', enhanced.engagementTechniques.ctaStyle || 'not set');
-        console.log('    Question Strategy:', enhanced.engagementTechniques.questionStrategy || 'not set');
-        console.log('    Direct Address Frequency:', enhanced.engagementTechniques.directAddressFrequency || 'not set');
-        if (enhanced.engagementTechniques.pronounUsage) {
-          console.log('    Pronoun Balance:');
-          console.log('      - "I" statements:', enhanced.engagementTechniques.pronounUsage.i + '%');
-          console.log('      - "We" inclusive:', enhanced.engagementTechniques.pronounUsage.we + '%');
-          console.log('      - "You" direct:', enhanced.engagementTechniques.pronounUsage.you + '%');
-        }
-      }
-
-      // Linguistic Fingerprints
-      if (enhanced?.linguisticFingerprints) {
-        console.log('\n  🔤 Linguistic Fingerprints:');
-        if (enhanced.linguisticFingerprints.fillerWords) {
-          console.log('    Filler Words:');
-          Object.entries(enhanced.linguisticFingerprints.fillerWords).forEach(([word, freq]) => {
-            console.log(`      - "${word}": ${(freq * 100).toFixed(1)}% frequency`);
-          });
-        }
-        if (enhanced.linguisticFingerprints.transitionPhrases) {
-          console.log('    Transition Phrases:');
-          enhanced.linguisticFingerprints.transitionPhrases.forEach((phrase, i) => {
-            console.log(`      ${i + 1}. "${phrase}"`);
-          });
-        }
-      }
-
-      // Implementation Notes
-      if (enhanced?.implementationNotes) {
-        console.log('\n  📋 Implementation Notes:');
-        if (enhanced.implementationNotes.pacingControl) {
-          console.log('    Pacing Control:', enhanced.implementationNotes.pacingControl);
-        }
-        if (enhanced.implementationNotes.questionTiming) {
-          console.log('    Question Timing:', enhanced.implementationNotes.questionTiming);
-        }
-        if (enhanced.implementationNotes.humorIntegration) {
-          console.log('    Humor Integration:', enhanced.implementationNotes.humorIntegration);
-        }
-        if (enhanced.implementationNotes.transitionStrategy) {
-          console.log('    Transition Strategy:', enhanced.implementationNotes.transitionStrategy);
-        }
-        if (enhanced.implementationNotes.fillerWordPlacement) {
-          console.log('    Filler Word Placement:', enhanced.implementationNotes.fillerWordPlacement);
-        }
-      }
-    } else {
-      console.log('No enhanced characteristics available');
-    }
-  } else {
-    console.log('No voice profile provided');
-  }
-  
   const voiceData = voiceProfile ? {
     // Basic profile info
     name: voiceProfile.profile_name || voiceProfile.name,
@@ -309,81 +124,6 @@ const generateYouTubeScriptPrompt = (topic, targetLength = 10, workflowContext =
     parameters: voiceProfile.parameters || {}
   } : null;
 
-  // Log content points structure
-  if (contentPoints?.points?.length > 0) {
-    console.log('\n📌 CONTENT POINTS:');
-    console.log('Total points:', contentPoints.points.length);
-    contentPoints.points.forEach((point, i) => {
-      console.log(`Point ${i + 1}:`, {
-        title: point.title,
-        duration: point.duration + 's',
-        hasKeyTakeaway: !!point.keyTakeaway
-      });
-    });
-    const totalDuration = contentPoints.points.reduce((acc, p) => acc + p.duration, 0);
-    console.log('Total duration from points:', totalDuration, 'seconds (' + Math.ceil(totalDuration / 60) + ' minutes)');
-  }
-  
-  // Log frame structure
-  if (frame && Object.keys(frame).length > 0) {
-    console.log('\n🎯 NARRATIVE FRAME:');
-    console.log('- Problem:', frame.problem_statement ? 'Provided' : 'None');
-    console.log('- Solution:', frame.solution_approach ? 'Provided' : 'None');
-    console.log('- Transformation:', frame.transformation_outcome ? 'Provided' : 'None');
-  }
-  
-  // Log hook
-  if (hook) {
-    console.log('\n🪝 HOOK:');
-    console.log('Hook length:', hook.length, 'characters');
-    console.log('Hook preview:', hook.substring(0, 100) + '...');
-  }
-  
-  // Log thumbnail
-  if (thumbnail) {
-    console.log('\n🖼️ THUMBNAIL:');
-    console.log('Description provided:', !!thumbnail.description);
-  }
-
-  // Log sponsor
-  if (sponsor) {
-    console.log('\n💰 SPONSOR INTEGRATION:');
-    console.log('Sponsor:', sponsor.sponsor_name);
-    console.log('Product:', sponsor.sponsor_product);
-    console.log('Placement:', sponsor.placement_preference);
-    console.log('Duration:', sponsor.sponsor_duration, 'seconds');
-    console.log('Key points:', sponsor.sponsor_key_points?.length || 0);
-  }
-
-  console.log('\n');
-  console.log('═════════════════════════════════════════════════════════════');
-  console.log('📤 FINAL SUMMARY OF DATA BEING SENT TO CLAUDE:');
-  console.log('═════════════════════════════════════════════════════════════');
-  console.log('Target Audience:', targetAudience || 'General audience (default)');
-  console.log('Voice Profile:', voiceProfile ? (voiceProfile.profile_name || voiceProfile.name) : 'None (default style)');
-  if (voiceProfile) {
-    const basic = voiceProfile.basic || voiceProfile.training_data?.basic;
-    const enhanced = voiceProfile.enhanced || voiceProfile.training_data?.enhanced;
-    console.log('  - Basic guidelines:', basic?.dos?.length || 0, 'dos,', basic?.donts?.length || 0, 'donts');
-    console.log('  - Signature phrases:', basic?.signature_phrases?.length || 0);
-    console.log('  - Enhanced features:', enhanced ? 'YES' : 'NO');
-    if (enhanced) {
-      console.log('    • Pacing dynamics:', !!enhanced.pacingDynamics);
-      console.log('    • Engagement techniques:', !!enhanced.engagementTechniques);
-      console.log('    • Linguistic fingerprints:', !!enhanced.linguisticFingerprints);
-      console.log('    • Implementation notes:', !!enhanced.implementationNotes);
-    }
-  }
-  console.log('Tone:', tone);
-  console.log('Research sources:', (research?.sources?.length || 0), 'total');
-  console.log('Content structure:', contentPoints?.points?.length || 0, 'sections');
-  console.log('Narrative frame:', frame?.problem_statement ? 'PROVIDED' : 'Not provided');
-  console.log('Hook:', hook ? hook.length + ' chars' : 'Auto-generate');
-  console.log('═════════════════════════════════════════════════════════════');
-
-  console.log('\n✅ PROMPT GENERATION COMPLETE');
-  console.log('═════════════════════════════════════════════════════════════\n');
-  
   return `
 <role>You are an expert YouTube scriptwriter specializing in engaging, factual content</role>
 
@@ -652,10 +392,6 @@ ${sponsor ? `
         return `- ${s.source_title} (${s.source_url}): ${content}`;
       }).join('\n      ')}
     </important_sources>` : ''}
-    ${(() => {
-      console.log(`📉 Research truncation: ${totalTruncated}/${totalSources} sources truncated (${(totalOriginalChars / 1000).toFixed(0)}KB → ${(sourceLimit * totalSources / 1000).toFixed(0)}KB)`);
-      return '';
-    })()}
     ${research?.insights ? `
     <research_insights>
       ${research.insights.facts?.length > 0 ? `<key_facts>${research.insights.facts.join(' | ')}</key_facts>` : ''}
@@ -929,9 +665,6 @@ const generateTitleVariations = (topic, keywords = []) => {
 
 // Enhanced main function with error handling and validation
 const generateOptimizedScript = (options = {}) => {
-  console.log('\n🚀 === GENERATE OPTIMIZED SCRIPT CALLED ===');
-  console.log('Options provided:', Object.keys(options));
-  
   try {
     const {
       topic,
@@ -967,17 +700,7 @@ const generateOptimizedScript = (options = {}) => {
       targetAudience: targetAudience || audience,
       tone
     };
-    
-    console.log('📦 WORKFLOW CONTEXT CREATED:');
-    console.log('- Has frame:', !!frame);
-    console.log('- Has hook:', !!hook);
-    console.log('- Has contentPoints:', !!contentPoints);
-    console.log('- Has research:', !!research);
-    console.log('- Has voiceProfile:', !!voiceProfile);
-    console.log('- Has thumbnail:', !!thumbnail);
-    console.log('- Target audience:', targetAudience || audience);
-    console.log('- Tone:', tone);
-    
+
     // Generate the prompt with workflow context
     const prompt = generateYouTubeScriptPrompt(topic, targetLength, workflowContext);
     
@@ -1005,26 +728,6 @@ const generateOptimizedScript = (options = {}) => {
         generatedAt: new Date().toISOString()
       }
     };
-    
-    // Estimate tokens (rough approximation: 1 token ≈ 4 characters)
-    const estimatedTokens = Math.ceil(prompt.length / 4);
-    const maxTokens = 200000;
-    const tokenUsagePercent = (estimatedTokens / maxTokens * 100).toFixed(1);
-
-    console.log('\n📄 RESULT METADATA:');
-    console.log('- Prompt length:', prompt.length.toLocaleString(), 'characters');
-    console.log('- Estimated tokens:', estimatedTokens.toLocaleString(), '/', maxTokens.toLocaleString(), `(${tokenUsagePercent}%)`);
-    if (estimatedTokens > maxTokens) {
-      console.error('⚠️  ERROR: Prompt exceeds Claude token limit!');
-      console.error(`   Reduce research content or script length. Over by ${(estimatedTokens - maxTokens).toLocaleString()} tokens.`);
-    } else if (estimatedTokens > maxTokens * 0.9) {
-      console.warn('⚠️  WARNING: Prompt is approaching token limit (>90%)');
-    }
-    console.log('- Keywords extracted:', keywords.length);
-    console.log('- Title variations:', titleVariations.length);
-    console.log('- Length suggestion:', lengthSuggestion);
-    console.log('═════════════════════════════════════════════════════════════');
-    console.log('=== END GENERATE OPTIMIZED SCRIPT ===\n');
     
     // Add validation function if requested
     if (validateOutput) {
@@ -1055,35 +758,18 @@ const testGenerator = () => {
     "iPhone 15 vs Samsung S24 Review",
     ""  // Empty topic for error testing
   ];
-  
-  console.log("Testing YouTube Script Generator...\n");
-  
-  testCases.forEach((testTopic, index) => {
-    console.log(`Test Case ${index + 1}: "${testTopic}"`);
-    console.log("-".repeat(50));
-    
+
+  testCases.forEach((testTopic) => {
     const result = generateOptimizedScript({
       topic: testTopic,
       targetLength: 10,
       validateOutput: true
     });
-    
-    if (result.error) {
-      console.log("Error:", result.error);
-    } else {
-      console.log("Keywords:", result.metadata.keywords);
-      console.log("Suggested Length:", result.metadata.lengthSuggestion);
-      console.log("Title Variations:", result.metadata.titleVariations.slice(0, 3).map(t => t.title));
-      
-      // Test validation with mock script
-      if (result.validate) {
-        const mockScript = "0:00 Introduction [Visual: Logo]\n0:30 Main content with question?\n(Section 1)";
-        const validation = result.validate(mockScript);
-        console.log("Validation Test:", validation);
-      }
+
+    if (result.validate && !result.error) {
+      const mockScript = "0:00 Introduction [Visual: Logo]\n0:30 Main content with question?\n(Section 1)";
+      result.validate(mockScript);
     }
-    
-    console.log("\n");
   });
 };
 

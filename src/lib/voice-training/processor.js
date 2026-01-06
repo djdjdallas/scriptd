@@ -2,12 +2,10 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function processVoiceTraining({
   channelId,
-  userId,
+  userId: _userId,
   channelData,
-  isFree = true // Always free
+  isFree: _isFree = true // Always free
 }) {
-  console.log(`Starting FREE voice training for channel ${channelId}`);
-  
   const supabase = await createClient();
   
   try {
@@ -52,8 +50,6 @@ export async function processVoiceTraining({
       throw new Error(`Failed to create voice profile: ${profileError.message}`);
     }
 
-    console.log(`Voice profile created/updated successfully (FREE) for channel ${channelId}`);
-
     // Return the profile data
     return {
       success: true,
@@ -74,10 +70,9 @@ export async function processVoiceTraining({
   }
 }
 
-async function fetchChannelVideos(channelId, limit = 10) {
+async function fetchChannelVideos(_channelId, limit = 10) {
   // In production, this would use the YouTube API
   // For now, return mock data for development
-  console.log(`Fetching videos for channel ${channelId} (limit: ${limit})`);
   
   // Mock video data
   return Array.from({ length: Math.min(limit, 5) }, (_, i) => ({
@@ -113,8 +108,7 @@ function generateMockTranscript(index) {
     Remember to like and subscribe if you find this helpful!`;
 }
 
-async function extractTrainingData(videos, channelData) {
-  console.log(`Extracting training data from ${videos.length} videos`);
+async function extractTrainingData(videos, _channelData) {
   
   // Aggregate all transcripts
   const allText = videos

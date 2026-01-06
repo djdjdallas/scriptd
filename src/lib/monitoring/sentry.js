@@ -56,11 +56,9 @@ export function captureMessage(message, level = 'info', context = {}) {
       extra: context,
     })
   }
-  
+
   if (level === 'error' || level === 'warning') {
     console.error(`${level}: ${message}`, context)
-  } else {
-    console.log(`${level}: ${message}`, context)
   }
 }
 

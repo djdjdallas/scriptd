@@ -18,8 +18,6 @@ const MAX_PROCESSING_TIME = 270; // 4.5 minutes (leave buffer before 5-min timeo
 
 export async function GET(request) {
   const startTime = Date.now();
-  console.log('🔄 === CRON JOB: Process Script Jobs Started ===');
-  console.log('🕒 Start time:', new Date().toISOString());
 
   try {
     // Verify this is called by Vercel Cron (security check)
@@ -28,7 +26,6 @@ export async function GET(request) {
       // Vercel Cron sends: Authorization: Bearer {CRON_SECRET}
       const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
       if (authHeader !== expectedAuth) {
-        console.error('❌ Unauthorized cron request');
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
     }
@@ -50,23 +47,15 @@ export async function GET(request) {
       .limit(1);
 
     if (fetchError) {
-      console.error('❌ Error fetching pending jobs:', fetchError);
+      console.error('Error fetching pending jobs:', fetchError);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
     if (!jobs || jobs.length === 0) {
-      console.log('✅ No pending jobs found');
       return NextResponse.json({ message: 'No pending jobs', processed: 0 });
     }
 
     const job = jobs[0];
-    console.log('📋 Processing job:', {
-      jobId: job.id,
-      workflowId: job.workflow_id,
-      userId: job.user_id,
-      priority: job.priority,
-      age: Math.round((Date.now() - new Date(job.created_at).getTime()) / 1000) + 's'
-    });
 
     // Mark job as processing
     await supabase
@@ -86,8 +75,6 @@ export async function GET(request) {
       // Call the ACTUAL script generation logic
       // We'll make an internal HTTP call to the existing generate-script endpoint
       // This reuses all the complex generation logic without code duplication
-
-      console.log('🎬 Calling script generation...');
 
       const generationResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/workflow/generate-script`, {
         method: 'POST',
@@ -128,9 +115,6 @@ export async function GET(request) {
         })
         .eq('id', job.id);
 
-      console.log('✅ Job completed successfully:', job.id);
-      console.log('⏱️ Processing time:', Math.round((Date.now() - startTime) / 1000) + 's');
-
       return NextResponse.json({
         success: true,
         jobId: job.id,
@@ -139,8 +123,6 @@ export async function GET(request) {
       });
 
     } catch (generationError) {
-      console.error('❌ Script generation error:', generationError);
-
       // Check if we should retry
       const shouldRetry = job.retry_count < job.max_retries;
 
@@ -155,8 +137,6 @@ export async function GET(request) {
             current_step: 'retry_queued'
           })
           .eq('id', job.id);
-
-        console.log(`🔄 Job ${job.id} queued for retry (attempt ${job.retry_count + 1}/${job.max_retries})`);
       } else {
         // Max retries reached, mark as failed
         await supabase
@@ -168,8 +148,6 @@ export async function GET(request) {
             completed_at: new Date().toISOString()
           })
           .eq('id', job.id);
-
-        console.log(`❌ Job ${job.id} failed after ${job.retry_count} retries`);
       }
 
       return NextResponse.json({
@@ -181,7 +159,6 @@ export async function GET(request) {
     }
 
   } catch (error) {
-    console.error('❌ Cron job error:', error);
     return NextResponse.json({
       error: 'Cron job failed',
       details: error.message
@@ -203,10 +180,7 @@ async function updateJobProgress(supabase, jobId, progressData) {
         current_chunk: progressData.chunk || 0
       })
       .eq('id', jobId);
-
-    console.log(`📊 Job ${jobId} progress: ${progressData.percentage}% (${progressData.step})`);
-  } catch (error) {
-    console.error('Error updating job progress:', error);
+  } catch {
     // Don't throw - progress updates are non-critical
   }
 }

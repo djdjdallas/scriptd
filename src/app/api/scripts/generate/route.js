@@ -115,11 +115,7 @@ export const POST = createApiHandler(async (req) => {
   }
 
   // Check user credits with bypass option
-  console.log('[Generate] Checking credits - User:', user.id, 'Cost:', creditCost, 'Balance:', userData.credits);
-  console.log('[Generate] NODE_ENV:', process.env.NODE_ENV);
-  
   const creditValidation = await validateCreditsWithBypass(user.id, 'SCRIPT_GENERATION', creditCost);
-  console.log('[Generate] Credit validation result:', creditValidation);
   
   if (!creditValidation.valid) {
     const message = creditValidation.error || `Insufficient credits. You need ${creditCost} credits but only have ${creditValidation.balance || userData.credits}.`;
@@ -182,11 +178,8 @@ export const POST = createApiHandler(async (req) => {
   }
 
   try {
-    console.log('[Generate] Starting script generation with tier:', selectedTier, 'model:', actualModel);
-    
     // Generate script using AI (select provider based on actual model)
     const ai = getAIService(actualModel);
-    console.log('[Generate] AI service initialized');
     
     const prompt = generateScript({
       title: validated.title,
@@ -201,13 +194,8 @@ export const POST = createApiHandler(async (req) => {
       enableFactChecking: validated.enableFactChecking
     });
 
-    console.log('[Generate] Prompt created, length:', prompt.user?.length || 0);
-    
     // All models are Claude models now
-    console.log('[Generate] Using Claude model:', actualModel);
-    
     let result;
-    console.log('[Generate] Calling Anthropic API...');
     // Call Anthropic API with Claude model
     result = await ai.generateCompletion({
       prompt: prompt.user,
@@ -216,7 +204,6 @@ export const POST = createApiHandler(async (req) => {
       maxTokens: 4000,
       temperature: 0.8
     });
-    console.log('[Generate] Anthropic response received');
     
     // Result is now consistently formatted with text, usage, and cost properties
     const formattedResult = result;
@@ -226,30 +213,8 @@ export const POST = createApiHandler(async (req) => {
     let factCheckData = null;
     
     if (validated.enableFactChecking === true) {
-      console.log('[Generate] Fact-checking explicitly enabled, validating generated script...');
       factCheckValidation = validateScriptFactChecking(formattedResult.text);
       factCheckData = extractFactCheckData(formattedResult.text);
-      
-      console.log('[Generate] Fact-check validation:', factCheckValidation.status);
-      console.log('[Generate] Fact-check score:', factCheckValidation.score);
-      
-      // Log warnings if any
-      if (factCheckValidation.warnings.length > 0) {
-        console.warn('[Generate] Fact-check warnings:', factCheckValidation.warnings);
-      }
-      
-      // Reject script if fact-checking failed
-      if (!factCheckValidation.passed) {
-        console.error('[Generate] Script failed fact-checking:', factCheckValidation.errors);
-        // Instead of throwing, just log the error and continue
-        console.warn('[Generate] Continuing despite fact-check failure (consider improving prompts)');
-        // throw new ApiError(
-        //   `Script generation failed fact-checking requirements: ${factCheckValidation.errors.join(', ')}. Please try again with accurate information.`,
-        //   400
-        // );
-      }
-    } else {
-      console.log('[Generate] Fact-checking disabled for this generation');
     }
 
     // Get or create default channel
@@ -324,7 +289,6 @@ export const POST = createApiHandler(async (req) => {
     );
 
     if (!creditDeduction.success && !creditDeduction.bypassed) {
-      console.error('Failed to deduct credits:', creditDeduction.error);
       // Don't throw error, script was already generated
     }
 
@@ -371,10 +335,6 @@ export const POST = createApiHandler(async (req) => {
     });
 
   } catch (error) {
-    console.error('Script generation error:', error);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    
     if (error instanceof ApiError) {
       throw error;
     }

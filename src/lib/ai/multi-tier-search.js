@@ -17,44 +17,36 @@ export class MultiTierSearchService {
    * Main search method with automatic fallback
    */
   async search(query, options = {}) {
-    const { maxResults = 10, includeContent = true } = options;
-
-    console.log(`🔍 Multi-tier search for: "${query}"`);
+    const { maxResults = 10 } = options;
 
     // Try Perplexity first
     try {
-      console.log('📡 Attempting Perplexity search...');
       const result = await this.searchWithPerplexity(query, maxResults);
       if (result.success) {
-        console.log('✅ Perplexity search successful');
         return result;
       }
     } catch (error) {
-      console.warn('⚠️ Perplexity failed:', error.message);
+      console.warn('Perplexity failed:', error.message);
     }
 
     // Fallback to SerpAPI
     try {
-      console.log('📡 Attempting SerpAPI search...');
       const result = await this.searchWithSerpAPI(query, maxResults);
       if (result.success) {
-        console.log('✅ SerpAPI search successful');
         return result;
       }
     } catch (error) {
-      console.warn('⚠️ SerpAPI failed:', error.message);
+      console.warn('SerpAPI failed:', error.message);
     }
 
     // Final fallback to Claude
     try {
-      console.log('📡 Attempting Claude search...');
       const result = await this.searchWithClaude(query, maxResults);
       if (result.success) {
-        console.log('✅ Claude search successful');
         return result;
       }
     } catch (error) {
-      console.error('❌ All search methods failed:', error.message);
+      console.error('All search methods failed:', error.message);
     }
 
     // All failed

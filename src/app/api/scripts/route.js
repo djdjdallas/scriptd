@@ -6,11 +6,7 @@ import { createApiHandler, ApiError, paginate } from '@/lib/api-handler';
 
 // GET /api/scripts - List user's scripts
 export const GET = createApiHandler(async (req) => {
-  console.log('[API /scripts] GET request received');
-
   const { user, supabase } = await getAuthenticatedUser();
-
-  console.log('[API /scripts] Authenticated user:', user.email, 'ID:', user.id);
 
   const { searchParams } = new URL(req.url);
   const pagination = paginate(Object.fromEntries(searchParams));
@@ -18,12 +14,6 @@ export const GET = createApiHandler(async (req) => {
   const search = searchParams.get('search');
   const sortBy = searchParams.get('sortBy') || 'created_at';
   const sortOrder = searchParams.get('sortOrder') || 'desc';
-
-  // DIAGNOSTIC: Check total scripts in database for debugging
-  const { count: totalScriptsInDb } = await supabase
-    .from('scripts')
-    .select('*', { count: 'exact', head: true });
-  console.log(`[API /scripts] 📊 Total scripts in entire database: ${totalScriptsInDb}`);
 
   // Build query - get user's scripts without complex joins
   // First get user's channels
@@ -38,24 +28,6 @@ export const GET = createApiHandler(async (req) => {
     return acc;
   }, {}) || {};
 
-  console.log(`[API /scripts] 📍 User has ${userChannels?.length || 0} channels:`, channelIds);
-
-  // DIAGNOSTIC: Check scripts owned directly by user
-  const { count: directlyOwnedCount } = await supabase
-    .from('scripts')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id);
-  console.log(`[API /scripts] 🔑 Scripts with user_id=${user.id}: ${directlyOwnedCount}`);
-
-  // DIAGNOSTIC: Check scripts by channel ownership
-  if (channelIds.length > 0) {
-    const { count: channelOwnedCount } = await supabase
-      .from('scripts')
-      .select('*', { count: 'exact', head: true })
-      .in('channel_id', channelIds);
-    console.log(`[API /scripts] 📺 Scripts in user's channels: ${channelOwnedCount}`);
-  }
-
   // Then get scripts for those channels or directly owned by user
   let query = supabase
     .from('scripts')
@@ -68,11 +40,9 @@ export const GET = createApiHandler(async (req) => {
   if (channelIds.length > 0) {
     // Get scripts from user's channels OR scripts directly owned by user
     const orClause = `channel_id.in.(${channelIds.join(',')}),user_id.eq.${user.id}`;
-    console.log(`[API /scripts] 🔍 Query filter (with channels):`, orClause);
     query = query.or(orClause);
   } else {
     // If no channels, just get scripts owned by user
-    console.log(`[API /scripts] 🔍 Query filter (no channels): user_id.eq.${user.id}`);
     query = query.eq('user_id', user.id);
   }
 
@@ -95,43 +65,7 @@ export const GET = createApiHandler(async (req) => {
 
   if (error) {
     console.error('[API /scripts] Database error:', error);
-    console.error('[API /scripts] Query details:', { 
-      userId: user.id, 
-      channelIds,
-      type, 
-      search, 
-      sortBy, 
-      sortOrder 
-    });
     throw new ApiError(`Failed to fetch scripts: ${error.message}`, 500);
-  }
-
-  console.log(`[API /scripts] Query details:`, {
-    userId: user.id,
-    userEmail: user.email,
-    channelIds,
-    channelCount: channelIds.length,
-    pagination: { page: pagination.page, limit: pagination.limit, offset: pagination.offset }
-  });
-  console.log(`[API /scripts] Found ${scripts?.length || 0} scripts on this page, total count: ${count}`);
-  console.log(`[API /scripts] Total pages: ${Math.ceil((count || 0) / pagination.limit)}`);
-
-  // Debug: Log first few scripts to see what we're getting
-  if (scripts && scripts.length > 0) {
-    console.log('[API /scripts] Sample script:', {
-      id: scripts[0].id,
-      title: scripts[0].title,
-      channel_id: scripts[0].channel_id,
-      user_id: scripts[0].user_id,
-      metadata: scripts[0].metadata
-    });
-  }
-
-  // IMPORTANT: Log if we're missing scripts
-  if (count && count > 20) {
-    console.log(`[API /scripts] ⚠️ PAGINATION ACTIVE: Showing ${scripts?.length || 0} of ${count} total scripts`);
-  } else if (count === 20) {
-    console.log(`[API /scripts] ℹ️ Exactly 20 scripts found - this might be all scripts OR first page`);
   }
 
   const items = (scripts || []).map(script => ({
@@ -145,8 +79,6 @@ export const GET = createApiHandler(async (req) => {
     createdAt: script.created_at,
     updatedAt: script.updated_at
   }));
-
-  console.log(`[API /scripts] Returning ${items.length} items`);
 
   // Calculate aggregate stats from ALL user's scripts (not just current page)
   // Get scripts from last 7 days
@@ -168,8 +100,6 @@ export const GET = createApiHandler(async (req) => {
     thisWeek: allScripts?.filter(s => new Date(s.created_at) > new Date(sevenDaysAgo)).length || 0,
     totalMinutes: allScripts?.reduce((acc, s) => acc + (s.length || 0), 0) || 0
   };
-
-  console.log(`[API /scripts] Aggregate stats:`, stats);
 
   return NextResponse.json({
     items,

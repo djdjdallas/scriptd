@@ -114,8 +114,7 @@ async function getTranscriptsForAnalysis(videos) {
           views: video.statistics?.viewCount
         });
       }
-    } catch (error) {
-      console.log(`Failed to get transcript for ${video.id}:`, error.message);
+    } catch {
     }
   }
   

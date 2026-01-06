@@ -51,8 +51,6 @@ export async function POST(request) {
       );
     }
 
-    console.log(`[API] Video search request: topic="${topic}", workflow=${workflowId}`);
-
     // Extract search options
     const searchOptions = {
       topic,
@@ -98,8 +96,7 @@ export async function POST(request) {
             url: video.url
           });
         }
-      } catch (error) {
-        console.error(`[API] Error fetching chapters for ${video.videoId}:`, error);
+      } catch {
         // Continue with other videos
       }
     }
@@ -153,8 +150,6 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('[API] Video search error:', error);
-
     // Check if it's a rate limit error
     if (error.message && error.message.includes('Rate limit')) {
       return NextResponse.json(

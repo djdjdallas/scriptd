@@ -22,8 +22,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log(`Looking up YouTube ID for: "${channelName}"`);
-    
     // First try known channels (instant)
     let channelId = getKnownChannelId(channelName);
     let source = 'known';

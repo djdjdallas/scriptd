@@ -37,8 +37,6 @@ export async function POST(request) {
       );
     }
 
-    console.log(`[API] Searching transcripts in workflow ${workflowId} for: "${searchTerm}"`);
-
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -51,7 +49,6 @@ export async function POST(request) {
     });
 
     if (error) {
-      console.error('[API] Error searching transcripts:', error);
       return NextResponse.json(
         {
           success: false,
@@ -62,8 +59,6 @@ export async function POST(request) {
       );
     }
 
-    console.log(`[API] Found ${data?.length || 0} matching transcripts`);
-
     return NextResponse.json({
       success: true,
       results: data || [],
@@ -73,7 +68,6 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('[API] Transcript search error:', error);
     return NextResponse.json(
       {
         success: false,
@@ -105,8 +99,6 @@ export async function GET(request) {
       );
     }
 
-    console.log(`[API] Getting transcript summary for workflow ${workflowId}`);
-
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -118,7 +110,6 @@ export async function GET(request) {
     });
 
     if (error) {
-      console.error('[API] Error getting transcript summary:', error);
       return NextResponse.json(
         {
           success: false,
@@ -129,8 +120,6 @@ export async function GET(request) {
       );
     }
 
-    console.log('[API] Transcript summary retrieved successfully');
-
     return NextResponse.json({
       success: true,
       summary: data || {},
@@ -138,7 +127,6 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('[API] Transcript summary error:', error);
     return NextResponse.json(
       {
         success: false,

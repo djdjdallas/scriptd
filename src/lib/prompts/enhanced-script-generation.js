@@ -125,10 +125,7 @@ function verifyVoiceCompliance(script, voiceProfile) {
     pronounUsage: checkPronounDistribution(script, voiceProfile),
     transitions: checkTransitionUsage(script, voiceProfile)
   };
-  
-  // Log compliance report
-  console.log('Voice Compliance Report:', checks);
-  
+
   // Return script with metadata about compliance
   return {
     content: script,

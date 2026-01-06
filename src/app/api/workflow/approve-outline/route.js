@@ -11,8 +11,6 @@ export async function POST(request) {
     const body = await request.json();
     const { outlineId, status, feedback, edits } = body;
 
-    console.log(`${status === 'approved' ? '✅' : '❌'} Outline ${outlineId} ${status}`);
-
     // Validate required fields
     if (!outlineId || !status) {
       return NextResponse.json({
@@ -71,7 +69,6 @@ export async function POST(request) {
 
       // If user provided edits, merge them into outline_data
       if (edits && Object.keys(edits).length > 0) {
-        console.log('📝 Applying user edits to outline');
         const updatedOutlineData = {
           ...outline.outline_data,
           ...edits,
@@ -130,8 +127,6 @@ export async function POST(request) {
             updated_at: new Date().toISOString()
           })
           .eq('id', outline.workflow_id);
-
-        console.log('✅ Workflow updated with approved outline');
       }
     }
 

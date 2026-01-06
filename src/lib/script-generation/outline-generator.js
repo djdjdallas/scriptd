@@ -23,8 +23,6 @@ async function generateComprehensiveOutline({
   apiKey,
   model = process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929'
 }) {
-  console.log('📝 Generating comprehensive outline for entire video...');
-  console.log(`   Total duration: ${totalMinutes} minutes across ${chunkCount} chunks`);
 
   const minutesPerChunk = Math.ceil(totalMinutes / chunkCount);
 
@@ -171,7 +169,6 @@ Remember:
     const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error('Could not parse outline JSON from response');
-      console.log('Raw response (first 1000 chars):', outlineText.substring(0, 1000));
       return null;
     }
 
@@ -190,9 +187,6 @@ Remember:
       return outline;
     } catch (parseError) {
       console.error('JSON parsing failed:', parseError);
-      console.log('Raw response (first 2000 chars):', outlineText.substring(0, 2000));
-      console.log('Extracted JSON (first 2000 chars):', jsonMatch[0].substring(0, 2000));
-      console.log('Extracted JSON (last 500 chars):', jsonMatch[0].substring(Math.max(0, jsonMatch[0].length - 500)));
       return null;
     }
   } catch (error) {
@@ -230,26 +224,7 @@ function validateOutlineStructure(outline) {
  * Log a summary of the generated outline
  */
 function logOutlineSummary(outline) {
-  console.log('\n📋 OUTLINE GENERATED SUCCESSFULLY:');
-  console.log('=' .repeat(60));
-  console.log(`Title: ${outline.title}`);
-  console.log(`Duration: ${outline.totalMinutes} minutes`);
-  console.log(`Chunks: ${outline.chunks.length}`);
-
-  outline.chunks.forEach(chunk => {
-    console.log(`\n📌 Chunk ${chunk.chunkNumber} (${chunk.timeRange}):`);
-    if (chunk.theme) {
-      console.log(`   Theme: ${chunk.theme}`);
-    }
-    chunk.sections.forEach(section => {
-      console.log(`   [${section.timestamp}] ${section.title} (${section.duration}min)`);
-    });
-    if (chunk.transitionToNext) {
-      console.log(`   → Transition: ${chunk.transitionToNext}`);
-    }
-  });
-
-  console.log('\n' + '=' .repeat(60));
+  // Outline logging disabled for production
 }
 
 /**
@@ -381,7 +356,6 @@ function saveOutlineToFile(outline, filepath = '/tmp/script-outline.json') {
   const fs = require('fs');
   try {
     fs.writeFileSync(filepath, JSON.stringify(outline, null, 2));
-    console.log(`💾 Outline saved to: ${filepath}`);
   } catch (error) {
     console.error('Failed to save outline:', error);
   }

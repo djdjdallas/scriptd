@@ -58,13 +58,7 @@ export async function GET(request, { params }) {
         channel.voice_profile = typeof channel.voice_profile === 'string'
           ? JSON.parse(channel.voice_profile)
           : channel.voice_profile;
-        console.log('API: Parsed channel.voice_profile:', {
-          hasVoiceProfile: !!channel.voice_profile?.voiceProfile,
-          hasBasicProfile: !!channel.voice_profile?.voiceProfile?.basicProfile,
-          keys: Object.keys(channel.voice_profile || {})
-        });
-      } catch (e) {
-        console.error('Error parsing voice_profile:', e);
+      } catch {
         channel.voice_profile = {};
       }
     }
@@ -75,13 +69,7 @@ export async function GET(request, { params }) {
         channel.analytics_data = typeof channel.analytics_data === 'string'
           ? JSON.parse(channel.analytics_data)
           : channel.analytics_data;
-        console.log('API: Parsed channel.analytics_data:', {
-          hasAudience: !!channel.analytics_data?.audience,
-          hasInsights: !!channel.analytics_data?.audience?.insights,
-          keys: Object.keys(channel.analytics_data || {})
-        });
-      } catch (e) {
-        console.error('Error parsing analytics_data:', e);
+      } catch {
         channel.analytics_data = {};
       }
     }
@@ -96,7 +84,7 @@ export async function GET(request, { params }) {
         .single();
 
       if (remixError && remixError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-        console.error('Error fetching remix data:', remixError);
+        // Error fetching remix data
       }
       
       // If we have remix data, ensure is_remix flag is set
@@ -115,7 +103,7 @@ export async function GET(request, { params }) {
             .single();
 
           if (analysisError && analysisError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-            console.error('Error fetching remix analyses:', analysisError);
+            // Error fetching remix analyses
           }
 
           // Merge the data
@@ -124,16 +112,10 @@ export async function GET(request, { params }) {
           // Parse combined_voice_profile if it's a string
           if (remixData.combined_voice_profile) {
             try {
-              channel.combined_voice_profile = typeof remixData.combined_voice_profile === 'string' 
+              channel.combined_voice_profile = typeof remixData.combined_voice_profile === 'string'
                 ? JSON.parse(remixData.combined_voice_profile)
                 : remixData.combined_voice_profile;
-              console.log('API: Set combined_voice_profile:', {
-                hasBasic: !!channel.combined_voice_profile?.basic,
-                hasTone: !!channel.combined_voice_profile?.basic?.tone,
-                keys: Object.keys(channel.combined_voice_profile || {})
-              });
-            } catch (e) {
-              console.error('Error parsing combined_voice_profile:', e);
+            } catch {
               channel.combined_voice_profile = {};
             }
           }
@@ -144,8 +126,7 @@ export async function GET(request, { params }) {
               channel.combined_analytics = typeof remixData.combined_analytics === 'string'
                 ? JSON.parse(remixData.combined_analytics)
                 : remixData.combined_analytics;
-            } catch (e) {
-              console.error('Error parsing combined_analytics:', e);
+            } catch {
               channel.combined_analytics = {};
             }
           }
@@ -155,8 +136,7 @@ export async function GET(request, { params }) {
             channel.audience_analysis = remixAnalyses.analysis_data?.audience;
           }
       }
-    } catch (error) {
-      console.error('Error fetching remix channel data:', error);
+    } catch {
       // Continue without remix data rather than failing completely
     }
 
@@ -298,8 +278,6 @@ export async function DELETE(request, { params }) {
     if (scriptUpdateError) {
       console.error('Error updating scripts to remove channel reference:', scriptUpdateError);
       deletions.push({ table: 'scripts', error: scriptUpdateError });
-    } else {
-      console.log(`✅ Preserved scripts for channel ${id} by setting channel_id to NULL`);
     }
 
     // 5. Delete script_generations that are NOT linked to any script (orphaned generations)

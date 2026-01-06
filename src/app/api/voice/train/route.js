@@ -44,7 +44,6 @@ export async function POST(request) {
 
     // NO CREDIT CHECK - Voice training is completely FREE
     // This is a core feature that helps users get started
-    console.log('Voice training initiated (FREE - no credits required)');
 
     // Update channel status to queued first
     const updateData = {
@@ -97,7 +96,6 @@ export async function POST(request) {
       sampleCount = samples.length;
     } else {
       // Fetch real transcripts from YouTube channel
-      console.log(`Fetching real transcripts for channel: ${channelId}`);
       transcriptsSource = 'youtube';
       
       try {
@@ -125,11 +123,10 @@ export async function POST(request) {
         
         for (const video of videos) {
           if (transcripts.length >= maxTranscripts) break;
-          
+
           try {
-            console.log(`Attempting to fetch transcript for: ${video.snippet.title} (${video.id})`);
             const transcript = await getVideoTranscript(video.id);
-            
+
             if (transcript.hasTranscript && transcript.fullText) {
               transcripts.push(transcript.fullText);
               analyzedVideos.push({
@@ -137,22 +134,15 @@ export async function POST(request) {
                 title: video.snippet.title,
                 publishedAt: video.snippet.publishedAt
               });
-              console.log(`✓ Got transcript for video: ${video.snippet.title}`);
-            } else {
-              console.log(`✗ No transcript available for: ${video.snippet.title}`);
-              if (transcript.error) {
-                console.log(`  Reason: ${transcript.error}`);
-              }
             }
-          } catch (error) {
-            console.log(`✗ Error getting transcript for ${video.id}:`, error.message);
+          } catch {
+            // Skip videos that fail to fetch transcript
           }
         }
         
         if (transcripts.length === 0) {
           // Fallback to basic analysis from video titles and descriptions
-          console.log('No transcripts available, using video metadata for analysis');
-          const videoTexts = videos.slice(0, 5).map(v => 
+          const videoTexts = videos.slice(0, 5).map(v =>
             `${v.snippet.title}. ${v.snippet.description}`
           );
           voiceCharacteristics = await analyzeVoiceStyle(videoTexts);
@@ -162,11 +152,10 @@ export async function POST(request) {
           // Analyze with both standard and advanced analyzers
           voiceCharacteristics = await analyzeVoiceStyle(transcripts);
           const advancedAnalysis = await analyzeVoiceStyleAdvanced(transcripts);
-          
+
           // Merge advanced features into voice characteristics
           voiceCharacteristics.advanced = advancedAnalysis;
           sampleCount = transcripts.length;
-          console.log(`Successfully analyzed ${transcripts.length} video transcripts with advanced features`);
         }
       } catch (error) {
         console.error('Error fetching YouTube transcripts:', error);
@@ -180,7 +169,6 @@ export async function POST(request) {
         voiceCharacteristics = await analyzeVoiceStyle(mockTranscripts);
         sampleCount = mockTranscripts.length;
         transcriptsSource = 'mock';
-        console.log('Using mock data due to error:', error.message);
       }
     }
 
@@ -192,9 +180,8 @@ export async function POST(request) {
           voice_training_progress: 60
         })
         .eq('id', channelId);
-    } catch (e) {
+    } catch {
       // Column might not exist, continue without error
-      console.log('Progress update skipped (column may not exist)');
     }
     
     // Create comprehensive voice profile with analyzed characteristics
@@ -259,8 +246,8 @@ export async function POST(request) {
           voice_training_progress: 80
         })
         .eq('id', channelId);
-    } catch (e) {
-      console.log('Progress update skipped (column may not exist)');
+    } catch {
+      // Column might not exist, continue without error
     }
 
     // Save voice profile - simplified insert without is_active

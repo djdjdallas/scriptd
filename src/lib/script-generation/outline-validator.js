@@ -176,25 +176,12 @@ function isCommonWord(word) {
  * Log validation results for debugging
  */
 function logValidationResults(validationResult, chunkNumber) {
-  if (validationResult.passed) {
-    console.log(`✅ Chunk ${chunkNumber} passed outline validation`);
-  } else {
-    console.error(`❌ Chunk ${chunkNumber} FAILED outline validation`);
+  if (!validationResult.passed) {
+    console.error(`Chunk ${chunkNumber} FAILED outline validation`);
     validationResult.issues.forEach(issue => {
-      const emoji = issue.severity === 'critical' ? '🚨' : '⚠️';
-      console.error(`  ${emoji} ${issue.message}`);
+      console.error(`  ${issue.message}`);
     });
   }
-
-  // Log topic match details
-  console.log(`📊 Topic Match Analysis for Chunk ${chunkNumber}:`);
-  Object.entries(validationResult.topicMatches).forEach(([topic, match]) => {
-    const status = match.titleFound ? '✓' : '✗';
-    console.log(`  ${status} "${topic}": ${Math.round(match.matchPercentage)}% match`);
-    if (match.keyTermsMissing.length > 0) {
-      console.log(`    Missing terms: ${match.keyTermsMissing.join(', ')}`);
-    }
-  });
 }
 
 /**
@@ -233,10 +220,8 @@ function validateCompleteScript(fullScript, completeOutline) {
   });
 
   // Log overall validation
-  if (results.passed) {
-    console.log('✅ Complete script passed outline validation');
-  } else {
-    console.error('❌ Complete script FAILED outline validation');
+  if (!results.passed) {
+    console.error('Complete script FAILED outline validation');
     console.error(`  Found ${results.overallIssues.length} critical issues`);
   }
 

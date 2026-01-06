@@ -184,9 +184,7 @@ Be extremely detailed and specific. Provide actionable insights based on the cha
     try {
       // First try direct parse
       analysis = JSON.parse(content);
-      console.log('✅ Direct JSON parse successful');
     } catch (e) {
-      console.log('Initial parse failed, attempting JSON extraction and repair...');
 
       // Try to extract JSON from markdown code blocks
       const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
@@ -197,15 +195,10 @@ Be extremely detailed and specific. Provide actionable insights based on the cha
         jsonText = repairJSON(jsonText);
         analysis = JSON.parse(jsonText);
         parseMethod = 'repaired';
-        console.log('✅ Successfully parsed after JSON repair');
       } catch (e2) {
-        // Log compact error (no need for full error message)
-        console.log(`⚠️  JSON repair couldn't fix syntax error - using text fallback`);
-
         // Fallback: create structured data from text response
         analysis = parseTextResponse(content);
         parseMethod = 'text-fallback';
-        console.log('✅ Text-based parsing complete - analysis data generated');
       }
     }
 
@@ -237,16 +230,13 @@ Be extremely detailed and specific. Provide actionable insights based on the cha
  */
 export async function generateRemixVoiceProfile(channels, config) {
   try {
-    console.log('🎯 Starting enhanced voice profile generation with real YouTube data...');
-    
     // First, try to get real voice analyses from YouTube
     const channelAnalyses = await analyzeChannelVoicesFromYouTube(channels, config);
-    
+
     // Combine the real analyses
     const combinedResult = await combineRealVoiceAnalyses(channelAnalyses, config);
-    
+
     if (combinedResult.success) {
-      console.log('✅ Successfully created voice profile from real YouTube data');
       return {
         success: true,
         voiceProfile: combinedResult.voiceProfile,
@@ -254,9 +244,8 @@ export async function generateRemixVoiceProfile(channels, config) {
         channelAnalyses: combinedResult.channelAnalyses
       };
     }
-    
+
     // Fallback to theoretical blending if real analysis fails
-    console.log('⚠️ Falling back to theoretical voice blending...');
     
     const voiceProfiles = channels.map(ch => ({
       channel: ch.title || ch.name,
@@ -435,8 +424,6 @@ function detectChannelResearchTopics(channels, config) {
     categories: ['general', 'news']
   };
 
-  console.log(`🎯 Detected channel topic: ${bestTopic} (score: ${bestScore})`);
-  console.log(`🔍 Will search for: ${topicConfig.searchTopics[0]}`);
 
   return {
     detectedTopic: bestTopic,
@@ -459,8 +446,6 @@ export async function generateRemixContentIdeas(channels, config, analysis, useF
     // If factual content is requested, research real events first
     let realEvents = [];
     if (useFactualContent && process.env.PERPLEXITY_API_KEY) {
-      console.log('🔍 Researching real events for content ideas...');
-
       // Dynamically detect what to search for
       const researchConfig = detectChannelResearchTopics(channels, config);
 
@@ -495,10 +480,8 @@ export async function generateRemixContentIdeas(channels, config, analysis, useF
               }
             })) : [])
           ];
-          console.log(`✅ Found ${realEvents.length} real cases for content ideas`);
         }
-      } catch (error) {
-        console.error('Perplexity research error:', error);
+      } catch {
         // Continue without real events
       }
     }
@@ -559,14 +542,10 @@ Return ONLY the JSON array, nothing else.`;
 
     const content = response.content[0].text;
 
-    // Debug log the response
-    console.log('📝 Claude response preview (first 500 chars):', content.substring(0, 500));
-
     let ideas;
     try {
       ideas = JSON.parse(content);
     } catch (e) {
-      console.log('Failed direct JSON parse, trying to extract from markdown...');
       const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
       let jsonText = jsonMatch ? jsonMatch[1] : content;
 
@@ -574,22 +553,17 @@ Return ONLY the JSON array, nothing else.`;
       try {
         jsonText = repairComplexJSON(jsonText);
         ideas = JSON.parse(jsonText);
-        console.log('✅ Successfully parsed after JSON repair');
       } catch (e2) {
-        console.error('Failed to parse JSON from markdown:', e2.message);
         // Try to find array pattern
         const arrayMatch = content.match(/\[[\s\S]*\]/);
         if (arrayMatch) {
           try {
             const repairedArray = repairComplexJSON(arrayMatch[0]);
             ideas = JSON.parse(repairedArray);
-            console.log('✅ Successfully parsed array after repair');
-          } catch (e3) {
-            console.error('Failed to parse array:', e3.message);
+          } catch {
             ideas = [];
           }
         } else {
-          console.error('No valid JSON found in response');
           ideas = [];
         }
       }
@@ -597,11 +571,6 @@ Return ONLY the JSON array, nothing else.`;
 
     // Ensure we have valid ideas
     const validIdeas = Array.isArray(ideas) ? ideas : [ideas];
-
-    console.log(`📊 Parsed ${validIdeas.length} content ideas`);
-    if (validIdeas.length > 0) {
-      console.log('First idea title:', validIdeas[0]?.title || 'No title');
-    }
 
     return {
       success: true,
@@ -772,10 +741,7 @@ Be extremely detailed and specific. Provide realistic percentages that add up to
     try {
       // First try direct parse
       insights = JSON.parse(content);
-      console.log('✅ Direct JSON parse successful (audience insights)');
     } catch (e) {
-      console.log('Initial parse failed, attempting JSON extraction and repair (audience insights)...');
-
       // Try to extract JSON from markdown code blocks
       const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
       let jsonText = jsonMatch ? jsonMatch[1] : content;
@@ -785,15 +751,10 @@ Be extremely detailed and specific. Provide realistic percentages that add up to
         jsonText = repairJSON(jsonText);
         insights = JSON.parse(jsonText);
         parseMethod = 'repaired';
-        console.log('✅ Successfully parsed after JSON repair (audience insights)');
       } catch (e2) {
-        // NEVER store raw content - parse it into structured data
-        console.log(`⚠️ JSON repair couldn't fix syntax error - using text fallback for audience insights`);
-
         // Fallback: Parse text into structured audience data
         insights = parseAudienceTextResponse(content);
         parseMethod = 'text-fallback';
-        console.log('✅ Text-based parsing complete for audience insights');
       }
     }
 
@@ -825,8 +786,6 @@ Be extremely detailed and specific. Provide realistic percentages that add up to
  */
 function repairComplexJSON(jsonText) {
   let fixed = jsonText.trim();
-
-  console.log('🔧 Attempting JSON repair...');
 
   // Step 1: Remove markdown code block markers if present
   fixed = fixed.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '');
@@ -879,7 +838,6 @@ function repairComplexJSON(jsonText) {
   // Step 9: Ensure proper spacing
   fixed = fixed.trim();
 
-  console.log('✅ JSON repair complete');
   return fixed;
 }
 
@@ -891,7 +849,6 @@ function repairJSON(jsonText) {
 }
 
 function parseTextResponse(text) {
-  console.log('📝 Parsing comprehensive analysis from text - using comprehensive fallback structure...');
 
   // Comprehensive fallback structure matching expected depth
   const analysis = {
@@ -1136,7 +1093,6 @@ function parseTextResponse(text) {
     _note: 'JSON parsing failed - using comprehensive default analysis structure'
   };
 
-  console.log('✅ Using comprehensive fallback analysis structure');
   return analysis;
 }
 
@@ -1144,7 +1100,6 @@ function parseTextResponse(text) {
  * Parse audience insights from text response (fallback when JSON fails)
  */
 function parseAudienceTextResponse(text) {
-  console.log('📝 Parsing audience insights from text - using comprehensive fallback structure...');
 
   // Comprehensive fallback structure matching expected depth
   const insights = {
@@ -1379,7 +1334,6 @@ function parseAudienceTextResponse(text) {
     _note: 'JSON parsing failed - using comprehensive default audience structure based on typical YouTube demographics'
   };
 
-  console.log('✅ Using comprehensive fallback audience structure');
   return insights;
 }
 

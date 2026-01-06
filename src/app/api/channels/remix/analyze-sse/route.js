@@ -20,7 +20,6 @@ export async function POST(request) {
       try {
         const { channelIds, channels: providedChannels, config } = await request.json();
 
-        console.log('Starting SSE analysis for channels:', channelIds);
         sendUpdate('Initializing analysis...', 5);
 
         // Check authentication
@@ -168,8 +167,7 @@ export async function POST(request) {
 
         // Voice profile generation
         sendUpdate('Generating combined voice profile...', 75);
-        console.log('Analyzing remix with Claude (Sonnet Model)...');
-        
+
         const voiceProfile = await generateRemixVoiceProfile(channels, config);
         
         sendUpdate('Voice profile complete. Analyzing audience demographics...', 80);

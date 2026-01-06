@@ -19,8 +19,6 @@ async function generateContentPlan({
   apiKey,
   model = process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929'
 }) {
-  console.log('📋 Generating content plan for optimal chunk distribution...');
-
   // If no content points, return basic time-based distribution
   if (!contentPoints || contentPoints.length === 0) {
     return generateBasicPlan(totalMinutes, chunkCount);
@@ -120,15 +118,6 @@ CRITICAL RULES:
       if (!plan.chunks || !Array.isArray(plan.chunks)) {
         throw new Error('Invalid plan structure');
       }
-
-      // Log the plan for debugging
-      console.log('📊 Content Plan Generated:');
-      plan.chunks.forEach(chunk => {
-        console.log(`  Chunk ${chunk.chunkNumber}: ${chunk.assignedSections.length} sections`);
-        chunk.assignedSections.forEach(section => {
-          console.log(`    - "${section.title}" (~${section.estimatedMinutes} min)`);
-        });
-      });
 
       return plan;
     } catch (parseError) {

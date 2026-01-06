@@ -48,13 +48,6 @@ export async function POST(request) {
 
       // If there's an error checking the count OR if count >= 1, show upgrade message
       if (countError || count >= 1) {
-        if (countError) {
-          console.error('Error checking action plan count:', countError);
-          console.log(`🚫 Unable to verify action plan count for free user ${user.id}, showing upgrade prompt`);
-        } else {
-          console.log(`🚫 Free user ${user.id} has reached action plan limit (${count} plans)`);
-        }
-
         return NextResponse.json({
           error: 'Free plan limit reached',
           message: 'You\'ve used your 1 free action plan. Upgrade to generate unlimited action plans and unlock script generation!',
@@ -71,8 +64,6 @@ export async function POST(request) {
         }, { status: 403 });
       }
 
-      // First free plan - welcome them!
-      console.log(`🎉 Generating first FREE action plan for user: ${user.id}`);
     }
 
     const claude = getClaudeService();
@@ -85,7 +76,6 @@ export async function POST(request) {
     // NEW: Check if this is a remix channel with analytics data
     if (remixAnalytics) {
       // Build analytics summary from remix channel data
-      console.log('Using remix analytics data for action plan generation');
 
       channelAnalytics = `
 Remix Channel Analysis for "${channelName}":
@@ -138,30 +128,21 @@ Remix Channel Analysis for "${channelName}":
     // EXISTING: Fall back to SupaData/YouTube API if no remix analytics
     else {
       try {
-        console.log(`🔍 Attempting to fetch YouTube data for channel: ${channelName} (ID: ${channelId || 'not provided'})`);
 
         let actualChannelId = channelId;
 
         // PRIORITY 1: Try SupaData first if we have a channel ID
         if (channelId) {
-          console.log(`🚀 PRIORITY 1: Trying SupaData with channel ID: ${channelId}`);
           const supadataChannel = await fetchChannelInfo(channelId);
 
           if (supadataChannel) {
-            console.log(`✅ SupaData: Successfully fetched channel "${supadataChannel.title}"`);
-            console.log(`   Subscribers: ${parseInt(supadataChannel.subscriberCount || 0).toLocaleString()}`);
-            console.log(`   Videos: ${supadataChannel.videoCount || 0}`);
-
             // Wait 1 second to respect SupaData free plan rate limit (1 request/second)
-            console.log('⏳ Waiting 1 second to respect rate limit...');
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Fetch recent videos from SupaData
-            console.log('📹 Fetching recent videos via SupaData...');
             const supadataVideos = await fetchChannelRecentVideos(channelId, 3);
 
             if (supadataVideos && supadataVideos.length > 0) {
-              console.log(`✅ SupaData: Fetched ${supadataVideos.length} videos`);
               recentVideos = supadataVideos.map(v => ({
                 title: v.title,
                 description: v.description?.substring(0, 200) || '',
@@ -199,29 +180,23 @@ This channel appears to focus on: ${supadataChannel.description ?
               }
             };
           } else {
-            console.log('⚠️ SupaData returned no channel data, falling back to YouTube API');
             throw new Error('SupaData fetch failed, trying YouTube API');
           }
         }
 
         // PRIORITY 2: Fall back to YouTube API if SupaData failed or no channel ID
         if (!channelData) {
-          console.log(`🔄 PRIORITY 2: Falling back to YouTube API`);
-
           if (!process.env.YOUTUBE_API_KEY) {
-            console.warn('⚠️ YOUTUBE_API_KEY not set, skipping YouTube API calls');
             throw new Error('YouTube API key not configured');
           }
 
           let apiUrl;
           if (channelId) {
-            console.log(`📡 Using provided channel ID: ${channelId}`);
             apiUrl = `https://www.googleapis.com/youtube/v3/channels?` +
               `part=snippet,statistics,contentDetails&` +
               `id=${channelId}&` +
               `key=${process.env.YOUTUBE_API_KEY}`;
           } else {
-            console.log(`🔎 Searching YouTube for channel by name: ${channelName}`);
             const searchResponse = await fetch(
               `https://www.googleapis.com/youtube/v3/search?` +
               `part=snippet&` +
@@ -232,35 +207,27 @@ This channel appears to focus on: ${supadataChannel.description ?
             );
 
             if (!searchResponse.ok) {
-              const errorText = await searchResponse.text();
-              console.error(`❌ YouTube search API failed (${searchResponse.status}):`, errorText);
               throw new Error(`YouTube API search failed: ${searchResponse.status}`);
             }
 
             const searchData = await searchResponse.json();
-            console.log(`📊 YouTube search returned ${searchData.items?.length || 0} results`);
 
             actualChannelId = searchData.items?.[0]?.snippet?.channelId;
 
             if (actualChannelId) {
-              console.log(`✅ Found channel ID from search: ${actualChannelId}`);
               apiUrl = `https://www.googleapis.com/youtube/v3/channels?` +
                 `part=snippet,statistics,contentDetails&` +
                 `id=${actualChannelId}&` +
                 `key=${process.env.YOUTUBE_API_KEY}`;
             } else {
-              console.warn('⚠️ No channel found in YouTube search results');
               throw new Error('Channel not found in YouTube search');
             }
           }
 
           if (apiUrl) {
-            console.log(`📡 Fetching channel details from YouTube API...`);
             const channelResponse = await fetch(apiUrl);
 
             if (!channelResponse.ok) {
-              const errorText = await channelResponse.text();
-              console.error(`❌ YouTube channel API failed (${channelResponse.status}):`, errorText);
               throw new Error(`YouTube API channel fetch failed: ${channelResponse.status}`);
             }
 
@@ -268,13 +235,8 @@ This channel appears to focus on: ${supadataChannel.description ?
             channelData = data.items?.[0];
 
             if (!channelData) {
-              console.warn('⚠️ YouTube API returned no channel data');
               throw new Error('No channel data returned from YouTube API');
             }
-
-            console.log(`✅ Successfully fetched channel data for: ${channelData.snippet?.title}`);
-            console.log(`   Subscribers: ${channelData.statistics?.subscriberCount || 'hidden'}`);
-            console.log(`   Videos: ${channelData.statistics?.videoCount || 0}`);
 
             // Get recent videos using YouTube API
             const uploadsPlaylistId = channelData.contentDetails?.relatedPlaylists?.uploads;
@@ -294,7 +256,6 @@ This channel appears to focus on: ${supadataChannel.description ?
                   description: item.snippet.description?.substring(0, 200) || '',
                   publishedAt: item.snippet.publishedAt
                 })) || [];
-                console.log(`✅ YouTube API: Fetched ${recentVideos.length} videos`);
               }
             }
 
@@ -313,9 +274,7 @@ This channel appears to focus on: ${channelData.snippet.description ?
   channelData.snippet.description.substring(0, 200) : 'content related to ' + topic}`;
           }
         }
-      } catch (error) {
-        console.error('❌ Error fetching YouTube channel data:', error.message);
-        console.log('⚠️ Continuing without YouTube data - will use fallback method');
+      } catch {
         // Continue without channel data
       }
     } // End of else block (SupaData/YouTube API fallback)
@@ -323,8 +282,6 @@ This channel appears to focus on: ${channelData.snippet.description ?
     // FALLBACK: If no channel data was fetched and we have a provided description/bio, use it
     if (!channelAnalytics && (channelDescription || channelBio)) {
       const providedDescription = channelDescription || channelBio;
-      console.log(`📝 Using provided channel description/bio for analysis (${providedDescription.length} chars)`);
-      console.log(`   Preview: ${providedDescription.substring(0, 100)}...`);
       channelAnalytics = `
 Channel Data for "${channelName}":
 - Description: ${providedDescription}
@@ -335,8 +292,6 @@ This channel appears to focus on: ${providedDescription.substring(0, 300)}`;
 
     // If still no analytics, create minimal fallback
     if (!channelAnalytics) {
-      console.warn(`⚠️ No channel data available for "${channelName}" - using name-only analysis`);
-      console.log('   This will result in generic recommendations. Try providing a channelId or better description.');
       channelAnalytics = `
 Channel: "${channelName}"
 - No channel data available
@@ -347,11 +302,9 @@ Channel: "${channelName}"
     // MULTI-STAGE AI ENHANCEMENT PIPELINE
     // ========================================
 
-    console.log('🚀 Starting multi-stage action plan generation');
     await updateProgress(sessionId, PROGRESS_STAGES.INITIALIZING, 'Starting action plan generation...', 0);
 
     // STAGE 1: Detect actual channel niche using AI (ENHANCED)
-    console.log('📊 Stage 1: Detecting channel niche...');
     await updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, 'Analyzing channel niche and audience...', 15);
     // Use provided description/bio as fallback when YouTube API fails
     const channelDescriptionToUse = channelData?.snippet?.description ||
@@ -375,7 +328,6 @@ Channel: "${channelName}"
     const confidence = nicheDetection.confidence || 'medium';
     const reasoning = nicheDetection.reasoning || 'AI-detected niche';
 
-    console.log(`✅ Detected niche: ${detectedNiche} (${confidence} confidence)`);
     await updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, `Detected niche: ${detectedNiche}`, 25);
 
     // Use detected niche instead of generic topic where appropriate
@@ -389,7 +341,6 @@ Channel: "${channelName}"
       `${channelName} Channel Content Strategy` : actualTopic;
 
     // STAGE 2: Find real events in this niche (pass sub-categories for better search)
-    console.log('🔍 Stage 2: Finding real events...');
     await updateProgress(sessionId, PROGRESS_STAGES.RESEARCH, 'Searching for trending topics and current events...', 35);
     const { success: eventsSuccess, events: realEvents, searchProvider } = await findRealEvents(
       finalTopic || detectedNiche,
@@ -398,10 +349,8 @@ Channel: "${channelName}"
     );
 
     if (eventsSuccess && realEvents.length > 0) {
-      console.log(`✅ Found ${realEvents.length} real events using ${searchProvider}`);
       await updateProgress(sessionId, PROGRESS_STAGES.RESEARCH, `Found ${realEvents.length} trending events`, 45);
     } else {
-      console.warn('⚠️ No real events found, will use AI-generated examples');
       await updateProgress(sessionId, PROGRESS_STAGES.RESEARCH, 'Generating content ideas...', 45);
     }
 
@@ -516,7 +465,6 @@ Include current trends and best practices for YouTube growth in 2025 that are re
 IMPORTANT: Provide complete JSON without truncation - all arrays should be fully populated with the specified number of items.`;
 
     // STAGE 3: Generate action plan with enhanced prompt
-    console.log('🎨 Stage 3: Generating action plan with AI...');
     await updateProgress(sessionId, PROGRESS_STAGES.GENERATING, 'Creating personalized strategy with AI...', 55);
     const response = await claude.generateCompletion(prompt, {
       model: 'claude-sonnet-4-5-20250929',
@@ -538,10 +486,7 @@ IMPORTANT: Provide complete JSON without truncation - all arrays should be fully
       if (!actionPlan.weeklyPlan || !actionPlan.contentTemplates) {
         throw new Error('Parsed JSON is missing required fields');
       }
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
-      console.error('Raw response (first 500 chars):', response.substring(0, 500));
-
+    } catch {
       // Update progress to show error
       await updateProgress(
         sessionId,
@@ -554,12 +499,10 @@ IMPORTANT: Provide complete JSON without truncation - all arrays should be fully
       actionPlan = generateFallbackPlan(channelName, actualTopic);
     }
 
-    console.log('✅ Action plan generated');
     await updateProgress(sessionId, PROGRESS_STAGES.GENERATING, 'Action plan generated successfully', 70);
 
     // STAGE 4: Validate content ideas against real events
     if (realEvents && realEvents.length > 0 && actionPlan.contentIdeas) {
-      console.log('✅ Stage 4: Validating content ideas...');
       await updateProgress(sessionId, PROGRESS_STAGES.VALIDATING, 'Validating content ideas against trends...', 80);
       try {
         actionPlan.contentIdeas = await validateContentIdeas(
@@ -567,20 +510,17 @@ IMPORTANT: Provide complete JSON without truncation - all arrays should be fully
           realEvents,
           detectedNiche
         );
-        console.log('✅ Content ideas validated');
-      } catch (error) {
-        console.warn('⚠️ Content idea validation failed:', error.message);
+      } catch {
+        /* ignored */
       }
     }
 
     // STAGE 5: Enrich missing fields
-    console.log('🎨 Stage 5: Enriching missing fields...');
     await updateProgress(sessionId, PROGRESS_STAGES.ENRICHING, 'Adding final touches and insights...', 90);
     try {
       actionPlan = await enrichActionPlan(actionPlan, detectedNiche);
-      console.log('✅ Action plan enriched');
-    } catch (error) {
-      console.warn('⚠️ Enrichment failed:', error.message);
+    } catch {
+      /* ignored */
     }
 
     // Add metadata (ENHANCED with niche detection data)
@@ -620,13 +560,9 @@ IMPORTANT: Provide complete JSON without truncation - all arrays should be fully
         created_at: new Date().toISOString()
       });
 
-    console.log('✅ Multi-stage action plan generation complete!');
-
     if (dbError) {
       console.error('Failed to store action plan:', dbError);
       // Continue anyway - the plan was generated successfully
-    } else {
-      console.log('Action plan stored successfully for channel:', channelName);
     }
 
     await updateProgress(sessionId, PROGRESS_STAGES.COMPLETED, 'Action plan completed!', 100);

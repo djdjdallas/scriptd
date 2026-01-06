@@ -87,16 +87,12 @@ function analyzeContentGaps(script, contentPoints, targetWords, chunkInfo = null
 
   // If no gaps found but script is short, add a general expansion gap
   if (gaps.length === 0 && wordsNeeded > 50) {  // Lower threshold from 100 to 50
-    console.log('⚠️ No specific gaps identified, script is short but complete');
-    console.log(`📈 Creating expansion strategy for ${wordsNeeded} additional words`);
-
     // Find all existing sections to expand
     const sectionMatches = script.match(/###\s+[^\n]+/g) || [];
 
     if (sectionMatches.length > 0) {
       // Add general expansion for existing sections
       const wordsPerSection = Math.ceil(wordsNeeded / sectionMatches.length);
-      console.log(`📝 Will expand ${sectionMatches.length} sections with ~${wordsPerSection} words each`);
 
       gaps.push({
         type: 'general_expansion',
@@ -135,18 +131,15 @@ function analyzeContentGaps(script, contentPoints, targetWords, chunkInfo = null
  * Generate expansion content for identified gaps
  */
 async function generateExpansion(script, gapAnalysis, research, apiKey, model = process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929', chunkInfo = null) {
-  const { gaps, wordsNeeded, currentWords, targetWords } = gapAnalysis;
+  const { gaps, wordsNeeded } = gapAnalysis;
 
   if (gaps.length === 0) {
-    console.log('No gaps identified, cannot expand');
     return null;
   }
 
   // Take top 3 gaps to focus on
   const topGaps = gaps.slice(0, 3);
   const wordsPerGap = Math.floor(wordsNeeded / topGaps.length);
-
-  console.log(`📝 Generating expansion for ${topGaps.length} gaps (${wordsNeeded} words needed)`);
 
   // Add chunk-specific context if provided
   const chunkContext = chunkInfo ? `
@@ -156,11 +149,11 @@ IMPORTANT CONTEXT:
 - ${chunkInfo.isLast ? 'This is the FINAL chunk - MUST include ## Description and ## Tags sections!' : ''}
 - ${chunkInfo.isFirst ? 'This is the FIRST chunk - focus on introduction and setup' : ''}
 ${chunkInfo.previouslyCoveredSections ? `
-⛔ DO NOT ADD CONTENT FOR THESE SECTIONS (already covered in previous chunks):
+DO NOT ADD CONTENT FOR THESE SECTIONS (already covered in previous chunks):
 ${chunkInfo.previouslyCoveredSections.join('\n- ')}` : ''}
 ` : '';
 
-  const expansionPrompt = `You are expanding a YouTube script that is currently ${currentWords} words but needs to be ${targetWords} words.
+  const expansionPrompt = `You are expanding a YouTube script that is currently ${gapAnalysis.currentWords} words but needs to be ${gapAnalysis.targetWords} words.
 ${chunkContext}
 CURRENT SCRIPT (DO NOT REWRITE THIS):
 ${script}
@@ -176,10 +169,10 @@ ${i + 1}. ${gap.title} (${gap.type})
 YOUR TASK:
 Write EXACTLY ${wordsNeeded} words (NO LESS!) to fill these gaps.
 
-🔴🔴🔴 ABSOLUTE REQUIREMENT: ${wordsNeeded} WORDS 🔴🔴🔴
-⚡ MANDATORY: You MUST write ${wordsNeeded} words of NEW content
-⚡ CRITICAL: Scripts shorter than ${wordsNeeded} words will be REJECTED
-⚡ COUNT YOUR WORDS: Keep track as you write to ensure you meet the requirement
+ABSOLUTE REQUIREMENT: ${wordsNeeded} WORDS
+MANDATORY: You MUST write ${wordsNeeded} words of NEW content
+CRITICAL: Scripts shorter than ${wordsNeeded} words will be REJECTED
+COUNT YOUR WORDS: Keep track as you write to ensure you meet the requirement
 
 This is NON-NEGOTIABLE. Write detailed, comprehensive, expansive content.
 DO NOT stop early. DO NOT say "continuing..." or use placeholders.
@@ -195,16 +188,16 @@ For each gap:
          ? `EXPAND ALL EXISTING SECTIONS: You MUST add ${Math.ceil(topGaps[0].estimatedWords / (topGaps[0].sectionCount || 4))} words to EACH section.
 
            FOR EACH EXISTING SECTION, ADD ALL OF THE FOLLOWING:
-           ✓ 2-3 specific examples with real names, dates, locations, and numbers
-           ✓ 3-4 relevant statistics with percentages and data sources
-           ✓ Step-by-step technical breakdowns and explanations
-           ✓ A detailed case study or real-world scenario (100+ words)
-           ✓ Expert quotes, testimonials, or industry analysis
-           ✓ Historical context, timeline, or background information
-           ✓ Visual descriptions ("imagine...", "picture this...", "visualize...")
-           ✓ Common misconceptions and clarifications
-           ✓ Comparisons and analogies to make concepts clearer
-           ✓ Potential implications and future considerations
+           - 2-3 specific examples with real names, dates, locations, and numbers
+           - 3-4 relevant statistics with percentages and data sources
+           - Step-by-step technical breakdowns and explanations
+           - A detailed case study or real-world scenario (100+ words)
+           - Expert quotes, testimonials, or industry analysis
+           - Historical context, timeline, or background information
+           - Visual descriptions ("imagine...", "picture this...", "visualize...")
+           - Common misconceptions and clarifications
+           - Comparisons and analogies to make concepts clearer
+           - Potential implications and future considerations
 
            CRITICAL: You MUST expand EVERY section that exists. DO NOT skip any section.
            DO NOT create new sections - expand what exists!
@@ -213,18 +206,18 @@ For each gap:
            ? `ADD ${topGaps[0].estimatedWords} WORDS throughout the entire script:
 
              MANDATORY ADDITIONS (include ALL):
-             ✓ Expand introduction: Add 150+ words with compelling hook, shocking statistics, preview of key points
-             ✓ For EACH main point: Add 200+ words including:
+             - Expand introduction: Add 150+ words with compelling hook, shocking statistics, preview of key points
+             - For EACH main point: Add 200+ words including:
                - Detailed explanation with technical depth
                - 2-3 specific real-world examples
                - Supporting data and statistics
                - Expert perspective or quote
                - Common mistakes to avoid
                - Actionable tips and implementation steps
-             ✓ Add transition paragraphs: 50+ words between major sections
-             ✓ Include storytelling: Personal anecdotes, case studies, success/failure stories
-             ✓ Add visual cues: "Imagine...", "Picture this...", "Let me paint you a picture..."
-             ✓ Expand conclusion: 150+ words with summary, key takeaways, call-to-action
+             - Add transition paragraphs: 50+ words between major sections
+             - Include storytelling: Personal anecdotes, case studies, success/failure stories
+             - Add visual cues: "Imagine...", "Picture this...", "Let me paint you a picture..."
+             - Expand conclusion: 150+ words with summary, key takeaways, call-to-action
 
              TOTAL REQUIRED: ${topGaps[0].estimatedWords} additional words
              Write DETAILED, COMPREHENSIVE expansions. Do NOT use placeholders.`
@@ -262,7 +255,7 @@ CRITICAL TAGS FORMATTING (if generating tags):
 - DO NOT write: [tag1, tag2, ...] or [20+ tags here]
 
 ${chunkInfo && chunkInfo.isLast ? `
-⚠️ FINAL CHUNK CRITICAL REQUIREMENT:
+FINAL CHUNK CRITICAL REQUIREMENT:
 You MUST include BOTH:
 1. ## Description section with complete video description and timestamps for ENTIRE video
 2. ## Tags section with 20+ actual tags (no placeholders)
@@ -296,8 +289,7 @@ Write the expansion content now:`;
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Expansion API error:', errorText);
+      console.error('Expansion API error:', await response.text());
       return null;
     }
 
@@ -311,9 +303,6 @@ Write the expansion content now:`;
       .replace(/^Here'?s? the (additional|expanded|new) .*?:\s*/gim, '')
       .replace(/^Let me (expand|add|continue).*?:\s*/gim, '')
       .trim();
-
-    const expansionWords = expansionContent.split(/\s+/).length;
-    console.log(`✅ Expansion generated: ${expansionWords} words`);
 
     return expansionContent;
   } catch (error) {
@@ -336,8 +325,6 @@ function insertExpansion(originalScript, expansionContent, gapAnalysis) {
   );
 
   if (isGeneralExpansion) {
-    console.log('📝 Handling general expansion - merging content throughout script');
-
     // For general expansions, the content should be merged more intelligently
     // If the expansion has section headers, try to merge with existing sections
     const expansionSections = expansionContent.split(/(?=###\s+)/);
@@ -361,7 +348,6 @@ function insertExpansion(originalScript, expansionContent, gapAnalysis) {
             enhancedScript = enhancedScript.replace(existingRegex, (match, header, content) => {
               return header + content + '\n\n' + sectionContent + '\n';
             });
-            console.log(`  ✅ Merged expansion into section: ${sectionTitle}`);
           } else {
             // Add as new content before Description/Tags
             const insertPoint = enhancedScript.indexOf('## Description') !== -1
@@ -373,7 +359,6 @@ function insertExpansion(originalScript, expansionContent, gapAnalysis) {
             enhancedScript = enhancedScript.slice(0, insertPoint) +
                            '\n\n' + section +
                            enhancedScript.slice(insertPoint);
-            console.log(`  ✅ Added new expanded section: ${sectionTitle}`);
           }
         } else {
           // No section header, append the content before Description/Tags
@@ -398,7 +383,6 @@ function insertExpansion(originalScript, expansionContent, gapAnalysis) {
 
   if (hasProperHeaders) {
     // Expansion already has correct formatting, append directly
-    console.log('✅ Expansion has proper headers, appending to script');
     return originalScript + '\n\n' + expansionContent;
   }
 
@@ -415,7 +399,6 @@ function insertExpansion(originalScript, expansionContent, gapAnalysis) {
     if (!section) return;
 
     // Check if this section already exists in the script (to prevent duplicates)
-    const normalizedTitle = gap.title.toLowerCase().trim();
     const existingSectionRegex = new RegExp(`###\\s+${gap.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
     const sectionExists = existingSectionRegex.test(enhancedScript);
 
@@ -429,8 +412,6 @@ function insertExpansion(originalScript, expansionContent, gapAnalysis) {
       sectionWithHeader = `\n\n## Description\n${section}`;
     } else if (sectionExists && gap.type === 'underdeveloped_section') {
       // Section exists but is underdeveloped - merge content instead of creating duplicate
-      console.log(`✅ Merging expansion into existing section: ${gap.title}`);
-
       // Find the section and append content after it (before next ### or ## header)
       const sectionMatch = enhancedScript.match(new RegExp(
         `(###\\s+${gap.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*?)(?=\\n###|\\n##|$)`,
@@ -455,7 +436,6 @@ function insertExpansion(originalScript, expansionContent, gapAnalysis) {
       sectionWithHeader = `\n\n### ${section}`;
     } else {
       // Section exists but gap type isn't underdeveloped - skip to avoid duplicates
-      console.log(`⚠️ Skipping section "${gap.title}" - already exists and not marked for expansion`);
       return;
     }
 
@@ -494,25 +474,14 @@ function insertExpansion(originalScript, expansionContent, gapAnalysis) {
  * Main function: Expand a short script intelligently
  */
 async function expandShortScript(script, contentPoints, targetWords, research, apiKey, model, chunkInfo = null) {
-  console.log('🔍 Analyzing script for expansion opportunities...');
-
   // Analyze what's missing (with chunk context)
   const gapAnalysis = analyzeContentGaps(script, contentPoints, targetWords, chunkInfo);
 
-  console.log(`📊 Gap analysis complete:`, {
-    currentWords: gapAnalysis.currentWords,
-    targetWords: gapAnalysis.targetWords,
-    wordsNeeded: gapAnalysis.wordsNeeded,
-    gapsFound: gapAnalysis.gapCount
-  });
-
   if (gapAnalysis.wordsNeeded <= 0) {
-    console.log('✅ Script already meets target word count');
     return script;
   }
 
   if (gapAnalysis.gapCount === 0) {
-    console.log('⚠️ No specific gaps identified, script is short but complete');
     return script;
   }
 
@@ -520,15 +489,11 @@ async function expandShortScript(script, contentPoints, targetWords, research, a
   const expansionContent = await generateExpansion(script, gapAnalysis, research, apiKey, model, chunkInfo);
 
   if (!expansionContent) {
-    console.log('❌ Failed to generate expansion content');
     return script;
   }
 
   // Insert expansion into script
   const enhancedScript = insertExpansion(script, expansionContent, gapAnalysis);
-
-  const finalWords = enhancedScript.split(/\s+/).length;
-  console.log(`✅ Script expanded: ${gapAnalysis.currentWords} → ${finalWords} words`);
 
   return enhancedScript;
 }

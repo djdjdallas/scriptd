@@ -192,24 +192,18 @@ Respond ONLY with valid JSON, no markdown code blocks or extra text.`;
     let analysis;
     try {
       analysis = JSON.parse(content);
-      console.log('✅ Successfully parsed JSON response from Claude');
     } catch (e) {
-      console.log('⚠️ Failed to parse direct JSON, trying markdown extraction...');
       // Try to extract JSON from markdown code blocks
       const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
       if (jsonMatch) {
         try {
           analysis = JSON.parse(jsonMatch[1]);
-          console.log('✅ Successfully parsed JSON from markdown');
         } catch (e2) {
-          console.error('❌ Failed to parse JSON from markdown:', e2.message);
-          console.log('📝 Raw content preview:', content.substring(0, 500));
+          console.error('Failed to parse JSON from markdown:', e2.message);
           // Fallback: create structured data from text response
           analysis = parseTextResponse(content);
         }
       } else {
-        console.log('📝 No JSON found in markdown, using fallback parser');
-        console.log('Raw content preview:', content.substring(0, 500));
         // Fallback: create structured data from text response
         analysis = parseTextResponse(content);
       }
@@ -228,10 +222,6 @@ Respond ONLY with valid JSON, no markdown code blocks or extra text.`;
       metricsAndBenchmarks: analysis['METRICS & BENCHMARKS'] || analysis.metricsAndBenchmarks || analysis['9. METRICS & BENCHMARKS'] || {},
       actionPlan: analysis['ACTION PLAN (First 30 Days)'] || analysis.actionPlan || analysis['10. ACTION PLAN (First 30 Days)'] || {}
     };
-
-    console.log('📊 Analysis sections populated:', Object.keys(normalizedAnalysis).filter(k =>
-      normalizedAnalysis[k] && (typeof normalizedAnalysis[k] === 'object' ? Object.keys(normalizedAnalysis[k]).length > 0 : normalizedAnalysis[k].length > 0)
-    ));
 
     return {
       success: true,
@@ -254,8 +244,6 @@ Respond ONLY with valid JSON, no markdown code blocks or extra text.`;
  */
 export async function generateChannelVoiceProfile(channel, videos) {
   try {
-    console.log('🎯 Starting voice profile generation from real YouTube data...');
-
     // Analyze actual videos for voice/style
     // Note: analyzeChannelVoicesFromYouTube expects an array of channels with youtube_channel_id
     const channelWithId = {
@@ -269,7 +257,6 @@ export async function generateChannelVoiceProfile(channel, videos) {
     const voiceAnalysis = channelAnalyses[0]?.voiceAnalysis ? { success: true, voiceProfile: channelAnalyses[0].voiceAnalysis } : { success: false };
 
     if (voiceAnalysis.success) {
-      console.log('✅ Successfully created voice profile from real YouTube data');
       return {
         success: true,
         voiceProfile: voiceAnalysis.voiceProfile,
@@ -279,7 +266,6 @@ export async function generateChannelVoiceProfile(channel, videos) {
     }
 
     // Fallback to metadata-based analysis
-    console.log('⚠️ Falling back to metadata-based voice analysis...');
     return await generateVoiceFromMetadata(channel, videos);
 
   } catch (error) {

@@ -21,9 +21,6 @@ class ResearchServiceWithSearch {
       niche
     } = options;
 
-    console.log(`🔍 Starting iterative research for: "${query}"`);
-    console.log(`📊 Target: ${minSources} sources with ${minContentLength}+ chars each`);
-
     let allSources = [];
     let attempt = 0;
     const maxAttempts = 3;
@@ -31,7 +28,6 @@ class ResearchServiceWithSearch {
 
     while (allSources.length < minSources && attempt < maxAttempts) {
       attempt++;
-      console.log(`\n🔄 Research attempt ${attempt}/${maxAttempts} (currently have ${allSources.length} sources)`);
 
       // Build query for this iteration
       let iterationQuery = query;
@@ -53,7 +49,7 @@ Focus on sources not yet covered. Already found ${allSources.length} sources.`;
       });
 
       if (!result.success) {
-        console.warn(`⚠️ Attempt ${attempt} failed:`, result.error);
+        console.warn(`Attempt ${attempt} failed:`, result.error);
         continue;
       }
 
@@ -73,19 +69,16 @@ Focus on sources not yet covered. Already found ${allSources.length} sources.`;
         return true;
       });
 
-      console.log(`✅ Found ${newSources.length} new unique sources this iteration`);
       allSources = allSources.concat(newSources);
 
       // If we've reached our goal, stop early
       if (allSources.length >= minSources) {
-        console.log(`🎯 Target reached! Found ${allSources.length} sources`);
         break;
       }
     }
 
     // Calculate total content
     const totalContent = allSources.reduce((sum, s) => sum + (s.source_content?.length || 0), 0);
-    console.log(`\n📚 Research complete: ${allSources.length} sources, ${totalContent} total characters`);
 
     // Use summary from last successful result or create one
     const summary = allSources.find(s => s.source_type === 'synthesis')?.source_content ||
@@ -125,7 +118,7 @@ Focus on sources not yet covered. Already found ${allSources.length} sources.`;
     } = options;
 
     if (!process.env.ANTHROPIC_API_KEY) {
-      console.error('❌ ANTHROPIC_API_KEY not configured');
+      console.error('ANTHROPIC_API_KEY not configured');
       return {
         success: false,
         error: 'ANTHROPIC_API_KEY not configured',
@@ -136,8 +129,6 @@ Focus on sources not yet covered. Already found ${allSources.length} sources.`;
     }
 
     try {
-      console.log('🔍 Attempting research with web search capabilities');
-
       const anthropic = new Anthropic({
         apiKey: process.env.ANTHROPIC_API_KEY,
       });
@@ -175,18 +166,15 @@ After completing your research, provide a comprehensive analysis including:
 
 Focus on quality over speed. Take the time to search thoroughly and fetch full content from the most relevant sources.`;
 
-      console.log('🔧 Using Claude web_search and web_fetch tools for real-time research');
-      console.log('🔑 API Key prefix:', process.env.ANTHROPIC_API_KEY?.substring(0, 15) + '...');
-
       const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-5-20250929', // ✅ Correct Sonnet 4.5 model
+        model: 'claude-sonnet-4-5-20250929', // Correct Sonnet 4.5 model
         max_tokens: 16000, // Increased for search results + analysis
         temperature: 0.3,
         messages: [{
           role: 'user',
           content: searchPrompt
         }],
-        // ✅ Enable REAL web search tool
+        // Enable REAL web search tool
         tools: [
           {
             type: "web_search_20250305",
@@ -197,23 +185,15 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
         // Note: web_fetch removed - it's in beta and may not be available for all API keys
       });
 
-      console.log('📊 API Response - Stop reason:', response.stop_reason);
-      console.log('📊 API Response - Usage:', JSON.stringify(response.usage, null, 2));
-
       // Parse the response - now includes actual web search results!
-      console.log(`📊 Response contains ${response.content.length} content blocks`);
-
       // Extract web search results from the response
       const searchResults = [];
       const fetchResults = [];
       let textAnalysis = '';
 
-      console.log('📦 Content block types:', response.content.map(b => b.type).join(', '));
-
       for (const block of response.content) {
         if (block.type === 'web_search_tool_result') {
           // Extract search results
-          console.log(`🔍 Found web_search_tool_result with ${block.content?.length || 0} results`);
           if (Array.isArray(block.content)) {
             for (const result of block.content) {
               if (result.type === 'web_search_result') {
@@ -228,7 +208,6 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
           }
         } else if (block.type === 'web_fetch_tool_result') {
           // Extract fetched content
-          console.log(`📄 Found web_fetch_tool_result`);
           if (block.content?.type === 'web_fetch_result') {
             const fetchData = block.content;
             let contentText = '';
@@ -250,9 +229,6 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
           textAnalysis += block.text || '';
         }
       }
-
-      console.log(`✅ Extracted ${searchResults.length} search results and ${fetchResults.length} fetched pages`);
-      console.log(`📝 Analysis text length: ${textAnalysis.length} characters`);
 
       // Combine search and fetch results into normalized sources
       const normalizedSources = [];
@@ -289,8 +265,6 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
       }
 
       // === NEW: ENRICH SOURCES WITH FULL WEB CONTENT ===
-      console.log('📚 Enriching search results with full web content...');
-
       // Identify URLs that need content fetching (those with placeholder content)
       const urlsToEnrich = normalizedSources
         .filter(s => {
@@ -300,8 +274,6 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
           return isWebUrl && (hasPlaceholder || hasShortContent);
         })
         .map(s => s.source_url);
-
-      console.log(`  🔍 Found ${urlsToEnrich.length} sources needing enrichment`);
 
       if (urlsToEnrich.length > 0) {
         try {
@@ -326,17 +298,11 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
                 word_count: fetched.wordCount,
                 is_starred: fetched.wordCount >= 500 ? true : source.is_starred
               };
-              console.log(`  ✅ Enriched: ${source.source_title} (${fetched.wordCount} words)`);
             }
           }
 
-          const successCount = fetchedContents.filter(f => f.success).length;
-          const totalWords = fetchedContents.reduce((sum, f) => sum + (f.wordCount || 0), 0);
-          console.log(`  📊 Enrichment complete: ${successCount}/${urlsToEnrich.length} successful (${totalWords.toLocaleString()} words added)`);
-
         } catch (error) {
-          console.error('  ❌ Content enrichment failed:', error);
-          console.log('  ⚠️ Continuing with original sources');
+          console.error('Content enrichment failed:', error);
         }
       }
 
@@ -344,7 +310,7 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
       if (textAnalysis.trim()) {
         normalizedSources.unshift({
           source_url: '#claude-analysis',
-          source_title: '🔬 AI Research Analysis',
+          source_title: 'AI Research Analysis',
           source_content: textAnalysis,
           source_type: 'synthesis',
           is_starred: true,
@@ -352,8 +318,6 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
           relevance: 1.0
         });
       }
-
-      console.log(`✅ Research completed with ${normalizedSources.length} total sources`);
 
       // Extract insights from text analysis (simple parsing)
       const insights = {
@@ -381,17 +345,11 @@ Focus on quality over speed. Take the time to search thoroughly and fetch full c
       };
 
     } catch (error) {
-      console.error('❌ Research failed:', error);
-      console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        status: error.status,
-        type: error.type
-      });
+      console.error('Research failed:', error);
 
       // Check for specific error types
       if (error.message?.includes('web_search') || error.message?.includes('web_fetch')) {
-        console.error('⚠️ Web tool error - check that web search is enabled in Console settings');
+        console.error('Web tool error - check that web search is enabled in Console settings');
       }
 
       return {

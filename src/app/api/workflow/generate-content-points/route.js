@@ -97,10 +97,9 @@ export async function POST(request) {
 
         if (workflowResearch && workflowResearch.length > 0) {
           sources = workflowResearch;
-          console.log(`✅ Loaded ${sources.length} research sources for content points generation`);
         }
-      } catch (error) {
-        console.warn('Could not load research sources:', error);
+      } catch {
+        /* ignored */
       }
     }
 
@@ -266,15 +265,7 @@ VALIDATION CHECKLIST:
               id: point.id || crypto.randomUUID()
             }));
 
-            console.log('✅ Content points generated with research context:', {
-              pointsCount: points.length,
-              sourcesUsed: sources.length,
-              totalDuration: points.reduce((sum, p) => sum + (p.duration || 0), 0),
-              targetDuration
-            });
-
-          } catch (parseError) {
-            console.log('Claude response parsing failed, using fallback');
+          } catch {
             points = generateFallbackPoints(topic, targetAudience, targetDuration);
           }
         }
@@ -312,7 +303,6 @@ VALIDATION CHECKLIST:
       );
 
       if (!deductionResult.success) {
-        console.error('Failed to deduct credits:', deductionResult.error);
         return NextResponse.json(
           {
             error: deductionResult.error || 'Failed to deduct credits',
@@ -322,8 +312,6 @@ VALIDATION CHECKLIST:
           { status: 402 }
         );
       }
-
-      console.log('✅ Credits deducted:', deductionResult);
     }
 
     return NextResponse.json({

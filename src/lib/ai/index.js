@@ -21,7 +21,6 @@ export function getAIService(model = MODEL_TIERS.BALANCED?.actualModel || proces
   // Always use Anthropic provider for all models
   if (!anthropicService) {
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    console.log('[AI Service] Initializing Anthropic provider for model:', model, 'API key present:', !!apiKey);
     if (!apiKey) {
       throw new Error('ANTHROPIC_API_KEY environment variable is not set');
     }

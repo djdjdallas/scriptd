@@ -82,10 +82,6 @@ export async function generateYouTubeScript() {
     }
   });
 
-  console.log('Generated Script:', response.text);
-  console.log('Token Usage:', response.usage);
-  console.log('Estimated Cost:', response.cost);
-
   return response;
 }
 
@@ -113,10 +109,6 @@ export async function generateScriptWithStreaming() {
     if (chunk.type === 'content') {
       process.stdout.write(chunk.content); // Print as it streams
       fullScript += chunk.content;
-    } else if (chunk.type === 'done') {
-      console.log('\n\nGeneration Complete!');
-      console.log('Total tokens:', chunk.usage.totalTokens);
-      console.log('Cost:', chunk.cost);
     }
   }
 
@@ -142,8 +134,6 @@ export async function generateVideoTitles() {
     taskType: TaskType.TITLE_GENERATION
   });
 
-  console.log('Generated Titles:', response.text);
-  
   return response;
 }
 
@@ -275,13 +265,6 @@ export async function trackUsageAndCosts() {
 
   // Get usage statistics
   const stats = ai.getUsageStats();
-  
-  console.log('Usage Statistics:');
-  console.log('Total Requests:', stats.requests);
-  console.log('Total Tokens:', stats.totalTokens);
-  console.log('Total Cost: $', stats.totalCost.toFixed(4));
-  console.log('Average Cost per Request: $', stats.averageCostPerRequest.toFixed(4));
-  console.log('By Provider:', stats.byProvider);
 
   return stats;
 }
@@ -332,21 +315,12 @@ export async function estimateGenerationCost() {
 
   // Count tokens before generation
   const inputTokens = await ai.countTokens(longPrompt);
-  console.log('Input tokens:', inputTokens);
 
   // Estimate cost (assuming ~2000 output tokens for 20-min script)
   const estimatedCost = ai.estimateCost(inputTokens, 2000, {
     provider: 'anthropic',
     model: 'claude-3-opus-20240229'
   });
-
-  console.log('Estimated cost: $', estimatedCost.toFixed(4));
-
-  // Decide whether to proceed based on cost
-  if (estimatedCost > 1.00) {
-    console.log('Cost too high, using cheaper model');
-    // Use cheaper model or shorter output
-  }
 
   return { inputTokens, estimatedCost };
 }

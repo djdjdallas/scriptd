@@ -19,7 +19,6 @@ const anthropic = new Anthropic({
  */
 export async function generateFactualVideoIdeas(channelData, recentVideos, audienceData, trends) {
   try {
-    console.log('🔍 Step 1: Researching real cases with Perplexity...');
 
     // Determine the channel's content focus
     const contentFocus = determineContentFocus(recentVideos, channelData.niche);
@@ -61,7 +60,6 @@ export async function generateFactualVideoIdeas(channelData, recentVideos, audie
       })) : [])
     ];
 
-    console.log(`✅ Found ${realEvents.length} real cases to work with`);
 
     // Now use Claude to create compelling content from these real events
     return await generateContentFromRealEvents(
@@ -403,7 +401,6 @@ Generate creative, specific, and actionable video ideas that align with the chan
       // First attempt: try to parse the matched JSON
       ideas = JSON.parse(jsonMatch[0]);
     } catch (parseError) {
-      console.error('Initial JSON parse failed, attempting to clean JSON:', parseError.message);
       
       // Clean up common JSON issues
       let cleanedJson = jsonMatch[0]
@@ -418,8 +415,6 @@ Generate creative, specific, and actionable video ideas that align with the chan
       try {
         ideas = JSON.parse(cleanedJson);
       } catch (secondError) {
-        console.error('Cleaned JSON parse also failed:', secondError.message);
-        console.error('JSON content (first 500 chars):', cleanedJson.substring(0, 500));
         throw new Error(`Failed to parse AI response: ${secondError.message}`);
       }
     }

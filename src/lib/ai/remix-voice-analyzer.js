@@ -527,7 +527,6 @@ function generateEnhancedMetadataFallback(metadataPatterns) {
  * Returns structure similar to full transcript analysis for consistency
  */
 async function analyzeVoiceStyleFromMetadata(channelContext, videos) {
-  console.log('🎨 Running ENHANCED metadata analysis (no transcripts available)...');
 
   // Pre-analyze metadata patterns for better prompting
   const metadataPatterns = analyzeMetadataPatterns(videos);
@@ -660,8 +659,7 @@ IMPORTANT: Be thorough and specific. Use actual patterns from the metadata. This
     try {
       // Try direct parse
       voiceProfile = JSON.parse(content);
-    } catch (e) {
-      console.log('🔧 Repairing JSON from metadata analysis...');
+    } catch {
       // Extract JSON from markdown if present
       const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
       const jsonText = jsonMatch ? jsonMatch[1] : content;
@@ -692,15 +690,9 @@ IMPORTANT: Be thorough and specific. Use actual patterns from the metadata. This
       };
     }
 
-    console.log('✅ Enhanced metadata analysis completed');
-    console.log(`   - Confidence: ${voiceProfile.confidenceScores.overall}`);
-    console.log(`   - Videos analyzed: ${videos.length}`);
-    console.log(`   - Has full structure: ${!!voiceProfile.linguisticFingerprints}`);
-
     return voiceProfile;
 
-  } catch (error) {
-    console.error('❌ Error analyzing voice from metadata:', error.message);
+  } catch {
 
     // Return basic fallback on error
     return {
@@ -792,8 +784,7 @@ function parseEnhancedVoiceAnalysis(analysisText, realConfidenceScores, linguist
       // First attempt: direct parse
       const parsed = JSON.parse(cleanedText);
       return processEnhancedProfile(parsed, realConfidenceScores, linguisticConsistency);
-    } catch (e) {
-      console.error('Initial parse failed, attempting comprehensive fixes...');
+    } catch {
       
       // Advanced JSON repair strategy
       let fixedText = cleanedText;
@@ -930,7 +921,6 @@ function parseEnhancedVoiceAnalysis(analysisText, realConfidenceScores, linguist
 
       // If we have unclosed structures, try to close them properly
       if (depth > 0) {
-        console.log(`Detected ${depth} unclosed structures, attempting to fix...`);
 
         // Close any open strings first
         if (inString) {
@@ -987,31 +977,16 @@ function parseEnhancedVoiceAnalysis(analysisText, realConfidenceScores, linguist
       // Try parsing the fixed version
       try {
         const parsed = JSON.parse(fixedText);
-        console.log('Successfully parsed after comprehensive fixes');
         return processEnhancedProfile(parsed, realConfidenceScores, linguisticConsistency);
-      } catch (e2) {
-        console.error('Parse failed even after fixes:', e2.message);
-
-        // Log debugging info
-        const match = e2.message.match(/position (\d+)/);
-        if (match) {
-          const pos = parseInt(match[1]);
-          const start = Math.max(0, pos - 150);
-          const end = Math.min(fixedText.length, pos + 150);
-          console.error('Text around error position:', fixedText.substring(start, end));
-        }
-
+      } catch {
         // Attempt to extract partial data
-        console.log('Attempting to extract partial data...');
         const partialData = extractPartialData(fixedText);
 
         if (partialData && Object.keys(partialData).length > 5) {
-          console.log(`Extracted ${Object.keys(partialData).length} fields from partial data`);
           return processEnhancedProfile(partialData, realConfidenceScores, linguisticConsistency);
         }
 
         // Return a fallback structure with real confidence scores
-        console.log('Returning enhanced fallback structure');
         const fallback = getFallbackVoiceProfile();
 
         // Add real calculated scores to the fallback
@@ -1029,8 +1004,7 @@ function parseEnhancedVoiceAnalysis(analysisText, realConfidenceScores, linguist
         return fallback;
       }
     }
-  } catch (error) {
-    console.error('Error in parseEnhancedVoiceAnalysis:', error);
+  } catch {
     return getFallbackVoiceProfile();
   }
 }
@@ -1224,14 +1198,9 @@ function generateDefaultEnhancedProfile() {
  * Prioritizes transcript-based patterns (direct observation) over metadata inferences
  */
 function mergeTranscriptAndMetadata(transcriptAnalysis, metadataAnalysis, transcriptCount) {
-  console.log('  🔗 Merging transcript and metadata analyses...');
-
   // Calculate confidence weights (more transcripts = higher weight for transcript data)
   const transcriptWeight = Math.min(transcriptCount / 5, 0.8); // Max 80% at 5 transcripts
   const metadataWeight = 1 - transcriptWeight;
-
-  console.log(`    Transcript weight: ${Math.round(transcriptWeight * 100)}%`);
-  console.log(`    Metadata weight: ${Math.round(metadataWeight * 100)}%`);
 
   const merged = {
     // Core voice - prefer transcript data
@@ -1329,8 +1298,6 @@ function mergeTranscriptAndMetadata(transcriptAnalysis, metadataAnalysis, transc
     _metadataSource: metadataAnalysis._generatedBy || 'metadata-analysis'
   };
 
-  console.log('  ✅ Merge complete - hybrid profile created');
-
   return merged;
 }
 
@@ -1338,24 +1305,19 @@ function mergeTranscriptAndMetadata(transcriptAnalysis, metadataAnalysis, transc
  * Fetch and analyze actual transcripts from YouTube channels
  * This provides real voice analysis instead of theoretical blending
  */
-export async function analyzeChannelVoicesFromYouTube(channels, config) {
+export async function analyzeChannelVoicesFromYouTube(channels) {
   const channelAnalyses = [];
-  
+
   for (const channel of channels) {
-    console.log(`\n📺 Analyzing voice for channel: ${channel.title || channel.name}`);
-    
     try {
       // Extract YouTube channel ID from various possible fields
-      const youtubeChannelId = channel.youtube_channel_id || 
-                              channel.channelId || 
+      const youtubeChannelId = channel.youtube_channel_id ||
+                              channel.channelId ||
                               channel.youtubeChannelId ||
                               channel.channel_id;
-      
-      console.log(`  YouTube Channel ID: ${youtubeChannelId || 'NOT FOUND'}`);
-      
+
       // Skip if not a real YouTube channel (e.g., custom/remix channels)
       if (!youtubeChannelId || youtubeChannelId.startsWith('remix_')) {
-        console.log(`  ⚠️ Skipping non-YouTube channel: ${channel.title} (no valid YouTube ID)`);
         channelAnalyses.push({
           channel: channel,
           voiceAnalysis: null,
@@ -1367,7 +1329,6 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
 
       // Check if channel already has a trained voice profile
       if (channel.voice_profile && Object.keys(channel.voice_profile).length > 0) {
-        console.log(`  ✓ Using existing voice profile for ${channel.title}`);
         channelAnalyses.push({
           channel: channel,
           voiceAnalysis: channel.voice_profile,
@@ -1378,11 +1339,9 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
       }
 
       // Fetch videos from the channel
-      console.log(`  🔍 Fetching videos from YouTube channel: ${youtubeChannelId}`);
       const videos = await getChannelVideos(youtubeChannelId, 10);
-      
+
       if (!videos || videos.length === 0) {
-        console.log(`  ⚠️ No videos found for channel: ${channel.title}`);
         channelAnalyses.push({
           channel: channel,
           voiceAnalysis: null,
@@ -1400,13 +1359,9 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
       const minTranscriptsForHybrid = 2; // Minimum for hybrid analysis
       const maxVideosToTry = 20; // Try up to 20 videos to get enough transcripts
 
-      console.log(`  📝 Attempting to fetch transcripts from up to ${Math.min(videos.length, maxVideosToTry)} videos...`);
-      console.log(`  🎯 Target: ${idealTranscripts} transcripts (minimum ${minTranscriptsForHybrid} for hybrid mode)`);
-
       for (const video of videos.slice(0, maxVideosToTry)) {
         // Stop if we have ideal number
         if (transcripts.length >= idealTranscripts) {
-          console.log(`  ✅ Reached ideal transcript count (${idealTranscripts})`);
           break;
         }
 
@@ -1420,12 +1375,9 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
               title: video.snippet.title,
               publishedAt: video.snippet.publishedAt
             });
-            console.log(`    ✓ Got transcript (${transcripts.length}/${idealTranscripts}): ${video.snippet.title.substring(0, 50)}...`);
-          } else {
-            console.log(`    ✗ No transcript: ${video.snippet.title.substring(0, 50)}...`);
           }
-        } catch (error) {
-          console.log(`    ✗ Error: ${error.message}`);
+        } catch {
+          // Continue to next video
         }
       }
 
@@ -1436,7 +1388,6 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
       // DECISION TREE: Full Analysis vs Hybrid vs Metadata-Only
       if (transcripts.length >= idealTranscripts) {
         // FULL TRANSCRIPT ANALYSIS (5+ transcripts)
-        console.log(`  🧠 Analyzing ${transcripts.length} transcripts with enhanced profiling...`);
         
         // Prepare transcript data for enhanced analysis
         const transcriptData = transcripts.map((text, index) => ({
@@ -1460,7 +1411,6 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
         };
 
         // Add performance analysis
-        console.log(`  📊 Analyzing video performance metrics...`);
         const performanceAnalysis = analyzeVideoPerformance(videos);
         const performanceCorrelation = correlateVoiceWithPerformance(
           voiceAnalysis,
@@ -1476,19 +1426,10 @@ export async function analyzeChannelVoicesFromYouTube(channels, config) {
         voiceAnalysis.performanceCorrelation = performanceCorrelation;
         voiceAnalysis.highPerformerPatterns = highPerformerPatterns;
 
-        console.log(`  📈 Performance analysis complete:`);
-        console.log(`     • High performers avg views: ${performanceAnalysis.highPerformers?.avgViews || 'N/A'}`);
-        console.log(`     • Low performers avg views: ${performanceAnalysis.lowPerformers?.avgViews || 'N/A'}`);
-        console.log(`     • ${performanceCorrelation.recommendations?.length || 0} recommendations generated`);
-
         source = 'youtube-transcripts';
-
-        console.log(`  ✅ Successfully analyzed voice from ${transcripts.length} videos with performance metrics`);
 
       } else if (transcripts.length >= minTranscriptsForHybrid) {
         // HYBRID ANALYSIS (2-4 transcripts + metadata)
-        console.log(`  🔄 Using HYBRID mode: ${transcripts.length} transcripts + metadata enrichment`);
-        console.log(`  💡 This combines partial transcript data with comprehensive metadata patterns`);
 
         // Prepare transcript data for partial analysis
         const transcriptData = transcripts.map((text, index) => ({
@@ -1542,16 +1483,10 @@ ${videoTexts}`;
 
         source = 'hybrid-analysis';
 
-        console.log(`  ✅ Hybrid analysis complete: ${transcripts.length} transcripts + ${videosToAnalyze.length} metadata sources`);
-
       } else {
         // METADATA-ONLY ANALYSIS (0 transcripts)
-        console.log(`  ⚠️ No transcripts available (tried ${maxVideosToTry} videos)`);
-        console.log(`  📊 Falling back to enhanced metadata analysis...`);
-
         // Use up to 15 videos for better pattern detection
         const videosToAnalyze = videos.slice(0, 15);
-        console.log(`  📊 Analyzing ${videosToAnalyze.length} videos using enhanced metadata patterns`);
 
         // Build comprehensive metadata text including multiple data sources
         const videoTexts = videosToAnalyze.map((v, index) => {
@@ -1587,8 +1522,6 @@ ${videoTexts}`;
         // Use enhanced metadata analysis that infers style from titles, descriptions, and patterns
         voiceAnalysis = await analyzeVoiceStyleFromMetadata(channelContext, videosToAnalyze);
         source = 'enhanced-metadata';
-
-        console.log(`  ✅ Completed enhanced metadata-only analysis`);
       }
 
       channelAnalyses.push({
@@ -1600,7 +1533,6 @@ ${videoTexts}`;
       });
 
     } catch (error) {
-      console.error(`  ❌ Error analyzing channel ${channel.title}:`, error.message);
       channelAnalyses.push({
         channel: channel,
         voiceAnalysis: null,
@@ -1620,9 +1552,8 @@ ${videoTexts}`;
 export async function combineRealVoiceAnalyses(channelAnalyses, config) {
   // Filter out channels without voice analysis
   const validAnalyses = channelAnalyses.filter(ca => ca.voiceAnalysis);
-  
+
   if (validAnalyses.length === 0) {
-    console.log('⚠️ No valid voice analyses to combine');
     return {
       success: false,
       error: 'No voice analyses available',
@@ -1797,7 +1728,6 @@ CRITICAL JSON RULES:
     };
 
   } catch (error) {
-    console.error('Error combining voice analyses:', error);
     return {
       success: false,
       error: error.message,
@@ -1818,12 +1748,10 @@ function generateFallbackVoiceProfile() {
  */
 export async function generateScriptWithEnhancedVoice(channel, topic, options = {}) {
   const { generateScript } = await import('../prompts/enhanced-script-generation.js');
-  
+
   // Ensure channel has enhanced voice profile
   if (!channel.voice_profile?.linguisticFingerprints) {
-    console.warn('Channel missing enhanced voice profile, attempting to generate...');
-    // You would need to implement fetchChannelTranscripts based on your data model
-    // For now, use basic generation as fallback
+    // Use basic generation as fallback
     return generateScript({
       channel: {
         ...channel,

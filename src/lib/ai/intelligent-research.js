@@ -12,8 +12,6 @@ import { fetchMultipleUrls } from '@/lib/utils/web-content-fetcher';
  * @returns {Promise<Object>} Extracted entities and search strategies
  */
 export async function extractSearchableEntities(topic) {
-  console.log('📊 Extracting searchable entities from topic...');
-
   const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY
   });
@@ -64,21 +62,15 @@ Return as JSON (no markdown, just raw JSON):
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
 
     if (!jsonMatch) {
-      console.warn('⚠️ Could not extract JSON from entity extraction response');
+      console.warn('Could not extract JSON from entity extraction response');
       return null;
     }
 
     const entities = JSON.parse(jsonMatch[0]);
-    console.log('✅ Entities extracted:', {
-      people: entities.entities?.people?.length || 0,
-      orgs: entities.entities?.organizations?.length || 0,
-      events: entities.entities?.events?.length || 0,
-      concepts: entities.entities?.concepts?.length || 0
-    });
 
     return entities;
   } catch (error) {
-    console.error('❌ Entity extraction failed:', error.message);
+    console.error('Entity extraction failed:', error.message);
     return null;
   }
 }
@@ -91,8 +83,6 @@ Return as JSON (no markdown, just raw JSON):
 export function generateSearchQueries(extractedData) {
   const queries = [];
   const { entities, primarySubject } = extractedData;
-
-  console.log('📝 Generating search queries...');
 
   // Strategy 1: Combine all specific entities for exact match (no quotes for less restrictive search)
   if (entities.people?.length > 0 && entities.organizations?.length > 0) {
@@ -158,7 +148,6 @@ export function generateSearchQueries(extractedData) {
     target: 'Broad search on main topic'
   });
 
-  console.log(`📝 Generated ${queries.length} search strategies`);
   return queries;
 }
 
@@ -168,14 +157,13 @@ export function generateSearchQueries(extractedData) {
  * @returns {Promise<Array>} Array of source objects
  */
 async function performSearch(query) {
-  console.log(`    🔎 Attempting search for: "${query}"`);
   const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY
   });
 
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929', // ✅ Correct Sonnet 4.5 model
+      model: 'claude-sonnet-4-5-20250929', // Correct Sonnet 4.5 model
       max_tokens: 16000,
       messages: [{
         role: 'user',
@@ -185,7 +173,7 @@ Find 3-5 highly relevant sources. For each source you find, fetch the full conte
 
 Provide comprehensive information from each source including specific facts, statistics, dates, and quotes.`
       }],
-      // ✅ Enable REAL web search tool
+      // Enable REAL web search tool
       tools: [
         {
           type: "web_search_20250305",
@@ -196,26 +184,12 @@ Provide comprehensive information from each source including specific facts, sta
       // Note: web_fetch removed - it's in beta and may not be available for all API keys
     });
 
-    // Add detailed logging
-    console.log(`    📨 Claude response received with ${message.content.length} content blocks`);
-
     // Parse the response - extract web search and fetch results
     const sources = parseWebSearchResults(message.content, query);
 
-    // Add parsing results logging
-    console.log(`    📊 Parsed ${sources.length} sources from response`);
-    if (sources.length > 0) {
-      console.log(`    ✅ Source URLs: ${sources.map(s => s.source_url).join(', ')}`);
-    }
-
     return sources;
   } catch (error) {
-    console.error(`    ❌ Search error: ${error.message}`);
-    console.error(`    Error details:`, {
-      name: error.name,
-      status: error.status,
-      type: error.type
-    });
+    console.error(`Search error: ${error.message}`);
     return [];
   }
 }
@@ -374,8 +348,6 @@ function parseWebSearchResults(contentBlocks, query) {
  * @returns {Promise<Array>} Expanded sources
  */
 async function expandResearch(entities, primarySources, targetDuration) {
-  console.log('📚 Expanding research with contextual information...');
-
   const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY
   });
@@ -433,7 +405,6 @@ IMPORTANT: Each query should find DIFFERENT types of information, not more artic
 
     for (let i = 0; i < expansionQueries.slice(0, 6).length; i++) {
       const query = expansionQueries[i];
-      console.log(`  🔎 Expansion [${query.category}]: "${query.query}"`);
       try {
         // Use Perplexity instead of Claude's performSearch
         const result = await ResearchService.performPerplexitySearch({
@@ -451,27 +422,23 @@ IMPORTANT: Each query should find DIFFERENT types of information, not more artic
               return {
                 ...source,
                 source_url: `#perplexity-synthesis-${query.category}-${i}`,
-                source_title: `🔬 ${query.category} Research: ${query.target}`
+                source_title: `Research: ${query.target}`
               };
             }
             return source;
           });
 
           expandedSources.push(...sourcesToAdd);
-          console.log(`    ✅ Found ${result.sources.length} sources, adding ${sourcesToAdd.length} (total expanded: ${expandedSources.length})`);
-        } else {
-          console.log(`    ⚠️ No results from Perplexity`);
         }
         await sleep(1500);
       } catch (error) {
-        console.error(`    ❌ Failed: ${error.message}`);
+        console.error(`Expansion failed: ${error.message}`);
       }
     }
 
-    console.log(`📚 Expansion complete: ${expandedSources.length} total expanded sources collected`);
     return expandedSources;
   } catch (error) {
-    console.error('❌ Expansion failed:', error.message);
+    console.error('Expansion failed:', error.message);
     return [];
   }
 }
@@ -484,14 +451,11 @@ IMPORTANT: Each query should find DIFFERENT types of information, not more artic
  * @returns {Promise<Object>} Research results with sources and metrics
  */
 export async function performIntelligentResearch(topic, targetDuration, initialResearchFn) {
-  console.log('🚀 Starting intelligent research for:', topic);
-  console.log(`   Target: ${targetDuration} minutes`);
-
   // STEP 1: Extract searchable entities from the topic
   const entities = await extractSearchableEntities(topic);
 
   if (!entities) {
-    console.warn('⚠️ Entity extraction failed, using simple research');
+    console.warn('Entity extraction failed, using simple research');
     const simpleResults = await initialResearchFn(topic);
     return {
       sources: simpleResults.sources || [],
@@ -513,24 +477,19 @@ export async function performIntelligentResearch(topic, targetDuration, initialR
   let allSources = [];
 
   for (const searchQuery of searchQueries) {
-    console.log(`🔍 Trying ${searchQuery.type} search: "${searchQuery.query}"`);
-
     try {
       const results = await performSearch(searchQuery.query);
 
       if (results && results.length > 0) {
-        console.log(`  ✅ Found ${results.length} sources`);
         allSources.push(...results);
 
         // If we found substantial content, we can move forward
         if (allSources.length >= 3) {
           break;
         }
-      } else {
-        console.log(`  ⚠️ No results for this query`);
       }
     } catch (error) {
-      console.error(`  ❌ Search failed: ${error.message}`);
+      console.error(`Search failed: ${error.message}`);
     }
 
     await sleep(1500);
@@ -538,34 +497,22 @@ export async function performIntelligentResearch(topic, targetDuration, initialR
 
   // STEP 4: If still no results, try initial research function
   if (allSources.length === 0) {
-    console.log('⚠️ No results from entity-based searches, trying initial research function');
     const fallbackResults = await initialResearchFn(topic);
     allSources = fallbackResults.sources || [];
   }
 
   // STEP 5: Deduplicate sources
   const uniqueSources = deduplicateSources(allSources);
-  console.log(`🧹 Deduplicated: ${allSources.length} → ${uniqueSources.length} sources`);
 
   // STEP 6: Check if we need expansion
   const totalWords = calculateTotalWords(uniqueSources);
   const targetWords = targetDuration * 150;
   const needsExpansion = totalWords < (targetWords * 0.75);
 
-  console.log(`📊 Content check: ${totalWords} words / ${targetWords} target (${((totalWords / targetWords) * 100).toFixed(0)}%)`);
-
   if (needsExpansion && uniqueSources.length > 0) {
-    console.log('📚 Expanding research with contextual information...');
     const expandedSources = await expandResearch(entities, uniqueSources, targetDuration);
 
-    console.log(`📊 Expansion results: ${expandedSources.length} sources before deduplication`);
-    console.log(`📊 Primary sources: ${uniqueSources.length}`);
-    console.log(`📊 Total before dedup: ${uniqueSources.length + expandedSources.length}`);
-
     const allUniqueSources = deduplicateSources([...uniqueSources, ...expandedSources]);
-
-    console.log(`📊 Final after deduplication: ${allUniqueSources.length} sources`);
-    console.log(`📊 Breakdown: ${uniqueSources.length} primary + ${expandedSources.length} expanded → ${allUniqueSources.length} unique`);
 
     // Enrich sources with full web content
     const enrichedSources = await enrichSourcesWithWebContent(allUniqueSources);
@@ -667,8 +614,6 @@ function sleep(ms) {
 async function enrichSourcesWithWebContent(sources) {
   if (!sources || sources.length === 0) return sources;
 
-  console.log('📚 Enriching sources with full web content...');
-
   // Identify URLs that need content fetching (web sources with short content)
   const urlsToFetch = sources
     .filter(s => {
@@ -678,10 +623,7 @@ async function enrichSourcesWithWebContent(sources) {
     })
     .map(s => s.source_url);
 
-  console.log(`  🔍 Found ${urlsToFetch.length} sources needing content enrichment`);
-
   if (urlsToFetch.length === 0) {
-    console.log('  ℹ️ No sources need enrichment (all have substantial content)');
     return sources;
   }
 
@@ -693,11 +635,7 @@ async function enrichSourcesWithWebContent(sources) {
       timeout: 30000,
       useJina: true,
       fallbackToRaw: true,
-      onProgress: (completed, total, currentUrl) => {
-        if (completed % 5 === 0 || completed === total) {
-          console.log(`  📊 Progress: ${completed}/${total} URLs fetched`);
-        }
-      }
+      onProgress: () => {}
     });
 
     // Map fetched content back to sources
@@ -705,7 +643,6 @@ async function enrichSourcesWithWebContent(sources) {
       const fetched = fetchedContents.find(f => f.url === source.source_url);
 
       if (fetched && fetched.success && fetched.wordCount >= 100) {
-        console.log(`  ✅ Enriched: ${source.source_title} (${fetched.wordCount} words via ${fetched.method})`);
         return {
           ...source,
           source_content: fetched.content,
@@ -720,15 +657,9 @@ async function enrichSourcesWithWebContent(sources) {
       return source;
     });
 
-    const successfulFetches = fetchedContents.filter(f => f.success).length;
-    const totalWords = fetchedContents.reduce((sum, f) => sum + (f.wordCount || 0), 0);
-
-    console.log(`  📊 Content enrichment complete: ${successfulFetches}/${urlsToFetch.length} successful (${totalWords.toLocaleString()} words added)`);
-
     return enrichedSources;
   } catch (error) {
-    console.error('  ❌ Content enrichment failed:', error);
-    console.log('  ⚠️ Continuing with original sources');
+    console.error('Content enrichment failed:', error);
     return sources;
   }
 }

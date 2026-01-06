@@ -48,8 +48,8 @@ export async function POST(request) {
     try {
       const transcriptData = await YoutubeTranscript.fetchTranscript(videoId);
       transcript = transcriptData.map(entry => entry.text).join(' ');
-    } catch (error) {
-      console.log('No transcript available for analysis');
+    } catch {
+      /* No transcript available for analysis */
     }
 
     // Analyze the video structure

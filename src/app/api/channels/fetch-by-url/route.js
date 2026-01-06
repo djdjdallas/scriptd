@@ -44,9 +44,6 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    console.log(`Fetching channel from URL: ${url}`);
-    console.log(`Extracted channel info:`, channelInfo);
-
     // Fetch channel data from YouTube
     const channelData = await getChannelByUrl(url);
     const parsedChannel = parseChannelData(channelData);
@@ -81,8 +78,6 @@ export async function POST(request) {
       publishedAt: parsedChannel.publishedAt || existingChannel?.created_at,
       url: url // Include the original URL for reference
     };
-
-    console.log(`Successfully fetched channel: ${formattedChannel.title} (${formattedChannel.youtube_channel_id})`);
 
     return NextResponse.json({
       success: true,

@@ -84,7 +84,6 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
 
     // Try Perplexity first if API key is available
     if (process.env.PERPLEXITY_API_KEY) {
-      console.log('🔍 Attempting Perplexity web search');
       try {
         // Detect if topic is about recent events (past year)
         const isRecentEvent = query.match(/\b(2024|2025|recent|latest|current)\b/i);
@@ -100,7 +99,6 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
         });
 
         if (perplexityResult.success) {
-          console.log('✅ Perplexity search successful');
           return perplexityResult;
         }
       } catch (error) {
@@ -121,8 +119,6 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
     }
 
     try {
-      console.log('🔍 Using Claude with native web search');
-
       const anthropic = new Anthropic({
         apiKey: process.env.ANTHROPIC_API_KEY,
       });
@@ -194,13 +190,6 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
     const webSearches = toolUses.filter(t => t.name === 'web_search' || t.name === 'WebSearch');
     const webFetches = toolUses.filter(t => t.name === 'web_fetch' || t.name === 'WebFetch');
 
-    console.log('🔧 Tools used by Claude:', {
-      totalToolCalls: toolUses.length,
-      webSearchCalls: webSearches.length,
-      webFetchCalls: webFetches.length,
-      allTools: toolUses.map(t => t.name)
-    });
-
     // For now, just check that Claude used web search at least
     if (webSearches.length === 0 && toolUses.length === 0) {
       console.warn('⚠️ Claude did not use web search tools - will validate content instead');
@@ -208,9 +197,6 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
 
     // Parse the JSON response
     let jsonText = textContent.text;
-
-    // Log the raw response for debugging
-    console.log('Raw response from Claude (first 200 chars):', jsonText.substring(0, 200));
 
     // Try multiple methods to extract JSON
     // Method 1: Remove markdown code blocks
@@ -312,8 +298,6 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
     }));
 
     // === NEW: ENRICH SOURCES WITH FULL WEB CONTENT ===
-    console.log('📚 Enriching sources with full web content...');
-
     // Identify URLs that need content fetching (web sources with short content)
     const urlsToFetch = normalizedSources
       .filter(s => {
@@ -322,8 +306,6 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
         return isWebUrl && hasShortContent;
       })
       .map(s => s.source_url);
-
-    console.log(`  🔍 Found ${urlsToFetch.length} sources needing content enrichment`);
 
     let enrichedSources = normalizedSources;
 
@@ -336,11 +318,7 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
           timeout: 30000,
           useJina: true,
           fallbackToRaw: true,
-          onProgress: (completed, total, currentUrl) => {
-            if (completed % 5 === 0 || completed === total) {
-              console.log(`  📊 Progress: ${completed}/${total} URLs fetched`);
-            }
-          }
+          onProgress: () => {}
         });
 
         // Map fetched content back to sources
@@ -348,7 +326,6 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
           const fetched = fetchedContents.find(f => f.url === source.source_url);
 
           if (fetched && fetched.success && fetched.wordCount >= 100) {
-            console.log(`  ✅ Enriched: ${source.source_title} (${fetched.wordCount} words via ${fetched.method})`);
             return {
               ...source,
               source_content: fetched.content,
@@ -363,18 +340,10 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
           return source;
         });
 
-        const successfulFetches = fetchedContents.filter(f => f.success).length;
-        const totalWords = fetchedContents.reduce((sum, f) => sum + (f.wordCount || 0), 0);
-
-        console.log(`  📊 Content enrichment complete: ${successfulFetches}/${urlsToFetch.length} successful (${totalWords.toLocaleString()} words added)`);
-
       } catch (error) {
-        console.error('  ❌ Content enrichment failed:', error);
-        console.log('  ⚠️ Continuing with original sources');
+        console.error('Content enrichment failed:', error);
         // Continue with original sources if enrichment fails
       }
-    } else {
-      console.log('  ℹ️ No sources need enrichment (all have substantial content)');
     }
 
     // Add AI synthesis as first source
@@ -390,8 +359,6 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
       },
       ...enrichedSources
     ];
-
-    console.log(`✅ Validated ${enrichedSources.length} sources with real content`);
 
     return {
       summary: parsed.summary || '',
@@ -434,7 +401,6 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
     }
 
     try {
-      console.log('🔍 Starting Perplexity web search for:', query);
 
       // ✅ Dynamically set recency filter
       const searchConfig = {
@@ -481,9 +447,6 @@ Include specific URLs and complete citations for all information.${!recencyFilte
       // ✅ Only add recency filter if specified
       if (recencyFilter) {
         searchConfig.search_recency_filter = recencyFilter;
-        console.log(`🗓️ Using recency filter: ${recencyFilter}`);
-      } else {
-        console.log('🗓️ No recency filter - searching all available sources');
       }
 
       const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -510,8 +473,6 @@ Include specific URLs and complete citations for all information.${!recencyFilte
 
       const content = data.choices[0].message.content;
       const citations = data.citations || [];
-
-      console.log(`📊 Perplexity returned ${citations.length} citations`);
 
       // Parse content into sections
       const sections = content.split(/\n\n+/);
@@ -572,8 +533,6 @@ Include specific URLs and complete citations for all information.${!recencyFilte
         commonMisconceptions: this.extractMisconceptions(content),
         actionableTakeaways: this.extractTakeaways(content)
       };
-
-      console.log(`✅ Perplexity search successful: ${sources.length} sources found`);
 
       return {
         success: true,
@@ -704,7 +663,6 @@ Include specific URLs and complete citations for all information.${!recencyFilte
    * Legacy method for backward compatibility
    */
   static async performAdvancedResearch(options) {
-    console.log('🔄 Redirecting to new performResearch method');
     return this.performResearch(options);
   }
 
@@ -733,15 +691,11 @@ Include specific URLs and complete citations for all information.${!recencyFilte
       niche
     } = options;
 
-    console.log('🚀 Starting enhanced research for:', query);
-
     // Fix duration: auto-detect if it's in seconds or minutes
     // If > 100, assume it's seconds and convert to minutes
     const targetMinutes = targetDuration > 100
       ? Math.ceil(targetDuration / 60)
       : targetDuration;
-
-    console.log(`   Target duration: ${targetMinutes} minutes (from ${targetDuration})`);
 
     // PHASE 1: Initial research function
     const initialResearchFn = async (searchTopic) => {
@@ -765,7 +719,6 @@ Include specific URLs and complete citations for all information.${!recencyFilte
     // Choose research method
     if (useIntelligentResearch && enableExpansion) {
       // Use intelligent entity-based research
-      console.log('🧠 Using intelligent entity-based research');
       const { performIntelligentResearch } = await import('./intelligent-research.js');
 
       const result = await performIntelligentResearch(
@@ -784,7 +737,6 @@ Include specific URLs and complete citations for all information.${!recencyFilte
       };
     } else if (enableExpansion) {
       // Use original gap-based expansion
-      console.log('🔬 Using gap-based research expansion');
       const { performComprehensiveResearch } = await import('./research-expander.js');
 
       const result = await performComprehensiveResearch(
@@ -805,7 +757,6 @@ Include specific URLs and complete citations for all information.${!recencyFilte
       };
     } else {
       // Simple research without expansion
-      console.log('📰 Using simple research (no expansion)');
       const result = await initialResearchFn(query);
 
       return {

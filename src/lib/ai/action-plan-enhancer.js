@@ -20,7 +20,6 @@ export async function detectChannelNiche(channelData) {
     videoCount = 0
   } = channelData;
 
-  console.log(`🎯 Detecting niche for channel: ${name}`);
 
   const claude = getClaudeService();
 
@@ -104,11 +103,6 @@ Return in this JSON format:
 
     const nicheData = JSON.parse(jsonMatch[0]);
 
-    console.log(`✅ Detected niche: ${nicheData.specificNiche}`);
-    console.log(`   Broad Category: ${nicheData.broadCategory}`);
-    console.log(`   Confidence: ${nicheData.confidence}`);
-    console.log(`   Sub-categories: ${nicheData.subCategories.join(', ')}`);
-    console.log(`   Reasoning: ${nicheData.reasoning}`);
 
     // Return the enhanced niche data
     return {
@@ -162,7 +156,6 @@ Return ONLY a specific 2-4 word niche category. Examples: "Fitness Motivation", 
  * Uses multi-tier search to find real, recent events in the niche
  */
 export async function findRealEvents(niche, timeframe = '12 months', subCategories = []) {
-  console.log(`🔍 Finding real events in ${niche} (last ${timeframe})`);
 
   const currentYear = new Date().getFullYear();
 
@@ -227,7 +220,6 @@ Return ONLY a JSON array of events, no other text.`;
     }
 
     const events = JSON.parse(jsonMatch[0]);
-    console.log(`✅ Found ${events.length} real events`);
 
     return {
       success: true,
@@ -250,7 +242,6 @@ Return ONLY a JSON array of events, no other text.`;
  * Ensures all content ideas reference real events with specific details
  */
 export async function validateContentIdeas(contentIdeas, realEvents, niche) {
-  console.log(`✅ Validating ${contentIdeas.length} content ideas against real events`);
 
   const claude = getClaudeService();
 
@@ -294,7 +285,6 @@ Return a JSON array with validated ideas in this format:
     }
 
     const validatedIdeas = JSON.parse(jsonMatch[0]);
-    console.log(`✅ Validated ${validatedIdeas.length} content ideas`);
     return validatedIdeas;
   } catch (error) {
     console.error('❌ Validation failed:', error);
@@ -307,13 +297,11 @@ Return a JSON array with validated ideas in this format:
  * Fills in missing fields using AI
  */
 export async function enrichActionPlan(actionPlan, niche) {
-  console.log(`🎨 Enriching action plan fields for ${niche}`);
 
   const claude = getClaudeService();
 
   // Enrich content templates
   if (actionPlan.contentTemplates && actionPlan.contentTemplates.length > 0) {
-    console.log('📝 Enriching content templates...');
 
     for (let i = 0; i < actionPlan.contentTemplates.length; i++) {
       const template = actionPlan.contentTemplates[i];
@@ -376,7 +364,6 @@ Return ONLY valid JSON: { "format": "...", "hook": "..." }`;
 
   // Enrich equipment
   if (actionPlan.equipment && actionPlan.equipment.length > 0) {
-    console.log('🎥 Enriching equipment list...');
 
     for (let i = 0; i < actionPlan.equipment.length; i++) {
       const item = actionPlan.equipment[i];
@@ -414,7 +401,6 @@ Return ONLY the purpose text, no quotes.`;
     }
   }
 
-  console.log(`✅ Enrichment complete`);
   return actionPlan;
 }
 
@@ -423,7 +409,6 @@ Return ONLY the purpose text, no quotes.`;
  * Runs all enhancement stages in sequence
  */
 export async function enhanceActionPlanComplete(channelData, rawActionPlan) {
-  console.log('🚀 Starting complete action plan enhancement pipeline');
 
   try {
     // Stage 1: Detect niche
@@ -449,7 +434,6 @@ export async function enhanceActionPlanComplete(channelData, rawActionPlan) {
     enrichedPlan.realEventsCount = realEvents.length;
     enrichedPlan.enhancementApplied = true;
 
-    console.log('✅ Complete enhancement pipeline finished');
     return enrichedPlan;
   } catch (error) {
     console.error('❌ Enhancement pipeline failed:', error);

@@ -98,13 +98,11 @@ Return ONLY a JSON array of exactly 10 title objects with this structure:
               throw new Error('Invalid response format');
             }
           } catch (parseError) {
-            console.log('Claude response parsing failed, using fallback');
             // Generate fallback titles if parsing fails
             titles = generateFallbackTitles(topic, keywords);
           }
         }
-      } catch (claudeError) {
-        console.error('Claude API error:', claudeError);
+      } catch {
         titles = generateFallbackTitles(topic, keywords);
       }
     } else {

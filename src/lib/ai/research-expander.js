@@ -18,13 +18,8 @@ export async function analyzeResearchGaps(topic, initialSources, targetDuration 
   const needsExpansion = totalWords < (targetWords * 0.75);
 
   if (!needsExpansion) {
-    console.log('✅ Research already adequate, skipping expansion');
-    console.log(`   Current: ${totalWords} words | Target: ${targetWords} words`);
     return null;
   }
-
-  console.log('🔍 Analyzing research gaps...');
-  console.log(`   Current: ${totalWords} words | Target: ${targetWords} words (${((totalWords/targetWords)*100).toFixed(0)}% coverage)`);
 
   const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY
@@ -117,14 +112,9 @@ Respond with ONLY the JSON, no other text.`;
 
     const expansionPlan = JSON.parse(jsonText);
 
-    console.log('📋 Research Expansion Plan:');
-    console.log(`  Core facts covered: ${expansionPlan.core_facts_covered?.length || 0}`);
-    console.log(`  Gaps identified: ${expansionPlan.identified_gaps?.length || 0}`);
-    console.log(`  Additional searches needed: ${expansionPlan.expansion_searches?.length || 0}`);
-
     return expansionPlan;
   } catch (error) {
-    console.error('❌ Failed to analyze research gaps:', error);
+    console.error('Failed to analyze research gaps:', error);
     // Return a minimal plan on failure
     return {
       core_facts_covered: [],
@@ -143,12 +133,9 @@ Respond with ONLY the JSON, no other text.`;
  * @returns {Promise<Array>} Array of new research sources
  */
 export async function executeExpansionSearches(expansionPlan, maxSearches = 6) {
-  console.log('🔎 Executing expansion searches...');
-
   const expandedSources = [];
 
   if (!expansionPlan || !expansionPlan.expansion_searches || expansionPlan.expansion_searches.length === 0) {
-    console.log('  No expansion searches to execute');
     return expandedSources;
   }
 
@@ -160,7 +147,6 @@ export async function executeExpansionSearches(expansionPlan, maxSearches = 6) {
 
   for (let i = 0; i < searchesToExecute.length; i++) {
     const search = searchesToExecute[i];
-    console.log(`  [${i + 1}/${searchesToExecute.length}] Searching: "${search.query}"`);
 
     try {
       // Use Claude with web_search tool
@@ -192,9 +178,6 @@ Format your response as a clear list of sources with their details.`;
 
       if (sources.length > 0) {
         expandedSources.push(...sources);
-        console.log(`    ✅ Found ${sources.length} sources`);
-      } else {
-        console.log(`    ⚠️  No results for this query`);
       }
 
       // Rate limiting between searches
@@ -203,11 +186,10 @@ Format your response as a clear list of sources with their details.`;
       }
 
     } catch (error) {
-      console.error(`    ❌ Search failed: ${error.message}`);
+      console.error(`Search failed: ${error.message}`);
     }
   }
 
-  console.log(`✅ Expansion complete: ${expandedSources.length} new sources found`);
   return expandedSources;
 }
 
@@ -290,19 +272,13 @@ export async function performComprehensiveResearch(
   targetDuration = 30,
   enableExpansion = true
 ) {
-  console.log('🚀 Starting comprehensive research for:', topic);
-  console.log(`   Target duration: ${targetDuration} minutes`);
-  console.log(`   Expansion enabled: ${enableExpansion}`);
-
   // PHASE 1: Initial Research
-  console.log('\n📰 PHASE 1: Gathering primary sources...');
   const initialResults = await initialResearchFn(topic);
 
   const initialSourceCount = initialResults.sources?.length || 0;
-  console.log(`  ✅ Found ${initialSourceCount} primary sources`);
 
   if (initialSourceCount === 0) {
-    console.error('  ❌ No initial sources found, cannot continue');
+    console.error('No initial sources found, cannot continue');
     return {
       sources: [],
       expansionPlan: null,
@@ -323,31 +299,19 @@ export async function performComprehensiveResearch(
   // PHASE 2-4: Analyze and expand if enabled
   if (enableExpansion) {
     // PHASE 2: Analyze Gaps
-    console.log('\n🔍 PHASE 2: Analyzing research gaps...');
     expansionPlan = await analyzeResearchGaps(topic, initialResults.sources, targetDuration);
 
     // PHASE 3: Execute expansion if needed
     if (expansionPlan && expansionPlan.expansion_searches?.length > 0) {
-      console.log('\n🔎 PHASE 3: Expanding research...');
       const expandedSources = await executeExpansionSearches(expansionPlan, 6);
 
       if (expandedSources.length > 0) {
         finalSources = [...initialResults.sources, ...expandedSources];
-        console.log(`  ✅ Total sources after expansion: ${finalSources.length}`);
-
-        const finalWords = calculateTotalWords(finalSources);
-        const targetWords = targetDuration * 150;
-        console.log(`  Total research: ${finalWords.toLocaleString()} words`);
-        console.log(`  Coverage: ${((finalWords / targetWords) * 100).toFixed(0)}%`);
       }
-    } else {
-      console.log('\n✅ PHASE 3: Expansion not needed - research already adequate');
     }
   }
 
   // PHASE 4 (or 2 if expansion disabled): Deduplicate and organize
-  const phaseNum = enableExpansion ? 4 : 2;
-  console.log(`\n🧹 PHASE ${phaseNum}: Deduplicating and organizing...`);
   const deduplicatedSources = deduplicateSources(finalSources);
 
   const totalWords = calculateTotalWords(deduplicatedSources);
@@ -361,12 +325,6 @@ export async function performComprehensiveResearch(
     targetWords: targetWords,
     coveragePercent: (totalWords / targetWords) * 100
   };
-
-  console.log('\n📊 FINAL METRICS:');
-  console.log(`  Sources: ${metrics.finalSourceCount}`);
-  console.log(`  Total words: ${metrics.totalWords.toLocaleString()}`);
-  console.log(`  Target words: ${metrics.targetWords.toLocaleString()}`);
-  console.log(`  Coverage: ${metrics.coveragePercent.toFixed(0)}%`);
 
   return {
     sources: deduplicatedSources,
@@ -407,7 +365,6 @@ export function deduplicateSources(sources) {
   for (const source of sources) {
     // First check URL
     if (source.source_url && seenUrls.has(source.source_url)) {
-      console.log(`  ↩️  Duplicate URL removed: ${source.source_title || source.source_url}`);
       continue;
     }
 
@@ -421,12 +378,9 @@ export function deduplicateSources(sources) {
         seenUrls.add(source.source_url);
       }
       unique.push(source);
-    } else {
-      console.log(`  ↩️  Duplicate content removed: ${source.source_title || 'Untitled'}`);
     }
   }
 
-  console.log(`  Removed ${sources.length - unique.length} duplicates`);
   return unique;
 }
 

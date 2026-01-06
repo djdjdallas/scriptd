@@ -80,21 +80,6 @@ export class LongFormScriptHandler {
     // Distribute content points across chunks
     const pointsPerChunk = Math.ceil(contentPoints.length / chunkConfig.chunks);
 
-    // Log content distribution for debugging
-    console.log(`📊 Content Distribution: ${contentPoints.length} points across ${chunkConfig.chunks} chunks`);
-    console.log(`📊 Points per chunk: ${pointsPerChunk}`);
-
-    // Log sponsor data
-    if (sponsor) {
-      console.log(`💰 SPONSOR DATA IN CHUNK HANDLER:`);
-      console.log(`   Sponsor: ${sponsor.sponsor_name}`);
-      console.log(`   Product: ${sponsor.sponsor_product}`);
-      console.log(`   Placement: ${sponsor.placement_preference}`);
-      console.log(`   Duration: ${sponsor.sponsor_duration}s`);
-    } else {
-      console.log(`⚠️ No sponsor data provided to chunk handler`);
-    }
-
     for (let i = 0; i < chunkConfig.chunks; i++) {
       const chunkStart = i * chunkConfig.minutesPerChunk;
       const chunkEnd = Math.min((i + 1) * chunkConfig.minutesPerChunk, totalMinutes);
@@ -106,7 +91,6 @@ export class LongFormScriptHandler {
 
       // PRIORITY 1: Use comprehensive outline for 30+ minute scripts
       if (comprehensiveOutline && comprehensiveOutline.chunks && comprehensiveOutline.chunks[i]) {
-        console.log(`📝 Chunk ${i + 1} using COMPREHENSIVE OUTLINE`);
 
         // Get outline sections for this chunk
         const outlineChunk = comprehensiveOutline.chunks[i];
@@ -150,7 +134,6 @@ export class LongFormScriptHandler {
           .slice(0, i)
           .flatMap(c => c.assignedSections.map(s => s.title));
 
-        console.log(`📋 Chunk ${i + 1} using PLANNED distribution: ${chunkPoints.length} sections`);
       } else {
         // Fallback to mechanical slicing
         chunkPoints = contentPoints.slice(
@@ -164,10 +147,7 @@ export class LongFormScriptHandler {
             .map(p => p.title || p.name || 'Section')
             .filter(Boolean) : [];
 
-        console.log(`📊 Chunk ${i + 1} using MECHANICAL distribution: ${chunkPoints.length} sections`);
       }
-
-      console.log(`📊 Chunk ${i + 1} assigned ${chunkPoints.length} content points for minutes ${chunkStart}-${chunkEnd}`);
 
       let chunkPrompt = {
         chunkNumber: i + 1,
@@ -262,11 +242,6 @@ export class LongFormScriptHandler {
       logContent += `Generated: ${new Date().toISOString()}\n`;
       logContent += '═══════════════════════════════════════════════════════════\n\n';
 
-      console.log('\n');
-      console.log('═════════════════════════════════════════════════════════════');
-      console.log('👥 TARGET AUDIENCE DETAILS (CHUNK GENERATION):');
-      console.log('═════════════════════════════════════════════════════════════');
-
       logContent += '👥 TARGET AUDIENCE DETAILS:\n';
       logContent += '═════════════════════════════════════════════════════════════\n';
 
@@ -281,7 +256,7 @@ export class LongFormScriptHandler {
           try {
             audienceData = JSON.parse(audienceData);
             isRichData = true;
-          } catch (e) {
+          } catch {
             // Not JSON, use as-is
             isRichData = false;
           }
@@ -291,122 +266,95 @@ export class LongFormScriptHandler {
 
         if (isRichData && audienceData.demographic_profile) {
           // Log rich audience analysis data
-          console.log('🎯 RICH AUDIENCE ANALYSIS DATA FOUND:');
           logContent += '🎯 RICH AUDIENCE ANALYSIS DATA:\n\n';
 
           if (audienceData.demographic_profile) {
-            console.log('\n📊 DEMOGRAPHIC PROFILE:');
             logContent += '📊 DEMOGRAPHIC PROFILE:\n';
 
             const demo = audienceData.demographic_profile;
             if (demo.age_distribution) {
-              console.log('  Age Distribution:');
               logContent += '  Age Distribution:\n';
               Object.entries(demo.age_distribution).forEach(([range, percent]) => {
-                console.log(`    ${range}: ${percent}`);
                 logContent += `    ${range}: ${percent}\n`;
               });
             }
             if (demo.gender_distribution) {
-              console.log('  Gender Distribution:');
               logContent += '  Gender Distribution:\n';
               Object.entries(demo.gender_distribution).forEach(([g, percent]) => {
-                console.log(`    ${g}: ${percent}`);
                 logContent += `    ${g}: ${percent}\n`;
               });
             }
             if (demo.education_income) {
               if (demo.education_income.education_level) {
-                console.log('  Education Level:');
                 logContent += '  Education Level:\n';
                 Object.entries(demo.education_income.education_level).forEach(([level, percent]) => {
-                  console.log(`    ${level}: ${percent}`);
                   logContent += `    ${level}: ${percent}\n`;
                 });
               }
               if (demo.education_income.income_brackets) {
-                console.log('  Income Brackets:');
                 logContent += '  Income Brackets:\n';
                 Object.entries(demo.education_income.income_brackets).forEach(([bracket, percent]) => {
-                  console.log(`    ${bracket}: ${percent}`);
                   logContent += `    ${bracket}: ${percent}\n`;
                 });
               }
             }
             if (demo.geographic_distribution) {
-              console.log('  Geographic Distribution:');
               logContent += '  Geographic Distribution:\n';
               Object.entries(demo.geographic_distribution).forEach(([country, percent]) => {
-                console.log(`    ${country}: ${percent}`);
                 logContent += `    ${country}: ${percent}\n`;
               });
             }
           }
 
           if (audienceData.psychographic_analysis) {
-            console.log('\n🧠 PSYCHOGRAPHIC ANALYSIS:');
             logContent += '\n🧠 PSYCHOGRAPHIC ANALYSIS:\n';
 
             const psycho = audienceData.psychographic_analysis;
             if (psycho.values && psycho.values.length > 0) {
-              console.log('  Values:');
               logContent += '  Values:\n';
               psycho.values.forEach((v, i) => {
-                console.log(`    ${i + 1}. ${v}`);
                 logContent += `    ${i + 1}. ${v}\n`;
               });
             }
             if (psycho.aspirations && psycho.aspirations.length > 0) {
-              console.log('  Aspirations:');
               logContent += '  Aspirations:\n';
               psycho.aspirations.forEach((a, i) => {
-                console.log(`    ${i + 1}. ${a}`);
                 logContent += `    ${i + 1}. ${a}\n`;
               });
             }
             if (psycho.pain_points && psycho.pain_points.length > 0) {
-              console.log('  Pain Points:');
               logContent += '  Pain Points:\n';
               psycho.pain_points.forEach((p, i) => {
-                console.log(`    ${i + 1}. ${p}`);
                 logContent += `    ${i + 1}. ${p}\n`;
               });
             }
           }
 
           if (audienceData.engagement_drivers) {
-            console.log('\n🎯 ENGAGEMENT DRIVERS:');
             logContent += '\n🎯 ENGAGEMENT DRIVERS:\n';
 
             const drivers = audienceData.engagement_drivers;
             if (drivers.comment_triggers && drivers.comment_triggers.length > 0) {
-              console.log('  Comment Triggers:');
               logContent += '  Comment Triggers:\n';
               drivers.comment_triggers.forEach((t, i) => {
-                console.log(`    ${i + 1}. ${t}`);
                 logContent += `    ${i + 1}. ${t}\n`;
               });
             }
             if (drivers.loyalty_builders && drivers.loyalty_builders.length > 0) {
-              console.log('  Loyalty Builders:');
               logContent += '  Loyalty Builders:\n';
               drivers.loyalty_builders.forEach((l, i) => {
-                console.log(`    ${i + 1}. ${l}`);
                 logContent += `    ${i + 1}. ${l}\n`;
               });
             }
             if (drivers.sharing_motivations && drivers.sharing_motivations.length > 0) {
-              console.log('  Sharing Motivations:');
               logContent += '  Sharing Motivations:\n';
               drivers.sharing_motivations.forEach((s, i) => {
-                console.log(`    ${i + 1}. ${s}`);
                 logContent += `    ${i + 1}. ${s}\n`;
               });
             }
           }
 
           if (audienceData.content_consumption_patterns) {
-            console.log('\n📺 CONTENT CONSUMPTION PATTERNS:');
             logContent += '\n📺 CONTENT CONSUMPTION PATTERNS:\n';
 
             const patterns = audienceData.content_consumption_patterns;
@@ -414,57 +362,38 @@ export class LongFormScriptHandler {
               // Handle preferred_video_length as an object
               if (typeof patterns.preferred_video_length === 'object') {
                 if (patterns.preferred_video_length.optimal_range) {
-                  console.log(`  Preferred Video Length: ${patterns.preferred_video_length.optimal_range}`);
                   logContent += `  Preferred Video Length: ${patterns.preferred_video_length.optimal_range}\n`;
                 }
                 if (patterns.preferred_video_length.tolerance) {
-                  console.log(`  Tolerance: ${patterns.preferred_video_length.tolerance}`);
                   logContent += `  Tolerance: ${patterns.preferred_video_length.tolerance}\n`;
                 }
                 if (patterns.preferred_video_length.minimum_threshold) {
-                  console.log(`  Minimum Threshold: ${patterns.preferred_video_length.minimum_threshold}`);
                   logContent += `  Minimum Threshold: ${patterns.preferred_video_length.minimum_threshold}\n`;
                 }
               } else {
                 // If it's a string, log it directly
-                console.log(`  Preferred Video Length: ${patterns.preferred_video_length}`);
                 logContent += `  Preferred Video Length: ${patterns.preferred_video_length}\n`;
               }
             }
             if (patterns.watch_time_preference) {
-              console.log(`  Watch Time Preference: ${patterns.watch_time_preference}`);
               logContent += `  Watch Time Preference: ${patterns.watch_time_preference}\n`;
             }
             if (patterns.device_usage && patterns.device_usage.length > 0) {
-              console.log('  Device Usage:');
               logContent += '  Device Usage:\n';
               patterns.device_usage.forEach((d, i) => {
-                console.log(`    ${i + 1}. ${d}`);
                 logContent += `    ${i + 1}. ${d}\n`;
               });
             }
           }
         } else {
           // Simple string audience description
-          console.log('Full audience description being sent to Claude:');
-          console.log('"' + context.targetAudience + '"');
-          console.log('Character count:', context.targetAudience.length);
-          console.log('Will appear in prompt as: <audience>' + context.targetAudience + '</audience>');
-
           logContent += `Full audience description: "${context.targetAudience}"\n`;
           logContent += `Character count: ${context.targetAudience.length}\n`;
         }
       } else {
-        console.log('No target audience specified - will use default: "General audience interested in the topic"');
         logContent += 'No target audience specified\n';
       }
-      console.log('═════════════════════════════════════════════════════════════');
       logContent += '═════════════════════════════════════════════════════════════\n\n';
-
-      console.log('\n');
-      console.log('═════════════════════════════════════════════════════════════');
-      console.log('🎤 VOICE PROFILE DETAILS (CHUNK GENERATION):');
-      console.log('═════════════════════════════════════════════════════════════');
 
       logContent += '🎤 VOICE PROFILE DETAILS:\n';
       logContent += '═════════════════════════════════════════════════════════════\n';
@@ -472,18 +401,10 @@ export class LongFormScriptHandler {
       if (context.voiceProfile) {
         const voiceProfile = context.voiceProfile;
         const profileName = voiceProfile.profile_name || voiceProfile.name || 'Unknown';
-        console.log('Voice profile name:', profileName);
         logContent += `Voice profile name: ${profileName}\n`;
 
         // Log raw structure for debugging
-        console.log('\n🔍 DEBUG - Voice Profile Structure:');
         logContent += '\n🔍 DEBUG - Voice Profile Structure:\n';
-        console.log('Has basicProfile:', !!voiceProfile.basicProfile);
-        console.log('Has enhancedProfile:', !!voiceProfile.enhancedProfile);
-        console.log('Has voiceProfileData:', !!voiceProfile.voiceProfileData);
-        console.log('Has metadata:', !!voiceProfile.metadata);
-        console.log('basedOnRealData:', voiceProfile.basedOnRealData);
-        console.log('All keys:', Object.keys(voiceProfile));
         logContent += `Has basicProfile: ${!!voiceProfile.basicProfile}\n`;
         logContent += `Has enhancedProfile: ${!!voiceProfile.enhancedProfile}\n`;
         logContent += `Has voiceProfileData: ${!!voiceProfile.voiceProfileData}\n`;
@@ -497,7 +418,6 @@ export class LongFormScriptHandler {
         const advanced = voiceProfile.enhancedProfile || voiceProfile.advanced;
 
         if (params) {
-          console.log('\n📝 VOICE CHARACTERISTICS:');
           logContent += '\n📝 VOICE CHARACTERISTICS:\n';
 
           // Helper to safely convert arrays or strings
@@ -505,15 +425,6 @@ export class LongFormScriptHandler {
             if (!field) return 'not set';
             return Array.isArray(field) ? field.join(', ') : field;
           };
-
-          // Log actual fields from basicProfile
-          console.log('  Tone:', formatField(params.tone));
-          console.log('  Style:', formatField(params.style));
-          console.log('  Pace:', params.pace || 'not set');
-          console.log('  Energy:', params.energy || 'not set');
-          console.log('  Humor:', params.humor || 'not set');
-          console.log('  Vocabulary:', params.vocabulary || 'not set');
-          console.log('  Sentence Structure:', params.sentenceStructure || 'not set');
 
           logContent += `  Tone: ${formatField(params.tone)}\n`;
           logContent += `  Style: ${formatField(params.style)}\n`;
@@ -525,76 +436,55 @@ export class LongFormScriptHandler {
 
           // Log DOs and DONTs
           if (params.dos && params.dos.length > 0) {
-            console.log('\n✅ DO:');
             logContent += '\n✅ DO:\n';
             params.dos.slice(0, 5).forEach((item, i) => {
-              console.log(`  ${i + 1}. ${item}`);
               logContent += `  ${i + 1}. ${item}\n`;
             });
           }
 
           if (params.donts && params.donts.length > 0) {
-            console.log('\n❌ DON\'T:');
             logContent += '\n❌ DON\'T:\n';
             params.donts.slice(0, 5).forEach((item, i) => {
-              console.log(`  ${i + 1}. ${item}`);
               logContent += `  ${i + 1}. ${item}\n`;
             });
           }
 
           // Log signature phrases (check both snake_case and camelCase)
-          console.log('\n💬 SIGNATURE PHRASES:');
           logContent += '\n💬 SIGNATURE PHRASES:\n';
           const signaturePhrases = voiceProfile.signature_phrases || params.signature_phrases ||
                                    voiceProfile.signaturePhrases || params.signaturePhrases;
           if (signaturePhrases && signaturePhrases.length > 0) {
             signaturePhrases.slice(0, 8).forEach((phrase, i) => {
-              console.log(`  ${i + 1}. "${phrase}"`);
               logContent += `  ${i + 1}. "${phrase}"\n`;
             });
           } else {
-            console.log('  (None specified)');
             logContent += '  (None specified)\n';
           }
 
           // Log hooks and transitions (check both top-level and params)
-          console.log('\n🎣 HOOK STYLE:');
           logContent += '\n🎣 HOOK STYLE:\n';
           const hooks = voiceProfile.hooks || voiceProfile.voiceProfileData?.hooks || params.hooks || 'not specified';
-          console.log(`  ${hooks}`);
           logContent += `  ${hooks}\n`;
 
-          console.log('\n🔄 TRANSITIONS:');
           logContent += '\n🔄 TRANSITIONS:\n';
           const transitions = voiceProfile.transitions || voiceProfile.voiceProfileData?.transitions || params.transitions || 'not specified';
-          console.log(`  ${transitions}`);
           logContent += `  ${transitions}\n`;
 
-          console.log('\n👥 ENGAGEMENT:');
           logContent += '\n👥 ENGAGEMENT:\n';
           const engagement = voiceProfile.engagement || voiceProfile.voiceProfileData?.engagement || params.engagement || 'not specified';
-          console.log(`  ${engagement}`);
           logContent += `  ${engagement}\n`;
 
           // Advanced features
           if (params.prosody && Object.keys(params.prosody).length > 0) {
-            console.log('\n🎯 PROSODY (Advanced):');
             logContent += '\n🎯 PROSODY (Advanced):\n';
             Object.entries(params.prosody).forEach(([key, value]) => {
-              console.log(`  ${key}: ${JSON.stringify(value)}`);
               logContent += `  ${key}: ${JSON.stringify(value)}\n`;
             });
           }
         }
 
         if (trainingData) {
-          console.log('\n📊 TRAINING METADATA:');
           logContent += '\n📊 TRAINING METADATA:\n';
-          console.log('  Sample Count:', trainingData.sampleCount || 'not set');
-          console.log('  Total Words:', trainingData.totalWords || 'not set');
-          console.log('  Source:', trainingData.source || 'not set');
-          console.log('  Processed At:', trainingData.processed_at || 'not set');
-
           logContent += `  Sample Count: ${trainingData.sampleCount || 'not set'}\n`;
           logContent += `  Total Words: ${trainingData.totalWords || 'not set'}\n`;
           logContent += `  Source: ${trainingData.source || 'not set'}\n`;
@@ -603,65 +493,50 @@ export class LongFormScriptHandler {
 
         // Log advanced analysis if available (from channels.voice_profile.advanced)
         if (advanced && Object.keys(advanced).length > 0) {
-          console.log('\n🎯 ADVANCED ANALYSIS:');
           logContent += '\n🎯 ADVANCED ANALYSIS:\n';
 
           if (advanced.prosody) {
-            console.log('  Prosody:');
             logContent += '  Prosody:\n';
             if (advanced.prosody.energyLevel) {
-              console.log(`    Energy Level: ${advanced.prosody.energyLevel.level} (score: ${advanced.prosody.energyLevel.score})`);
               logContent += `    Energy Level: ${advanced.prosody.energyLevel.level} (score: ${advanced.prosody.energyLevel.score})\n`;
             }
             if (advanced.prosody.speechTempo) {
-              console.log(`    Speech Tempo: ${advanced.prosody.speechTempo.pace} (${advanced.prosody.speechTempo.wordsPerMinute} WPM)`);
               logContent += `    Speech Tempo: ${advanced.prosody.speechTempo.pace} (${advanced.prosody.speechTempo.wordsPerMinute} WPM)\n`;
             }
           }
 
           if (advanced.personality) {
-            console.log('  Personality:');
             logContent += '  Personality:\n';
             if (advanced.personality.formalityScore) {
-              console.log(`    Formality: ${advanced.personality.formalityScore.level}`);
               logContent += `    Formality: ${advanced.personality.formalityScore.level}\n`;
             }
             if (advanced.personality.humorFrequency) {
-              console.log(`    Humor: ${advanced.personality.humorFrequency.level}`);
               logContent += `    Humor: ${advanced.personality.humorFrequency.level}\n`;
             }
             if (advanced.personality.storytellingStyle) {
-              console.log(`    Storytelling: ${advanced.personality.storytellingStyle.primaryStyle}`);
               logContent += `    Storytelling: ${advanced.personality.storytellingStyle.primaryStyle}\n`;
             }
           }
 
           if (advanced.quality) {
-            console.log('  Quality Metrics:');
             logContent += '  Quality Metrics:\n';
             if (advanced.quality.fillerWordUsage) {
-              console.log(`    Filler Words: ${advanced.quality.fillerWordUsage.level} (${advanced.quality.fillerWordUsage.density}% density)`);
               logContent += `    Filler Words: ${advanced.quality.fillerWordUsage.level} (${advanced.quality.fillerWordUsage.density}% density)\n`;
               if (advanced.quality.fillerWordUsage.fillers) {
-                console.log('    Top Fillers:');
                 logContent += '    Top Fillers:\n';
                 Object.entries(advanced.quality.fillerWordUsage.fillers).slice(0, 5).forEach(([word, count]) => {
-                  console.log(`      "${word}": ${count} uses`);
                   logContent += `      "${word}": ${count} uses\n`;
                 });
               }
             }
             if (advanced.quality.vocabularyDiversity) {
-              console.log(`    Vocabulary Diversity: ${advanced.quality.vocabularyDiversity.level} (${advanced.quality.vocabularyDiversity.uniqueWords} unique words)`);
               logContent += `    Vocabulary Diversity: ${advanced.quality.vocabularyDiversity.level} (${advanced.quality.vocabularyDiversity.uniqueWords} unique words)\n`;
             }
           }
 
           if (advanced.creatorPatterns) {
-            console.log('  Creator Patterns:');
             logContent += '  Creator Patterns:\n';
             if (advanced.creatorPatterns.introStyle) {
-              console.log(`    Intro Style: ${advanced.creatorPatterns.introStyle.style}`);
               logContent += `    Intro Style: ${advanced.creatorPatterns.introStyle.style}\n`;
             }
             if (advanced.creatorPatterns.ctaPatterns) {
@@ -670,25 +545,21 @@ export class LongFormScriptHandler {
               if (advanced.creatorPatterns.ctaPatterns.like?.present) ctas.push('like');
               if (advanced.creatorPatterns.ctaPatterns.comment?.present) ctas.push('comment');
               if (ctas.length > 0) {
-                console.log(`    CTAs Used: ${ctas.join(', ')}`);
                 logContent += `    CTAs Used: ${ctas.join(', ')}\n`;
               }
             }
           }
         }
       } else {
-        console.log('No voice profile provided');
         logContent += 'No voice profile provided\n';
       }
-      console.log('═════════════════════════════════════════════════════════════\n');
       logContent += '═════════════════════════════════════════════════════════════\n';
 
       // Write to file
       try {
         fs.appendFileSync(logFile, logContent, 'utf8');
-        console.log(`\n✅ Voice profile details saved to: ${logFile}\n`);
-      } catch (error) {
-        console.error('❌ Failed to write voice profile log:', error.message);
+      } catch {
+        // Silently fail - file logging is not critical
       }
     }
 
@@ -1008,12 +879,9 @@ ${previousChunkSummary ? `- ${previousChunkSummary.timeMarker}
         return false; // Exclude everything else
       });
 
-      const filteredCount = context.research.sources.length - substantiveSources.length;
-      console.log(`📚 Adding ${substantiveSources.length} research sources to chunk ${chunkNumber} prompt (filtered ${filteredCount} low-quality snippets - ${Math.round((filteredCount / context.research.sources.length) * 100)}% removed)`);
       const verifiedSources = substantiveSources.filter(s => s.fact_check_status === 'verified' || s.fact_check_status === 'perplexity-verified');
       const starredSources = substantiveSources.filter(s => s.is_starred);
       const synthesisSources = substantiveSources.filter(s => s.source_type === 'synthesis');
-      console.log(`  - Synthesis: ${synthesisSources.length}, Starred: ${starredSources.length}, Verified: ${verifiedSources.length}`);
 
       prompt += `
 RESEARCH SOURCES (USE THESE FOR FACTUAL ACCURACY):
@@ -1385,7 +1253,6 @@ Write the complete section now:`;
                 /word count.*requirement/i
               ];
               if (metaPatterns.some(pattern => pattern.test(line))) {
-                console.log(`🧹 Removing meta-commentary: "${line}"`);
                 return false;
               }
               return true;
@@ -1401,7 +1268,6 @@ Write the complete section now:`;
 
           // Check for duplicate header
           if (seenSectionHeaders.has(headerText)) {
-            console.log(`🧹 Removing duplicate section: "### ${headerLine}"`);
             return null; // Skip this entire section
           }
 
@@ -1410,14 +1276,12 @@ Write the complete section now:`;
           if (existingFingerprint && fingerprint) {
             // Exact match check
             if (existingFingerprint === fingerprint) {
-              console.log(`🧹 Removing exact duplicate section: "### ${headerLine}"`);
               return null;
             }
 
             // Then check similarity (>80% match)
             const similarity = this.calculateSimilarity(existingFingerprint, fingerprint);
             if (similarity > 0.8) {
-              console.log(`🧹 Removing duplicate content for section "### ${headerLine}" (${Math.round(similarity * 100)}% similar)`);
               return null;
             }
           }
@@ -1449,18 +1313,12 @@ Write the complete section now:`;
       /\[.*?\d+.*?words.*?added.*?\]/gi       // "[...X words added...]"
     ];
 
-    metaBlockPatterns.forEach((pattern, index) => {
-      const before = stitched.length;
+    metaBlockPatterns.forEach((pattern) => {
       stitched = stitched.replace(pattern, '');
-      const after = stitched.length;
-      if (before !== after) {
-        console.log(`🧹 Removing meta-commentary block (pattern ${index + 1}, removed ${before - after} chars)`);
-      }
     });
 
     // CRITICAL: Final deduplication pass to catch duplicates within chunks
     // The previous deduplication only works between chunks, not within them
-    console.log('🔍 Running final deduplication pass on complete script...');
     stitched = this.removeDuplicateSections(stitched);
 
     return stitched;
@@ -1532,15 +1390,9 @@ Write the complete section now:`;
     // Now identify and remove duplicates
     const seenHeaders = new Set();
     const result = [];
-    let removedCount = 0;
-    let removedWords = 0;
-
     for (const section of sections) {
       if (section.headerKey && seenHeaders.has(section.headerKey)) {
         // This is a duplicate - skip it
-        console.log(`🧹 Final pass: Removing duplicate section "${section.header}" (${section.wordCount} words)`);
-        removedCount++;
-        removedWords += section.wordCount;
       } else {
         // Keep this section
         if (section.headerKey) {
@@ -1555,12 +1407,6 @@ Write the complete section now:`;
         // Add content
         result.push(...section.content);
       }
-    }
-
-    if (removedCount > 0) {
-      console.log(`✅ Final deduplication pass removed ${removedCount} duplicate section(s) (${removedWords} words)`);
-    } else {
-      console.log(`✅ Final deduplication pass: No duplicates found`);
     }
 
     return result.join('\n');

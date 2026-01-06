@@ -21,14 +21,11 @@ export async function getChannelByUrl(url) {
       channelId = channelInfo.value;
     } else {
       // For @handles, we need to use a different approach
-      console.log('Looking up channel with handle:', channelInfo.value);
-      
       // Clean the handle (remove @ if present)
       const cleanHandle = channelInfo.value.replace('@', '');
       
       // First, try using the forHandle parameter (most accurate for handles)
       try {
-        console.log('Attempting direct handle lookup with forHandle parameter...');
         const handleResponse = await withRateLimit('channels', () =>
           youtube.channels.list({ 
             part: ['snippet', 'statistics', 'contentDetails', 'brandingSettings'],
@@ -38,12 +35,11 @@ export async function getChannelByUrl(url) {
 
         if (handleResponse.data.items && handleResponse.data.items.length > 0) {
           channelData = handleResponse.data.items[0];
-          console.log('Successfully found channel via forHandle:', channelData.snippet.title);
           setCache(cacheKey, channelData);
           return channelData;
         }
       } catch (handleError) {
-        console.log('forHandle lookup failed, trying fallback search...');
+        // forHandle lookup failed, trying fallback search
       }
 
       // Fallback: Search for the channel
@@ -55,8 +51,6 @@ export async function getChannelByUrl(url) {
           maxResults: 25, // Increased to find better matches
          }, requestOptions)
       );
-
-      console.log('Search response items:', searchResponse.data.items?.length || 0);
 
       if (!searchResponse.data.items || searchResponse.data.items.length === 0) {
         throw new Error(`Channel not found for: ${channelInfo.value}`);
@@ -77,17 +71,14 @@ export async function getChannelByUrl(url) {
         // Priority 1: Exact customUrl match (highest priority)
         if (customUrl === searchTerm) {
           score = 100;
-          console.log(`Found exact customUrl match: ${title}`);
         }
         // Priority 2: Exact title match (case-insensitive)
         else if (titleLower === searchTerm) {
           score = 90;
-          console.log(`Found exact title match: ${title}`);
         }
         // Priority 3: Title without spaces/special chars matches
         else if (titleLower.replace(/[^a-z0-9]/g, '') === searchTerm.replace(/[^a-z0-9]/g, '')) {
           score = 80;
-          console.log(`Found normalized title match: ${title}`);
         }
         // Priority 4: Title starts with search term
         else if (titleLower.startsWith(searchTerm)) {
@@ -113,12 +104,8 @@ export async function getChannelByUrl(url) {
       }
 
       if (!bestMatch) {
-        console.error('No suitable channel match found for:', channelInfo.value);
         // Last resort: use first result
         bestMatch = searchResponse.data.items[0];
-        console.log('Using first search result as last resort:', bestMatch.snippet.channelTitle);
-      } else {
-        console.log(`Selected best match: ${bestMatch.snippet.channelTitle} (score: ${bestScore})`);
       }
 
       channelId = bestMatch.snippet.channelId;

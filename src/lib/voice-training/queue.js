@@ -30,8 +30,6 @@ export async function queueVoiceTraining({
     throw error;
   }
 
-  console.log(`Voice training job queued (FREE): ${job.id}`);
-
   // Trigger background processing
   if (process.env.NODE_ENV === 'production') {
     // In production, trigger Supabase Edge Function or external worker
@@ -72,7 +70,6 @@ export async function processVoiceTrainingJob(jobId) {
     }
 
     if (job.status !== 'queued') {
-      console.log(`Job ${jobId} is not in queued status, skipping`);
       return;
     }
 
@@ -92,8 +89,6 @@ export async function processVoiceTrainingJob(jobId) {
         voice_training_status: 'in_progress'
       })
       .eq('id', job.channel_id);
-
-    console.log(`Processing FREE voice training for channel ${job.channel_id}`);
 
     // Process voice training (FREE - no credit check needed)
     const result = await processVoiceTraining({
@@ -122,9 +117,6 @@ export async function processVoiceTrainingJob(jobId) {
         voice_training_attempts: job.attempt_count + 1
       })
       .eq('id', job.channel_id);
-
-    // NO CREDIT DEDUCTION - Voice training is FREE
-    console.log(`Voice training completed successfully (FREE) for channel ${job.channel_id}`);
 
     // Log the FREE training event (0 credits)
     await supabase
@@ -181,7 +173,6 @@ export async function processVoiceTrainingJob(jobId) {
 
     // Retry if under max attempts
     if (job && job.attempt_count < job.max_attempts) {
-      console.log(`Retrying voice training job ${jobId} (attempt ${job.attempt_count + 1}/${job.max_attempts})`);
       setTimeout(() => processVoiceTrainingJob(jobId), 30000 * (job.attempt_count + 1)); // Exponential backoff
     } else {
       // Send failure notification
@@ -225,7 +216,6 @@ export async function checkAutoTrainEligibility(userId, channelId) {
 
   // Check if auto-training is disabled in user preferences
   if (userData?.preferences?.autoTrainVoice === false) {
-    console.log('Auto-training disabled in user preferences');
     return false;
   }
 
@@ -237,13 +227,11 @@ export async function checkAutoTrainEligibility(userId, channelId) {
     .single();
 
   if (!channel?.auto_train_enabled) {
-    console.log('Auto-training disabled for channel');
     return false;
   }
 
   // Skip if no videos to train on
   if (!channel.video_count || channel.video_count === 0) {
-    console.log('Skipping auto-training: No videos in channel');
     return false;
   }
 
@@ -253,18 +241,14 @@ export async function checkAutoTrainEligibility(userId, channelId) {
       (Date.now() - new Date(channel.last_voice_training).getTime()) / (1000 * 60 * 60 * 24)
     );
     if (daysSinceTraining < 7) {
-      console.log(`Skipping auto-training: Recently trained (${daysSinceTraining} days ago)`);
       return false;
     }
   }
 
   // Don't retrain if already completed
   if (channel.voice_training_status === 'completed') {
-    console.log('Skipping auto-training: Already completed');
     return false;
   }
 
-  // No credit check needed - voice training is FREE
-  console.log('Channel eligible for FREE auto voice training');
   return true;
 }

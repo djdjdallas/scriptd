@@ -33,8 +33,6 @@ export async function DELETE(request) {
       }, { status: 403 });
     }
 
-    console.log(`[Cleanup] Starting orphaned source cleanup for user ${user.id}`);
-
     // Find channels with voice_training_status = 'skipped' (external sources)
     // that belong to this user
     const { data: skippedChannels, error: skippedError } = await supabase
@@ -45,7 +43,6 @@ export async function DELETE(request) {
       .eq('is_remix', false);
 
     if (skippedError) {
-      console.error('[Cleanup] Error fetching skipped channels:', skippedError);
       return NextResponse.json({
         error: 'Failed to fetch channels',
         details: skippedError.message
@@ -60,8 +57,6 @@ export async function DELETE(request) {
       });
     }
 
-    console.log(`[Cleanup] Found ${skippedChannels.length} potential orphaned channels`);
-
     // Get all remix channels for this user to see which sources are actually used
     const { data: remixChannels, error: remixError } = await supabase
       .from('channels')
@@ -71,7 +66,7 @@ export async function DELETE(request) {
       .not('remix_source_ids', 'is', null);
 
     if (remixError) {
-      console.error('[Cleanup] Error fetching remix channels:', remixError);
+      /* ignored */
     }
 
     // Collect all source IDs that are referenced in active remixes
@@ -94,9 +89,6 @@ export async function DELETE(request) {
       });
     }
 
-    console.log(`[Cleanup] Deleting ${orphanedSources.length} orphaned sources:`,
-      orphanedSources.map(ch => ch.title).join(', '));
-
     // Delete the orphaned channels
     const idsToDelete = orphanedSources.map(ch => ch.id);
 
@@ -106,14 +98,11 @@ export async function DELETE(request) {
       .in('id', idsToDelete);
 
     if (deleteError) {
-      console.error('[Cleanup] Error deleting channels:', deleteError);
       return NextResponse.json({
         error: 'Failed to delete channels',
         details: deleteError.message
       }, { status: 500 });
     }
-
-    console.log(`[Cleanup] Successfully deleted ${idsToDelete.length} orphaned channels`);
 
     return NextResponse.json({
       success: true,
@@ -127,7 +116,6 @@ export async function DELETE(request) {
     });
 
   } catch (error) {
-    console.error('[Cleanup] Error during cleanup:', error);
     return NextResponse.json(
       { error: 'Cleanup failed', details: error.message },
       { status: 500 }
@@ -173,7 +161,7 @@ export async function GET(request) {
       .not('remix_source_ids', 'is', null);
 
     if (remixError) {
-      console.error('[Cleanup Preview] Error fetching remix channels:', remixError);
+      /* ignored */
     }
 
     const usedSourceIds = new Set();
@@ -199,7 +187,6 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('[Cleanup Preview] Error:', error);
     return NextResponse.json(
       { error: 'Preview failed', details: error.message },
       { status: 500 }

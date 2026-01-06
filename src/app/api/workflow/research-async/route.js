@@ -15,15 +15,12 @@ import { createClient } from '@/lib/supabase/server';
  * 5. Frontend polls job status for completion
  */
 export async function POST(request) {
-  console.log('🚀 === ASYNC RESEARCH API CALLED ===');
-
   try {
     const supabase = await createClient();
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      console.error('Auth error:', authError);
       return NextResponse.json({ error: 'Unauthorized', details: authError?.message }, { status: 401 });
     }
 
@@ -38,15 +35,6 @@ export async function POST(request) {
       hasContentIdeaInfo,
       niche
     } = requestData;
-
-    console.log('📊 Research job creation request:', {
-      workflowId,
-      userId: user.id,
-      targetDuration,
-      topic: topic?.substring(0, 100),
-      hasContentIdeaInfo,
-      enableExpansion
-    });
 
     // Validate required parameters
     if (!workflowId) {
@@ -65,7 +53,6 @@ export async function POST(request) {
       .single();
 
     if (workflowError || !workflow) {
-      console.error('Workflow validation error:', workflowError);
       return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
     }
 
@@ -82,7 +69,6 @@ export async function POST(request) {
       .limit(1);
 
     if (existingJobs && existingJobs.length > 0) {
-      console.log('⚠️ Research job already exists for this workflow:', existingJobs[0].id);
       return NextResponse.json({
         success: true,
         jobId: existingJobs[0].id,
@@ -117,18 +103,14 @@ export async function POST(request) {
       .single();
 
     if (jobError) {
-      console.error('❌ Error creating research job:', jobError);
       return NextResponse.json({
         error: 'Failed to create research job',
         details: jobError.message
       }, { status: 500 });
     }
 
-    console.log('✅ Research job created successfully:', job.id);
-
     // Trigger the Edge Function to process the job immediately
     try {
-      console.log('🚀 Triggering Edge Function to process research job immediately...');
 
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -143,16 +125,11 @@ export async function POST(request) {
             'x-supabase-caller': 'api'
           },
           body: JSON.stringify({})
-        }).catch(error => {
-          console.error('Failed to trigger Edge Function (non-blocking):', error);
+        }).catch(() => {
+          /* Failed to trigger Edge Function (non-blocking) */
         });
-
-        console.log('✅ Edge Function trigger initiated');
-      } else {
-        console.warn('⚠️ Missing Supabase URL or service key for Edge Function trigger');
       }
-    } catch (error) {
-      console.error('Error triggering Edge Function (non-blocking):', error);
+    } catch {
       // Don't fail the request if Edge Function trigger fails
     }
 
@@ -166,7 +143,6 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('❌ Async research API error:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',

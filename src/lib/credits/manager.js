@@ -186,11 +186,6 @@ export class CreditManager {
     // to include analytics, usage tracking, etc.
     const result = await this.deductCredits(userId, feature, options);
     
-    if (result.success) {
-      // Could add analytics tracking here
-      console.log(`Credit usage recorded: ${feature} for user ${userId}`);
-    }
-    
     return result;
   }
 

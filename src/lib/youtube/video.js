@@ -50,7 +50,6 @@ async function getTranscriptFromCache(videoId) {
 
     // Check if expired
     if (new Date(data.expires_at) < new Date()) {
-      console.log(`⏰ Cached transcript for ${videoId} has expired`);
       return null;
     }
 
@@ -62,8 +61,6 @@ async function getTranscriptFromCache(videoId) {
         last_accessed_at: new Date().toISOString()
       })
       .eq('video_id', videoId);
-
-    console.log(`✅ Cache HIT for ${videoId} (accessed ${data.access_count + 1} times)`);
 
     return {
       segments: data.transcript_data.segments || [],
@@ -104,8 +101,6 @@ async function saveTranscriptToCache(videoId, transcriptData) {
 
     if (error) {
       console.error(`Error saving to transcript cache:`, error.message);
-    } else {
-      console.log(`💾 Cached transcript for ${videoId} (expires in 7 days)`);
     }
   } catch (error) {
     console.error(`Error saving to transcript cache:`, error.message);
@@ -120,12 +115,10 @@ async function getTranscriptFromSupadata(videoId) {
   const apiKey = process.env.SUPADATA_API_KEY;
 
   if (!apiKey) {
-    console.log('⚠️ SUPADATA_API_KEY not configured - skipping API fallback');
     return null;
   }
 
   try {
-    console.log(`🔄 Attempting Supadata.ai API fallback for ${videoId}...`);
 
     const url = `https://api.supadata.ai/v1/youtube/transcript?videoId=${videoId}&text=false`;
 
@@ -162,9 +155,6 @@ async function getTranscriptFromSupadata(videoId) {
       .replace(/\s+/g, ' ')
       .trim();
 
-    console.log(`✅ Supadata API success: ${segments.length} segments, ${fullText.length} chars`);
-    console.log(`   Language: ${data.lang}, Available: ${data.availableLangs?.join(', ') || 'N/A'}`);
-
     return {
       segments,
       fullText,
@@ -174,8 +164,7 @@ async function getTranscriptFromSupadata(videoId) {
       availableLanguages: data.availableLangs || []
     };
 
-  } catch (error) {
-    console.error(`❌ Supadata API fallback failed for ${videoId}:`, error.message);
+  } catch {
     return null;
   }
 }
@@ -185,7 +174,6 @@ export async function getVideoTranscript(videoId) {
   const cacheKey = `transcript-${videoId}`;
   const memoryCached = getCached(cacheKey);
   if (memoryCached) {
-    console.log(`⚡ Memory cache HIT for ${videoId}`);
     return memoryCached;
   }
 
@@ -196,8 +184,6 @@ export async function getVideoTranscript(videoId) {
     return dbCached;
   }
 
-  console.log(`🔍 Cache MISS for ${videoId} - fetching from YouTube...`);
-
   try {
     let transcript = null;
     let lastError = null;
@@ -205,15 +191,9 @@ export async function getVideoTranscript(videoId) {
     // The youtube-transcript package has issues with language codes
     // Try without any config first - this often works best
     try {
-      console.log(`Fetching transcript for ${videoId} (default/auto-detect)...`);
       transcript = await YoutubeTranscript.fetchTranscript(videoId);
-
-      if (transcript && transcript.length > 0) {
-        console.log(`✓ Found transcript for ${videoId} using auto-detect`);
-      }
     } catch (e) {
       lastError = e;
-      console.log(`Auto-detect failed for ${videoId}: ${e.message}`);
 
       // Try different approaches based on error
       const attempts = [
@@ -224,15 +204,12 @@ export async function getVideoTranscript(videoId) {
 
       for (const attempt of attempts) {
         try {
-          console.log(`Trying ${attempt.name} for ${videoId}...`);
           transcript = await YoutubeTranscript.fetchTranscript(videoId, attempt.config);
 
           if (transcript && transcript.length > 0) {
-            console.log(`✓ Found transcript for ${videoId} using ${attempt.name}`);
             break;
           }
         } catch (e2) {
-          console.log(`Failed with ${attempt.name}: ${e2.message}`);
           lastError = e2;
         }
       }
@@ -240,7 +217,6 @@ export async function getVideoTranscript(videoId) {
 
     if (!transcript || transcript.length === 0) {
       // FALLBACK: Try Supadata.ai API before giving up
-      console.log(`⚠️ Scraping failed for ${videoId}, trying Supadata.ai API fallback...`);
 
       const apiTranscript = await getTranscriptFromSupadata(videoId);
 
@@ -252,7 +228,6 @@ export async function getVideoTranscript(videoId) {
       }
 
       // Both scraping AND API failed - cache negative result
-      console.log(`❌ All methods failed for ${videoId} (scraping + API)`);
       const noTranscriptResult = {
         segments: [],
         fullText: '',
@@ -281,8 +256,6 @@ export async function getVideoTranscript(videoId) {
     // Save to both caches
     setCache(cacheKey, result); // Memory cache
     await saveTranscriptToCache(videoId, result); // DB cache
-
-    console.log(`✅ Scraping success: ${transcript.length} segments, ${fullText.length} chars`);
 
     return result;
   } catch (error) {

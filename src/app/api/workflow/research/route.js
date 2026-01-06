@@ -15,13 +15,14 @@ export async function POST(request) {
 
     // If request is from Edge Function with proper headers, bypass cookie auth
     if (edgeFunctionUserId && edgeFunctionJobId && edgeFunctionSecret) {
-      const expectedSecret = process.env.EDGE_FUNCTION_SECRET || 'gpM1FDtEM2RXDu6pXQa0dMOWGiP4F3hlmhWVQWUmV2o=';
+      const expectedSecret = process.env.EDGE_FUNCTION_SECRET;
+
+      if (!expectedSecret) {
+        console.error('EDGE_FUNCTION_SECRET environment variable is not configured');
+        return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+      }
 
       if (edgeFunctionSecret === expectedSecret) {
-        console.log('✅ Edge Function authentication successful');
-        console.log('   User ID:', edgeFunctionUserId);
-        console.log('   Job ID:', edgeFunctionJobId);
-
         user = { id: edgeFunctionUserId };
 
         // For Edge Function requests, create a service role client
@@ -31,7 +32,7 @@ export async function POST(request) {
           process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         );
       } else {
-        console.error('❌ Edge Function authentication failed: Invalid secret');
+        console.error('Edge Function authentication failed: Invalid secret');
         return NextResponse.json({ error: 'Unauthorized', details: 'Invalid Edge Function secret' }, { status: 401 });
       }
     } else {
@@ -51,9 +52,9 @@ export async function POST(request) {
       context,
       workflowId,
       targetDuration,
-      enableExpansion = false, // New option for enhanced research with gap analysis
-      contentIdeaInfo, // Rich content idea context from Summary step
-      niche // Content niche for targeted research
+      enableExpansion = false,
+      contentIdeaInfo,
+      niche
     } = await request.json();
 
     if (!query) {
@@ -63,25 +64,12 @@ export async function POST(request) {
       );
     }
 
-    console.log('🔍 Research request:', {
-      query,
-      topic,
-      workflowId,
-      targetDuration,
-      enableExpansion,
-      hasContentIdeaInfo: !!contentIdeaInfo,
-      niche,
-      hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
-      anthropicKeyPrefix: process.env.ANTHROPIC_API_KEY?.substring(0, 10) + '...'
-    });
-
     // Try the enhanced service first, fall back to regular if needed
     let researchResult;
 
     try {
       // Use enhanced research with gap analysis if enabled
       if (enableExpansion) {
-        console.log('🔬 Using enhanced research with gap analysis and expansion');
         researchResult = await ResearchService.performEnhancedResearch({
           query,
           topic,
@@ -91,8 +79,8 @@ export async function POST(request) {
           maxExpansionSearches: 6,
           minSources: 10,
           minContentLength: 1000,
-          contentIdeaInfo, // Pass content idea context for targeted research
-          niche // Pass niche for better query generation
+          contentIdeaInfo,
+          niche
         });
       } else {
         // First attempt with enhanced search service
@@ -100,10 +88,10 @@ export async function POST(request) {
           query,
           topic,
           context,
-          minSources: 10, // Increased from 5 for better content depth
+          minSources: 10,
           minContentLength: 1000,
-          contentIdeaInfo, // Pass content idea context for targeted research
-          niche // Pass niche for better query generation
+          contentIdeaInfo,
+          niche
         });
       }
     } catch (error) {
@@ -113,21 +101,16 @@ export async function POST(request) {
         query,
         topic,
         context,
-        minSources: 10, // Increased from 5 for better content depth
+        minSources: 10,
         minContentLength: 1000,
-        contentIdeaInfo, // Pass content idea context for targeted research
-        niche // Pass niche for better query generation
+        contentIdeaInfo,
+        niche
       });
     }
 
     if (!researchResult.success) {
       const errorMessage = researchResult.error || 'Research failed';
-      console.error('❌ Research failed:', {
-        error: errorMessage,
-        suggestion: researchResult.suggestion,
-        provider: researchResult.provider,
-        hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY
-      });
+      console.error('Research failed:', errorMessage);
 
       return NextResponse.json(
         {
@@ -139,16 +122,8 @@ export async function POST(request) {
       );
     }
 
-    console.log('✅ Research successful:', {
-      sourcesCount: researchResult.sources?.length || 0,
-      provider: researchResult.provider,
-      totalContent: researchResult.sources?.reduce((sum, s) => sum + (s.source_content?.length || 0), 0)
-    });
-
     // Save research to workflow if workflowId provided
     if (workflowId && researchResult.sources?.length > 0) {
-      console.log('💾 Saving research to workflow:', workflowId);
-
       // Clear existing research for this workflow
       await supabase
         .from('workflow_research')
@@ -161,28 +136,21 @@ export async function POST(request) {
         source_type: source.source_type || 'web',
         source_url: source.source_url,
         source_title: source.source_title,
-        source_content: source.source_content, // Full content from Claude!
+        source_content: source.source_content,
         fact_check_status: source.fact_check_status || 'verified',
         is_starred: source.is_starred || false,
-        is_selected: true, // Auto-select since Claude verified them
+        is_selected: true,
         relevance: source.relevance || (1 - index * 0.1),
         added_at: new Date().toISOString()
       }));
 
-      const { data: savedSources, error: saveError } = await supabase
+      const { error: saveError } = await supabase
         .from('workflow_research')
         .insert(sourcesToSave)
         .select();
 
       if (saveError) {
         console.error('Error saving research:', saveError);
-        // Log specific error details to help with debugging
-        if (saveError.code === 'PGRST204' && saveError.message.includes('relevance')) {
-          console.error('❌ Database schema issue: relevance column missing');
-          console.error('Please run the migration to add the relevance column');
-        }
-      } else {
-        console.log(`✅ Saved ${savedSources?.length || sourcesToSave.length} sources to workflow`);
       }
     }
 
@@ -224,21 +192,21 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       results: researchResult.sources || [],
-      sources: researchResult.sources || [], // Include sources directly
+      sources: researchResult.sources || [],
       summary: researchResult.summary,
-      researchSummary: researchResult.summary, // Backward compatibility
+      researchSummary: researchResult.summary,
       relatedQuestions: researchResult.relatedQuestions || [],
       insights: researchResult.insights,
-      expansionPlan: researchResult.expansionPlan, // Include expansion plan if available
-      metrics: researchResult.metrics, // Include metrics if available
+      expansionPlan: researchResult.expansionPlan,
+      metrics: researchResult.metrics,
       creditsUsed,
       searchProvider: researchResult.provider,
       citations: researchResult.citations || [],
-      toolsUsed: researchResult.toolsUsed // Include tool usage stats
+      toolsUsed: researchResult.toolsUsed
     });
 
   } catch (error) {
-    console.error('❌ Research API error:', error);
+    console.error('Research API error:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',
