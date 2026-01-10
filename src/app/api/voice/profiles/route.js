@@ -5,6 +5,7 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { validateSchema } from '@/lib/validators';
 import { paginate } from '@/lib/api-handler';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // GET /api/voice/profiles - List user's voice profiles
 export const GET = createApiHandler(async (req) => {
@@ -36,7 +37,7 @@ export const GET = createApiHandler(async (req) => {
   const { data: profiles, error, count } = await query;
 
   if (error) {
-    console.error('Failed to fetch voice profiles:', error);
+    apiLogger.error('Failed to fetch voice profiles', error, { userId: user.id });
     throw new ApiError('Failed to fetch voice profiles', 500);
   }
 
@@ -103,7 +104,7 @@ export const POST = createApiHandler(async (req) => {
       .single();
 
     if (error) {
-      console.error('Profile creation error:', error);
+      apiLogger.error('Profile creation error', error, { userId: user.id });
       throw new ApiError('Failed to create voice profile', 500);
     }
 
@@ -119,12 +120,12 @@ export const POST = createApiHandler(async (req) => {
     };
 
   } catch (error) {
-    console.error('Voice profile creation error:', error);
-    
+    apiLogger.error('Voice profile creation error', error);
+
     if (error instanceof ApiError) {
       throw error;
     }
-    
+
     throw new ApiError('Failed to create voice profile', 500);
   }
 });

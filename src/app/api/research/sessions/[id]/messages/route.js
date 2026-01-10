@@ -6,6 +6,7 @@ import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { getAIService } from '@/lib/ai';
 import { CREDIT_COSTS } from '@/lib/constants';
 import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // POST /api/research/sessions/[id]/messages - Send message to research chat
 export const POST = createApiHandler(async (req, context) => {
@@ -149,7 +150,7 @@ export const POST = createApiHandler(async (req, context) => {
           }
         }
       } catch (error) {
-        console.error('Error fetching YouTube channel data:', error);
+        apiLogger.error('Error fetching YouTube channel data', error, { channelHandle });
         // Continue without channel data
       }
     }
@@ -321,7 +322,7 @@ Provide a comprehensive channel analysis focusing on:
     );
 
     if (!creditDeduction.success && !creditDeduction.bypassed) {
-      console.error('Failed to deduct credits:', creditDeduction.error);
+      apiLogger.error('Failed to deduct credits', null, { error: creditDeduction.error, sessionId });
       // Don't throw error, message was already processed
     }
 
@@ -359,7 +360,7 @@ Provide a comprehensive channel analysis focusing on:
     });
 
   } catch (error) {
-    console.error('Research chat error:', error);
+    apiLogger.error('Research chat error', error, { sessionId });
     throw new ApiError('Failed to process research chat', 500);
   }
 });
@@ -392,7 +393,7 @@ export const GET = createApiHandler(async (req, context) => {
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('Database error:', error);
+    apiLogger.error('Database error fetching messages', error, { sessionId });
     throw new ApiError('Failed to fetch messages', 500);
   }
 

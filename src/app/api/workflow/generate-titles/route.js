@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { ServerCreditManager } from '@/lib/credits/server-manager';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Helper function to generate fallback titles
 function generateFallbackTitles(topic, keywords) {
@@ -129,7 +130,7 @@ Return ONLY a JSON array of exactly 10 title objects with this structure:
       creditsUsed
     });
   } catch (error) {
-    console.error('Title generation error:', error);
+    apiLogger.error('Title generation error', error);
     return NextResponse.json(
       { error: 'Failed to generate titles' },
       { status: 500 }

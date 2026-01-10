@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { validateCreditsWithBypass } from '@/lib/credit-bypass';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // GET /api/credits - Get user's credit balance and history
 export const GET = createApiHandler(async (req) => {
@@ -147,7 +148,7 @@ export const POST = createApiHandler(async (req) => {
     };
 
   } catch (error) {
-    console.error('Transfer error:', error);
+    apiLogger.error('Transfer error', error);
     throw new ApiError('Failed to complete transfer', 500);
   }
 });

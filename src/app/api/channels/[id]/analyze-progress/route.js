@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getProgress } from '@/lib/utils/progress-tracker';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function GET(request, { params }) {
   try {
@@ -25,7 +26,7 @@ export async function GET(request, { params }) {
 
     return NextResponse.json(progress);
   } catch (error) {
-    console.error('Error fetching progress:', error);
+    apiLogger.error('Error fetching progress', error);
     return NextResponse.json(
       { error: 'Failed to fetch progress' },
       { status: 500 }

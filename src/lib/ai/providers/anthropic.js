@@ -29,7 +29,6 @@ export class AnthropicProvider extends BaseAIProvider {
       'claude-opus-4-1-20250805': { input: 0.020, output: 0.100 },
       'claude-4-opus-20250522': { input: 0.018, output: 0.090 },
       'claude-sonnet-4-5-20250929': { input: 0.008, output: 0.040 },
-      'claude-sonnet-4-5-20250929': { input: 0.010, output: 0.050 },
       'claude-3.7-sonnet-20250224': { input: 0.008, output: 0.040 },
       // Claude 3.5 models
       'claude-3-5-haiku-20241022': { input: 0.00030, output: 0.00150 },
@@ -138,57 +137,94 @@ export class AnthropicProvider extends BaseAIProvider {
   }
 
   /**
-   * Make API request
+   * Make API request with timeout
    * @private
    * @param {string} endpoint - API endpoint
    * @param {Object} body - Request body
+   * @param {number} [timeoutMs=120000] - Timeout in milliseconds (default 2 minutes)
    * @returns {Promise<Object>} Response data
    */
-  async _makeRequest(endpoint, body) {
+  async _makeRequest(endpoint, body, timeoutMs = 120000) {
     const headers = {
       'Content-Type': 'application/json',
       'x-api-key': this.apiKey,
       'anthropic-version': this.version
     };
 
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
-    });
+    // Use AbortController for request timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-      const err = new Error(error.error?.message || `Anthropic API error: ${response.status}`);
-      err.status = response.status;
-      err.data = error;
-      throw err;
+    try {
+      const response = await fetch(`${this.baseURL}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
+        const err = new Error(error.error?.message || `Anthropic API error: ${response.status}`);
+        err.status = response.status;
+        err.data = error;
+        throw err;
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        const timeoutErr = new Error(`Anthropic API request timed out after ${timeoutMs / 1000} seconds`);
+        timeoutErr.status = 408;
+        timeoutErr.isTimeout = true;
+        throw timeoutErr;
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    return response.json();
   }
 
   /**
-   * Stream chat completion
+   * Stream chat completion with timeout
    * @private
    * @param {string} endpoint - API endpoint
    * @param {Object} body - Request body
+   * @param {number} [timeoutMs=300000] - Timeout in milliseconds (default 5 minutes for streaming)
    * @returns {AsyncGenerator} Stream generator
    */
-  async* _streamChatCompletion(endpoint, body) {
+  async* _streamChatCompletion(endpoint, body, timeoutMs = 300000) {
     const headers = {
       'Content-Type': 'application/json',
       'x-api-key': this.apiKey,
       'anthropic-version': this.version
     };
 
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
-    });
+    // Use AbortController for request timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    let response;
+    try {
+      response = await fetch(`${this.baseURL}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        const timeoutErr = new Error(`Anthropic streaming request timed out after ${timeoutMs / 1000} seconds`);
+        timeoutErr.status = 408;
+        timeoutErr.isTimeout = true;
+        throw timeoutErr;
+      }
+      throw error;
+    }
 
     if (!response.ok) {
+      clearTimeout(timeoutId);
       const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
       const err = new Error(error.error?.message || `Anthropic API error: ${response.status}`);
       err.status = response.status;
@@ -248,6 +284,7 @@ export class AnthropicProvider extends BaseAIProvider {
         }
       }
     } finally {
+      clearTimeout(timeoutId);
       reader.releaseLock();
     }
   }

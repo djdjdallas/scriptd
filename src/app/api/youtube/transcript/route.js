@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -27,7 +28,7 @@ export async function POST(request) {
     try {
       transcriptData = await YoutubeTranscript.fetchTranscript(videoId);
     } catch (transcriptError) {
-      console.error('Transcript fetch error:', transcriptError);
+      apiLogger.error('Transcript fetch error', transcriptError);
       return NextResponse.json(
         {
           error: 'No transcript available for this video. The video may not have captions enabled.',
@@ -64,7 +65,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Transcript generation error:', error);
+    apiLogger.error('Transcript generation error', error);
     return NextResponse.json(
       { error: 'Failed to extract transcript', details: error.message },
       { status: 500 }

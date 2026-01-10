@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { validateSchema } from '@/lib/validators';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // GET /api/voice/profiles/[id] - Get specific voice profile
 export const GET = createApiHandler(async (req, { params }) => {
@@ -112,7 +113,7 @@ export const PUT = createApiHandler(async (req, { params }) => {
     .single();
 
   if (updateError) {
-    console.error('Profile update error:', updateError);
+    apiLogger.error('Profile update error', updateError);
     throw new ApiError('Failed to update voice profile', 500);
   }
 
@@ -159,7 +160,7 @@ export const DELETE = createApiHandler(async (req, { params }) => {
     .eq('id', id);
 
   if (deleteError) {
-    console.error('Profile deletion error:', deleteError);
+    apiLogger.error('Profile deletion error', deleteError);
     throw new ApiError('Failed to delete voice profile', 500);
   }
 

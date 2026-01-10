@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { ServerCreditManager } from '@/lib/credits/server-manager';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -211,7 +212,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
               creditsUsed
             });
           } catch (parseError) {
-            console.error('Frame parsing error:', parseError);
+            apiLogger.error('Frame parsing error', parseError, { topic, framework });
 
             // If parsing fails, extract text and format it
             const content = claudeData.content?.[0]?.text || '';
@@ -246,7 +247,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
           }
         }
       } catch (claudeError) {
-        console.error('Claude API error:', claudeError);
+        apiLogger.error('Claude API error', claudeError, { topic, framework });
       }
     }
 
@@ -315,7 +316,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
     });
 
   } catch (error) {
-    console.error('Frame suggestion API error:', error);
+    apiLogger.error('Frame suggestion API error', error);
     return NextResponse.json(
       { error: 'Failed to generate frame suggestions' },
       { status: 500 }

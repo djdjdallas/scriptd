@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Tag generation error:', error);
+    apiLogger.error('Tag generation error', error);
     return NextResponse.json(
       { error: 'Failed to generate tags' },
       { status: 500 }

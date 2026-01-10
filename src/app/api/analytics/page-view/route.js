@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -56,7 +57,7 @@ export async function POST(request) {
     
     return response;
   } catch (error) {
-    console.error('Failed to track page view:', error);
+    apiLogger.error('Failed to track page view', error);
     return NextResponse.json(
       { error: 'Failed to track page view' },
       { status: 500 }

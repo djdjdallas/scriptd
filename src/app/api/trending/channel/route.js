@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getChannelById, getChannelVideos } from '@/lib/youtube/channel';
 import { analyzeVideoContent } from '@/lib/youtube/video';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function GET(request) {
   try {
@@ -9,7 +10,7 @@ export async function GET(request) {
     const channelName = searchParams.get('channelName');
 
     if (!channelId || channelId === 'undefined') {
-      console.error('Invalid channel ID received:', channelId, 'for channel:', channelName);
+      apiLogger.error('Invalid channel ID received', null, { channelId, channelName });
       
       // If we have a channel name but no valid ID, we could try to search for it
       if (channelName && channelName !== 'undefined') {
@@ -124,7 +125,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Error fetching channel data:', error);
+    apiLogger.error('Error fetching channel data', error);
     return NextResponse.json(
       { 
         error: 'Failed to fetch channel data',

@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { PLANS, LAUNCH_CONFIG } from '@/lib/constants';
 import stripe from '@/lib/stripe';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export const POST = createApiHandler(async (request) => {
     // Get user from session
@@ -69,12 +70,12 @@ export const POST = createApiHandler(async (request) => {
             coupon: coupon,
           }];
         } else {
-          console.warn(`Coupon ${coupon} is not valid, continuing without discount`);
+          apiLogger.warn('Coupon is not valid, continuing without discount', { coupon });
           checkoutParams.allow_promotion_codes = true;
         }
       } catch (couponError) {
         // If coupon doesn't exist or there's an error, continue without it
-        console.warn('Coupon error:', couponError.message);
+        apiLogger.warn('Coupon error', { coupon, error: couponError.message });
         checkoutParams.allow_promotion_codes = true;
       }
     } else {
@@ -86,7 +87,7 @@ export const POST = createApiHandler(async (request) => {
     try {
       session = await stripe.checkout.sessions.create(checkoutParams);
     } catch (stripeError) {
-      console.error('Stripe session creation error:', stripeError);
+      apiLogger.error('Stripe session creation error', stripeError, { userId: user.id, planId });
       throw new ApiError(
         `Failed to create checkout session: ${stripeError.message}`,
         500

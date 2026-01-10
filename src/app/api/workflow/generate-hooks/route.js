@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { generateStructuredData } from '@/lib/ai/aiService';
 import Anthropic from '@anthropic-ai/sdk';
 import { ServerCreditManager } from '@/lib/credits/server-manager';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Fallback function using Claude API directly
 async function generateHooksFallback(prompt) {
@@ -44,7 +45,7 @@ Never use vague phrases like "someone" or "recently" - always be specific.`,
       throw new Error('Failed to parse JSON from Claude response');
     }
   } catch (error) {
-    console.error('Claude API fallback error:', error);
+    apiLogger.error('Claude API fallback error', error);
     throw error;
   }
 }
@@ -233,7 +234,7 @@ Return ONLY valid JSON array of exactly 8 hook objects (no markdown, no code blo
       sourcesUsed: sources.length
     });
   } catch (error) {
-    console.error('Hook generation error:', error);
+    apiLogger.error('Hook generation error', error);
     return NextResponse.json(
       { error: 'Failed to generate hooks' },
       { status: 500 }

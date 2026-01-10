@@ -5,6 +5,7 @@ import { createApiHandler, ApiError, rateLimiter } from '@/lib/api-handler';
 import { getAIService } from '@/lib/ai';
 import { AI_MODELS } from '@/lib/constants';
 import { createServiceClient } from '@/lib/supabase/service';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Rate limiter for free tools
 const freeToolLimiter = rateLimiter({
@@ -151,7 +152,7 @@ CTR_TIP: [tip]
     };
 
   } catch (error) {
-    console.error('Thumbnail idea generation error:', error);
+    apiLogger.error('Thumbnail idea generation error', error);
     throw new ApiError('Failed to generate thumbnail ideas', 500);
   }
 });

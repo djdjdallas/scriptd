@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 /**
  * Cron Job: Process Script Generation Jobs
@@ -47,7 +48,7 @@ export async function GET(request) {
       .limit(1);
 
     if (fetchError) {
-      console.error('Error fetching pending jobs:', fetchError);
+      apiLogger.error('Error fetching pending jobs', fetchError);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 

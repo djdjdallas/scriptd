@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { generateVideoIdeasWithAI, generateFactualVideoIdeas } from '@/lib/ai/video-ideas';
 import { getChannelVideos } from '@/lib/youtube/channel';
 import { ServerCreditManager } from '@/lib/credits/server-manager';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -100,7 +101,7 @@ export async function POST(request) {
     
     return NextResponse.json(ideas);
   } catch (error) {
-    console.error('Video ideas generation error:', error);
+    apiLogger.error('Video ideas generation error', error);
     return NextResponse.json(
       { error: 'Failed to generate video ideas' },
       { status: 500 }

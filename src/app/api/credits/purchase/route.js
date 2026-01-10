@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { getStripeService, CREDIT_PACKAGES } from '@/lib/stripe/client';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // POST /api/credits/purchase - Create Stripe checkout session for credit purchase
 export const POST = createApiHandler(async (req) => {
@@ -47,7 +48,7 @@ export const POST = createApiHandler(async (req) => {
     };
 
   } catch (error) {
-    console.error('Credit purchase error:', error);
+    apiLogger.error('Credit purchase error', error);
     throw new ApiError('Failed to create checkout session', 500);
   }
 });

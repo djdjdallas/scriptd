@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getTrendingVideos, getChannelStatistics } from '@/lib/youtube/trending';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // This endpoint should be called by a cron job (e.g., Vercel Cron, GitHub Actions, or external service)
 // Recommended frequency: Every 6-12 hours to track growth trends
@@ -51,7 +52,7 @@ export async function GET(request) {
         topicMetrics.push(...topicAnalysis);
         
       } catch (error) {
-        console.error(`Error processing category ${category}:`, error);
+        apiLogger.error('Error processing category', error, { category });
       }
     }
     
@@ -124,7 +125,7 @@ export async function GET(request) {
         .insert(topicMetrics);
       
       if (topicsError) {
-        console.error('Error storing topic metrics:', topicsError);
+        apiLogger.error('Error storing topic metrics', topicsError);
       }
     }
     
@@ -135,7 +136,7 @@ export async function GET(request) {
         .insert(channelMetrics);
       
       if (channelsError) {
-        console.error('Error storing channel metrics:', channelsError);
+        apiLogger.error('Error storing channel metrics', channelsError);
       }
     }
     
@@ -163,7 +164,7 @@ export async function GET(request) {
     });
     
   } catch (error) {
-    console.error('Error in metrics collection:', error);
+    apiLogger.error('Error in metrics collection', error);
     return NextResponse.json(
       { error: 'Failed to collect metrics', details: error.message },
       { status: 500 }

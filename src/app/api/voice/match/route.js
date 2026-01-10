@@ -8,6 +8,7 @@ import { getAIService } from '@/lib/ai';
 import { matchVoicePrompt } from '@/lib/prompts/voice-matching';
 import { CREDIT_COSTS } from '@/lib/constants';
 import { validateCreditsWithBypass, conditionalCreditDeduction, logCreditUsage } from '@/lib/credit-bypass';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // POST /api/voice/match - Apply voice profile to content
 export const POST = createApiHandler(async (req) => {
@@ -93,7 +94,7 @@ export const POST = createApiHandler(async (req) => {
     );
 
     if (!creditDeduction.success && !creditDeduction.bypassed) {
-      console.error('Failed to deduct credits:', creditDeduction.error);
+      apiLogger.error('Failed to deduct credits', null, { error: creditDeduction.error });
     }
 
     // Log credit usage
@@ -144,8 +145,8 @@ export const POST = createApiHandler(async (req) => {
     };
 
   } catch (error) {
-    console.error('Voice matching error:', error);
-    
+    apiLogger.error('Voice matching error', error);
+
     if (error instanceof ApiError) {
       throw error;
     }

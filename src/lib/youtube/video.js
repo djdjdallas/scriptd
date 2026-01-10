@@ -1,6 +1,7 @@
 import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
 import { getYouTubeClient, withRateLimit, getCached, setCache, getRequestOptions } from './client.js';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function getVideoById(videoId) {
   const cacheKey = `video-${videoId}`;
@@ -26,7 +27,7 @@ export async function getVideoById(videoId) {
     setCache(cacheKey, video);
     return video;
   } catch (error) {
-    console.error('Error fetching video:', error);
+    apiLogger.error('Error fetching video', error, { videoId });
     throw error;
   }
 }
@@ -70,17 +71,24 @@ async function getTranscriptFromCache(videoId) {
       cachedAt: data.cached_at
     };
   } catch (error) {
-    console.error(`Error reading from transcript cache:`, error.message);
+    apiLogger.warn('Error reading from transcript cache', { error: error.message });
     return null;
   }
 }
 
 /**
  * Save transcript to Supabase cache
+ * Uses different TTLs for positive vs negative results to prevent cache poisoning
  */
 async function saveTranscriptToCache(videoId, transcriptData) {
   try {
     const supabase = await createClient();
+
+    // Use shorter TTL for negative results (24 hours) vs positive results (7 days)
+    // This prevents cache poisoning when transcripts become available later
+    const ttlMs = transcriptData.hasTranscript
+      ? 7 * 24 * 60 * 60 * 1000  // 7 days for successful transcripts
+      : 24 * 60 * 60 * 1000;     // 24 hours for failed/no transcript
 
     const { error } = await supabase
       .from('video_transcripts_cache')
@@ -92,7 +100,7 @@ async function saveTranscriptToCache(videoId, transcriptData) {
         full_text: transcriptData.fullText,
         has_transcript: transcriptData.hasTranscript,
         cached_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+        expires_at: new Date(Date.now() + ttlMs).toISOString(),
         access_count: 0,
         last_accessed_at: new Date().toISOString()
       }, {
@@ -100,10 +108,10 @@ async function saveTranscriptToCache(videoId, transcriptData) {
       });
 
     if (error) {
-      console.error(`Error saving to transcript cache:`, error.message);
+      apiLogger.warn('Error saving to transcript cache', { error: error.message });
     }
   } catch (error) {
-    console.error(`Error saving to transcript cache:`, error.message);
+    apiLogger.warn('Error saving to transcript cache', { error: error.message });
   }
 }
 
@@ -164,7 +172,16 @@ async function getTranscriptFromSupadata(videoId) {
       availableLanguages: data.availableLangs || []
     };
 
-  } catch {
+  } catch (error) {
+    // Log Supadata API failures for monitoring and debugging
+    // This helps detect API key issues, quota exhaustion, or service outages
+    // apiLogger.error automatically sends to Sentry in production
+    apiLogger.error('Supadata API failed to fetch transcript', error, {
+      videoId,
+      hasApiKey: !!process.env.SUPADATA_API_KEY,
+      service: 'supadata'
+    });
+
     return null;
   }
 }
@@ -259,7 +276,7 @@ export async function getVideoTranscript(videoId) {
 
     return result;
   } catch (error) {
-    console.error(`Error fetching transcript for ${videoId}:`, error.message);
+    apiLogger.warn('Error fetching transcript', { videoId, error: error.message });
     return {
       segments: [],
       fullText: '',

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // POST - Track video interactions
 export async function POST(request) {
@@ -51,7 +52,7 @@ export async function POST(request) {
       });
 
     if (error) {
-      console.error('Error tracking analytics:', error);
+      apiLogger.error('Error tracking analytics', error, { videoId, actionType });
       return NextResponse.json(
         { error: 'Failed to track analytics' },
         { status: 500 }
@@ -63,7 +64,7 @@ export async function POST(request) {
       message: 'Analytics tracked successfully'
     });
   } catch (error) {
-    console.error('Error in POST analytics:', error);
+    apiLogger.error('Error in POST analytics', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -117,7 +118,7 @@ export async function GET(request) {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching analytics:', error);
+      apiLogger.error('Error fetching analytics', error, { userId: user.id });
       return NextResponse.json(
         { error: 'Failed to fetch analytics' },
         { status: 500 }
@@ -172,7 +173,7 @@ export async function GET(request) {
       summary
     });
   } catch (error) {
-    console.error('Error in GET analytics:', error);
+    apiLogger.error('Error in GET analytics', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

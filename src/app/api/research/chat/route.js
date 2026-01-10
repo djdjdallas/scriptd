@@ -6,6 +6,7 @@ import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { getAIService } from '@/lib/ai';
 import { CREDIT_COSTS } from '@/lib/constants';
 import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // POST /api/research/chat
 export const POST = createApiHandler(async (req) => {
@@ -143,7 +144,7 @@ Be concise but thorough. Cite sources when referencing specific information.`;
     );
 
     if (!creditDeduction.success && !creditDeduction.bypassed) {
-      console.error('Failed to deduct credits:', creditDeduction.error);
+      apiLogger.error('Failed to deduct credits', null, { error: creditDeduction.error });
       // Don't throw error, message was already processed
     }
 
@@ -178,7 +179,7 @@ Be concise but thorough. Cite sources when referencing specific information.`;
     };
 
   } catch (error) {
-    console.error('Research chat error:', error);
+    apiLogger.error('Research chat error', error);
     throw new ApiError('Failed to process research chat', 500);
   }
 });

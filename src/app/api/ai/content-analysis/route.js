@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { analyzeContentWithAI } from '@/lib/ai/content-analysis';
 import { getChannelVideos } from '@/lib/youtube/channel';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -58,7 +59,7 @@ export async function POST(request) {
     
     return NextResponse.json(analysis);
   } catch (error) {
-    console.error('Content analysis error:', error);
+    apiLogger.error('Content analysis error', error);
     return NextResponse.json(
       { error: 'Failed to analyze content' },
       { status: 500 }

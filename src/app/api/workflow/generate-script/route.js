@@ -6,12 +6,14 @@ import { LongFormScriptHandler } from '@/lib/script-generation/long-form-handler
 import ResearchService from '@/lib/ai/research-service';
 import { ContentFetcher } from '@/lib/content-fetcher';
 import crypto from 'crypto';
+import { apiLogger } from '@/lib/monitoring/logger';
 import {
   SCRIPT_CONFIG,
   calculateChunkStrategy,
   validateScriptQuality,
   validateUserAccess
 } from '@/lib/scriptGenerationConfig';
+import { checkFeatureRateLimit } from '@/lib/api/rate-limit';
 import { expandShortScript } from '@/lib/script-generation/expansion-handler';
 import { generateContentPlan, applyContentPlan } from '@/lib/script-generation/content-planner';
 import { generateComprehensiveOutline, formatOutlineForPrompt } from '@/lib/script-generation/outline-generator';
@@ -64,6 +66,7 @@ export async function POST(request) {
 
     let user = null;
     let supabase = null;
+    let isEdgeFunctionRequest = false;
 
     // If request is from Edge Function with proper headers, bypass cookie auth
     if (edgeFunctionUserId && edgeFunctionJobId && edgeFunctionSecret) {
@@ -73,6 +76,7 @@ export async function POST(request) {
       if (edgeFunctionSecret === expectedSecret) {
         // Create a user object with the ID from the Edge Function
         user = { id: edgeFunctionUserId };
+        isEdgeFunctionRequest = true;
 
         // For Edge Function requests, create a service role client
         // Import createClient from @supabase/supabase-js for service role access
@@ -82,7 +86,7 @@ export async function POST(request) {
           process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         );
       } else {
-        console.error('Edge Function authentication failed: Invalid secret');
+        apiLogger.warn('Edge Function authentication failed: Invalid secret', { userId: edgeFunctionUserId, jobId: edgeFunctionJobId });
         return NextResponse.json({ error: 'Unauthorized', details: 'Invalid Edge Function secret' }, { status: 401 });
       }
     } else {
@@ -90,7 +94,7 @@ export async function POST(request) {
       supabase = await createClient();
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData?.user) {
-        console.error('Auth error:', authError);
+        apiLogger.warn('Authentication failed', { error: authError?.message });
         return NextResponse.json({ error: 'Unauthorized', details: authError?.message }, { status: 401 });
       }
       user = authData.user;
@@ -185,6 +189,20 @@ export async function POST(request) {
       .single();
 
     const userTier = userProfile?.subscription_tier || userProfile?.subscription_plan || 'free';
+
+    // Check feature-specific rate limit (skip for Edge Function requests as they're processing already-submitted jobs)
+    if (!isEdgeFunctionRequest) {
+      const rateLimitCheck = await checkFeatureRateLimit(user.id, 'scripts', userTier);
+      if (!rateLimitCheck.success) {
+        return NextResponse.json({
+          error: 'Daily script limit reached',
+          details: userTier === 'free'
+            ? 'Free users can generate 3 scripts per day. Upgrade to generate more.'
+            : 'Please try again tomorrow.',
+          retryAfter: rateLimitCheck.retryAfter
+        }, { status: 429 });
+      }
+    }
 
     // ===== NEW: VALIDATE USER ACCESS =====
     // Calculate duration early for validation
@@ -1120,7 +1138,7 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           }
         } // End of else block for single generation
       } catch (claudeError) {
-        console.error('Claude API error:', claudeError);
+        apiLogger.error('Claude API error', claudeError, { model });
         return NextResponse.json(
           {
             error: 'Script generation failed',
@@ -1352,7 +1370,7 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           .single();
 
         if (scriptError) {
-          console.error('Error saving script to database:', scriptError);
+          apiLogger.error('Error saving script to database', scriptError, { userId: user.id, title: scriptTitle });
           // Don't fail the request if save fails
         } else if (newScript?.id) {
           // Save research sources to script_research table
@@ -1397,7 +1415,7 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
                 .select();
               
               if (researchError) {
-                console.error('Error saving script research:', researchError);
+                apiLogger.error('Error saving script research', researchError, { scriptId: newScript.id });
 
                 // Try alternative approach - save with minimal data
                 const minimalData = {
@@ -1428,7 +1446,7 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
                   .eq('id', newScript.id);
               }
             } catch (researchSaveError) {
-              console.error('Exception while saving research sources:', researchSaveError);
+              apiLogger.error('Exception while saving research sources', researchSaveError, { scriptId: newScript.id });
               // Don't fail the main request
             }
           }
@@ -1468,10 +1486,10 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
               .eq('id', workflowId);
 
             if (workflowUpdateError) {
-              console.error('Error updating workflow_data:', workflowUpdateError);
+              apiLogger.error('Error updating workflow_data', workflowUpdateError, { workflowId });
             }
           } catch (workflowError) {
-            console.error('Exception updating workflow:', workflowError);
+            apiLogger.error('Exception updating workflow', workflowError, { workflowId });
             // Don't fail the request
           }
         }
@@ -1482,7 +1500,7 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           scriptId: newScript?.id || null
         });
       } catch (saveError) {
-        console.error('Error saving script:', saveError);
+        apiLogger.error('Error saving script', saveError, { userId: user.id });
         // Still return the script even if save fails
         return NextResponse.json({
           script: script,
@@ -1500,7 +1518,7 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
       });
     }
   } catch (error) {
-    console.error('Script generation error:', error);
+    apiLogger.error('Script generation error', error);
     return NextResponse.json(
       { error: 'Failed to generate script' },
       { status: 500 }

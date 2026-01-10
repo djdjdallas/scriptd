@@ -10,6 +10,8 @@ import { CREDIT_COSTS, AI_MODELS } from '@/lib/constants';
 import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
 import { checkUpgradeRequirement, getTierDisplayName } from '@/lib/subscription-helpers';
 import { getPostHogClient } from '@/lib/posthog-server';
+import { apiLogger } from '@/lib/monitoring/logger';
+import { checkFeatureRateLimit } from '@/lib/api/rate-limit';
 
 // POST /api/scripts/generate-enhanced
 export const POST = createApiHandler(async (req) => {
@@ -48,8 +50,18 @@ export const POST = createApiHandler(async (req) => {
 
   // Check model access
   const userTier = userData.subscription_tier || 'free';
+
+  // Check feature-specific rate limit (scripts per day based on subscription tier)
+  const rateLimitCheck = await checkFeatureRateLimit(user.id, 'scripts', userTier);
+  if (!rateLimitCheck.success) {
+    throw new ApiError(
+      `Daily script limit reached. ${userTier === 'free' ? 'Free users can generate 3 scripts per day. Upgrade to generate more.' : 'Please try again tomorrow.'}`,
+      429
+    );
+  }
+
   const upgradeCheck = checkUpgradeRequirement(validated.model, userTier);
-  
+
   if (upgradeCheck.needsUpgrade) {
     const requiredTier = getTierDisplayName(upgradeCheck.minimumTier);
     throw new ApiError(
@@ -341,8 +353,8 @@ export const POST = createApiHandler(async (req) => {
     });
 
   } catch (error) {
-    console.error('Enhanced script generation error:', error);
-    
+    apiLogger.error('Enhanced script generation error', error);
+
     if (error instanceof ApiError) {
       throw error;
     }

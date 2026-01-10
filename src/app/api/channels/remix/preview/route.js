@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { analyzeVoiceCompatibility } from '@/lib/ai/voice-mixer';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -63,7 +64,7 @@ export async function POST(request) {
     return NextResponse.json(preview);
 
   } catch (error) {
-    console.error('Preview generation error:', error);
+    apiLogger.error('Preview generation error', error);
     return NextResponse.json(
       { error: 'Failed to generate preview', details: error.message },
       { status: 500 }

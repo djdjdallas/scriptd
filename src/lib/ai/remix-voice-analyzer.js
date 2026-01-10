@@ -1351,33 +1351,45 @@ export async function analyzeChannelVoicesFromYouTube(channels) {
         continue;
       }
 
-      // Fetch transcripts from videos
-      // ENHANCED: Try more videos to increase chance of getting at least 2 transcripts
+      // Fetch transcripts from videos in PARALLEL for better performance
+      // ENHANCED: Use Promise.allSettled with concurrency limit
       const transcripts = [];
       const analyzedVideos = [];
       const idealTranscripts = 5; // Ideal for full analysis
       const minTranscriptsForHybrid = 2; // Minimum for hybrid analysis
       const maxVideosToTry = 20; // Try up to 20 videos to get enough transcripts
+      const concurrencyLimit = 5; // Fetch 5 transcripts in parallel at a time
 
-      for (const video of videos.slice(0, maxVideosToTry)) {
-        // Stop if we have ideal number
-        if (transcripts.length >= idealTranscripts) {
-          break;
-        }
+      // Helper function to process videos in batches with concurrency limit
+      const videosToProcess = videos.slice(0, maxVideosToTry);
 
-        try {
-          const transcript = await getVideoTranscript(video.id);
+      for (let i = 0; i < videosToProcess.length && transcripts.length < idealTranscripts; i += concurrencyLimit) {
+        const batch = videosToProcess.slice(i, i + concurrencyLimit);
 
-          if (transcript.hasTranscript && transcript.fullText) {
-            transcripts.push(transcript.fullText);
-            analyzedVideos.push({
-              id: video.id,
-              title: video.snippet.title,
-              publishedAt: video.snippet.publishedAt
-            });
+        // Fetch batch of transcripts in parallel
+        const batchResults = await Promise.allSettled(
+          batch.map(async (video) => {
+            try {
+              const transcript = await getVideoTranscript(video.id);
+              return { video, transcript };
+            } catch {
+              return { video, transcript: null };
+            }
+          })
+        );
+
+        // Process successful results
+        for (const result of batchResults) {
+          if (result.status === 'fulfilled' && result.value.transcript?.hasTranscript && result.value.transcript?.fullText) {
+            if (transcripts.length < idealTranscripts) {
+              transcripts.push(result.value.transcript.fullText);
+              analyzedVideos.push({
+                id: result.value.video.id,
+                title: result.value.video.snippet.title,
+                publishedAt: result.value.video.snippet.publishedAt
+              });
+            }
           }
-        } catch {
-          // Continue to next video
         }
       }
 

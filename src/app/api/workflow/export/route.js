@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -97,7 +98,7 @@ ${script}`;
       }
     });
   } catch (error) {
-    console.error('Export error:', error);
+    apiLogger.error('Export error', error);
     return NextResponse.json(
       { error: 'Failed to export script' },
       { status: 500 }

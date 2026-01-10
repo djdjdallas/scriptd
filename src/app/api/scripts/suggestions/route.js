@@ -4,6 +4,7 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { getAIService } from '@/lib/ai';
 import { AI_MODELS } from '@/lib/constants';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // POST /api/scripts/suggestions
 export const POST = createApiHandler(async (req) => {
@@ -83,7 +84,7 @@ Examples of BAD key points (too generic):
           .slice(0, 10);
       }
     } catch (parseError) {
-      console.error('Failed to parse AI suggestions:', parseError);
+      apiLogger.error('Failed to parse AI suggestions', parseError);
       // Fallback to line-by-line parsing
       suggestions = response.text
         .split('\n')
@@ -123,8 +124,8 @@ Examples of BAD key points (too generic):
     });
     
   } catch (error) {
-    console.error('Suggestion generation error:', error);
-    
+    apiLogger.error('Suggestion generation error', error);
+
     // Fallback to smart template-based suggestions if AI fails
     const fallbackSuggestions = generateSmartFallbackSuggestions(title, type, targetAudience);
     

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getChannelById, getChannelVideos } from '@/lib/youtube/channel';
 import { analyzeChannelWithClaude, generateChannelVoiceProfile } from '@/lib/ai/single-channel-analyzer';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -209,7 +210,7 @@ export async function GET(request, { params }) {
         });
 
       } catch (error) {
-        console.error('SSE Analysis error:', error);
+        apiLogger.error('SSE Analysis error', error);
         sendEvent('error', {
           message: error.message || 'Analysis failed',
           details: error.toString()

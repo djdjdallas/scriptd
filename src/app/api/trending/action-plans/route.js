@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // GET - Fetch all action plans for the current user
 export async function GET(request) {
@@ -24,7 +25,7 @@ export async function GET(request) {
       .order('created_at', { ascending: false });
 
     if (fetchError) {
-      console.error('Error fetching action plans:', fetchError);
+      apiLogger.error('Error fetching action plans', fetchError);
       return NextResponse.json(
         { error: 'Failed to fetch action plans' },
         { status: 500 }
@@ -37,7 +38,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Error in action plans GET:', error);
+    apiLogger.error('Error in action plans GET', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

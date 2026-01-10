@@ -4,6 +4,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(req) {
   try {
@@ -27,7 +28,7 @@ export async function POST(req) {
       .single();
 
     if (updateError) {
-      console.error('Error updating credits:', updateError);
+      apiLogger.error('Error updating credits', updateError, { userId: user.id, amount });
       return NextResponse.json({ error: 'Failed to add credits' }, { status: 500 });
     }
 
@@ -46,7 +47,7 @@ export async function POST(req) {
       });
 
     if (txError) {
-      console.error('Error recording transaction:', txError);
+      apiLogger.error('Error recording transaction', txError, { userId: user.id, amount });
     }
 
     return NextResponse.json({
@@ -60,10 +61,10 @@ export async function POST(req) {
     });
 
   } catch (error) {
-    console.error('Test credits error:', error);
-    return NextResponse.json({ 
+    apiLogger.error('Test credits error', error);
+    return NextResponse.json({
       error: 'Failed to add test credits',
-      details: error.message 
+      details: error.message
     }, { status: 500 });
   }
 }
@@ -96,10 +97,10 @@ export async function GET(req) {
     });
 
   } catch (error) {
-    console.error('Get credits error:', error);
-    return NextResponse.json({ 
+    apiLogger.error('Get credits error', error);
+    return NextResponse.json({
       error: 'Failed to get credits',
-      details: error.message 
+      details: error.message
     }, { status: 500 });
   }
 }

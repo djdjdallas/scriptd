@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Helper function to calculate credit multiplier based on script length
 function getScriptLengthMultiplier(scriptLength) {
@@ -77,12 +78,12 @@ Please provide the improved version of the entire script. Maintain the original 
           const claudeData = await claudeResponse.json();
           improvedScript = claudeData.content?.[0]?.text || script;
         } else {
-          console.error('Claude API error:', await claudeResponse.text());
+          apiLogger.error('Claude API error', new Error(await claudeResponse.text()), { improvementType });
           // Fallback to simple improvements
           improvedScript = applySimpleImprovement(script, improvementType);
         }
       } catch (claudeError) {
-        console.error('Claude API error:', claudeError);
+        apiLogger.error('Claude API error', claudeError, { improvementType });
         improvedScript = applySimpleImprovement(script, improvementType);
       }
     } else {
@@ -98,7 +99,7 @@ Please provide the improved version of the entire script. Maintain the original 
       creditsUsed
     });
   } catch (error) {
-    console.error('Script improvement error:', error);
+    apiLogger.error('Script improvement error', error);
     return NextResponse.json(
       { error: 'Failed to improve script' },
       { status: 500 }

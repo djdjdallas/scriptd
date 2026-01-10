@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // GET /api/research/sessions - List user's research sessions
 export const GET = createApiHandler(async (req) => {
@@ -29,7 +30,7 @@ export const GET = createApiHandler(async (req) => {
   const { data: sessions, error } = await query;
 
   if (error) {
-    console.error('Database error:', error);
+    apiLogger.error('Database error fetching research sessions', error);
     return NextResponse.json(
       { error: 'Failed to fetch research sessions' },
       { status: 500 }
@@ -77,7 +78,7 @@ export const POST = createApiHandler(async (req) => {
     .single();
 
   if (error) {
-    console.error('Database error:', error);
+    apiLogger.error('Database error creating research session', error);
     return NextResponse.json(
       { error: 'Failed to create research session' },
       { status: 500 }

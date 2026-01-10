@@ -5,6 +5,7 @@ import { detectChannelNiche, findRealEvents, validateContentIdeas, enrichActionP
 import { updateProgress, PROGRESS_STAGES } from '@/lib/utils/progress-tracker';
 import { extractJsonFromResponse } from '@/lib/utils/json-parser';
 import { fetchChannelRecentVideos, fetchChannelInfo } from '@/lib/youtube/supadata';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -561,7 +562,7 @@ IMPORTANT: Provide complete JSON without truncation - all arrays should be fully
       });
 
     if (dbError) {
-      console.error('Failed to store action plan:', dbError);
+      apiLogger.error('Failed to store action plan', dbError);
       // Continue anyway - the plan was generated successfully
     }
 
@@ -569,7 +570,7 @@ IMPORTANT: Provide complete JSON without truncation - all arrays should be fully
     return NextResponse.json(actionPlan);
 
   } catch (error) {
-    console.error('Error generating action plan:', error);
+    apiLogger.error('Error generating action plan', error);
     return NextResponse.json(
       { error: 'Failed to generate action plan', details: error.message },
       { status: 500 }

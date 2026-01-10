@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { 
-  getTrendingVideos, 
+import {
+  getTrendingVideos,
   getRecentVideos,
   searchTrendingQueries,
   getEmergingTopics,
@@ -9,6 +9,7 @@ import {
   getChannelStatistics,
   searchVideos
 } from '@/lib/youtube/trending';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Dynamic trending search queries based on time and category
 const TRENDING_QUERIES = {
@@ -239,7 +240,7 @@ export async function GET(request) {
     });
     
   } catch (error) {
-    console.error('Error in trending v2 API:', error);
+    apiLogger.error('Error in trending v2 API', error);
     return NextResponse.json(
       { error: 'Failed to fetch trending data', details: error.message },
       { status: 500 }
@@ -281,6 +282,6 @@ async function storeTrendingMetrics(topics, channels, supabase) {
       .insert(topicMetrics);
     
   } catch (error) {
-    console.error('Error storing metrics:', error);
+    apiLogger.error('Error storing metrics', error);
   }
 }

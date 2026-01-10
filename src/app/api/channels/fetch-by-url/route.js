@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getChannelByUrl, parseChannelData } from '@/lib/youtube/channel';
 import { extractChannelId } from '@/lib/youtube/client';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -85,7 +86,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Error fetching channel by URL:', error);
+    apiLogger.error('Error fetching channel by URL', error);
     
     // Provide user-friendly error messages
     if (error.message?.includes('not found')) {

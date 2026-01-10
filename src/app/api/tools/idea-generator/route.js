@@ -5,6 +5,7 @@ import { createApiHandler, ApiError, rateLimiter } from '@/lib/api-handler';
 import { getAIService } from '@/lib/ai';
 import { AI_MODELS } from '@/lib/constants';
 import { createServiceClient } from '@/lib/supabase/service';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Rate limiter for free tools
 const freeToolLimiter = rateLimiter({
@@ -144,7 +145,7 @@ TRENDING: [true/false]
     };
 
   } catch (error) {
-    console.error('Video idea generation error:', error);
+    apiLogger.error('Video idea generation error', error);
     throw new ApiError('Failed to generate video ideas', 500);
   }
 });

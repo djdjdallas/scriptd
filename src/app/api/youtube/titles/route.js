@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getAIService } from '@/lib/ai';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -71,7 +72,7 @@ Return ONLY the JSON array, no other text.`;
         }));
       }
     } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
+      apiLogger.error('Failed to parse AI response', parseError);
       // Fallback titles
       titles = [
         { text: `How to ${topic}`, score: 8.0 },
@@ -87,7 +88,7 @@ Return ONLY the JSON array, no other text.`;
     });
 
   } catch (error) {
-    console.error('Title generation error:', error);
+    apiLogger.error('Title generation error', error);
     return NextResponse.json(
       { error: 'Failed to generate titles', details: error.message },
       { status: 500 }

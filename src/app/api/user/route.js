@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler } from '@/lib/api-handler';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export const GET = createApiHandler(async (req) => {
   const { user, supabase } = await getAuthenticatedUser();
@@ -13,7 +14,7 @@ export const GET = createApiHandler(async (req) => {
     .single();
     
   if (error) {
-    console.error('[API /user] Error fetching user:', error);
+    apiLogger.error('[API /user] Error fetching user', error);
     // Return default user data if not found
     return NextResponse.json({
       data: {

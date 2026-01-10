@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 /**
  * POST /api/workflow/approve-outline
@@ -44,7 +45,7 @@ export async function POST(request) {
       .single();
 
     if (fetchError) {
-      console.error('Error fetching outline:', fetchError);
+      apiLogger.error('Error fetching outline', fetchError, { outlineId });
       return NextResponse.json({
         error: 'Outline not found'
       }, { status: 404 });
@@ -88,7 +89,7 @@ export async function POST(request) {
       .single();
 
     if (updateError) {
-      console.error('Error updating outline:', updateError);
+      apiLogger.error('Error updating outline', updateError, { outlineId, status });
       return NextResponse.json({
         error: 'Failed to update outline'
       }, { status: 500 });
@@ -139,7 +140,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Error in approve-outline:', error);
+    apiLogger.error('Error in approve-outline', error);
     return NextResponse.json({
       error: 'Internal server error',
       details: error.message
@@ -183,7 +184,7 @@ export async function PUT(request) {
       .eq('id', outlineId);
 
     if (updateError) {
-      console.error('Error updating outline:', updateError);
+      apiLogger.error('Error updating outline for regeneration', updateError, { outlineId });
       return NextResponse.json({
         error: 'Failed to update outline'
       }, { status: 500 });
@@ -198,7 +199,7 @@ export async function PUT(request) {
     });
 
   } catch (error) {
-    console.error('Error in PUT approve-outline:', error);
+    apiLogger.error('Error in PUT approve-outline', error);
     return NextResponse.json({
       error: 'Internal server error',
       details: error.message

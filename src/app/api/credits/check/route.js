@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { ServerCreditManager } from '@/lib/credits/server-manager';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function GET() {
   try {
@@ -49,7 +50,7 @@ export async function GET() {
       env_bypass: process.env.BYPASS_CREDIT_CHECKS === 'true'
     });
   } catch (error) {
-    console.error('Credit check error:', error);
+    apiLogger.error('Credit check error', error);
     return NextResponse.json({ 
       error: 'Failed to check credits',
       details: error.message 

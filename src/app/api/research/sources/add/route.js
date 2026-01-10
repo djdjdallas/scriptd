@@ -5,6 +5,7 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { getWebScraper } from '@/lib/scraping/web-scraper';
 import { getAIService } from '@/lib/ai';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // POST /api/research/sources/add
 export const POST = createApiHandler(async (req) => {
@@ -71,8 +72,8 @@ export const POST = createApiHandler(async (req) => {
     };
 
   } catch (error) {
-    console.error('Add source error:', error);
-    
+    apiLogger.error('Add source error', error);
+
     if (error.message.includes('Failed to fetch')) {
       throw new ApiError('Could not access the URL. Please check if it\'s valid and accessible.', 400);
     }

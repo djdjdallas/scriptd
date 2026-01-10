@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getAIService } from '@/lib/ai';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -64,7 +65,7 @@ Make it engaging, SEO-optimized, and informative. Use emojis appropriately to ma
     });
 
   } catch (error) {
-    console.error('Description generation error:', error);
+    apiLogger.error('Description generation error', error);
     return NextResponse.json(
       { error: 'Failed to generate description' },
       { status: 500 }

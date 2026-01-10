@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { 
-  getTrendingVideos, 
-  getVideoCategories, 
+import {
+  getTrendingVideos,
+  getVideoCategories,
   searchVideos,
   analyzeTrendingTopics,
   getChannelStatistics,
   getChannelRecentVideos
 } from '@/lib/youtube/trending';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // YouTube category mappings for niches
 const CATEGORY_MAPPINGS = {
@@ -89,7 +90,7 @@ export async function GET(request) {
       // Analyze trending topics
       topicAnalysis = await analyzeTrendingTopics(trendingVideos);
     } catch (apiError) {
-      console.error('YouTube API error, using database fallback:', apiError.message);
+      apiLogger.warn('YouTube API error, using database fallback', { error: apiError.message });
       usingFallback = true;
       
       // Fallback to database data when API quota is exceeded
@@ -467,7 +468,7 @@ export async function GET(request) {
         const channelIds = Array.from(channelStats.keys());
         realChannelStats = await getChannelStatistics(channelIds);
       } catch (statsError) {
-        console.error('Failed to get channel statistics:', statsError.message);
+        apiLogger.warn('Failed to get channel statistics', { error: statsError.message });
         // Continue with partial data
       }
     } else {
@@ -493,7 +494,7 @@ export async function GET(request) {
         .limit(20);
       
       if (dbChannelsError) {
-        console.error('Error fetching channels from database:', dbChannelsError);
+        apiLogger.error('Error fetching channels from database', dbChannelsError);
       }
       
       // If no channels in database, use demo data
@@ -729,7 +730,7 @@ export async function GET(request) {
       }
     });
   } catch (error) {
-    console.error('Error fetching trending data:', error);
+    apiLogger.error('Error fetching trending data', error);
     return NextResponse.json(
       { error: 'Failed to fetch trending data', details: error.message },
       { status: 500 }
@@ -770,7 +771,7 @@ async function storeTrendingMetrics(topics, channels) {
       .insert(topicMetrics);
 
     if (topicsError) {
-      console.error('Error storing topic metrics:', topicsError);
+      apiLogger.error('Error storing topic metrics', topicsError);
     }
 
     // Store channel metrics
@@ -788,10 +789,10 @@ async function storeTrendingMetrics(topics, channels) {
       .insert(channelMetrics);
 
     if (channelsError) {
-      console.error('Error storing channel metrics:', channelsError);
+      apiLogger.error('Error storing channel metrics', channelsError);
     }
   } catch (error) {
-    console.error('Error in storeTrendingMetrics:', error);
+    apiLogger.error('Error in storeTrendingMetrics', error);
     // Don't throw - this is supplementary functionality
   }
 }

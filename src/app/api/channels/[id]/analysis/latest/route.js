@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function GET(request, { params }) {
   try {
@@ -182,7 +183,7 @@ export async function GET(request, { params }) {
     });
 
   } catch (error) {
-    console.error('Error fetching latest analysis:', error);
+    apiLogger.error('Error fetching latest analysis', error);
     return NextResponse.json(
       { error: 'Failed to fetch analysis' },
       { status: 500 }

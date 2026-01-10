@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // This starts the analysis in the background and returns immediately
 export async function POST(request, { params }) {
@@ -50,7 +51,7 @@ export async function POST(request, { params }) {
         'Cookie': request.headers.get('cookie') || '',
       },
     }).catch(err => {
-      console.error('Background analysis error:', err);
+      apiLogger.error('Background analysis error', err, { channelId: id });
     });
 
     // Return immediately
@@ -61,7 +62,7 @@ export async function POST(request, { params }) {
     });
 
   } catch (error) {
-    console.error('Error starting async analysis:', error);
+    apiLogger.error('Error starting async analysis', error);
     return NextResponse.json(
       { error: error.message || 'Failed to start analysis' },
       { status: 500 }

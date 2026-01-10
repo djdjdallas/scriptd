@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // GET /api/scripts/[id] - Get single script
 export const GET = createApiHandler(async (req, context) => {
@@ -44,7 +45,7 @@ export const PUT = createApiHandler(async (req, context) => {
 
     // Clean up old auto-save versions periodically
     if (body.isAutoSave) {
-      scriptService.cleanupOldAutoSaves(id, 10).catch(console.warn);
+      scriptService.cleanupOldAutoSaves(id, 10).catch(err => apiLogger.warn('Failed to cleanup old auto-saves', { error: err.message, scriptId: id }));
     }
 
     return NextResponse.json(script);

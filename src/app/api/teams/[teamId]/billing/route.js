@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { apiHandler } from '@/lib/api-handler'
 import { checkTeamPermission } from '@/lib/teams/permissions'
 import { getStripeService } from '@/lib/stripe/client'
+import { apiLogger } from '@/lib/monitoring/logger'
 
 const TEAM_PLANS = {
   free: {
@@ -98,7 +99,7 @@ export async function GET(request, { params }) {
       try {
         subscription = await stripeService.stripe.subscriptions.retrieve(team.stripe_subscription_id)
       } catch (error) {
-        console.error('Failed to retrieve subscription:', error)
+        apiLogger.error('Failed to retrieve subscription', error)
       }
     }
 

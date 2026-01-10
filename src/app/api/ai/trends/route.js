@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { analyzeTrendsWithAI } from '@/lib/ai/trend-analysis';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -87,7 +88,7 @@ export async function POST(request) {
     
     return NextResponse.json(trendAnalysis);
   } catch (error) {
-    console.error('Trend analysis error:', error);
+    apiLogger.error('Trend analysis error', error);
     return NextResponse.json(
       { error: 'Failed to analyze trends' },
       { status: 500 }

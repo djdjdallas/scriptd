@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { 
+import {
   generateOptimizedTitle,
   generateOptimizedDescription,
   generateOptimizedTags,
@@ -12,6 +12,7 @@ import { validateRequest } from '@/lib/api/validation';
 import { withRateLimit } from '@/lib/api/rate-limit';
 import { ApiError } from '@/lib/api/errors';
 import { CREDIT_COSTS } from '@/lib/constants';
+import { apiLogger } from '@/lib/monitoring/logger';
 // Credit system removed - implement your own if needed
 
 // Validation schemas
@@ -178,8 +179,8 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('SEO API error:', error);
-    
+    apiLogger.error('SEO API error', error);
+
     if (error instanceof ApiError) {
       return NextResponse.json(
         { error: error.message },
@@ -224,8 +225,8 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Trending keywords error:', error);
-    
+    apiLogger.error('Trending keywords error', error);
+
     if (error instanceof ApiError) {
       return NextResponse.json(
         { error: error.message },

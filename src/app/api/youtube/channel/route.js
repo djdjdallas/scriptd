@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { getChannelByUrl, getChannelVideos, parseChannelData } from '@/lib/youtube/channel';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // GET /api/youtube/channel?handle=channelname
 export const GET = createApiHandler(async (req) => {
@@ -125,7 +126,7 @@ export const GET = createApiHandler(async (req) => {
         }
       }
     } catch (error) {
-      console.error('Error fetching recent videos:', error);
+      apiLogger.error('Error fetching recent videos', error);
       // Continue without recent videos
     }
     
@@ -147,7 +148,7 @@ export const GET = createApiHandler(async (req) => {
     });
     
   } catch (error) {
-    console.error('Error fetching channel data:', error);
+    apiLogger.error('Error fetching channel data', error);
     if (error instanceof ApiError) {
       throw error;
     }

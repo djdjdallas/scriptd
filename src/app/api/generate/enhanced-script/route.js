@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { generateScriptWithEnhancedVoice } from '@/lib/ai/remix-voice-analyzer';
 import { getChannel } from '@/lib/db/channels';
 import { trackUsage } from '@/lib/credits';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -58,7 +59,7 @@ export async function POST(request) {
     });
     
   } catch (error) {
-    console.error('Enhanced script generation error:', error);
+    apiLogger.error('Enhanced script generation error', error);
     
     return NextResponse.json(
       { 
@@ -120,7 +121,7 @@ export async function GET(request) {
     });
     
   } catch (error) {
-    console.error('Profile check error:', error);
+    apiLogger.error('Profile check error', error);
     
     return NextResponse.json(
       { 

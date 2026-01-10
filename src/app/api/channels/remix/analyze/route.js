@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { 
+import {
   analyzeRemixWithClaude,
   generateRemixVoiceProfile,
   generateRemixContentIdeas,
-  generateAudienceInsights 
+  generateAudienceInsights
 } from '@/lib/ai/remix-analyzer';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -230,7 +231,7 @@ export async function POST(request) {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('Remix analysis error:', error);
+    apiLogger.error('Remix analysis error', error);
     return NextResponse.json(
       { error: 'Failed to analyze remix', details: error.message },
       { status: 500 }

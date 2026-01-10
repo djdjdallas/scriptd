@@ -3,6 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import stripe from '@/lib/stripe';
 import { CREDIT_PACKAGES } from '@/lib/constants';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -30,7 +31,7 @@ export async function POST(request) {
       .single();
 
     if (userError) {
-      console.error('Error fetching user data:', userError);
+      apiLogger.error('Error fetching user data', userError);
       return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 });
     }
 
@@ -92,7 +93,7 @@ export async function POST(request) {
       url: session.url 
     });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    apiLogger.error('Error creating checkout session', error);
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
       { status: 500 }

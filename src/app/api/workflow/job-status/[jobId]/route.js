@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 /**
  * GET /api/workflow/job-status/[jobId]
@@ -48,7 +49,7 @@ export async function GET(request, { params }) {
       if (jobError.code === 'PGRST116') {
         return NextResponse.json({ error: 'Job not found' }, { status: 404 });
       }
-      console.error('Error fetching job:', jobError);
+      apiLogger.error('Error fetching job', jobError, { jobId });
       return NextResponse.json({ error: 'Failed to fetch job status' }, { status: 500 });
     }
 
@@ -78,7 +79,7 @@ export async function GET(request, { params }) {
     });
 
   } catch (error) {
-    console.error('Job status API error:', error);
+    apiLogger.error('Job status API error', error);
     return NextResponse.json(
       {
         error: 'Internal server error',
@@ -123,7 +124,7 @@ export async function PATCH(request, { params }) {
         .single();
 
       if (updateError) {
-        console.error('Error cancelling job:', updateError);
+        apiLogger.error('Error cancelling job', updateError, { jobId });
         return NextResponse.json({ error: 'Failed to cancel job' }, { status: 500 });
       }
 
@@ -136,7 +137,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
 
   } catch (error) {
-    console.error('Job update API error:', error);
+    apiLogger.error('Job update API error', error);
     return NextResponse.json(
       {
         error: 'Internal server error',

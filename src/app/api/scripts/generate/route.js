@@ -10,6 +10,7 @@ import { validateScriptFactChecking, extractFactCheckData } from '@/lib/prompts/
 import { CREDIT_COSTS, AI_MODELS, MODEL_TIERS, calculateScriptCost, TIER_ACCESS_BY_SUBSCRIPTION } from '@/lib/constants';
 import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
 import { hasAccessToModel, checkUpgradeRequirement, getTierDisplayName } from '@/lib/subscription-helpers';
+import { checkFeatureRateLimit } from '@/lib/api/rate-limit';
 
 // Helper function to map quality tiers to actual AI models (hidden from users)
 function getTierModel(tier) {
@@ -95,7 +96,16 @@ export const POST = createApiHandler(async (req) => {
   // Check tier access based on subscription tier
   const userTier = userData.subscription_tier || 'free';
   const allowedTiers = TIER_ACCESS_BY_SUBSCRIPTION[userTier] || TIER_ACCESS_BY_SUBSCRIPTION['free'];
-  
+
+  // Check feature-specific rate limit (scripts per day based on subscription tier)
+  const rateLimitCheck = await checkFeatureRateLimit(user.id, 'scripts', userTier);
+  if (!rateLimitCheck.success) {
+    throw new ApiError(
+      `Daily script limit reached. ${userTier === 'free' ? 'Free users can generate 3 scripts per day. Upgrade to generate more.' : 'Please try again tomorrow.'}`,
+      429
+    );
+  }
+
   if (!allowedTiers.includes(selectedTier)) {
     // Find minimum tier required for this quality tier
     let requiredTier = 'professional'; // Default fallback
@@ -247,16 +257,17 @@ export const POST = createApiHandler(async (req) => {
       }
     }
 
-    // Save script to database
+    // Save script to database with extracted metadata
+    const scriptContent = formattedResult.text;
     const { data: script, error: scriptError } = await supabase
       .from('scripts')
       .insert({
         channel_id: channelId, // Required field
         title: validated.title,
-        content: formattedResult.text,
-        hook: '',
-        description: '',
-        tags: [],
+        content: scriptContent,
+        hook: extractHook(scriptContent),
+        description: extractDescription(scriptContent),
+        tags: extractTags(scriptContent, validated.keyPoints),
         metadata: {
           type: validated.type,
           length: validated.length,
@@ -356,3 +367,47 @@ export const POST = createApiHandler(async (req) => {
     throw new ApiError(errorMessage, 500);
   }
 });
+
+// Helper functions for extracting script metadata
+function extractHook(content) {
+  if (!content) return '';
+  // Extract the hook from the script content (look for **HOOK** section)
+  const hookMatch = content.match(/\*\*HOOK.*?\*\*\s*([\s\S]*?)(?:\*\*|$)/i);
+  if (hookMatch) {
+    return hookMatch[1].trim().slice(0, 200);
+  }
+  // Fallback: return first 200 characters
+  return content.slice(0, 200);
+}
+
+function extractDescription(content) {
+  if (!content) return '';
+  // Extract a description from the script
+  const sections = content.split(/\*\*[A-Z]+.*?\*\*/);
+  if (sections.length > 2) {
+    // Get the introduction or first main section
+    return sections[2].trim().slice(0, 500);
+  }
+  return content.slice(200, 700);
+}
+
+function extractTags(content, keyPoints = []) {
+  if (!content) return keyPoints;
+  const tags = [...keyPoints];
+
+  // Add common YouTube-relevant tags based on content
+  const commonTags = ['tutorial', 'guide', 'tips', 'howto', 'review', 'explained'];
+  commonTags.forEach(tag => {
+    if (content.toLowerCase().includes(tag)) {
+      tags.push(tag);
+    }
+  });
+
+  // Extract any hashtags mentioned
+  const hashtagMatches = content.match(/#\w+/g);
+  if (hashtagMatches) {
+    tags.push(...hashtagMatches.map(tag => tag.slice(1)));
+  }
+
+  return [...new Set(tags)].slice(0, 10); // Return unique tags, max 10
+}

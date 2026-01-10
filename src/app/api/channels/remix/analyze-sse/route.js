@@ -1,10 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
-import { 
+import {
   analyzeRemixWithClaude,
   generateRemixVoiceProfile,
   generateRemixContentIdeas,
-  generateAudienceInsights 
+  generateAudienceInsights
 } from '@/lib/ai/remix-analyzer';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   const encoder = new TextEncoder();
@@ -220,7 +221,7 @@ export async function POST(request) {
         controller.close();
 
       } catch (error) {
-        console.error('SSE Analysis error:', error);
+        apiLogger.error('SSE Analysis error', error);
         const errorMessage = `error:${error.message || 'Analysis failed'}`;
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ step: errorMessage })}\n\n`));
         controller.close();

@@ -5,6 +5,7 @@ import { createApiHandler, ApiError, rateLimiter } from '@/lib/api-handler';
 import { getAIService } from '@/lib/ai';
 import { AI_MODELS } from '@/lib/constants';
 import { createServiceClient } from '@/lib/supabase/service';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Rate limiter for free tools
 const freeToolLimiter = rateLimiter({
@@ -108,7 +109,7 @@ Example: youtube2025 | medium | 85 | true`;
     };
 
   } catch (error) {
-    console.error('Hashtag generation error:', error);
+    apiLogger.error('Hashtag generation error', error);
     throw new ApiError('Failed to generate hashtags', 500);
   }
 });

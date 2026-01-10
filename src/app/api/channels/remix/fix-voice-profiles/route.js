@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // This endpoint creates voice profile entries for existing remix channels
 // Run this once to fix existing remix channels that don't have voice profiles
@@ -21,7 +22,7 @@ export async function POST(request) {
       .eq('is_remix', true);
 
     if (channelError) {
-      console.error('Error fetching remix channels:', channelError);
+      apiLogger.error('Error fetching remix channels', channelError, { userId: user.id });
       return NextResponse.json({ error: 'Failed to fetch remix channels' }, { status: 500 });
     }
 
@@ -103,8 +104,8 @@ export async function POST(request) {
       .select();
 
     if (insertError) {
-      console.error('Error creating voice profiles:', insertError);
-      return NextResponse.json({ 
+      apiLogger.error('Error creating voice profiles', insertError, { userId: user.id, channelCount: channelsToFix.length });
+      return NextResponse.json({
         error: 'Failed to create voice profiles',
         details: insertError.message
       }, { status: 500 });
@@ -122,7 +123,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Fix voice profiles error:', error);
+    apiLogger.error('Fix voice profiles error', error);
     return NextResponse.json(
       { error: 'Failed to fix voice profiles', details: error.message },
       { status: 500 }
@@ -160,7 +161,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Check voice profiles error:', error);
+    apiLogger.error('Check voice profiles error', error);
     return NextResponse.json(
       { error: 'Failed to check voice profiles', details: error.message },
       { status: 500 }

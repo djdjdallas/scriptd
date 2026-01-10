@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { validateUserAccess, calculateChunkStrategy } from '@/lib/scriptGenerationConfig';
 import { MODEL_TIERS } from '@/lib/constants';
+import { checkFeatureRateLimit } from '@/lib/api/rate-limit';
 
 // Helper to normalize old model names to new ones
 function normalizeModelName(model) {
@@ -117,6 +118,18 @@ export async function POST(request) {
         .single();
 
       const userTier = userProfile?.subscription_tier || userProfile?.subscription_plan || 'free';
+
+      // Check feature-specific rate limit (scripts per day based on subscription tier)
+      const rateLimitCheck = await checkFeatureRateLimit(user.id, 'scripts', userTier);
+      if (!rateLimitCheck.success) {
+        return NextResponse.json({
+          error: 'Daily script limit reached',
+          details: userTier === 'free'
+            ? 'Free users can generate 3 scripts per day. Upgrade to generate more.'
+            : 'Please try again tomorrow.',
+          retryAfter: rateLimitCheck.retryAfter
+        }, { status: 429 });
+      }
 
       // Validate access (pass normalized model)
       const validation = validateUserAccess(user.id, userTier, durationMinutes, model);

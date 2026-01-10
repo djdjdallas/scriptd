@@ -8,6 +8,7 @@ import { exportToPDF } from '@/lib/export/pdf-exporter';
 import { exportToDOCX } from '@/lib/export/docx-exporter';
 import { exportToGoogleDocs } from '@/lib/export/google-docs-exporter';
 import { Packer } from 'docx';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Helper to convert script to different formats
 function convertScript(script, format) {
@@ -185,7 +186,7 @@ export const POST = createApiHandler(async (req, { params }) => {
     };
 
   } catch (error) {
-    console.error('Export error:', error);
+    apiLogger.error('Export error', error);
     throw new ApiError('Failed to export script', 500);
   }
 });

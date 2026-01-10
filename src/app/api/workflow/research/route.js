@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import ResearchService from '@/lib/ai/research-service';
 import ResearchServiceWithSearch from '@/lib/ai/research-service-with-search';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -18,7 +19,7 @@ export async function POST(request) {
       const expectedSecret = process.env.EDGE_FUNCTION_SECRET;
 
       if (!expectedSecret) {
-        console.error('EDGE_FUNCTION_SECRET environment variable is not configured');
+        apiLogger.error('EDGE_FUNCTION_SECRET environment variable is not configured');
         return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
       }
 
@@ -32,7 +33,7 @@ export async function POST(request) {
           process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         );
       } else {
-        console.error('Edge Function authentication failed: Invalid secret');
+        apiLogger.warn('Edge Function authentication failed: Invalid secret');
         return NextResponse.json({ error: 'Unauthorized', details: 'Invalid Edge Function secret' }, { status: 401 });
       }
     } else {
@@ -40,7 +41,7 @@ export async function POST(request) {
       supabase = await createClient();
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData?.user) {
-        console.error('Auth error:', authError);
+        apiLogger.warn('Authentication failed', { error: authError?.message });
         return NextResponse.json({ error: 'Unauthorized', details: authError?.message }, { status: 401 });
       }
       user = authData.user;
@@ -95,7 +96,7 @@ export async function POST(request) {
         });
       }
     } catch (error) {
-      console.warn('Enhanced search failed, falling back to regular service:', error.message);
+      apiLogger.warn('Enhanced search failed, falling back to regular service', { error: error.message });
       // Fallback to regular service
       researchResult = await ResearchService.performResearch({
         query,
@@ -110,7 +111,7 @@ export async function POST(request) {
 
     if (!researchResult.success) {
       const errorMessage = researchResult.error || 'Research failed';
-      console.error('Research failed:', errorMessage);
+      apiLogger.error('Research failed', null, { error: errorMessage, provider: researchResult.provider });
 
       return NextResponse.json(
         {
@@ -150,7 +151,7 @@ export async function POST(request) {
         .select();
 
       if (saveError) {
-        console.error('Error saving research:', saveError);
+        apiLogger.error('Error saving research', saveError, { workflowId });
       }
     }
 
@@ -206,7 +207,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Research API error:', error);
+    apiLogger.error('Research API error', error);
     return NextResponse.json(
       {
         error: 'Internal server error',

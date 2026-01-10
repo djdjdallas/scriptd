@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // GET - Fetch user's saved videos
 export async function GET(request) {
@@ -30,7 +31,7 @@ export async function GET(request) {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching saved videos:', error);
+      apiLogger.error('Error fetching saved videos', error);
       return NextResponse.json(
         { error: 'Failed to fetch saved videos' },
         { status: 500 }
@@ -42,7 +43,7 @@ export async function GET(request) {
       videos: data || []
     });
   } catch (error) {
-    console.error('Error in GET saved videos:', error);
+    apiLogger.error('Error in GET saved videos', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -112,7 +113,7 @@ export async function POST(request) {
           { status: 409 }
         );
       }
-      console.error('Error saving video:', error);
+      apiLogger.error('Error saving video', error);
       return NextResponse.json(
         { error: 'Failed to save video' },
         { status: 500 }
@@ -137,7 +138,7 @@ export async function POST(request) {
       video: data
     });
   } catch (error) {
-    console.error('Error in POST save video:', error);
+    apiLogger.error('Error in POST save video', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -184,7 +185,7 @@ export async function DELETE(request) {
       .eq('video_id', videoId);
 
     if (error) {
-      console.error('Error deleting saved video:', error);
+      apiLogger.error('Error deleting saved video', error);
       return NextResponse.json(
         { error: 'Failed to delete video' },
         { status: 500 }
@@ -211,7 +212,7 @@ export async function DELETE(request) {
       message: 'Video removed from saved list'
     });
   } catch (error) {
-    console.error('Error in DELETE saved video:', error);
+    apiLogger.error('Error in DELETE saved video', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -255,7 +256,7 @@ export async function PATCH(request) {
       .single();
 
     if (error) {
-      console.error('Error updating saved video:', error);
+      apiLogger.error('Error updating saved video', error);
       return NextResponse.json(
         { error: 'Failed to update video' },
         { status: 500 }
@@ -267,7 +268,7 @@ export async function PATCH(request) {
       video: data
     });
   } catch (error) {
-    console.error('Error in PATCH saved video:', error);
+    apiLogger.error('Error in PATCH saved video', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

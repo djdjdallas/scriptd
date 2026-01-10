@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 /**
  * Transfers a 30-day action plan to the existing content_calendar table
@@ -298,7 +299,7 @@ export async function POST(request) {
       .select();
 
     if (insertError) {
-      console.error('Error inserting calendar events:', insertError);
+      apiLogger.error('Error inserting calendar events', insertError);
       return NextResponse.json(
         { error: 'Failed to add events to calendar', details: insertError.message },
         { status: 500 }
@@ -348,7 +349,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Error transferring plan to calendar:', error);
+    apiLogger.error('Error transferring plan to calendar', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }

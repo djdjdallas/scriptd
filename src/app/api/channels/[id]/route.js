@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getChannelById, parseChannelData } from '@/lib/youtube/channel';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function GET(request, { params }) {
   try {
@@ -142,7 +143,7 @@ export async function GET(request, { params }) {
 
     return NextResponse.json({ channel });
   } catch (error) {
-    console.error('Error fetching channel:', error);
+    apiLogger.error('Error fetching channel', error);
     return NextResponse.json(
       { error: 'Failed to fetch channel' },
       { status: 500 }
@@ -203,13 +204,13 @@ export async function PUT(request, { params }) {
       .single();
 
     if (updateError) {
-      console.error('Error updating channel:', updateError);
+      apiLogger.error('Error updating channel', updateError);
       return NextResponse.json({ error: 'Failed to update channel' }, { status: 500 });
     }
 
     return NextResponse.json({ channel });
   } catch (error) {
-    console.error('Error updating channel:', error);
+    apiLogger.error('Error updating channel', error);
     return NextResponse.json(
       { error: 'Failed to update channel' },
       { status: 500 }
@@ -276,7 +277,7 @@ export async function DELETE(request, { params }) {
       .eq('channel_id', id);
 
     if (scriptUpdateError) {
-      console.error('Error updating scripts to remove channel reference:', scriptUpdateError);
+      apiLogger.error('Error updating scripts to remove channel reference', scriptUpdateError, { channelId: id });
       deletions.push({ table: 'scripts', error: scriptUpdateError });
     }
 
@@ -364,7 +365,7 @@ export async function DELETE(request, { params }) {
 
     // Log any deletion errors for debugging
     if (deletions.length > 0) {
-      console.error('Errors during channel deletion cleanup:', deletions);
+      apiLogger.error('Errors during channel deletion cleanup', null, { channelId: id, deletions });
     }
     
     // Finally, delete the channel itself
@@ -375,18 +376,17 @@ export async function DELETE(request, { params }) {
       .eq('user_id', user.id);
 
     if (error) {
-      console.error('Error deleting channel:', error);
-      console.error('Previous deletion errors:', deletions);
-      return NextResponse.json({ 
-        error: 'Failed to delete channel', 
+      apiLogger.error('Error deleting channel', error, { channelId: id, deletionErrors: deletions });
+      return NextResponse.json({
+        error: 'Failed to delete channel',
         details: error.message,
-        deletionErrors: deletions 
+        deletionErrors: deletions
       }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error in DELETE handler:', error);
+    apiLogger.error('Error in DELETE handler', error);
     return NextResponse.json(
       { error: 'Failed to delete channel', details: error.message },
       { status: 500 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Helper function to calculate credit multiplier based on script length
 function getScriptLengthMultiplier(scriptLength) {
@@ -73,12 +74,12 @@ Please provide only the edited text without any explanations or markers. Maintai
           const claudeData = await claudeResponse.json();
           editedText = claudeData.content?.[0]?.text || text;
         } else {
-          console.error('Claude API error:', await claudeResponse.text());
+          apiLogger.error('Claude API error', new Error(await claudeResponse.text()), { instruction });
           // Fallback to simple editing
           editedText = applySimpleEdit(text, instruction);
         }
       } catch (claudeError) {
-        console.error('Claude API error:', claudeError);
+        apiLogger.error('Claude API error', claudeError, { instruction });
         editedText = applySimpleEdit(text, instruction);
       }
     } else {
@@ -94,7 +95,7 @@ Please provide only the edited text without any explanations or markers. Maintai
       creditsUsed
     });
   } catch (error) {
-    console.error('AI edit error:', error);
+    apiLogger.error('AI edit error', error);
     return NextResponse.json(
       { error: 'Failed to apply AI edit' },
       { status: 500 }

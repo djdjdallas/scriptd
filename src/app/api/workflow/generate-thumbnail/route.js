@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { generateWithAI } from '@/lib/ai/aiService';
 import Anthropic from '@anthropic-ai/sdk';
 import { ServerCreditManager } from '@/lib/credits/server-manager';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Fallback function using Claude API directly
 async function generateThumbnailFallback(prompt) {
@@ -108,7 +109,7 @@ Make it eye-catching, clickable, and relevant to the content.`;
       creditsUsed
     });
   } catch (error) {
-    console.error('Thumbnail generation error:', error);
+    apiLogger.error('Thumbnail generation error', error);
     return NextResponse.json(
       { error: 'Failed to generate thumbnail concept' },
       { status: 500 }

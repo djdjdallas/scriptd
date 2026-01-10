@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { searchYouTubeChannels } from '@/lib/youtube/search';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function GET(request) {
   try {
@@ -45,7 +46,7 @@ export async function GET(request) {
     const { data: dbChannels, error: dbError } = await dbQuery;
 
     if (dbError) {
-      console.error('Database search error:', dbError);
+      apiLogger.error('Database search error', dbError, { query });
     }
 
     // If we have results from database, return them (even if less than 10)
@@ -141,7 +142,7 @@ export async function GET(request) {
         });
 
       } catch (youtubeError) {
-        console.error('YouTube search error:', youtubeError);
+        apiLogger.error('YouTube search error', youtubeError, { query });
         // Fall back to database results only
         return NextResponse.json({
           channels: dbChannels ? dbChannels.map(channel => ({
@@ -188,7 +189,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Channel search error:', error);
+    apiLogger.error('Channel search error', error);
     return NextResponse.json(
       { error: 'Failed to search channels', details: error.message },
       { status: 500 }

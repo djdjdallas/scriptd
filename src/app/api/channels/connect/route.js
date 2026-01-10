@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getChannelByUrl, parseChannelData } from '@/lib/youtube/channel';
 import { queueVoiceTraining } from '@/lib/voice-training/queue';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -143,7 +144,7 @@ export async function POST(request) {
 
     } catch (voiceError) {
       // Don't fail channel connection if voice training fails to queue
-      console.error('Failed to queue voice training:', voiceError);
+      apiLogger.error('Failed to queue voice training', voiceError);
     }
 
     return NextResponse.json({ 
@@ -157,7 +158,7 @@ export async function POST(request) {
       }
     });
   } catch (error) {
-    console.error('Channel connection error:', error);
+    apiLogger.error('Channel connection error', error);
     return NextResponse.json(
       { error: error.message || 'Failed to connect channel' },
       { status: 500 }

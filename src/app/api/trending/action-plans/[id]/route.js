@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // DELETE - Delete a specific action plan
 export async function DELETE(request, { params }) {
@@ -33,7 +34,7 @@ export async function DELETE(request, { params }) {
       .eq('user_id', user.id);
 
     if (deleteError) {
-      console.error('Error deleting action plan:', deleteError);
+      apiLogger.error('Error deleting action plan', deleteError, { planId: id, userId: user.id });
       return NextResponse.json(
         { error: 'Failed to delete action plan' },
         { status: 500 }
@@ -46,7 +47,7 @@ export async function DELETE(request, { params }) {
     });
 
   } catch (error) {
-    console.error('Error in action plan DELETE:', error);
+    apiLogger.error('Error in action plan DELETE', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -96,7 +97,7 @@ export async function GET(request, { params }) {
     return NextResponse.json(plan);
 
   } catch (error) {
-    console.error('Error in action plan GET:', error);
+    apiLogger.error('Error in action plan GET', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

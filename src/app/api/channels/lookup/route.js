@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { findChannelIdByName } from '@/lib/youtube/channel-lookup';
 import { getKnownChannelId } from '@/lib/youtube/known-channels';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -48,7 +49,7 @@ export async function POST(request) {
     }
 
   } catch (error) {
-    console.error('Channel lookup error:', error);
+    apiLogger.error('Channel lookup error', error);
     return NextResponse.json(
       { error: 'Failed to lookup channel', details: error.message },
       { status: 500 }
@@ -102,7 +103,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Batch channel lookup error:', error);
+    apiLogger.error('Batch channel lookup error', error);
     return NextResponse.json(
       { error: 'Failed to lookup channels', details: error.message },
       { status: 500 }

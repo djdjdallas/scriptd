@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getWebScraper } from '@/lib/scraping/web-scraper';
 import { contentFetchLimiter } from '@/lib/rate-limiter';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -112,7 +113,7 @@ export async function POST(request) {
       });
       
     } catch (scrapeError) {
-      console.error(`Failed to scrape ${url}:`, scrapeError.message);
+      apiLogger.error('Failed to scrape URL', scrapeError, { url });
       
       // Check if it's a specific error type
       const isTimeout = scrapeError.message === 'Scraping timeout';
@@ -133,7 +134,7 @@ export async function POST(request) {
     }
 
   } catch (error) {
-    console.error('Fetch content error:', error);
+    apiLogger.error('Fetch content error', error);
     return NextResponse.json(
       { error: 'Failed to fetch content' },
       { status: 500 }

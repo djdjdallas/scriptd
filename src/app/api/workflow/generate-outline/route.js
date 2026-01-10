@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateComprehensiveOutline, validateOutlineStructure } from '@/lib/script-generation/outline-generator';
 import { validateResearchForDuration, calculateResearchScore } from '@/lib/script-generation/research-validator';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 /**
  * POST /api/workflow/generate-outline
@@ -59,7 +60,7 @@ export async function POST(request) {
       .eq('is_selected', true);
 
     if (researchError) {
-      console.error('Error fetching research:', researchError);
+      apiLogger.error('Error fetching research', researchError, { workflowId });
       return NextResponse.json({
         error: 'Failed to fetch research data'
       }, { status: 500 });
@@ -112,7 +113,7 @@ export async function POST(request) {
 
     // Validate outline structure
     if (!validateOutlineStructure(outline)) {
-      console.error('Generated outline has invalid structure');
+      apiLogger.error('Generated outline has invalid structure', null, { workflowId, title });
       return NextResponse.json({
         error: 'Generated outline validation failed. Please try again.'
       }, { status: 500 });
@@ -145,7 +146,7 @@ export async function POST(request) {
       .single();
 
     if (saveError) {
-      console.error('Error saving outline:', saveError);
+      apiLogger.error('Error saving outline', saveError, { workflowId });
       return NextResponse.json({
         error: 'Failed to save outline to database'
       }, { status: 500 });
@@ -170,7 +171,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Error in generate-outline:', error);
+    apiLogger.error('Error in generate-outline', error);
     return NextResponse.json({
       error: 'Internal server error',
       details: error.message
@@ -222,7 +223,7 @@ export async function GET(request) {
         });
       }
 
-      console.error('Error fetching outline:', fetchError);
+      apiLogger.error('Error fetching outline', fetchError, { workflowId });
       return NextResponse.json({
         error: 'Failed to fetch outline'
       }, { status: 500 });
@@ -234,7 +235,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Error in GET generate-outline:', error);
+    apiLogger.error('Error in GET generate-outline', error);
     return NextResponse.json({
       error: 'Internal server error',
       details: error.message

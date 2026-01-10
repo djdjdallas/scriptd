@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 /**
  * DELETE /api/voice/[id]
@@ -53,7 +54,7 @@ export async function DELETE(request, { params }) {
       .eq('id', id);
 
     if (deleteError) {
-      console.error('Error deleting voice profile:', deleteError);
+      apiLogger.error('Error deleting voice profile', deleteError, { profileId: id, userId: user.id });
       return NextResponse.json(
         { error: 'Failed to delete voice profile' },
         { status: 500 }
@@ -66,7 +67,7 @@ export async function DELETE(request, { params }) {
     });
 
   } catch (error) {
-    console.error('Error in DELETE /api/voice/[id]:', error);
+    apiLogger.error('Error in DELETE /api/voice/[id]', error);
     return NextResponse.json(
       { error: 'Failed to delete voice profile' },
       { status: 500 }
@@ -124,7 +125,7 @@ export async function GET(request, { params }) {
     });
 
   } catch (error) {
-    console.error('Error in GET /api/voice/[id]:', error);
+    apiLogger.error('Error in GET /api/voice/[id]', error);
     return NextResponse.json(
       { error: 'Failed to fetch voice profile' },
       { status: 500 }

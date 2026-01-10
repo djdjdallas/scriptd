@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 const youtube = google.youtube({
   version: 'v3',
@@ -63,7 +64,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Video breakdown error:', error);
+    apiLogger.error('Video breakdown error', error);
     return NextResponse.json(
       { error: 'Failed to analyze video', details: error.message },
       { status: 500 }

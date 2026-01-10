@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getChannelById, parseChannelData } from '@/lib/youtube/channel';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -20,7 +21,7 @@ export async function POST(request) {
       .is('thumbnail_url', null);
 
     if (fetchError) {
-      console.error('Error fetching channels:', fetchError);
+      apiLogger.error('Error fetching channels', fetchError, { userId: user.id });
       return NextResponse.json({ error: 'Failed to fetch channels' }, { status: 500 });
     }
 
@@ -69,14 +70,14 @@ export async function POST(request) {
               .eq('id', channel.id);
 
             if (updateError) {
-              console.error(`Error updating channel ${channel.id}:`, updateError);
+              apiLogger.error('Error updating channel', updateError, { channelId: channel.id });
               return null;
             }
 
             return channel.id;
           }
         } catch (error) {
-          console.error(`Error processing channel ${channel.id}:`, error);
+          apiLogger.error('Error processing channel', error, { channelId: channel.id });
           return null;
         }
       })
@@ -90,7 +91,7 @@ export async function POST(request) {
       total: channels.length
     });
   } catch (error) {
-    console.error('Error refreshing thumbnails:', error);
+    apiLogger.error('Error refreshing thumbnails', error);
     return NextResponse.json(
       { error: error.message || 'Failed to refresh thumbnails' },
       { status: 500 }

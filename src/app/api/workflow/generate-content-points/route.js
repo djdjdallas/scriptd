@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { ServerCreditManager } from '@/lib/credits/server-manager';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Helper function to calculate credit multiplier based on duration
 function getDurationMultiplier(durationInSeconds) {
@@ -270,7 +271,7 @@ VALIDATION CHECKLIST:
           }
         }
       } catch (claudeError) {
-        console.error('Claude API error:', claudeError);
+        apiLogger.error('Claude API error', claudeError);
         points = generateFallbackPoints(topic, targetAudience, targetDuration);
       }
     } else {
@@ -320,7 +321,7 @@ VALIDATION CHECKLIST:
       sourcesUsed: sources.length
     });
   } catch (error) {
-    console.error('Content points generation error:', error);
+    apiLogger.error('Content points generation error', error);
     return NextResponse.json(
       { error: 'Failed to generate content points' },
       { status: 500 }

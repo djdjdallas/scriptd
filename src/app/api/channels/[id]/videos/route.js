@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getChannelVideos } from '@/lib/youtube/channel';
 import { getVideoTranscript } from '@/lib/youtube/video';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function GET(request, { params }) {
   try {
@@ -66,7 +67,7 @@ export async function GET(request, { params }) {
       transcriptsIncluded: false,
     });
   } catch (error) {
-    console.error('Error fetching videos:', error);
+    apiLogger.error('Error fetching videos', error);
     return NextResponse.json(
       { error: 'Failed to fetch videos' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getChannelGrowthMetrics, getComparativeGrowthMetrics } from '@/lib/youtube/growth-metrics';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // GET /api/channels/growth - Get growth metrics for all user's channels
 export async function GET(request) {
@@ -61,7 +62,7 @@ export async function GET(request) {
       });
     }
   } catch (error) {
-    console.error('Error fetching growth metrics:', error);
+    apiLogger.error('Error fetching growth metrics', error);
     return NextResponse.json(
       { error: 'Failed to fetch growth metrics' },
       { status: 500 }
@@ -112,7 +113,7 @@ export async function POST(request) {
       .single();
 
     if (snapshotError) {
-      console.error('Error storing metrics snapshot:', snapshotError);
+      apiLogger.error('Error storing metrics snapshot', snapshotError, { channelId });
       return NextResponse.json(
         { error: 'Failed to store metrics' },
         { status: 500 }
@@ -124,7 +125,7 @@ export async function POST(request) {
       data: snapshot
     });
   } catch (error) {
-    console.error('Error storing metrics:', error);
+    apiLogger.error('Error storing metrics', error);
     return NextResponse.json(
       { error: 'Failed to store metrics' },
       { status: 500 }

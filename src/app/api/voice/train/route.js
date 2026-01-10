@@ -6,6 +6,7 @@ import { analyzeVoiceStyle } from '@/lib/youtube/voice-analyzer';
 import { analyzeVoiceStyleAdvanced } from '@/lib/youtube/voice-analyzer-v2';
 import { getChannelVideos } from '@/lib/youtube/channel';
 import { getVideoTranscript } from '@/lib/youtube/video';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   try {
@@ -158,7 +159,7 @@ export async function POST(request) {
           sampleCount = transcripts.length;
         }
       } catch (error) {
-        console.error('Error fetching YouTube transcripts:', error);
+        apiLogger.error('Error fetching YouTube transcripts', error, { channelId });
         // Fallback to mock data if YouTube fetch fails
         const mockTranscripts = [
           "Hey everyone, welcome back to my channel! Today we're going to explore something really exciting.",
@@ -258,7 +259,7 @@ export async function POST(request) {
       .single();
 
     if (saveError) {
-      console.error('Error saving voice profile:', saveError);
+      apiLogger.error('Error saving voice profile', saveError, { channelId, profileName });
       return NextResponse.json(
         { error: 'Failed to save voice profile' },
         { status: 500 }
@@ -310,7 +311,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Voice training error:', error);
+    apiLogger.error('Voice training error', error);
     return NextResponse.json(
       { error: 'Failed to train voice profile' },
       { status: 500 }
@@ -339,7 +340,7 @@ export async function GET(request) {
       message: 'Voice training is FREE - no credits required!'
     });
   } catch (error) {
-    console.error('Error checking voice training cost:', error);
+    apiLogger.error('Error checking voice training cost', error);
     return NextResponse.json(
       { error: 'Failed to check cost' },
       { status: 500 }

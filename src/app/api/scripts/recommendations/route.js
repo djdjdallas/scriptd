@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 export async function POST(request) {
   let requestData = {};
@@ -102,7 +103,7 @@ Return ONLY a JSON array of 5-7 specific content points as strings. Each point s
     });
 
   } catch (error) {
-    console.error('Error generating recommendations:', error);
+    apiLogger.error('Error generating recommendations', error);
     
     // Use the requestData we stored earlier
     const { title = '', type = '' } = requestData;

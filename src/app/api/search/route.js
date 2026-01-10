@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Simple in-memory cache for search results (15 minutes)
 const searchCache = new Map();
@@ -51,7 +52,7 @@ export async function POST(request) {
 
     return NextResponse.json(searchResults);
   } catch (error) {
-    console.error('Search error:', error);
+    apiLogger.error('Search error', error);
     return NextResponse.json(
       { error: 'Failed to perform search' },
       { status: 500 }

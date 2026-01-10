@@ -1,40 +1,42 @@
 // Credit bypass for development/testing or specific features
 // This module helps track credit usage without actually deducting credits
 
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 
-// Log credit usage without deducting
+// Log credit usage for bypassed operations (audit trail)
+// Uses the existing credits_transactions table with type='usage' and amount=0
 export async function logCreditUsage(userId, feature, amount, metadata = {}) {
-  // Credit usage logging disabled - table doesn't exist yet
-  // Uncomment when credit_usage_logs table is created
-  /*
-  const supabase = createClient();
-  
+  // IMPORTANT: Always log bypassed credit usage for audit purposes
   try {
+    const supabase = await createClient();
+
     const { error } = await supabase
-      .from('credit_usage_logs')
+      .from('credits_transactions')
       .insert({
         user_id: userId,
-        feature,
-        amount,
-        metadata,
-        bypassed: true,
-        created_at: new Date().toISOString()
+        amount: 0, // No credits deducted for bypassed usage
+        type: 'usage',
+        description: `[BYPASSED] ${feature}`,
+        metadata: {
+          ...metadata,
+          bypassed: true,
+          intended_amount: amount,
+          bypass_reason: metadata.bypass_reason || 'credit_bypass_enabled',
+          timestamp: new Date().toISOString()
+        }
       });
-    
+
     if (error) {
-      console.error('Error logging credit usage:', error);
+      // Log error but don't fail the operation
+      console.error('[Credit Bypass Audit] Error logging bypassed usage:', error.message);
     }
-    
+
     return { success: true, bypassed: true };
   } catch (err) {
-    console.error('Failed to log credit usage:', err);
-    return { success: false, error: err.message };
+    // Log error but don't fail the operation - audit logging should not block features
+    console.error('[Credit Bypass Audit] Failed to log bypassed usage:', err.message);
+    return { success: true, bypassed: true, auditError: err.message };
   }
-  */
-  
-  // For now, just return success
-  return { success: true, bypassed: true };
 }
 
 // Check if feature should bypass credits

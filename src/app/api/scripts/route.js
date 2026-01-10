@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createApiHandler, ApiError, paginate } from '@/lib/api-handler';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // GET /api/scripts - List user's scripts
 export const GET = createApiHandler(async (req) => {
@@ -64,7 +65,7 @@ export const GET = createApiHandler(async (req) => {
   const { data: scripts, error, count } = await query;
 
   if (error) {
-    console.error('[API /scripts] Database error:', error);
+    apiLogger.error('[API /scripts] Database error', error);
     throw new ApiError(`Failed to fetch scripts: ${error.message}`, 500);
   }
 

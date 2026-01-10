@@ -5,6 +5,7 @@ import { apiHandler } from '@/lib/api-handler'
 import { validateSchema } from '@/lib/validators'
 import { z } from 'zod'
 import { checkRateLimit } from '@/lib/rate-limiter'
+import { apiLogger } from '@/lib/monitoring/logger'
 
 const createTeamSchema = z.object({
   name: z.string().min(2).max(50),
@@ -150,7 +151,7 @@ export async function POST(request) {
       })
 
     if (settingsError) {
-      console.error('Failed to create team settings:', settingsError)
+      apiLogger.error('Failed to create team settings', settingsError)
     }
 
     await supabase

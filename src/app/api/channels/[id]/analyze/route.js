@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getChannelById, getChannelVideos } from '@/lib/youtube/channel';
 import { analyzeChannelWithClaude, generateChannelVoiceProfile } from '@/lib/ai/single-channel-analyzer';
 import { updateProgress, PROGRESS_STAGES } from '@/lib/utils/progress-tracker';
+import { apiLogger } from '@/lib/monitoring/logger';
 
 // Configure Vercel Pro timeout (800 seconds max for Pro plan)
 export const maxDuration = 800;
@@ -708,7 +709,7 @@ export async function POST(request, { params }) {
       .single();
 
     if (saveError) {
-      console.error('Error saving analysis:', saveError);
+      apiLogger.error('Error saving analysis', saveError, { channelId: id, userId: user.id });
     }
 
     // Import the transformer
@@ -770,7 +771,7 @@ export async function POST(request, { params }) {
     });
 
   } catch (error) {
-    console.error('Error analyzing channel:', error);
+    apiLogger.error('Error analyzing channel', error);
     return NextResponse.json(
       { error: error.message || 'Failed to analyze channel' },
       { status: 500 }
