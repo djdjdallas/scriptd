@@ -149,6 +149,10 @@ export default function sitemap() {
       path: '/youtube-script-generator-faceless-channels',
       priority: 0.8,
     },
+    {
+      path: '/beta',
+      priority: 0.7,
+    },
   ];
 
   specialPages.forEach(({ path, priority }) => {
