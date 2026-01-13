@@ -8,7 +8,7 @@ export const metadata = {
     type: 'website',
   },
   alternates: {
-    canonical: '/alternatives/copy-ai',
+    canonical: 'https://genscript.io/alternatives/copy-ai',
   },
 };
 

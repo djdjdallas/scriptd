@@ -8,7 +8,7 @@ export const metadata = {
     type: 'website',
   },
   alternates: {
-    canonical: '/alternatives/jasper-ai',
+    canonical: 'https://genscript.io/alternatives/jasper-ai',
   },
 };
 

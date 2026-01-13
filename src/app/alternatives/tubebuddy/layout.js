@@ -8,7 +8,7 @@ export const metadata = {
     type: 'website',
   },
   alternates: {
-    canonical: '/alternatives/tubebuddy',
+    canonical: 'https://genscript.io/alternatives/tubebuddy',
   },
 };
 
