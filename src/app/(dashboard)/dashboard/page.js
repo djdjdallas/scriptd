@@ -352,10 +352,10 @@ export default function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {stats.recentScripts.map((script) => (
                 <Link key={script.id} href={`/scripts/${script.id}`}>
-                  <div className="glass p-4 rounded-xl hover:bg-white/10 transition-all cursor-pointer group">
+                  <div className="glass p-4 rounded-xl hover:bg-white/10 transition-all cursor-pointer group mb-1">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <h3 className="text-white font-medium group-hover:text-purple-400 transition-colors">

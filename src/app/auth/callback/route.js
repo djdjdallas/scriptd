@@ -6,22 +6,9 @@ export async function GET(request) {
   const code = searchParams.get('code')
   const next = searchParams.get('next')
 
-  console.log('[Auth Callback] Starting:', {
-    hasCode: !!code,
-    next,
-    origin,
-    appUrl: process.env.NEXT_PUBLIC_APP_URL
-  })
-
   if (code) {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-
-    console.log('[Auth Callback] Session exchange:', {
-      success: !error,
-      hasUser: !!data?.user,
-      error: error?.message
-    })
     
     if (!error && data?.user) {
       // Check if this is a new user
@@ -109,15 +96,7 @@ export async function GET(request) {
         return `${origin}${redirectUrl}`
       }
 
-      const finalRedirectUrl = getRedirectUrl()
-      console.log('[Auth Callback] Redirecting:', {
-        redirectUrl,
-        finalRedirectUrl,
-        forwardedHost,
-        nodeEnv: process.env.NODE_ENV
-      })
-
-      return NextResponse.redirect(finalRedirectUrl)
+      return NextResponse.redirect(getRedirectUrl())
     }
   }
 
