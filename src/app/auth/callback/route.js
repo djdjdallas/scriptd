@@ -74,19 +74,32 @@ export async function GET(request) {
         redirectUrl = next
       }
 
-      const forwardedHost = request.headers.get('x-forwarded-host')
-      const isLocalEnv = process.env.NODE_ENV === 'development'
-      
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${redirectUrl}`)
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${redirectUrl}`)
-      } else {
-        return NextResponse.redirect(`${origin}${redirectUrl}`)
+      // Build redirect URL reliably for all environments
+      const getRedirectUrl = () => {
+        if (process.env.NODE_ENV === 'development') {
+          return `${origin}${redirectUrl}`
+        }
+
+        // Production: use configured app URL (most reliable)
+        if (process.env.NEXT_PUBLIC_APP_URL) {
+          return `${process.env.NEXT_PUBLIC_APP_URL}${redirectUrl}`
+        }
+
+        // Fallback: use x-forwarded-host from Vercel/proxy
+        const forwardedHost = request.headers.get('x-forwarded-host')
+        if (forwardedHost) {
+          return `https://${forwardedHost}${redirectUrl}`
+        }
+
+        // Last resort: use origin
+        return `${origin}${redirectUrl}`
       }
+
+      return NextResponse.redirect(getRedirectUrl())
     }
   }
 
   // Return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-error`)
+  const errorBaseUrl = process.env.NEXT_PUBLIC_APP_URL || origin
+  return NextResponse.redirect(`${errorBaseUrl}/auth/auth-error`)
 }
