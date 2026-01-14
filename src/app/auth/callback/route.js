@@ -6,9 +6,22 @@ export async function GET(request) {
   const code = searchParams.get('code')
   const next = searchParams.get('next')
 
+  console.log('[Auth Callback] Starting:', {
+    hasCode: !!code,
+    next,
+    origin,
+    appUrl: process.env.NEXT_PUBLIC_APP_URL
+  })
+
   if (code) {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+    console.log('[Auth Callback] Session exchange:', {
+      success: !error,
+      hasUser: !!data?.user,
+      error: error?.message
+    })
     
     if (!error && data?.user) {
       // Check if this is a new user
@@ -75,6 +88,8 @@ export async function GET(request) {
       }
 
       // Build redirect URL reliably for all environments
+      const forwardedHost = request.headers.get('x-forwarded-host')
+
       const getRedirectUrl = () => {
         if (process.env.NODE_ENV === 'development') {
           return `${origin}${redirectUrl}`
@@ -86,7 +101,6 @@ export async function GET(request) {
         }
 
         // Fallback: use x-forwarded-host from Vercel/proxy
-        const forwardedHost = request.headers.get('x-forwarded-host')
         if (forwardedHost) {
           return `https://${forwardedHost}${redirectUrl}`
         }
@@ -95,7 +109,15 @@ export async function GET(request) {
         return `${origin}${redirectUrl}`
       }
 
-      return NextResponse.redirect(getRedirectUrl())
+      const finalRedirectUrl = getRedirectUrl()
+      console.log('[Auth Callback] Redirecting:', {
+        redirectUrl,
+        finalRedirectUrl,
+        forwardedHost,
+        nodeEnv: process.env.NODE_ENV
+      })
+
+      return NextResponse.redirect(finalRedirectUrl)
     }
   }
 
