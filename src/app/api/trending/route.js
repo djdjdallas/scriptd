@@ -95,22 +95,40 @@ export async function GET(request) {
       
       // Fallback to database data when API quota is exceeded
       const supabase = await createClient();
-      
+
       // Get recent trending topics from database
-      const { data: dbTopics } = await supabase
+      let topicsQuery = supabase
         .from('trending_topics_history')
         .select('*')
-        .eq(userCategory !== 'all' ? 'category' : '', userCategory !== 'all' ? userCategory : '')
         .order('recorded_at', { ascending: false })
         .limit(50);
-      
+
+      if (userCategory !== 'all') {
+        topicsQuery = topicsQuery.eq('category', userCategory);
+      }
+
+      const { data: dbTopics, error: topicsError } = await topicsQuery;
+
+      if (topicsError) {
+        console.error('Error fetching trending topics:', topicsError);
+      }
+
       // Get recent trending channels from database
-      const { data: dbChannels } = await supabase
+      let channelsQuery = supabase
         .from('trending_channels_history')
         .select('*')
-        .eq(userCategory !== 'all' ? 'category' : '', userCategory !== 'all' ? userCategory : '')
         .order('recorded_at', { ascending: false })
         .limit(30);
+
+      if (userCategory !== 'all') {
+        channelsQuery = channelsQuery.eq('category', userCategory);
+      }
+
+      const { data: dbChannels, error: channelsError } = await channelsQuery;
+
+      if (channelsError) {
+        console.error('Error fetching trending channels:', channelsError);
+      }
       
       // Format database data to match expected structure
       if (dbTopics && dbTopics.length > 0) {

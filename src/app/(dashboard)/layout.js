@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { VoiceTrainingNotifications } from "@/components/notifications/voice-training-notification";
+import { CreditsProvider, useCredits } from "@/contexts/CreditsContext";
 import {
   FileText,
   Play,
@@ -30,6 +31,43 @@ import {
   Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Memoized sidebar credits component using the shared context
+const SidebarCredits = memo(function SidebarCredits() {
+  const { credits, loading } = useCredits();
+
+  return (
+    <div className="glass-card p-3 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-purple-400" />
+          <span className="text-xs font-medium text-gray-300">Credits</span>
+        </div>
+        {loading ? (
+          <span className="text-sm font-bold text-gray-500">...</span>
+        ) : (
+          <span className="text-sm font-bold gradient-text">
+            {credits.toLocaleString()}
+          </span>
+        )}
+      </div>
+      <div className="w-full h-1.5 bg-black/30 rounded-full overflow-hidden mb-2">
+        <div
+          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+          style={{ width: `${Math.min((credits / 1000) * 100, 100)}%` }}
+        />
+      </div>
+      <Link href="/credits" className="block">
+        <Button
+          size="sm"
+          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs py-1.5 h-auto"
+        >
+          Get More
+        </Button>
+      </Link>
+    </div>
+  );
+});
 
 const sidebarItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -83,10 +121,33 @@ export default function DashboardLayout({ children }) {
     "research",
     "trending",
   ]); // Keep scripts, research and trending expanded by default
-  const [credits, setCredits] = useState(0);
-  const [creditsLoading, setCreditsLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+
+  // Memoized event handlers to prevent unnecessary re-renders
+  const handleSidebarMouseEnter = useCallback(() => {
+    setSidebarHovered(true);
+  }, []);
+
+  const handleSidebarMouseLeave = useCallback(() => {
+    setSidebarHovered(false);
+  }, []);
+
+  const handleItemHover = useCallback((href) => {
+    setHoveredItem(href);
+  }, []);
+
+  const handleItemLeave = useCallback(() => {
+    setHoveredItem(null);
+  }, []);
+
+  const handleExpandToggle = useCallback((label) => {
+    setExpandedItems((prev) =>
+      prev.includes(label.toLowerCase())
+        ? prev.filter((i) => i !== label.toLowerCase())
+        : [...prev, label.toLowerCase()]
+    );
+  }, []);
 
   useEffect(() => {
     // IMPORTANT: Let middleware handle auth
@@ -116,12 +177,6 @@ export default function DashboardLayout({ children }) {
     checkUser();
   }, []); // Only run once on mount
 
-  useEffect(() => {
-    if (user) {
-      fetchCredits();
-    }
-  }, [user]);
-
   // Add auth timeout - redirect if stuck on "Authenticating..." for too long
   useEffect(() => {
     if (!loading && !user) {
@@ -132,36 +187,6 @@ export default function DashboardLayout({ children }) {
       return () => clearTimeout(timeout);
     }
   }, [loading, user, router]);
-
-  const fetchCredits = async () => {
-    if (!user) return;
-
-    setCreditsLoading(true);
-    try {
-      const supabase = createClient();
-      const { data: balance, error: rpcError } = await supabase.rpc(
-        "get_available_credit_balance",
-        { p_user_id: user.id }
-      );
-
-      if (rpcError) {
-        // Fallback to fetch from users table
-        const { data: userData } = await supabase
-          .from("users")
-          .select("credits")
-          .eq("id", user.id)
-          .single();
-
-        setCredits(userData?.credits || 0);
-      } else {
-        setCredits(balance || 0);
-      }
-    } catch (error) {
-      setCredits(0);
-    } finally {
-      setCreditsLoading(false);
-    }
-  };
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -199,9 +224,10 @@ export default function DashboardLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900">
-      {/* Voice Training Notifications */}
-      {user && <VoiceTrainingNotifications userId={user.id} />}
+    <CreditsProvider userId={user?.id}>
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900">
+        {/* Voice Training Notifications */}
+        {user && <VoiceTrainingNotifications userId={user.id} />}
 
       {/* Background Effects */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
@@ -227,8 +253,8 @@ export default function DashboardLayout({ children }) {
 
       {/* Sidebar */}
       <aside
-        onMouseEnter={() => setSidebarHovered(true)}
-        onMouseLeave={() => setSidebarHovered(false)}
+        onMouseEnter={handleSidebarMouseEnter}
+        onMouseLeave={handleSidebarMouseLeave}
         className={cn(
           "fixed left-0 top-0 h-full glass border-r border-white/10 transition-all duration-500 ease-in-out z-40 flex flex-col overflow-hidden",
           sidebarCollapsed && !sidebarHovered ? "w-20" : "w-64",
@@ -268,17 +294,13 @@ export default function DashboardLayout({ children }) {
                         item.subItems &&
                         !(sidebarCollapsed && !sidebarHovered)
                       ) {
-                        setExpandedItems((prev) =>
-                          prev.includes(item.label.toLowerCase())
-                            ? prev.filter((i) => i !== item.label.toLowerCase())
-                            : [...prev, item.label.toLowerCase()]
-                        );
+                        handleExpandToggle(item.label);
                       } else {
                         router.push(item.href);
                       }
                     }}
-                    onMouseEnter={() => setHoveredItem(item.href)}
-                    onMouseLeave={() => setHoveredItem(null)}
+                    onMouseEnter={() => handleItemHover(item.href)}
+                    onMouseLeave={handleItemLeave}
                     className={cn(
                       "flex items-center gap-3 rounded-xl transition-all duration-300 group relative cursor-pointer",
                       sidebarCollapsed && !sidebarHovered
@@ -372,35 +394,7 @@ export default function DashboardLayout({ children }) {
           {/* Credits Display Card */}
           {!(sidebarCollapsed && !sidebarHovered) && (
             <div className="mt-auto pt-4 border-t border-white/10">
-              <div className="glass-card p-3 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-purple-400" />
-                    <span className="text-xs font-medium text-gray-300">Credits</span>
-                  </div>
-                  {creditsLoading ? (
-                    <span className="text-sm font-bold text-gray-500">...</span>
-                  ) : (
-                    <span className="text-sm font-bold gradient-text">
-                      {credits.toLocaleString()}
-                    </span>
-                  )}
-                </div>
-                <div className="w-full h-1.5 bg-black/30 rounded-full overflow-hidden mb-2">
-                  <div
-                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-                    style={{ width: `${Math.min((credits / 1000) * 100, 100)}%` }}
-                  />
-                </div>
-                <Link href="/credits" className="block">
-                  <Button
-                    size="sm"
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs py-1.5 h-auto"
-                  >
-                    Get More
-                  </Button>
-                </Link>
-              </div>
+              <SidebarCredits />
             </div>
           )}
 
@@ -433,13 +427,14 @@ export default function DashboardLayout({ children }) {
         <div className="p-6">{children}</div>
       </main>
 
-      {/* Mobile Overlay */}
-      {sidebarOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-    </div>
+        {/* Mobile Overlay */}
+        {sidebarOpen && (
+          <div
+            className="lg:hidden fixed inset-0 bg-black/50 z-30"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+      </div>
+    </CreditsProvider>
   );
 }

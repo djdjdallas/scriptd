@@ -60,25 +60,16 @@ export default function ScriptsPage() {
   const fetchScripts = async (searchTerm, filter, sort, pageNum) => {
     // Check if we're fetching with the same parameters
     const fetchParams = `${searchTerm}-${filter}-${sort}-${pageNum}`;
-    if (lastFetchParamsRef.current === fetchParams && !hasMountedRef.current) {
-      console.log(
-        "[ScriptsPage] Skipping duplicate fetch with same params:",
-        fetchParams
-      );
-      return;
+    if (lastFetchParamsRef.current === fetchParams) {
+      return; // Skip duplicate fetch with same params
     }
     lastFetchParamsRef.current = fetchParams;
-
-    console.log(
-      `[ScriptsPage] Fetching scripts - search: "${searchTerm}", filter: ${filter}, sort: ${sort}, page: ${pageNum}`
-    );
 
     // Set loading state
     setIsLoading(true);
 
     // Cancel any in-flight requests
     if (abortControllerRef.current) {
-      console.log("[ScriptsPage] Aborting previous request");
       abortControllerRef.current.abort();
     }
 
@@ -109,8 +100,6 @@ export default function ScriptsPage() {
 
       const result = await response.json();
 
-      console.log(`[ScriptsPage] API Response:`, result);
-
       // Handle the response
       const scriptsData = result.items || [];
       const paginationData = result.pagination || {};
@@ -120,16 +109,9 @@ export default function ScriptsPage() {
       setTotalPages(paginationData.totalPages || 1);
       setTotalScripts(paginationData.total || scriptsData.length);
       setStats(statsData);
-      console.log(
-        `[ScriptsPage] Set ${scriptsData.length} scripts, ${
-          paginationData.totalPages || 1
-        } pages, ${paginationData.total || scriptsData.length} total`
-      );
-      console.log(`[ScriptsPage] Stats:`, statsData);
     } catch (error) {
       // Ignore abort errors
       if (error.name === "AbortError") {
-        console.log("[ScriptsPage] Request was aborted");
         return;
       }
 
@@ -155,15 +137,15 @@ export default function ScriptsPage() {
   // Initial load - ONLY runs once
   useEffect(() => {
     if (hasMountedRef.current) return; // Prevent double mount in dev mode
-
-    console.log("[ScriptsPage] Initial mount - fetching scripts");
     hasMountedRef.current = true;
 
     fetchScripts("", "all", "created_at", 1);
 
     // Cleanup function
     return () => {
-      console.log("[ScriptsPage] Component unmounting");
+      // Reset refs on unmount
+      hasMountedRef.current = false;
+      lastFetchParamsRef.current = null;
 
       // Cancel any pending requests
       if (abortControllerRef.current) {
@@ -181,10 +163,6 @@ export default function ScriptsPage() {
   useEffect(() => {
     // Skip the initial render
     if (!hasMountedRef.current) return;
-
-    console.log(
-      `[ScriptsPage] Parameters changed - search: "${search}", filter: ${typeFilter}, sort: ${sortBy}, page: ${page}`
-    );
 
     // Clear any existing search timeout
     if (searchTimeoutRef.current) {
@@ -231,7 +209,6 @@ export default function ScriptsPage() {
 
   const handleDelete = async () => {
     const scriptId = deleteModal.script.id;
-    console.log(`[ScriptsPage] Deleting script: ${scriptId}`);
 
     try {
       const response = await fetch(`/api/scripts/${scriptId}`, {

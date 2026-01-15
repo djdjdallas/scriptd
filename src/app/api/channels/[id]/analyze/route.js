@@ -418,7 +418,12 @@ export async function POST(request, { params }) {
       await updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, 'Analyzing voice and style from transcripts...', 30);
 
       // Step 1: Analyze voice from transcripts (just like remix does)
-      const voiceAnalyses = await analyzeChannelVoicesFromYouTube([channelForAnalysis], {});
+      // Pass progress callback for granular updates during transcript fetching
+      const voiceAnalyses = await analyzeChannelVoicesFromYouTube([channelForAnalysis], {
+        onProgress: (progress, message) => {
+          updateProgress(sessionId, PROGRESS_STAGES.ANALYZING, message, Math.round(progress));
+        }
+      });
 
       await updateProgress(sessionId, PROGRESS_STAGES.GENERATING, 'Generating deep audience insights...', 50);
 

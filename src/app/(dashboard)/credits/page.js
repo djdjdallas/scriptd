@@ -261,15 +261,15 @@ export default function CreditsPage() {
         <div className="grid md:grid-cols-3 gap-6">
           {Object.values(CREDIT_PACKAGES).map((pkg) => {
             const iconMap = {
-              pack_50: Zap,
-              pack_100: Gem,
-              pack_500: Crown,
+              small: Zap,
+              medium: Gem,
+              large: Crown,
             };
             const Icon = iconMap[pkg.id] || CreditCard;
             const colorMap = {
-              pack_50: "from-blue-500/20",
-              pack_100: "from-purple-500/20",
-              pack_500: "from-yellow-500/20",
+              small: "from-blue-500/20",
+              medium: "from-purple-500/20",
+              large: "from-yellow-500/20",
             };
 
             return (

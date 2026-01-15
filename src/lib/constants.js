@@ -11,17 +11,8 @@ export const AI_PROVIDERS = {
   GROQ: 'groq'
 };
 
-// Quality Tiers - Simplified 3-tier system
+// Quality Tiers - Simplified 2-tier system (Balanced + Premium only)
 export const MODEL_TIERS = {
-  FAST: {
-    id: 'fast',
-    name: 'Fast Generation',
-    description: 'Quick drafts and ideation',
-    baseCredits: 3,
-    actualModel: process.env.FAST_MODEL || 'claude-3-5-haiku-20241022',
-    features: ['60 second generation', 'Good for outlines', 'Testing ideas'],
-    icon: '⚡'
-  },
   BALANCED: {
     id: 'balanced',
     name: 'Professional Quality',
@@ -176,7 +167,6 @@ export const SCRIPT_LENGTHS = {
 export const CREDIT_COSTS = {
   // Tier-based costs (base cost × length multiplier)
   SCRIPT_GENERATION_BY_TIER: {
-    FAST: 3,
     BALANCED: 8,
     PREMIUM: 15
   },
@@ -451,40 +441,46 @@ export const TEAM_ROLES = {
   }
 };
 
-// Credit Packages - One-time purchases (doubled credits)
+// Credit Packages - One-time purchases (priced to be less value than subscriptions)
+// Creator: $39/mo = 300 credits ($0.13/credit)
+// Professional: $79/mo = 800 credits ($0.10/credit)
+// Agency: $199/mo = 2000 credits ($0.10/credit)
+// Packs should be higher per-credit cost to encourage subscriptions
 export const CREDIT_PACKAGES = {
-  STARTER: {
-    id: 'starter',
-    name: 'Starter Pack',
-    credits: 100, // Doubled from 50
-    price: 19,
-    stripeProductId: 'prod_T2iddrAOXO01Xs',
-    stripePriceId: 'price_1S6dCoPpO7oOioNRWCV3u8Dj',
-    savings: '24% off',
-    scripts: '10-33 scripts',
-    bestFor: 'Trying premium features'
+  SMALL: {
+    id: 'small',
+    name: 'Small Pack',
+    credits: 50,
+    price: 12,
+    pricePerCredit: 0.24, // Higher than all subscription tiers
+    stripeProductId: 'prod_T2iddrAOXO01Xs', // TODO: Create new Stripe product
+    stripePriceId: 'price_1S6dCoPpO7oOioNRWCV3u8Dj', // TODO: Create new Stripe price
+    scripts: '5-17 scripts',
+    bestFor: 'Occasional creators'
   },
-  POPULAR: {
-    id: 'popular',
-    name: 'Popular Pack',
-    credits: 300, // Doubled from 150
-    price: 49,
-    stripeProductId: 'prod_T2ieJr8IY7tHqm',
-    stripePriceId: 'price_1S6dCzPpO7oOioNRDEeNjEwe',
-    savings: '31% off',
+  MEDIUM: {
+    id: 'medium',
+    name: 'Medium Pack',
+    credits: 150,
+    price: 29,
+    pricePerCredit: 0.19, // Still higher than Creator subscription
+    stripeProductId: 'prod_T2ieJr8IY7tHqm', // TODO: Create new Stripe product
+    stripePriceId: 'price_1S6dCzPpO7oOioNRDEeNjEwe', // TODO: Create new Stripe price
+    savings: '21% off',
     badge: 'Most Popular',
-    scripts: '30-100 scripts',
+    scripts: '15-50 scripts',
     bestFor: 'Regular creators'
   },
-  BULK: {
-    id: 'bulk',
-    name: 'Bulk Pack',
-    credits: 800, // Doubled from 400
-    price: 99,
-    stripeProductId: 'prod_T2ieo3rnpZEBsF',
-    stripePriceId: 'price_1S6dDDPpO7oOioNRr2K4dbOs',
-    savings: '38% off',
-    scripts: '80-260 scripts',
+  LARGE: {
+    id: 'large',
+    name: 'Large Pack',
+    credits: 400,
+    price: 69,
+    pricePerCredit: 0.17, // Still higher than Professional subscription
+    stripeProductId: 'prod_T2ieo3rnpZEBsF', // TODO: Create new Stripe product
+    stripePriceId: 'price_1S6dDDPpO7oOioNRr2K4dbOs', // TODO: Create new Stripe price
+    savings: '29% off',
+    scripts: '40-130 scripts',
     bestFor: 'Teams and agencies'
   }
 };

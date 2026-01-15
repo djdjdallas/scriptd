@@ -2,6 +2,7 @@ import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
 import { getYouTubeClient, withRateLimit, getCached, setCache, getRequestOptions } from './client.js';
 import { createClient } from '@/lib/supabase/server';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { withRetry, isRateLimitError, createApiError } from '@/lib/utils/retry';
 
 export async function getVideoById(videoId) {
   const cacheKey = `video-${videoId}`;
@@ -118,6 +119,7 @@ async function saveTranscriptToCache(videoId, transcriptData) {
 /**
  * Fetch transcript from Supadata.ai API (fallback when scraping fails)
  * API Docs: https://docs.supadata.ai/youtube/get-transcript
+ * Uses retry with exponential backoff for rate limit handling
  */
 async function getTranscriptFromSupadata(videoId) {
   const apiKey = process.env.SUPADATA_API_KEY;
@@ -127,56 +129,66 @@ async function getTranscriptFromSupadata(videoId) {
   }
 
   try {
+    return await withRetry(
+      async () => {
+        const url = `https://api.supadata.ai/v1/youtube/transcript?videoId=${videoId}&text=false`;
 
-    const url = `https://api.supadata.ai/v1/youtube/transcript?videoId=${videoId}&text=false`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'x-api-key': apiKey,
+            'Content-Type': 'application/json'
+          }
+        });
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json'
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw createApiError(
+            `Supadata API error (${response.status}): ${errorText}`,
+            response.status,
+            response
+          );
+        }
+
+        const data = await response.json();
+
+        // Supadata returns: { content: [{text, offset, duration, lang}], lang, availableLangs }
+        if (!data.content || !Array.isArray(data.content)) {
+          throw new Error('Invalid Supadata API response format');
+        }
+
+        // Convert Supadata format to our format
+        const segments = data.content.map(chunk => ({
+          text: chunk.text,
+          offset: chunk.offset,
+          duration: chunk.duration
+        }));
+
+        const fullText = data.content
+          .map(chunk => chunk.text)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        return {
+          segments,
+          fullText,
+          hasTranscript: true,
+          source: 'supadata-api',
+          language: data.lang,
+          availableLanguages: data.availableLangs || []
+        };
+      },
+      {
+        maxRetries: 3,
+        baseDelayMs: 1000,
+        shouldRetry: isRateLimitError
       }
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Supadata API error (${response.status}): ${errorText}`);
-    }
-
-    const data = await response.json();
-
-    // Supadata returns: { content: [{text, offset, duration, lang}], lang, availableLangs }
-    if (!data.content || !Array.isArray(data.content)) {
-      throw new Error('Invalid Supadata API response format');
-    }
-
-    // Convert Supadata format to our format
-    const segments = data.content.map(chunk => ({
-      text: chunk.text,
-      offset: chunk.offset,
-      duration: chunk.duration
-    }));
-
-    const fullText = data.content
-      .map(chunk => chunk.text)
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    return {
-      segments,
-      fullText,
-      hasTranscript: true,
-      source: 'supadata-api',
-      language: data.lang,
-      availableLanguages: data.availableLangs || []
-    };
-
+    );
   } catch (error) {
     // Log Supadata API failures for monitoring and debugging
     // This helps detect API key issues, quota exhaustion, or service outages
-    // apiLogger.error automatically sends to Sentry in production
-    apiLogger.error('Supadata API failed to fetch transcript', error, {
+    apiLogger.error('Supadata API failed to fetch transcript after retries', error, {
       videoId,
       hasApiKey: !!process.env.SUPADATA_API_KEY,
       service: 'supadata'

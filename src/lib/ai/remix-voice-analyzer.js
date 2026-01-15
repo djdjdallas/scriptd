@@ -1304,11 +1304,17 @@ function mergeTranscriptAndMetadata(transcriptAnalysis, metadataAnalysis, transc
 /**
  * Fetch and analyze actual transcripts from YouTube channels
  * This provides real voice analysis instead of theoretical blending
+ * @param {Array} channels - Array of channel objects to analyze
+ * @param {Object} options - Optional configuration
+ * @param {Function} options.onProgress - Progress callback (progress, message) => void
  */
-export async function analyzeChannelVoicesFromYouTube(channels) {
+export async function analyzeChannelVoicesFromYouTube(channels, options = {}) {
+  const { onProgress } = options;
   const channelAnalyses = [];
+  const totalChannels = channels.length;
 
-  for (const channel of channels) {
+  for (let channelIndex = 0; channelIndex < channels.length; channelIndex++) {
+    const channel = channels[channelIndex];
     try {
       // Extract YouTube channel ID from various possible fields
       const youtubeChannelId = channel.youtube_channel_id ||
@@ -1338,6 +1344,13 @@ export async function analyzeChannelVoicesFromYouTube(channels) {
         continue;
       }
 
+      // Update progress: Starting video fetch
+      const channelName = channel.title || channel.name || 'Channel';
+      if (onProgress) {
+        const baseProgress = 30 + (channelIndex / totalChannels) * 15;
+        onProgress(baseProgress, `Fetching videos for ${channelName}...`);
+      }
+
       // Fetch videos from the channel
       const videos = await getChannelVideos(youtubeChannelId, 10);
 
@@ -1349,6 +1362,12 @@ export async function analyzeChannelVoicesFromYouTube(channels) {
           error: 'No videos found'
         });
         continue;
+      }
+
+      // Update progress: Starting transcript fetch
+      if (onProgress) {
+        const baseProgress = 30 + (channelIndex / totalChannels) * 15 + 2;
+        onProgress(baseProgress, `Analyzing transcripts for ${channelName}...`);
       }
 
       // Fetch transcripts from videos in PARALLEL for better performance
@@ -1365,6 +1384,17 @@ export async function analyzeChannelVoicesFromYouTube(channels) {
 
       for (let i = 0; i < videosToProcess.length && transcripts.length < idealTranscripts; i += concurrencyLimit) {
         const batch = videosToProcess.slice(i, i + concurrencyLimit);
+
+        // Update progress for each batch
+        if (onProgress) {
+          const batchNum = Math.floor(i / concurrencyLimit) + 1;
+          const totalBatches = Math.ceil(Math.min(videosToProcess.length, maxVideosToTry) / concurrencyLimit);
+          const batchProgress = 30 + (channelIndex / totalChannels) * 15 + 3 + (batchNum / totalBatches) * 10;
+          onProgress(
+            Math.min(batchProgress, 45),
+            `Analyzing transcript ${Math.min(i + concurrencyLimit, videosToProcess.length)}/${videosToProcess.length} for ${channelName}...`
+          );
+        }
 
         // Fetch batch of transcripts in parallel
         const batchResults = await Promise.allSettled(
