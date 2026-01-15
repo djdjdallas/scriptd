@@ -1,31 +1,171 @@
 "use client";
 
-import { useRef } from "react";
+/**
+ * Landing Page
+ *
+ * Authenticity-first positioning for GenScript.
+ * Focuses on YouTube compliance and demonetization protection.
+ */
+
+import { useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { StatHero, AnimatedCounter } from "@/components/stats";
+import { PLANS } from "@/lib/constants";
 import {
   ArrowRight,
   Sparkles,
-  Play,
-  BarChart3,
-  FileText,
-  Users,
-  Globe,
+  Shield,
+  ShieldCheck,
+  AlertTriangle,
+  XCircle,
+  CheckCircle,
   Mic,
   TrendingUp,
   Star,
   ChevronDown,
-  Target,
-  Code2,
-  Palette,
-  Layers,
+  ChevronRight,
+  Download,
+  BarChart3,
+  Users,
+  Bot,
+  AudioWaveform,
+  FileText,
+  Check,
+  X,
 } from "lucide-react";
+
+const FEATURES = [
+  {
+    title: "Compliance Checker",
+    description: "Every script scanned for YouTube policy violations. Get warnings before you publish, not after.",
+    icon: ShieldCheck,
+    gradient: "from-green-500/20 to-emerald-500/20",
+    benefit: "Protect your monetization"
+  },
+  {
+    title: "Voice Matching",
+    description: "AI that learns YOUR speaking style. Upload past scripts, get output that sounds like you.",
+    icon: AudioWaveform,
+    gradient: "from-blue-500/20 to-cyan-500/20",
+    benefit: "Sound authentically you"
+  },
+  {
+    title: "Retention Optimizer",
+    description: "Scripts engineered for 70%+ retention. Hook formulas proven to keep viewers watching.",
+    icon: TrendingUp,
+    gradient: "from-purple-500/20 to-pink-500/20",
+    benefit: "Keep viewers watching"
+  },
+  {
+    title: "One-Click Export",
+    description: "Title, description, tags—all generated. Copy straight to YouTube Studio.",
+    icon: Download,
+    gradient: "from-orange-500/20 to-yellow-500/20",
+    benefit: "Upload in seconds"
+  }
+];
+
+const PROBLEMS = [
+  {
+    icon: AlertTriangle,
+    title: "AI-generated scripts can get your channel demonetized",
+    color: "text-red-400"
+  },
+  {
+    icon: Bot,
+    title: "Generic AI sounds like... generic AI",
+    color: "text-yellow-400"
+  },
+  {
+    icon: XCircle,
+    title: "One wrong video can tank months of work",
+    color: "text-orange-400"
+  }
+];
+
+const SOLUTIONS = [
+  {
+    icon: ShieldCheck,
+    title: "Real-time compliance checking as you write",
+    color: "text-green-400"
+  },
+  {
+    icon: AudioWaveform,
+    title: "Voice matching that sounds like YOU",
+    color: "text-blue-400"
+  },
+  {
+    icon: Shield,
+    title: "Built-in safeguards against AI detection",
+    color: "text-purple-400"
+  }
+];
+
+const TESTIMONIALS = [
+  {
+    quote: "My retention went from 35% to 68% after switching to GenScript. The compliance checker saved me from a strike I didn't even know was coming.",
+    name: "Michael Torres",
+    channel: "@FinanceFreedom",
+    subscribers: "45K subscribers",
+    niche: "Finance"
+  },
+  {
+    quote: "Finally, an AI tool that actually sounds like me. My audience can't tell the difference.",
+    name: "Sarah Chen",
+    channel: "@TechReviewsPro",
+    subscribers: "120K subscribers",
+    niche: "Tech reviews"
+  },
+  {
+    quote: "I was terrified of YouTube's new AI policy. GenScript is the only tool that made me feel safe using AI again.",
+    name: "James Wilson",
+    channel: "@LearnWithJames",
+    subscribers: "28K subscribers",
+    niche: "Educational content"
+  }
+];
+
+const COMPARISON_DATA = [
+  { feature: "YouTube-Specific", genscript: true, chatgpt: false, subscribr: true },
+  { feature: "Compliance Check", genscript: true, chatgpt: false, subscribr: false },
+  { feature: "Voice Matching", genscript: true, chatgpt: false, subscribr: "Limited" },
+  { feature: "Retention Focus", genscript: true, chatgpt: false, subscribr: true },
+  { feature: "Free Tier", genscript: true, chatgpt: true, subscribr: true },
+];
+
+const FAQ_DATA = [
+  {
+    question: "Will YouTube know I used AI?",
+    answer: "YouTube's policy doesn't ban AI-assisted content—it targets content that lacks authenticity. GenScript's compliance checker ensures your scripts include personal insight markers and avoid AI-typical patterns. Plus, our voice matching makes your content sound genuinely like you."
+  },
+  {
+    question: "How does the compliance checker work?",
+    answer: "Our algorithm analyzes your script across four categories: repetitiveness, original insight markers, AI patterns, and structure quality. You get a score from 0-100 with specific suggestions for improvement. Scripts scoring 80+ are considered 'YouTube Approved.'"
+  },
+  {
+    question: "Can I use my own voice/style?",
+    answer: "Absolutely! Our voice matching feature learns your speaking patterns from your existing content. Upload a few transcripts or past scripts, and GenScript will generate new content that sounds authentically like you—not like generic AI."
+  },
+  {
+    question: "What if I get demonetized anyway?",
+    answer: "While no tool can guarantee 100% protection, our compliance checker significantly reduces risk by flagging issues before you publish. We continuously update our detection patterns as YouTube's policies evolve to keep you protected."
+  },
+  {
+    question: "How is this different from ChatGPT?",
+    answer: "ChatGPT is a general-purpose AI that doesn't understand YouTube's specific requirements. GenScript is built exclusively for YouTube creators with retention optimization, compliance checking, and voice matching that ChatGPT simply can't provide."
+  },
+  {
+    question: "Do you offer refunds?",
+    answer: "Yes! We offer a 14-day money-back guarantee. If GenScript doesn't meet your needs, contact us within 14 days for a full refund—no questions asked."
+  }
+];
 
 export default function Home() {
   const heroRef = useRef(null);
+  const [openFaq, setOpenFaq] = useState(null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 overflow-hidden">
@@ -72,14 +212,12 @@ export default function Home() {
         {/* Particle Field */}
         <div className="absolute inset-0">
           {[...Array(50)].map((_, i) => {
-            // Use deterministic values based on index to avoid hydration mismatch
             const seededRandom = (seed, multiplier = 1) => {
               const x =
                 Math.sin(seed * 12.9898 + multiplier * 78.233) * 43758.5453;
               return x - Math.floor(x);
             };
 
-            // Pre-calculate all values and format them consistently
             const left = (seededRandom(i, 1) * 100).toFixed(4);
             const top = (seededRandom(i, 2) * 100).toFixed(4);
             const delay = (seededRandom(i, 3) * 20).toFixed(4);
@@ -111,11 +249,45 @@ export default function Home() {
           </Link>
           <div className="hidden md:flex items-center gap-6">
             <Link
+              href="/compliance-check"
+              className="text-gray-200 hover:text-white transition-colors"
+            >
+              Compliance Check
+            </Link>
+            <Link
               href="/tools"
               className="text-gray-200 hover:text-white transition-colors"
             >
               Free Tools
             </Link>
+            <div className="relative group">
+              <span className="text-gray-200 hover:text-white transition-colors cursor-pointer flex items-center gap-1">
+                Resources
+                <ChevronDown className="w-3 h-3" />
+              </span>
+              <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                <div className="glass-card p-2 min-w-[200px] space-y-1">
+                  <Link
+                    href="/resources/youtube-compliance-whitepaper"
+                    className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    Compliance Whitepaper
+                  </Link>
+                  <Link
+                    href="/resources/creator-compliance-checklist"
+                    className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    Creator Checklist
+                  </Link>
+                  <Link
+                    href="/blog"
+                    className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    Blog
+                  </Link>
+                </div>
+              </div>
+            </div>
             <Link
               href="/pricing"
               className="text-gray-200 hover:text-white transition-colors"
@@ -142,29 +314,40 @@ export default function Home() {
         className="relative min-h-screen flex items-center justify-center px-4 py-22"
       >
         <div className="relative z-10 max-w-5xl mx-auto text-center stagger-children">
-          {/* Glowing Badge with Market Validation */}
+          {/* Trust Badge */}
           <div className="inline-flex items-center gap-2 glass-card px-4 py-2 mb-8 animate-glow">
-            <Star className="w-4 h-4 text-yellow-400" />
+            <ShieldCheck className="w-4 h-4 text-green-400" />
             <span className="text-sm text-gray-200">
-              Join 69M+ YouTube creators using AI
+              YouTube Policy Compliant • Built for 2025
             </span>
           </div>
 
-          <h1 className="text-6xl md:text-8xl font-bold mb-6 leading-tight">
-            <span className="block text-white text-glow">AI Scripts That</span>
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            <span className="block text-white text-glow">YouTube Scripts That</span>
             <span className="block gradient-text text-glow holographic bg-clip-text">
-              Go Viral
+              Won&apos;t Get You Demonetized
             </span>
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Generate YouTube scripts in your unique voice. Analyze top
-            performers, research trends, and create content that drives views.
+            The only AI script generator built for YouTube&apos;s 2025 authenticity policy.{" "}
+            <span className="text-white">Write faster without risking your channel.</span>
           </p>
 
-          {/* Hero Market Stats */}
-          <div className="mb-12">
-            <StatHero />
+          {/* Trust Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-6 mb-10 text-sm">
+            <div className="flex items-center gap-2 text-green-400">
+              <ShieldCheck className="w-4 h-4" />
+              <span>YouTube Policy Compliant</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-400">
+              <Users className="w-4 h-4" />
+              <span>500+ Creators</span>
+            </div>
+            <div className="flex items-center gap-2 text-yellow-400">
+              <Star className="w-4 h-4" />
+              <span>4.9/5 Rating</span>
+            </div>
           </div>
 
           {/* CTA Buttons */}
@@ -174,19 +357,20 @@ export default function Home() {
                 size="lg"
                 className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white group"
               >
-                Start Free Trial
+                Start Writing Free
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <Link href="/tools">
+            <Link href="/compliance-check">
               <Button size="lg" className="glass-button text-white">
-                Try Free Tools
+                <Shield className="mr-2 h-5 w-5" />
+                Check Your Script
               </Button>
             </Link>
           </div>
 
           <p className="text-gray-400">
-            No credit card required • 10 free scripts
+            No credit card required • 50 free credits
           </p>
 
           {/* Scroll Indicator */}
@@ -196,153 +380,492 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Lazy load Features Section */}
-      {(() => {
-        const OptimizedFeatures = dynamic(
-          () =>
-            import("@/components/OptimizedFeatures").then((mod) => ({
-              default: mod.OptimizedFeatures,
-            })),
-          {
-            ssr: true,
-            loading: () => (
-              <div className="py-32 px-4">
-                <div className="max-w-7xl mx-auto">
-                  <div className="h-20 bg-gray-700 rounded mb-8 animate-pulse"></div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {[...Array(6)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="glass-card p-6 h-48 animate-pulse"
-                      >
-                        <div className="h-16 bg-gray-700 rounded mb-4"></div>
-                        <div className="h-4 bg-gray-600 rounded"></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ),
-          }
-        );
-        return <OptimizedFeatures />;
-      })()}
-
-      {/* Import SocialProofStats component dynamically */}
-      {(() => {
-        const SocialProofStats = dynamic(
-          () =>
-            import("@/components/stats").then((mod) => ({
-              default: mod.SocialProofStats,
-            })),
-          {
-            ssr: false,
-            loading: () => (
-              <div className="py-32 px-4">
-                <div className="max-w-7xl mx-auto">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="glass-card p-6 animate-pulse">
-                        <div className="h-12 bg-gray-700 rounded mb-4"></div>
-                        <div className="h-4 bg-gray-600 rounded"></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ),
-          }
-        );
-        return <SocialProofStats />;
-      })()}
-
-      {/* Final CTA with Parallax */}
-      <section className="relative py-32 px-4 mt-40">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="relative overflow-hidden">
-            <h2 className="text-5xl md:text-6xl font-bold text-white mb-8 text-glow relative z-20">
-              Ready to Create Your Best Content?
+      {/* Problem/Solution Section */}
+      <section className="relative py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20 mb-6">
+              <AlertTriangle className="w-4 h-4 text-yellow-400" />
+              <span className="text-sm text-yellow-400">July 2025 Policy Update</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              YouTube&apos;s Policy Changed Everything
             </h2>
-            {/* Background text effect - positioned behind and clipped */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-              <p className="text-[8rem] md:text-[10rem] font-bold text-white">
-                CREATE
-              </p>
-            </div>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+              AI-generated content is under scrutiny like never before.
+            </p>
           </div>
-          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto relative z-10">
-            Join <AnimatedCounter end={250} startOnView={true} />+ creators
-            achieving{" "}
-            <AnimatedCounter end={180} suffix="%" startOnView={true} /> faster
-            growth
-          </p>
-          <Link href="/signup">
-            <Button
-              size="lg"
-              className="glass-button bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:scale-105 transform transition relative z-10"
-            >
-              Start Your Free Trial
-              <Sparkles className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
 
-          {/* Floating testimonials - hidden on mobile to prevent overlap */}
-          <div className="mt-20 relative hidden md:block">
-            <div className="absolute -left-20 top-0 glass-card p-4 animate-float max-w-xs">
-              <p className="text-sm text-gray-300">
-                "GenScript revolutionized my workflow!"
-              </p>
-              <p className="text-xs text-purple-400 mt-2">- Top Creator</p>
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
+            {/* The Problem */}
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold text-red-400 flex items-center gap-2">
+                <XCircle className="w-5 h-5" />
+                The Problem
+              </h3>
+              <div className="space-y-4">
+                {PROBLEMS.map((problem, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-4 glass-card rounded-xl p-4"
+                  >
+                    <div className="p-2 rounded-lg bg-red-500/10">
+                      <problem.icon className={`w-5 h-5 ${problem.color}`} />
+                    </div>
+                    <p className="text-gray-300">{problem.title}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div
-              className="absolute -right-20 top-10 glass-card p-4 animate-float max-w-xs"
-              style={{ animationDelay: "3s" }}
-            >
-              <p className="text-sm text-gray-300">
-                "10x faster script creation"
-              </p>
-              <p className="text-xs text-pink-400 mt-2">- YouTube Partner</p>
+
+            {/* The Solution */}
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold text-green-400 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" />
+                The Solution
+              </h3>
+              <div className="space-y-4">
+                {SOLUTIONS.map((solution, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-4 glass-card rounded-xl p-4"
+                  >
+                    <div className="p-2 rounded-lg bg-green-500/10">
+                      <solution.icon className={`w-5 h-5 ${solution.color}`} />
+                    </div>
+                    <p className="text-gray-300">{solution.title}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Minimalist Footer */}
-      <footer className="relative py-12 px-4 border-t border-white/10">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="text-center md:text-left">
-              <h3 className="text-2xl font-bold gradient-text mb-2">
-                GenScript
-              </h3>
-              <p className="text-gray-400">AI-powered content creation</p>
+      {/* Features Section */}
+      <section className="relative py-24 px-4 bg-gradient-to-b from-transparent via-purple-900/20 to-transparent">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Built Different
+            </h2>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+              Features designed specifically for YouTube creators who value their channel.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {FEATURES.map((feature, idx) => (
+              <TiltCard
+                key={idx}
+                className="glass-card p-6 rounded-xl"
+                options={{ max: 5, scale: 1.02 }}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`p-3 rounded-xl bg-gradient-to-br ${feature.gradient}`}>
+                    <feature.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-400 mb-3">{feature.description}</p>
+                    <span className="text-sm text-purple-400">
+                      → {feature.benefit}
+                    </span>
+                  </div>
+                </div>
+              </TiltCard>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Social Proof Section */}
+      <section className="relative py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Creators Trust GenScript
+            </h2>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+              Real results from real creators who switched to compliance-first scripting.
+            </p>
+          </div>
+
+          {/* Stats Bar */}
+          <div className="glass-card rounded-xl p-6 mb-12">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              <div>
+                <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  2.5M+
+                </div>
+                <div className="text-sm text-gray-400 mt-1">Scripts Generated</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  89%
+                </div>
+                <div className="text-sm text-gray-400 mt-1">Avg Compliance Score</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  68%
+                </div>
+                <div className="text-sm text-gray-400 mt-1">Avg Retention</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  0
+                </div>
+                <div className="text-sm text-gray-400 mt-1">Policy Strikes</div>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-6 text-sm text-gray-400">
-              <Link
-                href="/privacy"
-                className="hover:text-white transition-colors"
+          </div>
+
+          {/* Testimonials */}
+          <div className="grid md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((testimonial, idx) => (
+              <TiltCard
+                key={idx}
+                className="glass-card p-6 rounded-xl"
+                options={{ max: 5, scale: 1.02 }}
               >
-                Privacy
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-gray-300 mb-6 italic">
+                  &quot;{testimonial.quote}&quot;
+                </p>
+                <div className="border-t border-gray-700 pt-4">
+                  <div className="font-semibold text-white">{testimonial.name}</div>
+                  <div className="text-sm text-gray-400">{testimonial.channel}</div>
+                  <div className="text-xs text-purple-400">{testimonial.subscribers} • {testimonial.niche}</div>
+                </div>
+              </TiltCard>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison Section */}
+      <section className="relative py-24 px-4 bg-gradient-to-b from-transparent via-gray-900/50 to-transparent">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Why Creators Choose GenScript
+            </h2>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+              See how we compare to other options.
+            </p>
+          </div>
+
+          <div className="glass-card rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-700">
+                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Feature</th>
+                    <th className="text-center py-4 px-6 text-purple-400 font-medium">GenScript</th>
+                    <th className="text-center py-4 px-6 text-gray-400 font-medium">ChatGPT</th>
+                    <th className="text-center py-4 px-6 text-gray-400 font-medium">Subscribr</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {COMPARISON_DATA.map((row, idx) => (
+                    <tr key={idx} className="border-b border-gray-800">
+                      <td className="py-4 px-6 text-white font-medium">{row.feature}</td>
+                      <td className="py-4 px-6 text-center bg-purple-500/5">
+                        {row.genscript === true ? (
+                          <Check className="w-5 h-5 text-green-400 mx-auto" />
+                        ) : row.genscript === false ? (
+                          <X className="w-5 h-5 text-gray-600 mx-auto" />
+                        ) : (
+                          <span className="text-yellow-400 text-sm">{row.genscript}</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 text-center">
+                        {row.chatgpt === true ? (
+                          <Check className="w-5 h-5 text-green-400 mx-auto" />
+                        ) : row.chatgpt === false ? (
+                          <X className="w-5 h-5 text-gray-600 mx-auto" />
+                        ) : (
+                          <span className="text-yellow-400 text-sm">{row.chatgpt}</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 text-center">
+                        {row.subscribr === true ? (
+                          <Check className="w-5 h-5 text-green-400 mx-auto" />
+                        ) : row.subscribr === false ? (
+                          <X className="w-5 h-5 text-gray-600 mx-auto" />
+                        ) : (
+                          <span className="text-yellow-400 text-sm">{row.subscribr}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="text-center mt-8">
+            <Link href="/compare/genscript-vs-chatgpt" className="text-purple-400 hover:text-purple-300 transition-colors text-sm">
+              See detailed comparisons →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="relative py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+              Start free, upgrade when you&apos;re ready.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {/* Free */}
+            <div className="glass-card rounded-xl p-6">
+              <div className="text-sm text-gray-400 mb-2">FREE</div>
+              <div className="flex items-baseline gap-1 mb-4">
+                <span className="text-4xl font-bold text-white">$0</span>
+                <span className="text-gray-400">/month</span>
+              </div>
+              <ul className="space-y-3 mb-6">
+                {PLANS.FREE.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-sm text-gray-300">
+                    <Check className="w-4 h-4 text-green-400" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup" className="block">
+                <Button className="w-full glass-button text-white">
+                  Start Free
+                </Button>
               </Link>
-              <Link
-                href="/terms"
-                className="hover:text-white transition-colors"
-              >
-                Terms
+            </div>
+
+            {/* Creator - Popular */}
+            <div className="glass-card rounded-xl p-6 ring-2 ring-purple-500/50 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-xs font-medium text-white">
+                Most Popular
+              </div>
+              <div className="text-sm text-purple-400 mb-2">CREATOR</div>
+              <div className="flex items-baseline gap-1 mb-4">
+                <span className="text-4xl font-bold text-white">${PLANS.CREATOR.price}</span>
+                <span className="text-gray-400">/month</span>
+              </div>
+              <ul className="space-y-3 mb-6">
+                {PLANS.CREATOR.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-sm text-gray-300">
+                    <Check className="w-4 h-4 text-green-400" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup?plan=creator" className="block">
+                <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                  Get Started
+                </Button>
               </Link>
-              <Link href="/blog" className="hover:text-white transition-colors">
-                Blog
-              </Link>
-              <Link
-                href="/contact"
-                className="hover:text-white transition-colors"
-              >
-                Contact
+            </div>
+
+            {/* Professional */}
+            <div className="glass-card rounded-xl p-6">
+              <div className="text-sm text-gray-400 mb-2">PROFESSIONAL</div>
+              <div className="flex items-baseline gap-1 mb-4">
+                <span className="text-4xl font-bold text-white">${PLANS.PROFESSIONAL.price}</span>
+                <span className="text-gray-400">/month</span>
+              </div>
+              <ul className="space-y-3 mb-6">
+                {PLANS.PROFESSIONAL.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-sm text-gray-300">
+                    <Check className="w-4 h-4 text-green-400" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup?plan=professional" className="block">
+                <Button className="w-full glass-button text-white">
+                  Get Started
+                </Button>
               </Link>
             </div>
           </div>
-          <div className="mt-8 text-center text-sm text-gray-500">
-            © 2024 GenScript. All rights reserved.
+
+          <div className="text-center mt-8">
+            <Link href="/pricing" className="text-purple-400 hover:text-purple-300 transition-colors text-sm">
+              View all plans including Agency →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="relative py-24 px-4 bg-gradient-to-b from-transparent via-gray-900/50 to-transparent">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Frequently Asked Questions
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+            {FAQ_DATA.map((faq, idx) => (
+              <div key={idx} className="glass-card rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                  className="w-full flex items-center justify-between p-5 text-left"
+                >
+                  <span className="font-medium text-white pr-4">{faq.question}</span>
+                  <ChevronRight
+                    className={`w-5 h-5 text-gray-400 transition-transform ${
+                      openFaq === idx ? 'rotate-90' : ''
+                    }`}
+                  />
+                </button>
+                {openFaq === idx && (
+                  <div className="px-5 pb-5 pt-0">
+                    <p className="text-gray-400">{faq.answer}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="relative py-32 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 mb-6">
+            <Sparkles className="w-4 h-4 text-green-400" />
+            <span className="text-sm text-green-400">Start for free today</span>
+          </div>
+
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 text-glow">
+            Ready to Write Scripts That Actually Work?
+          </h2>
+
+          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
+            Join 500+ creators who trust GenScript to keep their channels safe and their content engaging.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <Link href="/signup">
+              <Button
+                size="lg"
+                className="glass-button bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:scale-105 transform transition"
+              >
+                Start Writing Free
+                <Sparkles className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link href="/compliance-check">
+              <Button size="lg" className="glass-button text-white">
+                <Shield className="mr-2 h-5 w-5" />
+                Check Your Script First
+              </Button>
+            </Link>
+          </div>
+
+          <p className="text-sm text-gray-500">
+            No credit card required • 50 free credits • Cancel anytime
+          </p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="relative py-16 px-4 border-t border-white/10">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+            {/* Brand */}
+            <div className="col-span-2 md:col-span-1">
+              <h3 className="text-2xl font-bold gradient-text mb-2">
+                GenScript
+              </h3>
+              <p className="text-gray-400 text-sm">Compliance-first AI scriptwriting for YouTube creators.</p>
+            </div>
+
+            {/* Product */}
+            <div>
+              <h4 className="font-semibold text-white mb-4">Product</h4>
+              <div className="space-y-2 text-sm">
+                <Link href="/compliance-check" className="block text-gray-400 hover:text-white transition-colors">
+                  Compliance Checker
+                </Link>
+                <Link href="/tools/youtube-script-generator" className="block text-gray-400 hover:text-white transition-colors">
+                  Script Generator
+                </Link>
+                <Link href="/tools" className="block text-gray-400 hover:text-white transition-colors">
+                  Free Tools
+                </Link>
+                <Link href="/pricing" className="block text-gray-400 hover:text-white transition-colors">
+                  Pricing
+                </Link>
+              </div>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <h4 className="font-semibold text-white mb-4">Resources</h4>
+              <div className="space-y-2 text-sm">
+                <Link href="/resources/youtube-compliance-whitepaper" className="block text-gray-400 hover:text-white transition-colors">
+                  Compliance Whitepaper
+                </Link>
+                <Link href="/resources/creator-compliance-checklist" className="block text-gray-400 hover:text-white transition-colors">
+                  Creator Checklist
+                </Link>
+                <Link href="/blog" className="block text-gray-400 hover:text-white transition-colors">
+                  Blog
+                </Link>
+              </div>
+            </div>
+
+            {/* Compare */}
+            <div>
+              <h4 className="font-semibold text-white mb-4">Compare</h4>
+              <div className="space-y-2 text-sm">
+                <Link href="/compare/genscript-vs-chatgpt" className="block text-gray-400 hover:text-white transition-colors">
+                  GenScript vs ChatGPT
+                </Link>
+                <Link href="/compare/genscript-vs-subscribr" className="block text-gray-400 hover:text-white transition-colors">
+                  GenScript vs Subscribr
+                </Link>
+                <Link href="/alternatives/chatgpt" className="block text-gray-400 hover:text-white transition-colors">
+                  ChatGPT Alternative
+                </Link>
+              </div>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="font-semibold text-white mb-4">Legal</h4>
+              <div className="space-y-2 text-sm">
+                <Link href="/privacy" className="block text-gray-400 hover:text-white transition-colors">
+                  Privacy Policy
+                </Link>
+                <Link href="/terms" className="block text-gray-400 hover:text-white transition-colors">
+                  Terms of Service
+                </Link>
+                <Link href="/terms-voice-cloning" className="block text-gray-400 hover:text-white transition-colors">
+                  Voice Cloning Terms
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-8 border-t border-white/10 text-center text-sm text-gray-500">
+            &copy; {new Date().getFullYear()} GenScript. All rights reserved.
           </div>
         </div>
       </footer>
