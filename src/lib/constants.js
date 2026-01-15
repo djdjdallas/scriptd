@@ -453,8 +453,8 @@ export const CREDIT_PACKAGES = {
     credits: 50,
     price: 12,
     pricePerCredit: 0.24, // Higher than all subscription tiers
-    stripeProductId: 'prod_T2iddrAOXO01Xs', // TODO: Create new Stripe product
-    stripePriceId: 'price_1S6dCoPpO7oOioNRWCV3u8Dj', // TODO: Create new Stripe price
+    stripeProductId: 'prod_TnWHNDy2Sh1cxq',
+    stripePriceId: 'price_1SpvF7PpO7oOioNRJBTt6yDs',
     scripts: '5-17 scripts',
     bestFor: 'Occasional creators'
   },
@@ -464,8 +464,8 @@ export const CREDIT_PACKAGES = {
     credits: 150,
     price: 29,
     pricePerCredit: 0.19, // Still higher than Creator subscription
-    stripeProductId: 'prod_T2ieJr8IY7tHqm', // TODO: Create new Stripe product
-    stripePriceId: 'price_1S6dCzPpO7oOioNRDEeNjEwe', // TODO: Create new Stripe price
+    stripeProductId: 'prod_TnWHF2sftKfduF',
+    stripePriceId: 'price_1SpvFGPpO7oOioNRBrXkOpLN',
     savings: '21% off',
     badge: 'Most Popular',
     scripts: '15-50 scripts',
@@ -477,8 +477,8 @@ export const CREDIT_PACKAGES = {
     credits: 400,
     price: 69,
     pricePerCredit: 0.17, // Still higher than Professional subscription
-    stripeProductId: 'prod_T2ieo3rnpZEBsF', // TODO: Create new Stripe product
-    stripePriceId: 'price_1S6dDDPpO7oOioNRr2K4dbOs', // TODO: Create new Stripe price
+    stripeProductId: 'prod_TnWHxgeHP1iR4a',
+    stripePriceId: 'price_1SpvFPPpO7oOioNRjgdhItGy',
     savings: '29% off',
     scripts: '40-130 scripts',
     bestFor: 'Teams and agencies'
