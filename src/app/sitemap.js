@@ -38,6 +38,9 @@ export default function sitemap() {
     'faceless-youtube-generator',
     'pvss-framework',
     'youtube',
+    'youtube-script-generator',
+    'ai-script-writer-youtube',
+    'youtube-shorts-script-generator',
   ];
 
   tools.forEach(tool => {
@@ -128,6 +131,71 @@ export default function sitemap() {
         changeFrequency: 'monthly',
         priority: 0.75,
       });
+    });
+  });
+
+  // Compliance and Resources pages
+  const compliancePages = [
+    {
+      path: '/compliance-check',
+      priority: 0.9,
+      changeFrequency: 'weekly',
+    },
+    {
+      path: '/resources/youtube-compliance-whitepaper',
+      priority: 0.8,
+      changeFrequency: 'monthly',
+    },
+    {
+      path: '/resources/creator-compliance-checklist',
+      priority: 0.8,
+      changeFrequency: 'monthly',
+    },
+  ];
+
+  compliancePages.forEach(({ path, priority, changeFrequency }) => {
+    routes.push({
+      url: `${baseUrl}${path}`,
+      lastModified: currentDate,
+      changeFrequency: changeFrequency || 'weekly',
+      priority,
+    });
+  });
+
+  // Comparison pages
+  const comparePages = [
+    'genscript-vs-chatgpt',
+    'genscript-vs-subscribr',
+  ];
+
+  comparePages.forEach(page => {
+    routes.push({
+      url: `${baseUrl}/compare/${page}`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    });
+  });
+
+  // Blog pages
+  routes.push({
+    url: `${baseUrl}/blog`,
+    lastModified: currentDate,
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  });
+
+  const blogPosts = [
+    'how-to-pass-youtube-2025-ai-content-policy',
+    'best-script-structure-finance-youtube-channels',
+  ];
+
+  blogPosts.forEach(post => {
+    routes.push({
+      url: `${baseUrl}/blog/${post}`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.7,
     });
   });
 
