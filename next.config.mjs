@@ -4,6 +4,11 @@ const nextConfig = {
   // Required for PostHog reverse proxy to work properly with trailing slashes
   skipTrailingSlashRedirect: true,
 
+  // Enable instrumentation-client.js for PostHog client-side initialization
+  experimental: {
+    instrumentationClientHook: true,
+  },
+
   // PostHog reverse proxy rewrites - routes analytics through your domain to avoid ad blockers
   async rewrites() {
     return [
