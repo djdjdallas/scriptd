@@ -90,6 +90,7 @@ export async function POST(request) {
     let sampleCount = 0;
     let transcriptsSource = 'provided';
     let analyzedVideos = [];
+    let transcriptFailures = []; // Track failed transcript fetches for debugging
     
     if (samples && samples.length > 0) {
       // Analyze provided text samples
@@ -120,27 +121,101 @@ export async function POST(request) {
         
         // Try to get transcripts from the videos
         const transcripts = [];
+        transcriptFailures = []; // Reset for this fetch attempt
         const maxTranscripts = 10; // Analyze up to 10 videos for comprehensive voice profile
-        
-        for (const video of videos) {
-          if (transcripts.length >= maxTranscripts) break;
+        const TRANSCRIPT_CONCURRENCY = 5; // Parallel batch size for faster fetching
 
-          try {
-            const transcript = await getVideoTranscript(video.id);
+        // Fetch transcripts in parallel batches for 3-5x faster performance
+        for (let i = 0; i < videos.length && transcripts.length < maxTranscripts; i += TRANSCRIPT_CONCURRENCY) {
+          const batch = videos.slice(i, i + TRANSCRIPT_CONCURRENCY);
 
-            if (transcript.hasTranscript && transcript.fullText) {
-              transcripts.push(transcript.fullText);
-              analyzedVideos.push({
-                id: video.id,
-                title: video.snippet.title,
-                publishedAt: video.snippet.publishedAt
+          const results = await Promise.allSettled(
+            batch.map(async (video) => {
+              const transcript = await getVideoTranscript(video.id);
+              return { video, transcript };
+            })
+          );
+
+          // Process batch results
+          for (let j = 0; j < results.length; j++) {
+            if (transcripts.length >= maxTranscripts) break;
+
+            const result = results[j];
+            const video = batch[j];
+
+            if (result.status === 'fulfilled') {
+              const { transcript } = result.value;
+              if (transcript.hasTranscript && transcript.fullText) {
+                transcripts.push(transcript.fullText);
+                analyzedVideos.push({
+                  id: video.id,
+                  title: video.snippet?.title,
+                  publishedAt: video.snippet?.publishedAt
+                });
+              } else {
+                // Track videos where transcript was not available
+                transcriptFailures.push({
+                  videoId: video.id,
+                  title: video.snippet?.title?.substring(0, 50),
+                  reason: transcript.error || 'No transcript available',
+                  timestamp: new Date().toISOString()
+                });
+              }
+            } else {
+              // Track unexpected errors (Promise rejected)
+              console.warn('[Voice Training] Transcript fetch failed', {
+                videoId: video.id,
+                videoTitle: video.snippet?.title?.substring(0, 50),
+                channelId,
+                error: result.reason?.message || 'Unknown error'
+              });
+
+              transcriptFailures.push({
+                videoId: video.id,
+                title: video.snippet?.title?.substring(0, 50),
+                reason: result.reason?.message || 'Fetch error',
+                timestamp: new Date().toISOString()
               });
             }
+          }
+
+          // Update progress after each batch
+          const progressPercent = 30 + Math.round(((i + batch.length) / videos.length) * 20);
+          try {
+            await supabase
+              .from('channels')
+              .update({ voice_training_progress: progressPercent })
+              .eq('id', channelId);
           } catch {
-            // Skip videos that fail to fetch transcript
+            // Progress column may not exist
           }
         }
-        
+
+        // Log fetch summary
+        console.log('[Voice Training] Transcript fetch complete', {
+          channelId,
+          attempted: videos.length,
+          succeeded: transcripts.length,
+          failed: transcriptFailures.length
+        });
+
+        // Edge case handling
+        const MIN_TRANSCRIPTS = 3;
+        if (transcripts.length === 0) {
+          console.error('[Voice Training] No transcripts available', {
+            channelId,
+            videosAttempted: videos.length,
+            failures: transcriptFailures.length,
+            failureReasons: [...new Set(transcriptFailures.map(f => f.reason))].slice(0, 5)
+          });
+        } else if (transcripts.length < MIN_TRANSCRIPTS) {
+          console.warn('[Voice Training] Low transcript count may affect quality', {
+            channelId,
+            found: transcripts.length,
+            minimum: MIN_TRANSCRIPTS
+          });
+        }
+
         if (transcripts.length === 0) {
           // Fallback to basic analysis from video titles and descriptions
           const videoTexts = videos.slice(0, 5).map(v =>
@@ -197,7 +272,17 @@ export async function POST(request) {
         processed_at: new Date().toISOString(),
         totalWords: voiceCharacteristics.topWords?.reduce((sum, w) => sum + w.count, 0) || 0,
         source: transcriptsSource,
-        analyzedVideos: analyzedVideos
+        analyzedVideos: analyzedVideos,
+        // Fetch statistics for debugging and quality assessment
+        fetchStats: transcriptsSource === 'youtube' ? {
+          videosAttempted: analyzedVideos.length + transcriptFailures.length,
+          transcriptsFound: analyzedVideos.length,
+          fetchFailures: transcriptFailures.length,
+          successRate: analyzedVideos.length + transcriptFailures.length > 0
+            ? ((analyzedVideos.length / (analyzedVideos.length + transcriptFailures.length)) * 100).toFixed(1) + '%'
+            : 'N/A'
+        } : null,
+        transcriptFailures: transcriptFailures.slice(0, 10) // Keep first 10 for debugging
       },
       parameters: {
         // Voice characteristics from analysis
