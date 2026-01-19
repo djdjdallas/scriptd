@@ -1,4 +1,90 @@
 import { createClient } from '@/lib/supabase/server';
+import { getChannelVideos } from '@/lib/youtube/channel';
+import { getVideoTranscript } from '@/lib/youtube/video';
+
+/** Concurrency limit for parallel transcript fetching */
+const TRANSCRIPT_CONCURRENCY_LIMIT = 5;
+
+/**
+ * Parse ISO 8601 duration string to seconds
+ * @param {string} duration - ISO 8601 duration (e.g., "PT10M30S", "PT1H2M10S")
+ * @returns {number} Duration in seconds
+ */
+function parseISO8601Duration(duration) {
+  if (!duration) return 0;
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return 0;
+  const hours = parseInt(match[1] || 0);
+  const minutes = parseInt(match[2] || 0);
+  const seconds = parseInt(match[3] || 0);
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+/**
+ * Fetch transcripts for multiple videos with concurrency limit
+ * @param {Array<{id: string, title: string}>} videos - Videos to fetch transcripts for
+ * @param {number} concurrencyLimit - Maximum parallel requests
+ * @returns {Promise<Map<string, {fullText: string, hasTranscript: boolean}>>} Map of videoId to transcript data
+ */
+async function fetchTranscriptsInBatches(videos, concurrencyLimit = TRANSCRIPT_CONCURRENCY_LIMIT) {
+  const transcriptMap = new Map();
+  let successCount = 0;
+  let failureCount = 0;
+
+  for (let i = 0; i < videos.length; i += concurrencyLimit) {
+    const batch = videos.slice(i, i + concurrencyLimit);
+
+    const batchResults = await Promise.allSettled(
+      batch.map(async (video) => {
+        try {
+          const transcript = await getVideoTranscript(video.id);
+          return { videoId: video.id, videoTitle: video.title, transcript };
+        } catch (error) {
+          console.warn('Transcript fetch failed', {
+            videoId: video.id,
+            videoTitle: video.title,
+            error: error.message
+          });
+          return { videoId: video.id, videoTitle: video.title, transcript: null };
+        }
+      })
+    );
+
+    for (const result of batchResults) {
+      if (result.status === 'fulfilled') {
+        const { videoId, transcript } = result.value;
+        transcriptMap.set(videoId, transcript);
+        if (transcript?.hasTranscript) {
+          successCount++;
+        } else {
+          failureCount++;
+        }
+      } else {
+        failureCount++;
+      }
+    }
+  }
+
+  console.log(`[Voice Training] Transcript fetch complete: ${successCount} succeeded, ${failureCount} failed/unavailable`);
+  return transcriptMap;
+}
+
+/**
+ * Transform YouTube API video response to the format expected by extractTrainingData
+ * @param {Object} video - YouTube API video object
+ * @param {Object|null} transcript - Transcript data from getVideoTranscript
+ * @returns {Object} Transformed video object
+ */
+function transformYouTubeVideo(video, transcript) {
+  return {
+    id: video.id,
+    title: video.snippet?.title || '',
+    description: video.snippet?.description || '',
+    transcript: transcript?.hasTranscript ? transcript.fullText : '',
+    duration: parseISO8601Duration(video.contentDetails?.duration),
+    publishedAt: video.snippet?.publishedAt || new Date().toISOString()
+  };
+}
 
 export async function processVoiceTraining({
   channelId,
@@ -70,42 +156,47 @@ export async function processVoiceTraining({
   }
 }
 
-async function fetchChannelVideos(_channelId, limit = 10) {
-  // In production, this would use the YouTube API
-  // For now, return mock data for development
-  
-  // Mock video data
-  return Array.from({ length: Math.min(limit, 5) }, (_, i) => ({
-    id: `video_${i + 1}`,
-    title: `Sample Video ${i + 1}`,
-    description: `This is a sample video description for video ${i + 1}`,
-    transcript: generateMockTranscript(i),
-    duration: Math.floor(Math.random() * 600) + 120, // 2-12 minutes
-    publishedAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString()
-  }));
-}
+/**
+ * Fetch channel videos with real transcripts for voice training
+ * @param {string} channelId - YouTube channel ID
+ * @param {number} limit - Maximum number of videos to fetch (default: 10)
+ * @returns {Promise<Array<{id: string, title: string, description: string, transcript: string, duration: number, publishedAt: string}>>}
+ */
+async function fetchChannelVideos(channelId, limit = 10) {
+  try {
+    // Fetch real videos from YouTube API
+    const youtubeVideos = await getChannelVideos(channelId, limit);
 
-function generateMockTranscript(index) {
-  const topics = [
-    'technology and innovation',
-    'creative content creation',
-    'educational tutorials',
-    'entertainment and gaming',
-    'lifestyle and wellness'
-  ];
-  
-  const styles = [
-    'professional and informative',
-    'casual and friendly',
-    'energetic and enthusiastic',
-    'calm and thoughtful',
-    'humorous and engaging'
-  ];
-  
-  return `Welcome back to the channel! Today we're discussing ${topics[index % topics.length]}. 
-    My style is ${styles[index % styles.length]}. 
-    Let's dive into the content and explore some amazing insights together.
-    Remember to like and subscribe if you find this helpful!`;
+    if (!youtubeVideos || youtubeVideos.length === 0) {
+      console.warn(`[Voice Training] No videos found for channel: ${channelId}`);
+      return [];
+    }
+
+    // Prepare video metadata for transcript fetching
+    const videosWithMetadata = youtubeVideos.map(video => ({
+      id: video.id,
+      title: video.snippet?.title || `Video ${video.id}`
+    }));
+
+    // Fetch transcripts in parallel with concurrency limit
+    const transcriptMap = await fetchTranscriptsInBatches(videosWithMetadata);
+
+    // Transform videos to expected format
+    const transformedVideos = youtubeVideos.map(video => {
+      const transcript = transcriptMap.get(video.id);
+      return transformYouTubeVideo(video, transcript);
+    });
+
+    // Log summary
+    const withTranscripts = transformedVideos.filter(v => v.transcript).length;
+    console.log(`[Voice Training] Fetched ${transformedVideos.length} videos, ${withTranscripts} with transcripts for channel: ${channelId}`);
+
+    return transformedVideos;
+
+  } catch (error) {
+    console.error(`[Voice Training] Error fetching channel videos for ${channelId}:`, error.message);
+    throw error;
+  }
 }
 
 async function extractTrainingData(videos, _channelData) {
