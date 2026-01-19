@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { analyzeChannelVoicesFromYouTube } from './remix-voice-analyzer';
+import { parseAIResponse } from '@/lib/utils/json-parser';
 
 // Initialize Anthropic
 const anthropic = new Anthropic({
@@ -188,26 +189,11 @@ Respond ONLY with valid JSON, no markdown code blocks or extra text.`;
     // Parse the response
     const content = response.content[0].text;
 
-    // Try to extract JSON from the response
-    let analysis;
-    try {
-      analysis = JSON.parse(content);
-    } catch (e) {
-      // Try to extract JSON from markdown code blocks
-      const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
-      if (jsonMatch) {
-        try {
-          analysis = JSON.parse(jsonMatch[1]);
-        } catch (e2) {
-          console.error('Failed to parse JSON from markdown:', e2.message);
-          // Fallback: create structured data from text response
-          analysis = parseTextResponse(content);
-        }
-      } else {
-        // Fallback: create structured data from text response
-        analysis = parseTextResponse(content);
-      }
-    }
+    // Parse the response using shared utility
+    const analysis = parseAIResponse(content, {
+      fallback: parseTextResponse(content),
+      logErrors: true
+    });
 
     // Normalize keys to camelCase if they came with different formatting
     const normalizedAnalysis = {
@@ -349,17 +335,15 @@ Format as detailed JSON.`;
     });
 
     const content = response.content[0].text;
-    let voiceProfile;
 
-    try {
-      voiceProfile = JSON.parse(content);
-    } catch (e) {
-      const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
-      if (jsonMatch) {
-        voiceProfile = JSON.parse(jsonMatch[1]);
-      } else {
-        throw new Error('Failed to parse voice profile');
-      }
+    // Parse voice profile using shared utility
+    const voiceProfile = parseAIResponse(content, {
+      fallback: null,
+      logErrors: true
+    });
+
+    if (!voiceProfile) {
+      throw new Error('Failed to parse voice profile');
     }
 
     return {

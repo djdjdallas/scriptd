@@ -3,6 +3,7 @@ import { callAIService } from '../ai-service';
 import { analyzeTranscriptVoice, generateDefaultEnhancedProfile } from './remix-voice-analyzer';
 import { getChannelVideos } from '../youtube/channel';
 import { getVideoTranscript } from '../youtube/video';
+import { parseAIResponse } from '@/lib/utils/json-parser';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -191,25 +192,18 @@ Create a detailed audience profile including:
 Return as detailed JSON with specific percentages and actionable insights.`;
 
   const response = await callAIService(audiencePrompt);
-  
-  try {
-    return JSON.parse(response);
-  } catch (e) {
-    // Try to extract JSON from response
-    const jsonMatch = response.match(/```json?\n?([\s\S]*?)\n?```/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[1]);
-    }
-    
-    // Fallback structure
-    return {
+
+  // Parse response using shared utility
+  return parseAIResponse(response, {
+    fallback: {
       demographics: { age: '18-34', gender: 'mixed' },
       psychographics: { values: ['learning', 'growth'] },
       behavioralPatterns: { viewingTime: 'evening' },
       contentPreferences: { length: '10-15 minutes' },
       growthOpportunities: { topics: ['related topics'] }
-    };
-  }
+    },
+    logErrors: true
+  });
 }
 
 async function analyzeVideoTopics(videos) {
