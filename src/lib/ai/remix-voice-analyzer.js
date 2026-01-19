@@ -13,6 +13,10 @@ import {
   correlateVoiceWithPerformance,
   extractHighPerformerPatterns
 } from './performance-analyzer';
+import {
+  getCachedVoiceAnalysis,
+  setCachedVoiceAnalysis
+} from './voice-analysis-cache';
 
 // Initialize Anthropic
 const anthropic = new Anthropic({
@@ -1309,7 +1313,7 @@ function mergeTranscriptAndMetadata(transcriptAnalysis, metadataAnalysis, transc
  * @param {Function} options.onProgress - Progress callback (progress, message) => void
  */
 export async function analyzeChannelVoicesFromYouTube(channels, options = {}) {
-  const { onProgress } = options;
+  const { onProgress, forceRefresh = false } = options;
   const channelAnalyses = [];
   const totalChannels = channels.length;
 
@@ -1344,8 +1348,29 @@ export async function analyzeChannelVoicesFromYouTube(channels, options = {}) {
         continue;
       }
 
-      // Update progress: Starting video fetch
+      // Get channel name early for logging
       const channelName = channel.title || channel.name || 'Channel';
+
+      // CHECK CACHE before expensive analysis
+      if (!forceRefresh) {
+        const cached = await getCachedVoiceAnalysis(youtubeChannelId);
+        if (cached) {
+          console.log(`[Voice Analysis] Cache HIT for ${channelName} (${cached.age} old)`);
+          channelAnalyses.push({
+            channel: channel,
+            voiceAnalysis: cached.data,
+            source: `cached_${cached.source}`,
+            videosAnalyzed: cached.metadata?.videosAnalyzed || 0,
+            videos: [],
+            fromCache: true,
+            cacheAge: cached.age
+          });
+          continue;
+        }
+        console.log(`[Voice Analysis] Cache MISS for ${channelName}`);
+      }
+
+      // Update progress: Starting video fetch
       if (onProgress) {
         const baseProgress = 30 + (channelIndex / totalChannels) * 15;
         onProgress(baseProgress, `Fetching videos for ${channelName}...`);
@@ -1566,12 +1591,24 @@ ${videoTexts}`;
         source = 'enhanced-metadata';
       }
 
+      // STORE IN CACHE after fresh analysis
+      if (voiceAnalysis) {
+        await setCachedVoiceAnalysis(youtubeChannelId, voiceAnalysis, {
+          source,
+          videosAnalyzed: analyzedVideos.length,
+          transcriptsAnalyzed: transcripts.length,
+          channelName: channelName,
+          analysisVersion: '1.0.0'
+        });
+      }
+
       channelAnalyses.push({
         channel: channel,
         voiceAnalysis: voiceAnalysis,
         source: source,
         videosAnalyzed: analyzedVideos.length,
-        videos: analyzedVideos
+        videos: analyzedVideos,
+        fromCache: false
       });
 
     } catch (error) {
@@ -1579,8 +1616,23 @@ ${videoTexts}`;
         channel: channel,
         voiceAnalysis: null,
         source: 'error',
-        error: error.message
+        error: error.message,
+        fromCache: false
       });
+    }
+  }
+
+  // Log cache performance metrics
+  const cacheHits = channelAnalyses.filter(a => a.fromCache).length;
+  const cacheMisses = channelAnalyses.filter(a => !a.fromCache && a.source !== 'existing' && a.source !== 'skipped').length;
+  const existingProfiles = channelAnalyses.filter(a => a.source === 'existing').length;
+  const skipped = channelAnalyses.filter(a => a.source === 'skipped').length;
+
+  if (cacheHits + cacheMisses > 0) {
+    const hitRate = Math.round(cacheHits / (cacheHits + cacheMisses) * 100);
+    console.log(`[Voice Analysis] Cache performance: ${cacheHits} hits, ${cacheMisses} misses (${hitRate}% hit rate)`);
+    if (existingProfiles > 0) {
+      console.log(`[Voice Analysis] Additional: ${existingProfiles} existing profiles, ${skipped} skipped`);
     }
   }
 

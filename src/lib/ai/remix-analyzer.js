@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { analyzeChannelVoicesFromYouTube, combineRealVoiceAnalyses } from './remix-voice-analyzer';
+import { parseAIResponse } from '@/lib/utils/json-parser';
 
 // Initialize Anthropic with the premium model
 const anthropic = new Anthropic({
@@ -174,38 +175,14 @@ Be extremely detailed and specific. Provide actionable insights based on the cha
       ]
     });
 
-    // Parse the response with comprehensive JSON repair
+    // Parse the response with shared utility
     const content = response.content[0].text;
 
-    // Try to extract JSON from the response
-    let analysis;
-    let parseMethod = 'direct';
-
-    try {
-      // First try direct parse
-      analysis = JSON.parse(content);
-    } catch (e) {
-
-      // Try to extract JSON from markdown code blocks
-      const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
-      let jsonText = jsonMatch ? jsonMatch[1] : content;
-
-      // Apply comprehensive JSON repairs
-      try {
-        jsonText = repairJSON(jsonText);
-        analysis = JSON.parse(jsonText);
-        parseMethod = 'repaired';
-      } catch (e2) {
-        // Fallback: create structured data from text response
-        analysis = parseTextResponse(content);
-        parseMethod = 'text-fallback';
-      }
-    }
-
-    // Add metadata about parsing method for debugging
-    if (analysis && typeof analysis === 'object') {
-      analysis._parseMethod = parseMethod;
-    }
+    // Parse using shared utility with text fallback
+    const analysis = parseAIResponse(content, {
+      fallback: parseTextResponse(content),
+      logErrors: true
+    });
 
     return {
       success: true,
@@ -231,7 +208,10 @@ Be extremely detailed and specific. Provide actionable insights based on the cha
 export async function generateRemixVoiceProfile(channels, config) {
   try {
     // First, try to get real voice analyses from YouTube
-    const channelAnalyses = await analyzeChannelVoicesFromYouTube(channels, config);
+    const channelAnalyses = await analyzeChannelVoicesFromYouTube(channels, {
+      onProgress: config.onProgress,
+      forceRefresh: config.forceRefresh || false
+    });
 
     // Combine the real analyses
     const combinedResult = await combineRealVoiceAnalyses(channelAnalyses, config);
@@ -293,24 +273,17 @@ Format as JSON with detailed descriptions.`;
     });
 
     const content = response.content[0].text;
-    
-    // Parse response
-    let voiceProfile;
-    try {
-      voiceProfile = JSON.parse(content);
-    } catch (e) {
-      const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
-      if (jsonMatch) {
-        voiceProfile = JSON.parse(jsonMatch[1]);
-      } else {
-        voiceProfile = {
-          generated: true,
-          description: content,
-          tone: ['engaging', 'authentic', 'dynamic'],
-          style: ['conversational', 'informative', 'entertaining']
-        };
-      }
-    }
+
+    // Parse voice profile using shared utility
+    const voiceProfile = parseAIResponse(content, {
+      fallback: {
+        generated: true,
+        description: content,
+        tone: ['engaging', 'authentic', 'dynamic'],
+        style: ['conversational', 'informative', 'entertaining']
+      },
+      logErrors: true
+    });
 
     return {
       success: true,
@@ -542,35 +515,14 @@ Return ONLY the JSON array, nothing else.`;
 
     const content = response.content[0].text;
 
-    let ideas;
-    try {
-      ideas = JSON.parse(content);
-    } catch (e) {
-      const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
-      let jsonText = jsonMatch ? jsonMatch[1] : content;
+    // Parse content ideas using shared utility
+    const ideas = parseAIResponse(content, {
+      fallback: [],
+      logErrors: true
+    });
 
-      // Apply comprehensive JSON repairs
-      try {
-        jsonText = repairComplexJSON(jsonText);
-        ideas = JSON.parse(jsonText);
-      } catch (e2) {
-        // Try to find array pattern
-        const arrayMatch = content.match(/\[[\s\S]*\]/);
-        if (arrayMatch) {
-          try {
-            const repairedArray = repairComplexJSON(arrayMatch[0]);
-            ideas = JSON.parse(repairedArray);
-          } catch {
-            ideas = [];
-          }
-        } else {
-          ideas = [];
-        }
-      }
-    }
-
-    // Ensure we have valid ideas
-    const validIdeas = Array.isArray(ideas) ? ideas : [ideas];
+    // Ensure we have valid ideas array
+    const validIdeas = Array.isArray(ideas) ? ideas : (ideas ? [ideas] : []);
 
     return {
       success: true,
@@ -735,38 +687,15 @@ Be extremely detailed and specific. Provide realistic percentages that add up to
 
     const content = response.content[0].text;
 
-    let insights;
-    let parseMethod = 'direct';
-
-    try {
-      // First try direct parse
-      insights = JSON.parse(content);
-    } catch (e) {
-      // Try to extract JSON from markdown code blocks
-      const jsonMatch = content.match(/```json?\n?([\s\S]*?)\n?```/);
-      let jsonText = jsonMatch ? jsonMatch[1] : content;
-
-      // Apply comprehensive JSON repairs
-      try {
-        jsonText = repairJSON(jsonText);
-        insights = JSON.parse(jsonText);
-        parseMethod = 'repaired';
-      } catch (e2) {
-        // Fallback: Parse text into structured audience data
-        insights = parseAudienceTextResponse(content);
-        parseMethod = 'text-fallback';
-      }
-    }
-
-    // Add metadata about parsing method
-    if (insights && typeof insights === 'object') {
-      insights._parseMethod = parseMethod;
-    }
+    // Parse audience insights using shared utility
+    const insights = parseAIResponse(content, {
+      fallback: parseAudienceTextResponse(content),
+      logErrors: true
+    });
 
     return {
       success: true,
-      insights: insights,
-      parseMethod
+      insights: insights
     };
 
   } catch (error) {
@@ -779,75 +708,8 @@ Be extremely detailed and specific. Provide realistic percentages that add up to
 }
 
 /**
- * Parse text response into structured data
+ * Parse text response into structured data (fallback when JSON parsing fails)
  */
-/**
- * Comprehensive JSON repair function - handles complex nested structures
- */
-function repairComplexJSON(jsonText) {
-  let fixed = jsonText.trim();
-
-  // Step 1: Remove markdown code block markers if present
-  fixed = fixed.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '');
-
-  // Step 2: Remove empty keys (critical fix)
-  fixed = fixed.replace(/,?\s*""\s*:\s*"[^"]*"/g, '');
-  fixed = fixed.replace(/,?\s*""\s*:\s*\{[^}]*\}/g, '');
-  fixed = fixed.replace(/,?\s*""\s*:\s*\[[^\]]*\]/g, '');
-
-  // Step 3: Fix unescaped quotes in string values (more aggressive)
-  // This is tricky - we need to be careful not to break already-valid JSON
-  const lines = fixed.split('\n');
-  const repairedLines = lines.map(line => {
-    // Match lines with key-value pairs
-    const kvMatch = line.match(/^(\s*)"([^"]+)":\s*"(.*)"\s*,?\s*$/);
-    if (kvMatch) {
-      const indent = kvMatch[1];
-      const key = kvMatch[2];
-      const value = kvMatch[3];
-      const hasComma = line.trim().endsWith(',');
-
-      // Count unescaped quotes in value
-      let fixedValue = value;
-      // Only escape quotes that aren't already escaped
-      fixedValue = fixedValue.replace(/(?<!\\)"/g, '\\"');
-
-      return `${indent}"${key}": "${fixedValue}"${hasComma ? ',' : ''}`;
-    }
-    return line;
-  });
-  fixed = repairedLines.join('\n');
-
-  // Step 4: Remove trailing commas before closing brackets/braces
-  fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
-
-  // Step 5: Add missing commas between properties
-  fixed = fixed.replace(/([}\]])(\s*)("[^"]+":)/g, '$1,$2$3');
-  fixed = fixed.replace(/("|\d|true|false|null)(\s+)("[^"]+":)/g, '$1,$2$3');
-
-  // Step 6: Clean up double commas created by previous operations
-  fixed = fixed.replace(/,\s*,/g, ',');
-
-  // Step 7: Remove leading commas after opening braces/brackets
-  fixed = fixed.replace(/\{\s*,/g, '{');
-  fixed = fixed.replace(/\[\s*,/g, '[');
-
-  // Step 8: Fix missing quotes around property names
-  fixed = fixed.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
-
-  // Step 9: Ensure proper spacing
-  fixed = fixed.trim();
-
-  return fixed;
-}
-
-/**
- * Original JSON repair function (kept for backwards compatibility)
- */
-function repairJSON(jsonText) {
-  return repairComplexJSON(jsonText);
-}
-
 function parseTextResponse(text) {
 
   // Comprehensive fallback structure matching expected depth

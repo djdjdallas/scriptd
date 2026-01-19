@@ -155,7 +155,10 @@ export async function POST(request) {
     let voiceProfile = null;
     let voiceAnalysisMetadata = null;
     if (config.elements.voice_style) {
-      const voiceResult = await generateRemixVoiceProfile(channels, config);
+      const voiceResult = await generateRemixVoiceProfile(channels, {
+        ...config,
+        forceRefresh: config.forceRefresh || false
+      });
 
       if (voiceResult.success) {
         voiceProfile = voiceResult.voiceProfile;
