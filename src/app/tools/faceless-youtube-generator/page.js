@@ -90,7 +90,7 @@ export default function FacelessYouTubeGeneratorPage() {
   ];
 
   return (
-    <>
+    <div className="min-h-screen bg-black">
       <head>
         <title>Faceless YouTube Channel Generator - Create Viral Videos Without Showing Your Face</title>
         <meta name="description" content="Generate complete faceless YouTube videos with AI. Scripts, voiceovers, and visuals in minutes. Join creators earning $10K+/month without being on camera." />
@@ -98,41 +98,41 @@ export default function FacelessYouTubeGeneratorPage() {
       </head>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-purple-50 via-white to-purple-50 dark:from-purple-950/20 dark:to-background py-20">
+      <section className="relative bg-gradient-to-b from-purple-950/40 via-black to-purple-950/20 py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center">
-            <Badge className="mb-4" variant="secondary">
+            <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30">
               <EyeOff className="w-4 h-4 mr-1" />
               No Camera Required
             </Badge>
-            
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               Create Viral Faceless YouTube Videos in Minutes
             </h1>
-            
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Generate complete YouTube videos without showing your face. 
-              <span className="font-semibold text-foreground"> AI scripts</span>, 
-              <span className="font-semibold text-foreground"> voice narration</span>, and 
-              <span className="font-semibold text-foreground"> visual generation</span> - all automated.
+
+            <p className="text-xl text-gray-400 mb-8 max-w-3xl mx-auto">
+              Generate complete YouTube videos without showing your face.
+              <span className="font-semibold text-white"> AI scripts</span>,
+              <span className="font-semibold text-white"> voice narration</span>, and
+              <span className="font-semibold text-white"> visual generation</span> - all automated.
             </p>
 
             <div className="flex gap-4 justify-center mb-8">
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-purple-600 to-pink-600"
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 onClick={handleGenerate}
               >
                 Generate Your First Video Free
                 <Video className="ml-2 w-5 h-5" />
               </Button>
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" className="border-gray-600 hover:bg-gray-800 text-white">
                 See Success Stories
                 <Users className="ml-2 w-5 h-5" />
               </Button>
             </div>
 
-            <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-8 text-sm text-gray-400">
               <div className="flex items-center gap-1">
                 <Bot className="w-4 h-4" />
                 <span>100% Automated</span>
@@ -152,20 +152,20 @@ export default function FacelessYouTubeGeneratorPage() {
 
       {/* Live Generation Demo */}
       {isGenerating && (
-        <section className="py-16 bg-white dark:bg-background border-y">
+        <section className="py-16 bg-gray-900 border-y border-gray-800">
           <div className="container mx-auto px-4 max-w-4xl">
-            <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30">
+            <Card className="bg-gradient-to-br from-purple-950/50 to-pink-950/50 border-gray-700">
               <CardHeader>
-                <CardTitle>Generating Your Faceless Video...</CardTitle>
+                <CardTitle className="text-white">Generating Your Faceless Video...</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {generationSteps.map((step, idx) => (
                     <div key={idx} className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${idx <= generationStep ? 'bg-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                      <div className={`p-2 rounded-full ${idx <= generationStep ? 'bg-purple-600 text-white' : 'bg-gray-700'}`}>
                         {idx <= generationStep ? <CheckCircle2 className="w-4 h-4" /> : step.icon}
                       </div>
-                      <span className={idx <= generationStep ? 'font-medium' : 'text-muted-foreground'}>
+                      <span className={idx <= generationStep ? 'font-medium text-white' : 'text-gray-400'}>
                         {step.label}
                       </span>
                     </div>
@@ -179,38 +179,38 @@ export default function FacelessYouTubeGeneratorPage() {
       )}
 
       {/* Channel Types */}
-      <section className="py-20 bg-gradient-to-b from-white to-purple-50 dark:from-background dark:to-purple-950/20">
+      <section className="py-20 bg-gradient-to-b from-black to-purple-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             Choose Your Faceless Channel Type
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
             Each type has proven success patterns and monetization potential
           </p>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {facelessChannelTypes.map((channel, idx) => (
-              <Card key={idx} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card key={idx} className="bg-gray-800/50 border-gray-700 hover:border-purple-500 transition-all cursor-pointer">
                 <CardHeader>
                   <div className="mb-3">{channel.icon}</div>
-                  <CardTitle className="text-lg">{channel.type}</CardTitle>
-                  <Badge variant={channel.difficulty === 'Easy' ? 'secondary' : 'outline'}>
+                  <CardTitle className="text-lg text-white">{channel.type}</CardTitle>
+                  <Badge className={channel.difficulty === 'Easy' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-gray-700 text-gray-300'}>
                     {channel.difficulty}
                   </Badge>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div>
-                      <p className="text-sm font-medium mb-1">Examples:</p>
-                      <ul className="text-xs text-muted-foreground space-y-1">
+                      <p className="text-sm font-medium mb-1 text-gray-300">Examples:</p>
+                      <ul className="text-xs text-gray-400 space-y-1">
                         {channel.examples.map((ex, i) => (
                           <li key={i}>• {ex}</li>
                         ))}
                       </ul>
                     </div>
-                    <div className="pt-3 border-t">
-                      <p className="text-sm font-medium">Avg Views:</p>
-                      <p className="text-lg font-bold text-purple-600">{channel.avgViews}</p>
+                    <div className="pt-3 border-t border-gray-700">
+                      <p className="text-sm font-medium text-gray-300">Avg Views:</p>
+                      <p className="text-lg font-bold text-purple-400">{channel.avgViews}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -221,139 +221,139 @@ export default function FacelessYouTubeGeneratorPage() {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-gray-900">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             From Idea to Published Video in 5 Minutes
           </h2>
-          
+
           <Tabs defaultValue="script" className="max-w-4xl mx-auto">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-4 bg-gray-800">
               <TabsTrigger value="script">1. Script</TabsTrigger>
               <TabsTrigger value="voice">2. Voice</TabsTrigger>
               <TabsTrigger value="visuals">3. Visuals</TabsTrigger>
               <TabsTrigger value="publish">4. Publish</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="script" className="mt-8">
-              <Card>
+              <Card className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
-                  <CardTitle>AI-Generated Viral Scripts</CardTitle>
+                  <CardTitle className="text-white">AI-Generated Viral Scripts</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <p>Enter any topic and our AI creates scripts optimized for:</p>
+                    <p className="text-gray-300">Enter any topic and our AI creates scripts optimized for:</p>
                     <ul className="space-y-2">
-                      <li className="flex items-center gap-2">
+                      <li className="flex items-center gap-2 text-gray-300">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                         <span>68%+ retention rate</span>
                       </li>
-                      <li className="flex items-center gap-2">
+                      <li className="flex items-center gap-2 text-gray-300">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                         <span>Viral hook in first 3 seconds</span>
                       </li>
-                      <li className="flex items-center gap-2">
+                      <li className="flex items-center gap-2 text-gray-300">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                         <span>Perfect 8-10 minute length</span>
                       </li>
                     </ul>
-                    <Button className="w-full">Generate Script Now</Button>
+                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">Generate Script Now</Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             <TabsContent value="voice" className="mt-8">
-              <Card>
+              <Card className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
-                  <CardTitle>Natural AI Voice Narration</CardTitle>
+                  <CardTitle className="text-white">Natural AI Voice Narration</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <p>Choose from multiple voice options:</p>
+                    <p className="text-gray-300">Choose from multiple voice options:</p>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 border rounded-lg">
-                        <p className="font-medium">Documentary Style</p>
-                        <p className="text-sm text-muted-foreground">David Attenborough-like</p>
+                      <div className="p-3 border border-gray-700 rounded-lg bg-gray-900">
+                        <p className="font-medium text-white">Documentary Style</p>
+                        <p className="text-sm text-gray-400">David Attenborough-like</p>
                       </div>
-                      <div className="p-3 border rounded-lg">
-                        <p className="font-medium">Energetic</p>
-                        <p className="text-sm text-muted-foreground">MrBeast-inspired</p>
+                      <div className="p-3 border border-gray-700 rounded-lg bg-gray-900">
+                        <p className="font-medium text-white">Energetic</p>
+                        <p className="text-sm text-gray-400">MrBeast-inspired</p>
                       </div>
-                      <div className="p-3 border rounded-lg">
-                        <p className="font-medium">Storyteller</p>
-                        <p className="text-sm text-muted-foreground">Engaging narrative</p>
+                      <div className="p-3 border border-gray-700 rounded-lg bg-gray-900">
+                        <p className="font-medium text-white">Storyteller</p>
+                        <p className="text-sm text-gray-400">Engaging narrative</p>
                       </div>
-                      <div className="p-3 border rounded-lg">
-                        <p className="font-medium">Professional</p>
-                        <p className="text-sm text-muted-foreground">News anchor style</p>
+                      <div className="p-3 border border-gray-700 rounded-lg bg-gray-900">
+                        <p className="font-medium text-white">Professional</p>
+                        <p className="text-sm text-gray-400">News anchor style</p>
                       </div>
                     </div>
-                    <Button className="w-full">Generate Voiceover</Button>
+                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">Generate Voiceover</Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             <TabsContent value="visuals" className="mt-8">
-              <Card>
+              <Card className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
-                  <CardTitle>Automated Visual Generation</CardTitle>
+                  <CardTitle className="text-white">Automated Visual Generation</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <p>AI creates engaging visuals including:</p>
+                    <p className="text-gray-300">AI creates engaging visuals including:</p>
                     <ul className="space-y-2">
-                      <li className="flex items-center gap-2">
+                      <li className="flex items-center gap-2 text-gray-300">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                         <span>Stock footage matching script</span>
                       </li>
-                      <li className="flex items-center gap-2">
+                      <li className="flex items-center gap-2 text-gray-300">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                         <span>Animated text overlays</span>
                       </li>
-                      <li className="flex items-center gap-2">
+                      <li className="flex items-center gap-2 text-gray-300">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                         <span>Transitions and effects</span>
                       </li>
-                      <li className="flex items-center gap-2">
+                      <li className="flex items-center gap-2 text-gray-300">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                         <span>Background music</span>
                       </li>
                     </ul>
-                    <Button className="w-full">Add Visuals</Button>
+                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">Add Visuals</Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             <TabsContent value="publish" className="mt-8">
-              <Card>
+              <Card className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
-                  <CardTitle>One-Click Publishing</CardTitle>
+                  <CardTitle className="text-white">One-Click Publishing</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <p>Everything ready for YouTube:</p>
+                    <p className="text-gray-300">Everything ready for YouTube:</p>
                     <ul className="space-y-2">
-                      <li className="flex items-center gap-2">
+                      <li className="flex items-center gap-2 text-gray-300">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                         <span>SEO-optimized title</span>
                       </li>
-                      <li className="flex items-center gap-2">
+                      <li className="flex items-center gap-2 text-gray-300">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                         <span>Engaging description</span>
                       </li>
-                      <li className="flex items-center gap-2">
+                      <li className="flex items-center gap-2 text-gray-300">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                         <span>Relevant tags</span>
                       </li>
-                      <li className="flex items-center gap-2">
+                      <li className="flex items-center gap-2 text-gray-300">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                         <span>Eye-catching thumbnail</span>
                       </li>
                     </ul>
-                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600">
+                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                       Publish to YouTube
                     </Button>
                   </div>
@@ -365,27 +365,27 @@ export default function FacelessYouTubeGeneratorPage() {
       </section>
 
       {/* Monetization Potential */}
-      <section className="py-20 bg-gradient-to-b from-white to-purple-50 dark:from-background dark:to-purple-950/20">
+      <section className="py-20 bg-gradient-to-b from-black to-purple-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             Your Monetization Timeline
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
             Realistic earnings potential based on {socialProofData.metrics.totalUsers}+ successful channels
           </p>
-          
+
           <div className="grid md:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {monetizationPotential.map((milestone, idx) => (
-              <Card key={idx} className={idx === 3 ? 'border-purple-500 shadow-lg' : ''}>
+              <Card key={idx} className={`bg-gray-800/50 border-gray-700 ${idx === 3 ? 'border-purple-500 shadow-lg shadow-purple-500/20' : ''}`}>
                 <CardHeader>
-                  <CardDescription>Month {milestone.months}</CardDescription>
-                  <CardTitle className="text-2xl">{milestone.revenue}</CardTitle>
+                  <CardDescription className="text-gray-400">Month {milestone.months}</CardDescription>
+                  <CardTitle className="text-2xl text-white">{milestone.revenue}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm">{milestone.subscribers.toLocaleString()} subs</span>
+                      <Users className="w-4 h-4 text-purple-400" />
+                      <span className="text-sm text-gray-300">{milestone.subscribers.toLocaleString()} subs</span>
                     </div>
                     <Progress value={(idx + 1) * 25} className="h-2" />
                   </div>
@@ -393,20 +393,22 @@ export default function FacelessYouTubeGeneratorPage() {
               </Card>
             ))}
           </div>
-          
-          <div className="mt-12 p-8 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-950/50 dark:to-pink-950/50 rounded-2xl text-center max-w-3xl mx-auto">
-            <h3 className="text-2xl font-bold mb-4">
+
+          <div className="mt-12 p-8 bg-gradient-to-r from-purple-950/50 to-pink-950/50 rounded-2xl text-center max-w-3xl mx-auto border border-purple-500/30">
+            <h3 className="text-2xl font-bold mb-4 text-white">
               Start Your Faceless Channel Today
             </h3>
-            <p className="mb-6 text-muted-foreground">
+            <p className="mb-6 text-gray-400">
               Join creators earning passive income without ever showing their face
             </p>
             <div className="flex gap-4 justify-center">
-              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600">
-                Start Free Trial
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline">
+              <Link href="/signup">
+                <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                  Start Free Trial
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Button size="lg" variant="outline" className="border-gray-600 hover:bg-gray-800 text-white">
                 View Case Studies
               </Button>
             </div>
@@ -415,72 +417,72 @@ export default function FacelessYouTubeGeneratorPage() {
       </section>
 
       {/* Success Stories */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Real Faceless Channel Success Stories
           </h2>
-          
+
           <div className="grid md:grid-cols-3 gap-6">
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
                 <div className="flex items-center gap-2 mb-2">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                   ))}
                 </div>
-                <CardTitle>Mystery Channel</CardTitle>
-                <CardDescription>Started 3 months ago</CardDescription>
+                <CardTitle className="text-white">Mystery Channel</CardTitle>
+                <CardDescription className="text-gray-400">Started 3 months ago</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm mb-4">
+                <p className="text-sm mb-4 text-gray-300">
                   "I create top 10 mystery videos. Never showed my face, now at 50K subs earning $3K/month."
                 </p>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm text-gray-400">
                   <span>Videos: 24</span>
-                  <span className="font-bold text-purple-600">$3,200/mo</span>
+                  <span className="font-bold text-purple-400">$3,200/mo</span>
                 </div>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
                 <div className="flex items-center gap-2 mb-2">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                   ))}
                 </div>
-                <CardTitle>Motivation Daily</CardTitle>
-                <CardDescription>Started 6 months ago</CardDescription>
+                <CardTitle className="text-white">Motivation Daily</CardTitle>
+                <CardDescription className="text-gray-400">Started 6 months ago</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm mb-4">
+                <p className="text-sm mb-4 text-gray-300">
                   "Daily motivation videos, 100% automated. Hit 100K subs and making $8K monthly."
                 </p>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm text-gray-400">
                   <span>Videos: 180</span>
-                  <span className="font-bold text-purple-600">$8,500/mo</span>
+                  <span className="font-bold text-purple-400">$8,500/mo</span>
                 </div>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
                 <div className="flex items-center gap-2 mb-2">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                   ))}
                 </div>
-                <CardTitle>Tech Facts</CardTitle>
-                <CardDescription>Started 1 year ago</CardDescription>
+                <CardTitle className="text-white">Tech Facts</CardTitle>
+                <CardDescription className="text-gray-400">Started 1 year ago</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm mb-4">
+                <p className="text-sm mb-4 text-gray-300">
                   "Tech explainer videos without showing face. 250K subs, full-time income now!"
                 </p>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm text-gray-400">
                   <span>Videos: 365</span>
-                  <span className="font-bold text-purple-600">$15,000/mo</span>
+                  <span className="font-bold text-purple-400">$15,000/mo</span>
                 </div>
               </CardContent>
             </Card>
@@ -497,7 +499,7 @@ export default function FacelessYouTubeGeneratorPage() {
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
             No camera, no problem. Create viral content and earn passive income with AI.
           </p>
-          
+
           <div className="grid md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
             <div className="flex items-center justify-center gap-2">
               <CheckCircle2 className="w-5 h-5" />
@@ -512,18 +514,20 @@ export default function FacelessYouTubeGeneratorPage() {
               <span>Proven Templates</span>
             </div>
           </div>
-          
+
           <div className="flex gap-4 justify-center">
-            <Button size="lg" variant="secondary">
-              Create Your First Video Free
-              <Play className="ml-2 w-5 h-5" />
-            </Button>
+            <Link href="/signup">
+              <Button size="lg" variant="secondary">
+                Create Your First Video Free
+                <Play className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
             <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
               Watch Tutorial
             </Button>
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { 
-  ArrowRight, Mic, Brain, Fingerprint, 
+import {
+  ArrowRight, Mic, Brain, Fingerprint,
   Volume2, User, Sparkles, CheckCircle2,
   Upload, Play, BarChart3
 } from 'lucide-react';
+import Link from 'next/link';
 // Removed unused import - using hardcoded metrics instead
 
 export default function VoiceMatchingPage() {
@@ -137,7 +138,7 @@ export default function VoiceMatchingPage() {
   ];
 
   return (
-    <>
+    <div className="min-h-screen bg-black">
       <head>
         <title>Voice Matching AI - Deep Linguistic Profiling with 100+ Voice Metrics</title>
         <meta name="description" content="Advanced 8-category deep linguistic profiling system that analyzes 100+ voice metrics from real YouTube transcripts. Pattern enforcement, compliance scoring, and authentic voice replication." />
@@ -145,50 +146,50 @@ export default function VoiceMatchingPage() {
       </head>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-blue-950/20 dark:to-background py-20">
+      <section className="relative bg-gradient-to-b from-blue-950/40 via-purple-950/20 to-black py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center">
-            <Badge className="mb-4" variant="secondary">
+            <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30">
               <Fingerprint className="w-4 h-4 mr-1" />
               Your Unique Voice DNA
             </Badge>
-            
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
               AI That Writes Exactly Like You Do
             </h1>
-            
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Our Voice Matching AI analyzes your speaking style and creates scripts that are 
-              <span className="font-semibold text-foreground"> indistinguishable from your own writing</span>. 
+
+            <p className="text-xl text-gray-400 mb-8 max-w-3xl mx-auto">
+              Our Voice Matching AI analyzes your speaking style and creates scripts that are
+              <span className="font-semibold text-white"> indistinguishable from your own writing</span>.
               No more generic AI content.
             </p>
 
             <div className="flex gap-4 justify-center mb-8">
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600"
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                 onClick={handleAnalyze}
               >
                 Analyze Your Voice
                 <Mic className="ml-2 w-5 h-5" />
               </Button>
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" className="border-gray-600 hover:bg-gray-800 text-white">
                 See Examples
                 <Play className="ml-2 w-5 h-5" />
               </Button>
             </div>
 
-            <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-8 text-sm text-gray-400">
               <div className="flex items-center gap-1">
-                <Brain className="w-4 h-4" />
+                <Brain className="w-4 h-4 text-purple-400" />
                 <span>AI Learning</span>
               </div>
               <div className="flex items-center gap-1">
-                <Fingerprint className="w-4 h-4" />
+                <Fingerprint className="w-4 h-4 text-purple-400" />
                 <span>Unique Voice Print</span>
               </div>
               <div className="flex items-center gap-1">
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4 text-purple-400" />
                 <span>95%+ Accuracy</span>
               </div>
             </div>
@@ -198,24 +199,24 @@ export default function VoiceMatchingPage() {
 
       {/* Voice Analysis Demo */}
       {isAnalyzing && (
-        <section className="py-16 bg-white dark:bg-background border-y">
+        <section className="py-16 bg-black border-y border-gray-800">
           <div className="container mx-auto px-4 max-w-4xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30">
+            <Card className="bg-gradient-to-br from-blue-950/30 to-purple-950/30 border-gray-700">
               <CardHeader>
-                <CardTitle>Analyzing Your Voice Pattern...</CardTitle>
+                <CardTitle className="text-white">Analyzing Your Voice Pattern...</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {analysisSteps.map((step, idx) => (
                     <div key={idx} className="flex items-center gap-3">
                       <div className={`p-2 rounded-full ${
-                        idx <= analysisStep 
-                          ? 'bg-purple-600 text-white' 
-                          : 'bg-gray-200 dark:bg-gray-700'
+                        idx <= analysisStep
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-700 text-gray-400'
                       }`}>
                         {idx <= analysisStep ? <CheckCircle2 className="w-4 h-4" /> : step.icon}
                       </div>
-                      <span className={idx <= analysisStep ? 'font-medium' : 'text-muted-foreground'}>
+                      <span className={idx <= analysisStep ? 'font-medium text-white' : 'text-gray-500'}>
                         {step.label}
                       </span>
                     </div>
@@ -230,12 +231,12 @@ export default function VoiceMatchingPage() {
 
       {/* Voice Profile Results */}
       {voiceProfile && (
-        <section className="py-16 bg-gradient-to-b from-white to-blue-50 dark:from-background dark:to-blue-950/20">
+        <section className="py-16 bg-gradient-to-b from-black to-blue-950/20">
           <div className="container mx-auto px-4 max-w-4xl">
-            <Card className="border-purple-200 dark:border-purple-800">
+            <Card className="bg-gray-800/50 border-purple-500/50">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Your Voice Profile</CardTitle>
+                  <CardTitle className="text-white">Your Voice Profile</CardTitle>
                   <Badge className="bg-green-600 text-white">
                     {voiceProfile.matchScore}% Match
                   </Badge>
@@ -245,59 +246,61 @@ export default function VoiceMatchingPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Tone</p>
-                      <p className="font-medium">{voiceProfile.tone}</p>
+                      <p className="text-sm font-medium text-gray-400">Tone</p>
+                      <p className="font-medium text-white">{voiceProfile.tone}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Vocabulary</p>
-                      <p className="font-medium">{voiceProfile.vocabulary}</p>
+                      <p className="text-sm font-medium text-gray-400">Vocabulary</p>
+                      <p className="font-medium text-white">{voiceProfile.vocabulary}</p>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Pacing</p>
-                      <p className="font-medium">{voiceProfile.pacing}</p>
+                      <p className="text-sm font-medium text-gray-400">Pacing</p>
+                      <p className="font-medium text-white">{voiceProfile.pacing}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Personality</p>
-                      <p className="font-medium">{voiceProfile.personality}</p>
+                      <p className="text-sm font-medium text-gray-400">Personality</p>
+                      <p className="font-medium text-white">{voiceProfile.personality}</p>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-6 space-y-4">
-                  <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-                    <p className="text-sm font-medium mb-2">Your Signature Phrases:</p>
+                  <div className="p-4 bg-purple-950/30 rounded-lg border border-purple-500/20">
+                    <p className="text-sm font-medium mb-2 text-white">Your Signature Phrases:</p>
                     <div className="flex flex-wrap gap-2">
                       {voiceProfile.uniquePhrases.map((phrase, idx) => (
-                        <Badge key={idx} variant="secondary">"{phrase}"</Badge>
+                        <Badge key={idx} className="bg-purple-500/20 text-purple-400 border-purple-500/30">"{phrase}"</Badge>
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                      <p className="text-xs font-medium text-muted-foreground">Formality Score</p>
-                      <p className="text-lg font-bold">{voiceProfile.formalityScore}/100</p>
+                    <div className="p-3 bg-blue-950/30 rounded-lg border border-blue-500/20">
+                      <p className="text-xs font-medium text-gray-400">Formality Score</p>
+                      <p className="text-lg font-bold text-white">{voiceProfile.formalityScore}/100</p>
                     </div>
-                    <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                      <p className="text-xs font-medium text-muted-foreground">Consistency</p>
-                      <p className="text-lg font-bold">{voiceProfile.consistencyScore}%</p>
+                    <div className="p-3 bg-green-950/30 rounded-lg border border-green-500/20">
+                      <p className="text-xs font-medium text-gray-400">Consistency</p>
+                      <p className="text-lg font-bold text-white">{voiceProfile.consistencyScore}%</p>
                     </div>
-                    <div className="p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-                      <p className="text-xs font-medium text-muted-foreground">Avg Words/Sentence</p>
-                      <p className="text-lg font-bold">{voiceProfile.avgWordsPerSentence}</p>
+                    <div className="p-3 bg-orange-950/30 rounded-lg border border-orange-500/20">
+                      <p className="text-xs font-medium text-gray-400">Avg Words/Sentence</p>
+                      <p className="text-lg font-bold text-white">{voiceProfile.avgWordsPerSentence}</p>
                     </div>
-                    <div className="p-3 bg-pink-50 dark:bg-pink-950/20 rounded-lg">
-                      <p className="text-xs font-medium text-muted-foreground">Humor Frequency</p>
-                      <p className="text-lg font-bold">{voiceProfile.humorFrequency}</p>
+                    <div className="p-3 bg-pink-950/30 rounded-lg border border-pink-500/20">
+                      <p className="text-xs font-medium text-gray-400">Humor Frequency</p>
+                      <p className="text-lg font-bold text-white">{voiceProfile.humorFrequency}</p>
                     </div>
                   </div>
                 </div>
-                
-                <Button className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600">
-                  Start Creating in Your Voice
-                </Button>
+
+                <Link href="/signup">
+                  <Button className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    Start Creating in Your Voice
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>
@@ -305,50 +308,50 @@ export default function VoiceMatchingPage() {
       )}
 
       {/* How It Works */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             How Deep Linguistic Profiling Works
           </h2>
-          
+
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <Card className="text-center">
+            <Card className="text-center bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Upload className="w-8 h-8 text-blue-600" />
+                <div className="w-16 h-16 bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Upload className="w-8 h-8 text-blue-400" />
                 </div>
-                <CardTitle>1. YouTube Analysis</CardTitle>
+                <CardTitle className="text-white">1. YouTube Analysis</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-400">
                   Analyzes up to 20 videos & 10 transcripts from your channel
                 </p>
               </CardContent>
             </Card>
-            
-            <Card className="text-center">
+
+            <Card className="text-center bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Brain className="w-8 h-8 text-purple-600" />
+                <div className="w-16 h-16 bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Brain className="w-8 h-8 text-purple-400" />
                 </div>
-                <CardTitle>2. Deep Profiling</CardTitle>
+                <CardTitle className="text-white">2. Deep Profiling</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-400">
                   8-category analysis with 100+ unique voice metrics
                 </p>
               </CardContent>
             </Card>
-            
-            <Card className="text-center">
+
+            <Card className="text-center bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <div className="w-16 h-16 bg-pink-100 dark:bg-pink-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-pink-600" />
+                <div className="w-16 h-16 bg-pink-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-8 h-8 text-pink-400" />
                 </div>
-                <CardTitle>3. Pattern Enforcement</CardTitle>
+                <CardTitle className="text-white">3. Pattern Enforcement</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-400">
                   Enforces your exact phrases & structures with 95%+ accuracy
                 </p>
               </CardContent>
@@ -358,28 +361,28 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* Advanced Features Section */}
-      <section className="py-20 bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/20 dark:to-background">
+      <section className="py-20 bg-gradient-to-b from-blue-950/20 to-black">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             Advanced Voice Analysis Features
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
             Powered by our Version 3.0 Deep Linguistic Profiling System
           </p>
-          
+
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-blue-600" />
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <BarChart3 className="w-5 h-5 text-blue-400" />
                   100+ Metrics
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-sm text-gray-400 mb-3">
                   Comprehensive analysis including:
                 </p>
-                <ul className="text-sm space-y-1">
+                <ul className="text-sm space-y-1 text-gray-300">
                   <li>• Question frequency types</li>
                   <li>• Filler word density</li>
                   <li>• Sentence complexity</li>
@@ -387,19 +390,19 @@ export default function VoiceMatchingPage() {
                 </ul>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="w-5 h-5 text-purple-600" />
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Brain className="w-5 h-5 text-purple-400" />
                   Real Transcript Analysis
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-sm text-gray-400 mb-3">
                   Direct YouTube integration:
                 </p>
-                <ul className="text-sm space-y-1">
+                <ul className="text-sm space-y-1 text-gray-300">
                   <li>• 20 videos fetched</li>
                   <li>• 10 transcripts analyzed</li>
                   <li>• 279+ segments per video</li>
@@ -407,19 +410,19 @@ export default function VoiceMatchingPage() {
                 </ul>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <CheckCircle2 className="w-5 h-5 text-green-400" />
                   Compliance Scoring
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-sm text-gray-400 mb-3">
                   Post-generation verification:
                 </p>
-                <ul className="text-sm space-y-1">
+                <ul className="text-sm space-y-1 text-gray-300">
                   <li>• 0-100 authenticity score</li>
                   <li>• Pattern enforcement</li>
                   <li>• Voice consistency check</li>
@@ -427,19 +430,19 @@ export default function VoiceMatchingPage() {
                 </ul>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Fingerprint className="w-5 h-5 text-orange-600" />
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Fingerprint className="w-5 h-5 text-orange-400" />
                   Linguistic Fingerprints
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-sm text-gray-400 mb-3">
                   Unique pattern detection:
                 </p>
-                <ul className="text-sm space-y-1">
+                <ul className="text-sm space-y-1 text-gray-300">
                   <li>• Opening patterns</li>
                   <li>• Transition phrases</li>
                   <li>• Closing signatures</li>
@@ -447,19 +450,19 @@ export default function VoiceMatchingPage() {
                 </ul>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5 text-pink-600" />
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <User className="w-5 h-5 text-pink-400" />
                   Audience Psychographics
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-sm text-gray-400 mb-3">
                   Beyond demographics:
                 </p>
-                <ul className="text-sm space-y-1">
+                <ul className="text-sm space-y-1 text-gray-300">
                   <li>• Values & behaviors</li>
                   <li>• Content preferences</li>
                   <li>• Engagement patterns</li>
@@ -467,19 +470,19 @@ export default function VoiceMatchingPage() {
                 </ul>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-indigo-600" />
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Sparkles className="w-5 h-5 text-indigo-400" />
                   Intelligent Blending
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-sm text-gray-400 mb-3">
                   For remix channels:
                 </p>
-                <ul className="text-sm space-y-1">
+                <ul className="text-sm space-y-1 text-gray-300">
                   <li>• Smart pattern selection</li>
                   <li>• Dominant voice extraction</li>
                   <li>• Multi-channel synthesis</li>
@@ -492,26 +495,26 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* Voice Attributes */}
-      <section className="py-20 bg-gradient-to-b from-white to-blue-50 dark:from-background dark:to-blue-950/20">
+      <section className="py-20 bg-gradient-to-b from-black to-blue-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             What We Analyze in Your Voice
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
             Our AI captures every nuance that makes your content unique
           </p>
-          
+
           <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {voiceAttributes.map((attr, idx) => (
-              <Card key={idx}>
+              <Card key={idx} className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
-                  <CardTitle className="text-lg">{attr.attribute}</CardTitle>
-                  <CardDescription>{attr.description}</CardDescription>
+                  <CardTitle className="text-lg text-white">{attr.attribute}</CardTitle>
+                  <CardDescription className="text-gray-400">{attr.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {attr.examples.map((example, i) => (
-                      <Badge key={i} variant="outline">{example}</Badge>
+                      <Badge key={i} variant="outline" className="border-gray-600 text-gray-300">{example}</Badge>
                     ))}
                   </div>
                 </CardContent>
@@ -522,19 +525,19 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* What Makes Us Different */}
-      <section className="py-20 bg-gradient-to-b from-purple-50 to-white dark:from-purple-950/20 dark:to-background">
+      <section className="py-20 bg-gradient-to-b from-purple-950/20 to-black">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             What Makes Our System Different
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
             Industry-leading deep linguistic profiling vs basic voice matching
           </p>
-          
+
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            <div>
-              <h3 className="font-semibold mb-4 text-red-600">❌ Other Voice Matching Tools</h3>
-              <ul className="space-y-3 text-sm">
+            <div className="p-6 bg-gray-800/30 rounded-lg border border-gray-700">
+              <h3 className="font-semibold mb-4 text-red-400">Other Voice Matching Tools</h3>
+              <ul className="space-y-3 text-sm text-gray-300">
                 <li className="flex items-start gap-2">
                   <span className="text-red-500 mt-1">•</span>
                   <span>Basic tone and style matching</span>
@@ -561,42 +564,42 @@ export default function VoiceMatchingPage() {
                 </li>
               </ul>
             </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4 text-green-600">✅ Our Deep Profiling System</h3>
-              <ul className="space-y-3 text-sm">
+
+            <div className="p-6 bg-gray-800/30 rounded-lg border border-green-500/30">
+              <h3 className="font-semibold mb-4 text-green-400">Our Deep Profiling System</h3>
+              <ul className="space-y-3 text-sm text-gray-300">
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">•</span>
-                  <span className="font-medium">8-category deep linguistic analysis</span>
+                  <span className="font-medium text-white">8-category deep linguistic analysis</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">•</span>
-                  <span className="font-medium">Real YouTube transcript analysis</span>
+                  <span className="font-medium text-white">Real YouTube transcript analysis</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">•</span>
-                  <span className="font-medium">Pattern enforcement with exact phrases</span>
+                  <span className="font-medium text-white">Pattern enforcement with exact phrases</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">•</span>
-                  <span className="font-medium">Compliance scoring (0-100)</span>
+                  <span className="font-medium text-white">Compliance scoring (0-100)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">•</span>
-                  <span className="font-medium">Psychographic audience profiling</span>
+                  <span className="font-medium text-white">Psychographic audience profiling</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">•</span>
-                  <span className="font-medium">100+ unique voice metrics</span>
+                  <span className="font-medium text-white">100+ unique voice metrics</span>
                 </li>
               </ul>
             </div>
           </div>
-          
-          <div className="mt-12 p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg max-w-3xl mx-auto">
+
+          <div className="mt-12 p-6 bg-gradient-to-r from-blue-950/30 to-purple-950/30 rounded-lg max-w-3xl mx-auto border border-purple-500/30">
             <div className="text-center">
-              <p className="text-lg font-semibold mb-2">Version 3.0 - January 2025</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-lg font-semibold mb-2 text-white">Version 3.0 - January 2025</p>
+              <p className="text-sm text-gray-400">
                 Production-ready deep linguistic profiling with enhanced pattern enforcement
               </p>
             </div>
@@ -605,155 +608,155 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* Technical Depth Section */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             Technical Analysis Depth
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
             See exactly how we analyze your unique voice patterns
           </p>
-          
+
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-lg">Question Analysis</CardTitle>
+                <CardTitle className="text-lg text-white">Question Analysis</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-medium">Engagement Questions</p>
+                    <p className="text-sm font-medium text-gray-300">Engagement Questions</p>
                     <Progress value={65} className="h-2 mt-1" />
-                    <p className="text-xs text-muted-foreground mt-1">65% of questions</p>
+                    <p className="text-xs text-gray-500 mt-1">65% of questions</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Rhetorical Questions</p>
+                    <p className="text-sm font-medium text-gray-300">Rhetorical Questions</p>
                     <Progress value={25} className="h-2 mt-1" />
-                    <p className="text-xs text-muted-foreground mt-1">25% of questions</p>
+                    <p className="text-xs text-gray-500 mt-1">25% of questions</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Informational Questions</p>
+                    <p className="text-sm font-medium text-gray-300">Informational Questions</p>
                     <Progress value={10} className="h-2 mt-1" />
-                    <p className="text-xs text-muted-foreground mt-1">10% of questions</p>
+                    <p className="text-xs text-gray-500 mt-1">10% of questions</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-lg">Sentence Complexity</CardTitle>
+                <CardTitle className="text-lg text-white">Sentence Complexity</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-medium">Simple Sentences</p>
+                    <p className="text-sm font-medium text-gray-300">Simple Sentences</p>
                     <Progress value={40} className="h-2 mt-1" />
-                    <p className="text-xs text-muted-foreground mt-1">40% distribution</p>
+                    <p className="text-xs text-gray-500 mt-1">40% distribution</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Moderate Complexity</p>
+                    <p className="text-sm font-medium text-gray-300">Moderate Complexity</p>
                     <Progress value={45} className="h-2 mt-1" />
-                    <p className="text-xs text-muted-foreground mt-1">45% distribution</p>
+                    <p className="text-xs text-gray-500 mt-1">45% distribution</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Complex Structures</p>
+                    <p className="text-sm font-medium text-gray-300">Complex Structures</p>
                     <Progress value={15} className="h-2 mt-1" />
-                    <p className="text-xs text-muted-foreground mt-1">15% distribution</p>
+                    <p className="text-xs text-gray-500 mt-1">15% distribution</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-lg">Hook Types</CardTitle>
+                <CardTitle className="text-lg text-white">Hook Types</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Badge variant="outline" className="w-full justify-between">
+                  <Badge variant="outline" className="w-full justify-between border-gray-600 text-gray-300">
                     <span>Question Hooks</span>
                     <span>35%</span>
                   </Badge>
-                  <Badge variant="outline" className="w-full justify-between">
+                  <Badge variant="outline" className="w-full justify-between border-gray-600 text-gray-300">
                     <span>Statistic Hooks</span>
                     <span>20%</span>
                   </Badge>
-                  <Badge variant="outline" className="w-full justify-between">
+                  <Badge variant="outline" className="w-full justify-between border-gray-600 text-gray-300">
                     <span>Story Hooks</span>
                     <span>25%</span>
                   </Badge>
-                  <Badge variant="outline" className="w-full justify-between">
+                  <Badge variant="outline" className="w-full justify-between border-gray-600 text-gray-300">
                     <span>Problem Hooks</span>
                     <span>15%</span>
                   </Badge>
-                  <Badge variant="outline" className="w-full justify-between">
+                  <Badge variant="outline" className="w-full justify-between border-gray-600 text-gray-300">
                     <span>Curiosity Hooks</span>
                     <span>5%</span>
                   </Badge>
                 </div>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-lg">Vocabulary Metrics</CardTitle>
+                <CardTitle className="text-lg text-white">Vocabulary Metrics</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded">
-                    <p className="text-2xl font-bold">0.72</p>
-                    <p className="text-xs text-muted-foreground">Type-Token Ratio</p>
+                  <div className="text-center p-3 bg-blue-950/30 rounded border border-blue-500/20">
+                    <p className="text-2xl font-bold text-white">0.72</p>
+                    <p className="text-xs text-gray-400">Type-Token Ratio</p>
                   </div>
-                  <div className="text-center p-3 bg-purple-50 dark:bg-purple-950/30 rounded">
-                    <p className="text-2xl font-bold">3.2</p>
-                    <p className="text-xs text-muted-foreground">Fillers/1000 words</p>
+                  <div className="text-center p-3 bg-purple-950/30 rounded border border-purple-500/20">
+                    <p className="text-2xl font-bold text-white">3.2</p>
+                    <p className="text-xs text-gray-400">Fillers/1000 words</p>
                   </div>
                 </div>
-                <div className="mt-3 p-2 bg-gray-50 dark:bg-gray-900/30 rounded text-center">
-                  <p className="text-xs text-muted-foreground">Top 50 unique words tracked</p>
+                <div className="mt-3 p-2 bg-gray-900/30 rounded text-center">
+                  <p className="text-xs text-gray-500">Top 50 unique words tracked</p>
                 </div>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-lg">Emotional Dynamics</CardTitle>
+                <CardTitle className="text-lg text-white">Emotional Dynamics</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Excitement Peaks</span>
+                    <span className="text-sm text-gray-300">Excitement Peaks</span>
                     <Badge className="bg-orange-500">High</Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Vulnerability</span>
+                    <span className="text-sm text-gray-300">Vulnerability</span>
                     <Badge className="bg-blue-500">Moderate</Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Enthusiasm</span>
+                    <span className="text-sm text-gray-300">Enthusiasm</span>
                     <Badge className="bg-green-500">Very High</Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Authority</span>
+                    <span className="text-sm text-gray-300">Authority</span>
                     <Badge className="bg-purple-500">Expert</Badge>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-lg">Pacing Analysis</CardTitle>
+                <CardTitle className="text-lg text-white">Pacing Analysis</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded">
+                  <div className="p-3 bg-gradient-to-r from-blue-950/30 to-purple-950/30 rounded border border-purple-500/20">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium">Words Per Minute</span>
-                      <span className="text-lg font-bold">145</span>
+                      <span className="text-sm font-medium text-gray-300">Words Per Minute</span>
+                      <span className="text-lg font-bold text-white">145</span>
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-gray-500">
                       <p>• Short pauses: Every 15-20 words</p>
                       <p>• Long pauses: Every 50-60 words</p>
                       <p>• Dramatic pauses: 2-3 per video</p>
@@ -767,39 +770,39 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* Before & After Examples */}
-      <section className="py-20 bg-gradient-to-b from-white to-blue-50 dark:from-background dark:to-blue-950/20">
+      <section className="py-20 bg-gradient-to-b from-black to-blue-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Generic AI vs Your Voice
           </h2>
-          
+
           <div className="space-y-6 max-w-4xl mx-auto">
             {beforeAfterExamples.map((example, idx) => (
-              <Card key={idx}>
+              <Card key={idx} className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle>{example.category}</CardTitle>
-                    <Badge variant="outline">{example.creator}</Badge>
+                    <CardTitle className="text-white">{example.category}</CardTitle>
+                    <Badge variant="outline" className="border-purple-500/30 text-purple-400">{example.creator}</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-gray-50 dark:bg-gray-900/30 rounded-lg">
+                    <div className="p-4 bg-gray-900/50 rounded-lg border border-gray-700">
                       <div className="flex items-center gap-2 mb-2">
                         <Volume2 className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium">Generic AI</span>
+                        <span className="text-sm font-medium text-gray-300">Generic AI</span>
                       </div>
-                      <p className="text-sm italic text-muted-foreground">
+                      <p className="text-sm italic text-gray-400">
                         "{example.before}"
                       </p>
                     </div>
-                    
-                    <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg">
+
+                    <div className="p-4 bg-gradient-to-br from-blue-950/30 to-purple-950/30 rounded-lg border border-purple-500/20">
                       <div className="flex items-center gap-2 mb-2">
-                        <Mic className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm font-medium">Your Voice</span>
+                        <Mic className="w-4 h-4 text-purple-400" />
+                        <span className="text-sm font-medium text-white">Your Voice</span>
                       </div>
-                      <p className="text-sm italic">
+                      <p className="text-sm italic text-gray-300">
                         "{example.after}"
                       </p>
                     </div>
@@ -812,52 +815,52 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 bg-gradient-to-b from-white to-blue-50 dark:from-background dark:to-blue-950/20">
+      <section className="py-20 bg-gradient-to-b from-black to-purple-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Voice Matching Results
           </h2>
-          
+
           <div className="grid md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            <Card className="text-center">
+            <Card className="text-center bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-3xl font-bold text-purple-600">8</CardTitle>
+                <CardTitle className="text-3xl font-bold text-purple-400">8</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-400">
                   Deep analysis categories
                 </p>
               </CardContent>
             </Card>
-            
-            <Card className="text-center">
+
+            <Card className="text-center bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-3xl font-bold text-purple-600">100+</CardTitle>
+                <CardTitle className="text-3xl font-bold text-purple-400">100+</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-400">
                   Voice metrics captured
                 </p>
               </CardContent>
             </Card>
-            
-            <Card className="text-center">
+
+            <Card className="text-center bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-3xl font-bold text-purple-600">95%+</CardTitle>
+                <CardTitle className="text-3xl font-bold text-purple-400">95%+</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-400">
                   Compliance accuracy
                 </p>
               </CardContent>
             </Card>
-            
-            <Card className="text-center">
+
+            <Card className="text-center bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-3xl font-bold text-purple-600">20</CardTitle>
+                <CardTitle className="text-3xl font-bold text-purple-400">20</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-400">
                   Videos analyzed per channel
                 </p>
               </CardContent>
@@ -873,21 +876,25 @@ export default function VoiceMatchingPage() {
             Never Sound Like Generic AI Again
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Create authentic scripts that sound exactly like you wrote them. 
+            Create authentic scripts that sound exactly like you wrote them.
             Your audience will never know it's AI.
           </p>
-          
+
           <div className="flex gap-4 justify-center">
-            <Button size="lg" variant="secondary">
-              Create Your Voice Profile
-              <Fingerprint className="ml-2 w-5 h-5" />
-            </Button>
-            <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
-              See Demo
-            </Button>
+            <Link href="/signup">
+              <Button size="lg" variant="secondary">
+                Create Your Voice Profile
+                <Fingerprint className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+                See Demo
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

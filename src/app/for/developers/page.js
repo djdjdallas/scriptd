@@ -245,7 +245,7 @@ export default function DeveloperContentTools() {
   ];
 
   return (
-    <>
+    <div className="min-h-screen bg-black">
       {/* SEO Meta Tags */}
       <head>
         <title>Developer Content Tools - YouTube Scripts for Programming Tutorials | GenScript</title>
@@ -254,35 +254,39 @@ export default function DeveloperContentTools() {
       </head>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-green-50 to-white dark:from-green-950/20 dark:to-background py-20">
+      <section className="relative bg-gradient-to-b from-green-950/40 via-black to-green-950/20 py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center">
-            <Badge className="mb-4" variant="secondary">
+            <Badge className="mb-4 bg-green-500/20 text-green-400 border-green-500/30">
               <Code className="w-4 h-4 mr-1" />
               For Developers & Tech Educators
             </Badge>
-            
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
               YouTube Scripts That Make Complex Code Simple
             </h1>
-            
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Built for developers who want to share knowledge effectively. Create programming tutorials 
-              that achieve <span className="font-semibold text-foreground">72% retention rates</span> 
+
+            <p className="text-xl text-gray-400 mb-8 max-w-3xl mx-auto">
+              Built for developers who want to share knowledge effectively. Create programming tutorials
+              that achieve <span className="font-semibold text-white">72% retention rates</span>
               while maintaining technical accuracy and developer credibility.
             </p>
 
             <div className="flex gap-4 justify-center mb-8">
-              <Button size="lg" className="bg-gradient-to-r from-green-600 to-blue-600">
-                Start Coding Better Content
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline">
-                See Code Examples
-              </Button>
+              <Link href="/signup">
+                <Button size="lg" className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
+                  Start Coding Better Content
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button size="lg" variant="outline" className="border-gray-600 hover:bg-gray-800 text-white">
+                  See Code Examples
+                </Button>
+              </Link>
             </div>
 
-            <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-8 text-sm text-gray-400">
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                 <span>127 Developer Creators</span>
@@ -295,22 +299,22 @@ export default function DeveloperContentTools() {
       </section>
 
       {/* Developer Results */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             Results from Developer Content Creators
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
             See how programming educators and tech creators grow their channels with developer-focused scripts
           </p>
 
           <div className="grid md:grid-cols-4 gap-6 mb-12">
             {techMetrics.map((metric, idx) => (
-              <Card key={idx} className="text-center">
+              <Card key={idx} className="text-center bg-gray-800/50 border-gray-700">
                 <CardContent className="pt-6">
-                  <div className="text-3xl font-bold text-green-600 mb-2">{metric.improvement}</div>
-                  <div className="font-semibold mb-1">{metric.metric}</div>
-                  <div className="text-sm text-muted-foreground">{metric.description}</div>
+                  <div className="text-3xl font-bold text-green-400 mb-2">{metric.improvement}</div>
+                  <div className="font-semibold mb-1 text-white">{metric.metric}</div>
+                  <div className="text-sm text-gray-400">{metric.description}</div>
                 </CardContent>
               </Card>
             ))}
@@ -318,27 +322,27 @@ export default function DeveloperContentTools() {
 
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, idx) => (
-              <Card key={idx}>
+              <Card key={idx} className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
                   <div className="flex items-center gap-2 mb-2">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                     ))}
                   </div>
-                  <CardTitle className="text-lg">{testimonial.name}</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg text-white">{testimonial.name}</CardTitle>
+                  <CardDescription className="text-gray-400">
                     {testimonial.title} • {testimonial.company}
                   </CardDescription>
-                  <Badge variant="secondary" className="w-fit">
+                  <Badge variant="secondary" className="w-fit bg-green-500/20 text-green-400 border-green-500/30">
                     {testimonial.subscribers} subscribers
                   </Badge>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm italic mb-4">"{testimonial.quote}"</p>
-                  <div className="bg-muted rounded-lg p-3">
-                    <div className="text-xs font-medium mb-1">Results:</div>
-                    <div className="text-xs text-red-600">Before: {testimonial.beforeAfter.before}</div>
-                    <div className="text-xs text-green-600">After: {testimonial.beforeAfter.after}</div>
+                  <p className="text-sm italic mb-4 text-gray-300">"{testimonial.quote}"</p>
+                  <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
+                    <div className="text-xs font-medium mb-1 text-gray-300">Results:</div>
+                    <div className="text-xs text-red-400">Before: {testimonial.beforeAfter.before}</div>
+                    <div className="text-xs text-green-400">After: {testimonial.beforeAfter.after}</div>
                   </div>
                 </CardContent>
               </Card>
@@ -348,26 +352,26 @@ export default function DeveloperContentTools() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-gradient-to-b from-white to-green-50 dark:from-background dark:to-green-950/20">
+      <section className="py-20 bg-gradient-to-b from-black to-green-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             Built for Technical Content Creation
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
             Every feature designed to help developers create engaging, accurate, and educational programming content
           </p>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, idx) => (
-              <Card key={idx} className="border-green-200 dark:border-green-800">
+              <Card key={idx} className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
-                  <feature.icon className="w-10 h-10 text-green-600 mb-2" />
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
+                  <feature.icon className="w-10 h-10 text-green-400 mb-2" />
+                  <CardTitle className="text-lg text-white">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="mb-4">{feature.description}</p>
-                  <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3">
-                    <div className="text-sm font-medium text-green-600">{feature.benefit}</div>
+                  <p className="mb-4 text-gray-300">{feature.description}</p>
+                  <div className="bg-green-950/30 rounded-lg p-3 border border-green-500/20">
+                    <div className="text-sm font-medium text-green-400">{feature.benefit}</div>
                   </div>
                 </CardContent>
               </Card>
@@ -377,41 +381,41 @@ export default function DeveloperContentTools() {
       </section>
 
       {/* Tech Categories */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Specialized Templates for Every Tech Stack
           </h2>
 
           <div className="grid md:grid-cols-2 gap-8">
             {techCategories.map((category, idx) => (
-              <Card key={idx} className="border-blue-200 dark:border-blue-800">
+              <Card key={idx} className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">{category.category}</CardTitle>
-                    <Badge variant="secondary">{category.templates} templates</Badge>
+                    <CardTitle className="text-xl text-white">{category.category}</CardTitle>
+                    <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 border-blue-500/30">{category.templates} templates</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-4">
-                    <div className="text-lg font-bold text-green-600 mb-1">{category.retention} avg retention</div>
-                    <div className="text-sm text-muted-foreground">Across all {category.category.toLowerCase()} content</div>
+                    <div className="text-lg font-bold text-green-400 mb-1">{category.retention} avg retention</div>
+                    <div className="text-sm text-gray-400">Across all {category.category.toLowerCase()} content</div>
                   </div>
                   <div className="mb-4">
-                    <div className="text-sm font-medium mb-2">Supported Technologies:</div>
+                    <div className="text-sm font-medium mb-2 text-gray-300">Supported Technologies:</div>
                     <div className="flex flex-wrap gap-1">
                       {category.technologies.map((tech, i) => (
-                        <Badge key={i} variant="outline" className="text-xs">
+                        <Badge key={i} variant="outline" className="text-xs border-gray-600 text-gray-300">
                           {tech}
                         </Badge>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <div className="text-sm font-medium mb-2">Content Types:</div>
+                    <div className="text-sm font-medium mb-2 text-gray-300">Content Types:</div>
                     <div className="flex flex-wrap gap-1">
                       {category.examples.map((example, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">
+                        <Badge key={i} variant="secondary" className="text-xs bg-gray-700 text-gray-300">
                           {example}
                         </Badge>
                       ))}
@@ -425,33 +429,33 @@ export default function DeveloperContentTools() {
       </section>
 
       {/* Code Examples */}
-      <section className="py-20 bg-gradient-to-b from-white to-blue-50 dark:from-background dark:to-blue-950/20">
+      <section className="py-20 bg-gradient-to-b from-black to-blue-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Before vs After: Script Optimization Examples
           </h2>
 
           <div className="space-y-8">
             {codeExamples.map((example, idx) => (
-              <Card key={idx} className="border-l-4 border-l-green-500">
+              <Card key={idx} className="border-l-4 border-l-green-500 bg-gray-800/50 border-gray-700">
                 <CardContent className="p-8">
                   <div className="mb-6">
-                    <h3 className="text-xl font-bold mb-2">{example.title}</h3>
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    <h3 className="text-xl font-bold mb-2 text-white">{example.title}</h3>
+                    <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
                       {example.improvement}
                     </Badge>
                   </div>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      <div className="text-sm font-medium text-red-600 mb-2">❌ Generic Opening:</div>
-                      <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg">
-                        <code className="text-sm text-muted-foreground">"{example.before}"</code>
+                      <div className="text-sm font-medium text-red-400 mb-2">❌ Generic Opening:</div>
+                      <div className="bg-red-950/30 p-4 rounded-lg border border-red-500/20">
+                        <code className="text-sm text-gray-400">"{example.before}"</code>
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm font-medium text-green-600 mb-2">✅ Optimized Hook:</div>
-                      <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-                        <code className="text-sm text-muted-foreground">"{example.after}"</code>
+                      <div className="text-sm font-medium text-green-400 mb-2">✅ Optimized Hook:</div>
+                      <div className="bg-green-950/30 p-4 rounded-lg border border-green-500/20">
+                        <code className="text-sm text-gray-300">"{example.after}"</code>
                       </div>
                     </div>
                   </div>
@@ -463,35 +467,35 @@ export default function DeveloperContentTools() {
       </section>
 
       {/* Content Types */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Optimized for Every Type of Developer Content
           </h2>
 
           <div className="grid md:grid-cols-2 gap-8">
             {contentTypes.map((content, idx) => (
-              <Card key={idx} className="border-purple-200 dark:border-purple-800">
+              <Card key={idx} className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
-                  <CardTitle className="text-xl">{content.type}</CardTitle>
-                  <CardDescription>{content.description}</CardDescription>
+                  <CardTitle className="text-xl text-white">{content.type}</CardTitle>
+                  <CardDescription className="text-gray-400">{content.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <div className="text-lg font-bold text-blue-600">{content.avgViews}</div>
-                      <div className="text-xs text-muted-foreground">Average views</div>
+                      <div className="text-lg font-bold text-blue-400">{content.avgViews}</div>
+                      <div className="text-xs text-gray-400">Average views</div>
                     </div>
                     <div>
-                      <div className="text-lg font-bold text-green-600">{content.retention}</div>
-                      <div className="text-xs text-muted-foreground">Retention rate</div>
+                      <div className="text-lg font-bold text-green-400">{content.retention}</div>
+                      <div className="text-xs text-gray-400">Retention rate</div>
                     </div>
                   </div>
                   <div>
-                    <div className="text-sm font-medium mb-2">Popular formats:</div>
+                    <div className="text-sm font-medium mb-2 text-gray-300">Popular formats:</div>
                     <div className="flex flex-wrap gap-1">
                       {content.examples.map((example, i) => (
-                        <Badge key={i} variant="outline" className="text-xs">
+                        <Badge key={i} variant="outline" className="text-xs border-gray-600 text-gray-300">
                           {example}
                         </Badge>
                       ))}
@@ -505,64 +509,66 @@ export default function DeveloperContentTools() {
       </section>
 
       {/* Developer ROI */}
-      <section className="py-20 bg-gradient-to-b from-white to-green-50 dark:from-background dark:to-green-950/20">
+      <section className="py-20 bg-gradient-to-b from-black to-green-950/20">
         <div className="container mx-auto px-4 max-w-4xl">
-          <div className="bg-gradient-to-r from-green-100 to-blue-100 dark:from-green-950/50 dark:to-blue-950/50 rounded-2xl p-8">
-            <h2 className="text-3xl font-bold text-center mb-6">
+          <div className="bg-gradient-to-r from-green-950/50 to-blue-950/50 rounded-2xl p-8 border border-green-500/20">
+            <h2 className="text-3xl font-bold text-center mb-6 text-white">
               Your Developer Content ROI
             </h2>
-            <p className="text-center text-muted-foreground mb-8">
+            <p className="text-center text-gray-400 mb-8">
               Calculate the career and business impact of better technical content
             </p>
 
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               <div className="text-center">
-                <div className="text-4xl font-bold text-green-600 mb-2">$45K</div>
-                <div className="text-sm text-muted-foreground">Additional job offers</div>
-                <div className="text-xs text-muted-foreground mt-1">(185% tutorial completion boost)</div>
+                <div className="text-4xl font-bold text-green-400 mb-2">$45K</div>
+                <div className="text-sm text-gray-400">Additional job offers</div>
+                <div className="text-xs text-gray-500 mt-1">(185% tutorial completion boost)</div>
               </div>
               <div className="text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-2">12K</div>
-                <div className="text-sm text-muted-foreground">Monthly subscribers</div>
-                <div className="text-xs text-muted-foreground mt-1">(260% growth rate increase)</div>
+                <div className="text-4xl font-bold text-blue-400 mb-2">12K</div>
+                <div className="text-sm text-gray-400">Monthly subscribers</div>
+                <div className="text-xs text-gray-500 mt-1">(260% growth rate increase)</div>
               </div>
               <div className="text-center">
-                <div className="text-4xl font-bold text-purple-600 mb-2">340%</div>
-                <div className="text-sm text-muted-foreground">More GitHub stars</div>
-                <div className="text-xs text-muted-foreground mt-1">(Better project showcases)</div>
+                <div className="text-4xl font-bold text-purple-400 mb-2">340%</div>
+                <div className="text-sm text-gray-400">More GitHub stars</div>
+                <div className="text-xs text-gray-500 mt-1">(Better project showcases)</div>
               </div>
             </div>
 
             <div className="text-center">
-              <div className="text-2xl font-bold mb-2">Career Impact: Immeasurable</div>
-              <div className="text-sm text-muted-foreground mb-6">
-                Investment: $79/month • Better content, better career opportunities
+              <div className="text-2xl font-bold mb-2 text-white">Career Impact: Immeasurable</div>
+              <div className="text-sm text-gray-400 mb-6">
+                Investment: $79/month - Better content, better career opportunities
               </div>
-              <Button size="lg" className="bg-gradient-to-r from-green-600 to-blue-600">
-                Start Your Developer Journey
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
+              <Link href="/signup">
+                <Button size="lg" className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
+                  Start Your Developer Journey
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-3xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Developer-Specific Questions
           </h2>
 
           <div className="space-y-4">
             {faqs.map((faq, idx) => (
-              <Card key={idx}>
+              <Card key={idx} className="bg-gray-800/50 border-gray-700">
                 <Collapsible open={openFAQ === idx} onOpenChange={() => setOpenFAQ(openFAQ === idx ? null : idx)}>
                   <CollapsibleTrigger className="w-full">
-                    <CardHeader className="text-left hover:bg-muted/50 transition-colors cursor-pointer">
-                      <CardTitle className="text-lg flex justify-between items-center">
+                    <CardHeader className="text-left hover:bg-gray-700/50 transition-colors cursor-pointer">
+                      <CardTitle className="text-lg flex justify-between items-center text-white">
                         {faq.question}
-                        <span className="text-muted-foreground">
+                        <span className="text-gray-400">
                           {openFAQ === idx ? '−' : '+'}
                         </span>
                       </CardTitle>
@@ -570,7 +576,7 @@ export default function DeveloperContentTools() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <CardContent>
-                      <p className="text-muted-foreground">{faq.answer}</p>
+                      <p className="text-gray-400">{faq.answer}</p>
                     </CardContent>
                   </CollapsibleContent>
                 </Collapsible>
@@ -589,28 +595,32 @@ export default function DeveloperContentTools() {
           <p className="text-xl mb-8 opacity-90">
             Join 127 developers already growing their influence with engaging, technically accurate content.
           </p>
-          
+
           <div className="bg-white/10 backdrop-blur rounded-2xl p-8 max-w-2xl mx-auto mb-8">
             <h3 className="text-2xl font-bold mb-4">Developer Early Access</h3>
             <p className="text-lg mb-6">
               Get priority access to new programming language support + 50% off your first 3 months
             </p>
             <div className="flex gap-4 justify-center">
-              <Button size="lg" variant="secondary">
-                Join Early Access
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
-                View Code Samples
-              </Button>
+              <Link href="/signup">
+                <Button size="lg" variant="secondary">
+                  Join Early Access
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+                  View Code Samples
+                </Button>
+              </Link>
             </div>
           </div>
 
           <div className="text-sm opacity-75">
-            14-day free trial • 50+ languages supported • Technical accuracy guaranteed
+            14-day free trial - 50+ languages supported - Technical accuracy guaranteed
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

@@ -10,6 +10,7 @@ import {
   AlertTriangle, CheckCircle2, Play, Pause, FastForward,
   Activity, Eye, Users, Zap
 } from 'lucide-react';
+import Link from 'next/link';
 import { socialProofData } from '@/lib/comparison-data';
 
 export default function RetentionOptimizerPage() {
@@ -105,7 +106,7 @@ export default function RetentionOptimizerPage() {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-black">
       <head>
         <title>YouTube Retention Optimizer - Keep Viewers Watching Until The End</title>
         <meta name="description" content="Transform your scripts for 68%+ retention. AI-powered optimization that keeps viewers glued to your videos. Used by top creators." />
@@ -113,30 +114,32 @@ export default function RetentionOptimizerPage() {
       </head>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-green-50 to-white dark:from-green-950/20 dark:to-background py-20">
+      <section className="relative bg-gradient-to-b from-green-950/40 via-black to-green-950/20 py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center">
-            <Badge className="mb-4" variant="secondary">
+            <Badge className="mb-4 bg-green-500/20 text-green-400 border-green-500/30">
               <Activity className="w-4 h-4 mr-1" />
               {socialProofData.metrics.averageRetention}%+ Average Retention
             </Badge>
-            
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
               Turn 30% Retention Into 68%+ With AI Optimization
             </h1>
-            
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Our retention optimizer analyzes your scripts and transforms them using 
-              <span className="font-semibold text-foreground"> psychological triggers</span> that keep viewers watching 
+
+            <p className="text-xl text-gray-400 mb-8 max-w-3xl mx-auto">
+              Our retention optimizer analyzes your scripts and transforms them using
+              <span className="font-semibold text-white"> psychological triggers</span> that keep viewers watching
               until the very last second.
             </p>
 
             <div className="flex gap-4 justify-center mb-8">
-              <Button size="lg" className="bg-gradient-to-r from-green-600 to-emerald-600">
-                Optimize Your Script Now
-                <TrendingUp className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline">
+              <Link href="/signup">
+                <Button size="lg" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
+                  Optimize Your Script Now
+                  <TrendingUp className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Button size="lg" variant="outline" className="border-gray-600 hover:bg-gray-800 text-white">
                 See Before & After
                 <BarChart3 className="ml-2 w-5 h-5" />
               </Button>
@@ -146,25 +149,25 @@ export default function RetentionOptimizerPage() {
       </section>
 
       {/* Interactive Retention Curve */}
-      <section className="py-20 bg-white dark:bg-background border-y">
+      <section className="py-20 bg-black border-y border-gray-800">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Your Retention Transformation
           </h2>
-          
-          <Card className="max-w-4xl mx-auto">
+
+          <Card className="max-w-4xl mx-auto bg-gray-800/50 border-gray-700">
             <CardHeader>
-              <CardTitle>Current vs Optimized Retention</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-white">Current vs Optimized Retention</CardTitle>
+              <CardDescription className="text-gray-400">
                 Adjust your current retention to see potential improvement
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 <div>
-                  <div className="flex justify-between mb-2">
+                  <div className="flex justify-between mb-2 text-gray-300">
                     <span>Your Current Retention</span>
-                    <span className="font-bold">{currentRetention[0]}%</span>
+                    <span className="font-bold text-white">{currentRetention[0]}%</span>
                   </div>
                   <Slider
                     value={currentRetention}
@@ -175,21 +178,21 @@ export default function RetentionOptimizerPage() {
                     className="mb-6"
                   />
                 </div>
-                
-                <div className="relative h-64 bg-gradient-to-b from-green-50 to-white dark:from-green-950/20 dark:to-background rounded-lg p-4">
+
+                <div className="relative h-64 bg-gradient-to-b from-green-950/20 to-gray-900 rounded-lg p-4">
                   <div className="absolute inset-0 p-4">
                     {/* Simplified retention curve visualization */}
                     <div className="relative h-full">
-                      <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-muted-foreground">
+                      <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-gray-500">
                         {retentionCurveData.map(point => (
                           <span key={point.time}>{point.time}</span>
                         ))}
                       </div>
-                      
+
                       <svg className="absolute inset-0 w-full h-full">
                         {/* Standard retention curve */}
                         <polyline
-                          points={retentionCurveData.map((point, i) => 
+                          points={retentionCurveData.map((point, i) =>
                             `${i * 10}%,${100 - (point.standard * currentRetention[0] / 35)}%`
                           ).join(' ')}
                           fill="none"
@@ -197,10 +200,10 @@ export default function RetentionOptimizerPage() {
                           strokeWidth="2"
                           opacity="0.5"
                         />
-                        
+
                         {/* Optimized retention curve */}
                         <polyline
-                          points={retentionCurveData.map((point, i) => 
+                          points={retentionCurveData.map((point, i) =>
                             `${i * 10}%,${100 - point.optimized}%`
                           ).join(' ')}
                           fill="none"
@@ -211,26 +214,26 @@ export default function RetentionOptimizerPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-lg">
-                    <div className="text-3xl font-bold text-red-600">{currentRetention[0]}%</div>
-                    <p className="text-sm text-muted-foreground">Current Retention</p>
+                  <div className="text-center p-4 bg-red-950/30 rounded-lg border border-red-500/20">
+                    <div className="text-3xl font-bold text-red-400">{currentRetention[0]}%</div>
+                    <p className="text-sm text-gray-400">Current Retention</p>
                   </div>
-                  <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                    <div className="text-3xl font-bold text-green-600">{optimizedRetention}%</div>
-                    <p className="text-sm text-muted-foreground">After Optimization</p>
+                  <div className="text-center p-4 bg-green-950/30 rounded-lg border border-green-500/20">
+                    <div className="text-3xl font-bold text-green-400">{optimizedRetention}%</div>
+                    <p className="text-sm text-gray-400">After Optimization</p>
                   </div>
                 </div>
-                
-                <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-950/30 dark:to-emerald-950/30 rounded-lg">
+
+                <div className="p-4 bg-gradient-to-r from-green-950/30 to-emerald-950/30 rounded-lg border border-green-500/30">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">Improvement</span>
-                    <span className="text-2xl font-bold text-green-600">
+                    <span className="font-medium text-white">Improvement</span>
+                    <span className="text-2xl font-bold text-green-400">
                       +{optimizedRetention - currentRetention[0]}% AVD
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-gray-400 mt-1">
                     That's {Math.round((optimizedRetention - currentRetention[0]) / currentRetention[0] * 100)}% better retention
                   </p>
                 </div>
@@ -241,27 +244,27 @@ export default function RetentionOptimizerPage() {
       </section>
 
       {/* Script Optimization Examples */}
-      <section className="py-20 bg-gradient-to-b from-white to-green-50 dark:from-background dark:to-green-950/20">
+      <section className="py-20 bg-gradient-to-b from-black to-green-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             See The Optimization In Action
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
             Real examples of how we transform standard scripts into retention magnets
           </p>
-          
+
           <div className="max-w-4xl mx-auto space-y-6">
             {Object.entries(scriptSections).map(([key, section]) => (
-              <Card 
+              <Card
                 key={key}
-                className={activeSection === key ? 'border-green-500 shadow-lg' : ''}
+                className={`bg-gray-800/50 border-gray-700 cursor-pointer ${activeSection === key ? 'border-green-500 shadow-lg shadow-green-500/20' : 'hover:border-gray-600'}`}
                 onClick={() => setActiveSection(key)}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{section.label}</CardTitle>
+                    <CardTitle className="text-lg text-white">{section.label}</CardTitle>
                     <div className="flex gap-2">
-                      <Badge variant="outline" className="bg-red-50 dark:bg-red-950/20">
+                      <Badge variant="outline" className="bg-red-950/30 border-red-500/30 text-red-400">
                         Before: {section.retention.standard}%
                       </Badge>
                       <Badge className="bg-green-600 text-white">
@@ -272,22 +275,22 @@ export default function RetentionOptimizerPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                    <div className="p-3 bg-red-950/30 rounded-lg border border-red-500/20">
                       <div className="flex items-center gap-2 mb-2">
-                        <AlertTriangle className="w-4 h-4 text-red-600" />
-                        <span className="text-sm font-medium">Standard Script</span>
+                        <AlertTriangle className="w-4 h-4 text-red-400" />
+                        <span className="text-sm font-medium text-red-400">Standard Script</span>
                       </div>
-                      <p className="text-sm italic text-muted-foreground">
+                      <p className="text-sm italic text-gray-400">
                         "{section.standard}"
                       </p>
                     </div>
-                    
-                    <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+
+                    <div className="p-3 bg-green-950/30 rounded-lg border border-green-500/20">
                       <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        <span className="text-sm font-medium">Optimized Script</span>
+                        <CheckCircle2 className="w-4 h-4 text-green-400" />
+                        <span className="text-sm font-medium text-green-400">Optimized Script</span>
                       </div>
-                      <p className="text-sm italic">
+                      <p className="text-sm italic text-gray-300">
                         "{section.optimized}"
                       </p>
                     </div>
@@ -300,24 +303,24 @@ export default function RetentionOptimizerPage() {
       </section>
 
       {/* Optimization Techniques */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Advanced Retention Techniques We Use
           </h2>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {optimizationTechniques.map((technique, idx) => (
-              <Card key={idx}>
+              <Card key={idx} className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
-                  <CardTitle className="text-lg">{technique.name}</CardTitle>
-                  <Badge variant="secondary">{technique.impact}</Badge>
+                  <CardTitle className="text-lg text-white">{technique.name}</CardTitle>
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">{technique.impact}</Badge>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground mb-3">
+                  <p className="text-sm text-gray-400 mb-3">
                     {technique.description}
                   </p>
-                  <div className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Clock className="w-3 h-3" />
                     <span>{technique.timing}</span>
                   </div>
@@ -329,47 +332,47 @@ export default function RetentionOptimizerPage() {
       </section>
 
       {/* Results Section */}
-      <section className="py-20 bg-gradient-to-b from-white to-green-50 dark:from-background dark:to-green-950/20">
+      <section className="py-20 bg-gradient-to-b from-black to-green-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             What Better Retention Means For You
           </h2>
-          
+
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <Card className="text-center">
+            <Card className="text-center bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <Eye className="w-12 h-12 text-green-600 mx-auto mb-2" />
-                <CardTitle>More Views</CardTitle>
+                <Eye className="w-12 h-12 text-green-400 mx-auto mb-2" />
+                <CardTitle className="text-white">More Views</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600 mb-2">3.5x</div>
-                <p className="text-sm text-muted-foreground">
+                <div className="text-3xl font-bold text-green-400 mb-2">3.5x</div>
+                <p className="text-sm text-gray-400">
                   Algorithm boost from higher retention
                 </p>
               </CardContent>
             </Card>
-            
-            <Card className="text-center">
+
+            <Card className="text-center bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <Users className="w-12 h-12 text-green-600 mx-auto mb-2" />
-                <CardTitle>More Subscribers</CardTitle>
+                <Users className="w-12 h-12 text-green-400 mx-auto mb-2" />
+                <CardTitle className="text-white">More Subscribers</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600 mb-2">2.8x</div>
-                <p className="text-sm text-muted-foreground">
+                <div className="text-3xl font-bold text-green-400 mb-2">2.8x</div>
+                <p className="text-sm text-gray-400">
                   Viewer-to-subscriber conversion
                 </p>
               </CardContent>
             </Card>
-            
-            <Card className="text-center">
+
+            <Card className="text-center bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <Target className="w-12 h-12 text-green-600 mx-auto mb-2" />
-                <CardTitle>More Revenue</CardTitle>
+                <Target className="w-12 h-12 text-green-400 mx-auto mb-2" />
+                <CardTitle className="text-white">More Revenue</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600 mb-2">4.2x</div>
-                <p className="text-sm text-muted-foreground">
+                <div className="text-3xl font-bold text-green-400 mb-2">4.2x</div>
+                <p className="text-sm text-gray-400">
                   RPM increase from watch time
                 </p>
               </CardContent>
@@ -387,18 +390,20 @@ export default function RetentionOptimizerPage() {
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
             Transform any script into a retention masterpiece with our AI optimizer.
           </p>
-          
+
           <div className="flex gap-4 justify-center">
-            <Button size="lg" variant="secondary">
-              Optimize Your First Script Free
-              <Zap className="ml-2 w-5 h-5" />
-            </Button>
+            <Link href="/signup">
+              <Button size="lg" variant="secondary">
+                Optimize Your First Script Free
+                <Zap className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
             <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
               Watch Demo
             </Button>
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
