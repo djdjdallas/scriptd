@@ -647,24 +647,6 @@ export default function PricingPage() {
             <div className="space-y-4">
               <div className="glass p-4 rounded-lg">
                 <div className="flex justify-between items-center">
-                  <span className="text-white font-medium">POPULAR Pack</span>
-                  <Badge className="glass bg-green-500/20 text-green-300">
-                    Best Value
-                  </Badge>
-                </div>
-                <div className="mt-2">
-                  <p className="text-2xl font-bold text-green-300">
-                    {formatPrice(49)}
-                  </p>
-                  <p className="text-gray-300">300 credits = 30-100 scripts</p>
-                  <p className="text-sm text-gray-400">
-                    ~$0.49-1.63 per script
-                  </p>
-                </div>
-              </div>
-
-              <div className="glass p-4 rounded-lg">
-                <div className="flex justify-between items-center">
                   <span className="text-white font-medium">CREATOR Plan</span>
                   <Badge className="glass bg-purple-500/20 text-purple-300">
                     Most Popular
@@ -677,6 +659,24 @@ export default function PricingPage() {
                   <p className="text-gray-300">300 credits = 30-100 scripts</p>
                   <p className="text-sm text-gray-400">
                     ~$0.39-1.30 per script
+                  </p>
+                </div>
+              </div>
+
+              <div className="glass p-4 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-white font-medium">PROFESSIONAL Plan</span>
+                  <Badge className="glass bg-green-500/20 text-green-300">
+                    Best for Teams
+                  </Badge>
+                </div>
+                <div className="mt-2">
+                  <p className="text-2xl font-bold text-green-300">
+                    {formatPrice(79)}/month
+                  </p>
+                  <p className="text-gray-300">800 credits = 80-260 scripts</p>
+                  <p className="text-sm text-gray-400">
+                    ~$0.30-0.99 per script
                   </p>
                 </div>
               </div>
@@ -746,13 +746,13 @@ export default function PricingPage() {
             </p>
             <div className="flex items-center justify-center gap-4">
               <div className="text-center">
-                <p className="text-3xl font-bold text-green-300">300</p>
-                <p className="text-sm text-gray-400">credits for $49</p>
+                <p className="text-3xl font-bold text-green-300">800</p>
+                <p className="text-sm text-gray-400">credits for $79/mo</p>
               </div>
               <div className="text-purple-400">vs</div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-red-300">60</p>
-                <p className="text-sm text-gray-400">credits for $49</p>
+                <p className="text-3xl font-bold text-red-300">125</p>
+                <p className="text-sm text-gray-400">credits for $99/mo</p>
               </div>
             </div>
           </div>
