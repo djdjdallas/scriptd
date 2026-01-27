@@ -4,6 +4,7 @@ import { generateWithAI } from '@/lib/ai/aiService';
 import Anthropic from '@anthropic-ai/sdk';
 import { ServerCreditManager } from '@/lib/credits/server-manager';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { WORKFLOW_MODEL } from '@/lib/constants';
 
 // Fallback function using Claude API directly
 async function generateThumbnailFallback(prompt) {
@@ -13,7 +14,7 @@ async function generateThumbnailFallback(prompt) {
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
+      model: WORKFLOW_MODEL, // Haiku 4.5 for workflow steps
       max_tokens: 4000,
       temperature: 0.7,
       messages: [{
@@ -60,7 +61,7 @@ Make it eye-catching, clickable, and relevant to the content.`;
 
     let response;
     try {
-      response = await generateWithAI(prompt, 'claude-3-haiku');
+      response = await generateWithAI(prompt, WORKFLOW_MODEL);
     } catch (error) {
       response = await generateThumbnailFallback(prompt);
     }

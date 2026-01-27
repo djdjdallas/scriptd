@@ -14,6 +14,7 @@ import {
   validateUserAccess
 } from '@/lib/scriptGenerationConfig';
 import { checkFeatureRateLimit } from '@/lib/api/rate-limit';
+import { MODEL_TIERS } from '@/lib/constants';
 import { expandShortScript } from '@/lib/script-generation/expansion-handler';
 import { generateContentPlan, applyContentPlan } from '@/lib/script-generation/content-planner';
 import { generateComprehensiveOutline, formatOutlineForPrompt } from '@/lib/script-generation/outline-generator';
@@ -24,30 +25,31 @@ import {
 } from '@/lib/script-generation/outline-validator';
 
 // Helper function to calculate credits based on duration and model
-function calculateCreditsForDuration(durationInSeconds, model = 'claude-3-5-haiku') {
+function calculateCreditsForDuration(durationInSeconds, model) {
   const minutes = Math.ceil(durationInSeconds / 60);
 
   // Base rate: 0.33 credits per minute (so 10 min Professional = 5 credits)
   const baseRate = 0.33;
 
-  // Normalize model name first
+  // Normalize model name first - all script generation uses BALANCED or PREMIUM
   const normalizeModel = (m) => {
     const mapping = {
-      'claude-3-5-haiku': 'claude-3-5-haiku-20241022',
-      'claude-3-5-sonnet': 'claude-sonnet-4-5-20250929',
-      'claude-3-opus': 'claude-opus-4-1-20250805',
-      'claude-opus-4-1': 'claude-opus-4-1-20250805',
+      'claude-3-5-haiku': MODEL_TIERS.BALANCED.actualModel, // FAST tier disabled
+      'claude-3-haiku': MODEL_TIERS.BALANCED.actualModel,
+      'claude-3-5-sonnet': MODEL_TIERS.BALANCED.actualModel,
+      'claude-3-opus': MODEL_TIERS.PREMIUM.actualModel,
+      'claude-opus-4-1': MODEL_TIERS.PREMIUM.actualModel,
     };
     return mapping[m] || m;
   };
 
-  const normalizedModel = normalizeModel(model);
+  const normalizedModel = normalizeModel(model || MODEL_TIERS.BALANCED.actualModel);
 
   // Model multipliers based on actual model IDs
   let modelMultiplier = 1;
-  if (normalizedModel === 'claude-sonnet-4-5-20250929') {
+  if (normalizedModel === MODEL_TIERS.BALANCED.actualModel) {
     modelMultiplier = 1.5;
-  } else if (normalizedModel === 'claude-opus-4-1-20250805') {
+  } else if (normalizedModel === MODEL_TIERS.PREMIUM.actualModel) {
     modelMultiplier = 3.5;
   }
 
@@ -111,7 +113,7 @@ export async function POST(request) {
       contentPoints,
       thumbnail,
       sponsor, // Add sponsor data
-      model = 'claude-3-5-haiku',
+      model, // Model is now normalized from MODEL_TIERS
       targetAudience,
       tone,
       targetDuration, // Add targetDuration from summary
@@ -475,20 +477,22 @@ export async function POST(request) {
     if (process.env.ANTHROPIC_API_KEY) {
       try {
         // Get the actual model name - normalize old model names to new ones
+        // All script generation uses BALANCED (Sonnet 4.5) or PREMIUM (Opus 4.1)
         const actualModel = (() => {
-          // Map old model names to new ones
+          // Map old model names to new ones - FAST tier disabled, use BALANCED
           const modelMapping = {
-            'claude-3-5-haiku': process.env.FAST_MODEL || 'claude-3-5-haiku-20241022',
-            'claude-3-5-sonnet': process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
-            'claude-3-sonnet': process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
-            'claude-3-opus': process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805',
-            'claude-opus-4-1': process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805',
+            'claude-3-5-haiku': MODEL_TIERS.BALANCED.actualModel,
+            'claude-3-haiku': MODEL_TIERS.BALANCED.actualModel,
+            'claude-3-5-sonnet': MODEL_TIERS.BALANCED.actualModel,
+            'claude-3-sonnet': MODEL_TIERS.BALANCED.actualModel,
+            'claude-3-opus': MODEL_TIERS.PREMIUM.actualModel,
+            'claude-opus-4-1': MODEL_TIERS.PREMIUM.actualModel,
           };
           if (modelMapping[model]) return modelMapping[model];
           // Check if it's already a valid new model ID
           if (model && model.includes('-202')) return model;
-          // Default to fast model
-          return process.env.FAST_MODEL || 'claude-3-5-haiku-20241022';
+          // Default to BALANCED model (Sonnet 4.5)
+          return MODEL_TIERS.BALANCED.actualModel;
         })();
 
         if (needsChunking) {

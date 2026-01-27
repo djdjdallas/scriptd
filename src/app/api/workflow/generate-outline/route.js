@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { generateComprehensiveOutline, validateOutlineStructure } from '@/lib/script-generation/outline-generator';
 import { validateResearchForDuration, calculateResearchScore } from '@/lib/script-generation/research-validator';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { MODEL_TIERS } from '@/lib/constants';
 
 /**
  * POST /api/workflow/generate-outline
@@ -102,7 +103,7 @@ export async function POST(request) {
       targetAudience,
       tone,
       apiKey: process.env.ANTHROPIC_API_KEY,
-      model: process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929'
+      model: MODEL_TIERS.BALANCED.actualModel
     });
 
     if (!outline) {
@@ -120,9 +121,10 @@ export async function POST(request) {
     }
 
     // Determine recommended model based on research quality
+    // High quality research can use BALANCED, otherwise recommend PREMIUM
     const recommendedModel = researchScore.overallScore > 0.8
-      ? 'claude-3-5-sonnet'
-      : 'claude-3-5-opus';
+      ? MODEL_TIERS.BALANCED.actualModel
+      : MODEL_TIERS.PREMIUM.actualModel;
 
     // Estimate generation time
     const estimatedMinutes = chunkCount * 4; // ~4 min per chunk

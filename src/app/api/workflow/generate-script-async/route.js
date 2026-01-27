@@ -4,10 +4,11 @@ import { validateUserAccess, calculateChunkStrategy } from '@/lib/scriptGenerati
 import { MODEL_TIERS } from '@/lib/constants';
 import { checkFeatureRateLimit } from '@/lib/api/rate-limit';
 
-// Helper to normalize old model names to new ones
+// Helper to normalize old model names to new ones (all script generation uses BALANCED or PREMIUM)
 function normalizeModelName(model) {
   const modelMapping = {
-    'claude-3-5-haiku': MODEL_TIERS.FAST.actualModel,
+    'claude-3-5-haiku': MODEL_TIERS.BALANCED.actualModel, // FAST tier disabled, use BALANCED
+    'claude-3-haiku': MODEL_TIERS.BALANCED.actualModel,
     'claude-3-5-sonnet': MODEL_TIERS.BALANCED.actualModel,
     'claude-3-opus': MODEL_TIERS.PREMIUM.actualModel,
     'claude-opus-4-1': MODEL_TIERS.PREMIUM.actualModel,
@@ -61,8 +62,8 @@ export async function POST(request) {
       workflowId
     } = requestData;
 
-    // Normalize the model name (handle old model names)
-    const model = normalizeModelName(requestData.model || MODEL_TIERS.FAST.actualModel);
+    // Normalize the model name (handle old model names) - default to BALANCED (Sonnet 4.5)
+    const model = normalizeModelName(requestData.model || MODEL_TIERS.BALANCED.actualModel);
 
     // Validate required parameters
     if (!workflowId) {

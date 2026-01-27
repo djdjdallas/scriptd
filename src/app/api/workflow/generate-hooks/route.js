@@ -4,6 +4,7 @@ import { generateStructuredData } from '@/lib/ai/aiService';
 import Anthropic from '@anthropic-ai/sdk';
 import { ServerCreditManager } from '@/lib/credits/server-manager';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { WORKFLOW_MODEL } from '@/lib/constants';
 
 // Fallback function using Claude API directly
 async function generateHooksFallback(prompt) {
@@ -13,7 +14,7 @@ async function generateHooksFallback(prompt) {
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929', // Upgraded to Sonnet 4.5
+      model: WORKFLOW_MODEL, // Haiku 4.5 for workflow steps
       max_tokens: 4000,
       temperature: 0.7, // Increased for more creative hooks
       system: `You are a YouTube hook expert. Your hooks must be:
@@ -183,7 +184,7 @@ Return ONLY valid JSON array of exactly 8 hook objects (no markdown, no code blo
     let hooks;
     try {
       // Try primary AI service first
-      hooks = await generateStructuredData(prompt, 'claude-3-haiku');
+      hooks = await generateStructuredData(prompt, WORKFLOW_MODEL);
     } catch (error) {
       hooks = await generateHooksFallback(prompt);
     }

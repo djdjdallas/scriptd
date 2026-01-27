@@ -11,8 +11,21 @@ export const AI_PROVIDERS = {
   GROQ: 'groq'
 };
 
-// Quality Tiers - Simplified 2-tier system (Balanced + Premium only)
+// Quality Tiers for Script Generation
+// FAST tier is disabled - all scripts use BALANCED (Sonnet 4.5) or PREMIUM (Opus 4.1)
+// Workflow steps (hooks, titles, frames, etc.) use WORKFLOW_MODEL (Haiku 4.5)
 export const MODEL_TIERS = {
+  FAST: {
+    id: 'fast',
+    name: 'Fast Draft',
+    description: 'Quick drafts for ideation',
+    baseCredits: 3,
+    actualModel: process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929', // Maps to BALANCED
+    features: ['Fastest generation', 'Good for drafts'],
+    icon: '⚡',
+    disabled: true, // Greyed out in UI
+    disabledReason: 'Use Professional quality for best results'
+  },
   BALANCED: {
     id: 'balanced',
     name: 'Professional Quality',
@@ -33,6 +46,10 @@ export const MODEL_TIERS = {
     icon: '🎬'
   }
 };
+
+// Model for workflow steps (hooks, titles, frames, content points, thumbnails, research)
+// Uses Haiku 4.5 for speed and cost efficiency
+export const WORKFLOW_MODEL = process.env.WORKFLOW_MODEL || 'claude-haiku-4-5-20251015';
 
 // Length Multipliers for detailed pricing (granular as requested)
 export const LENGTH_MULTIPLIERS = {
@@ -64,7 +81,7 @@ export const TIER_ACCESS_BY_SUBSCRIPTION = {
 export const AI_MODELS = {
   CLAUDE_3_OPUS: process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805',
   CLAUDE_3_SONNET: process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
-  CLAUDE_3_HAIKU: process.env.FAST_MODEL || 'claude-3-5-haiku-20241022',
+  CLAUDE_3_HAIKU: process.env.WORKFLOW_MODEL || 'claude-haiku-4-5-20251015',
   CLAUDE_VOICE: process.env.VOICE_MODEL || 'claude-sonnet-4-5-20250929'
 };
 

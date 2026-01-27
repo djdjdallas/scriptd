@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { ServerCreditManager } from '@/lib/credits/server-manager';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { WORKFLOW_MODEL } from '@/lib/constants';
 
 // Helper function to calculate credit multiplier based on duration
 function getDurationMultiplier(durationInSeconds) {
@@ -159,7 +160,7 @@ export async function POST(request) {
             'anthropic-version': '2023-06-01'
           },
           body: JSON.stringify({
-            model: 'claude-sonnet-4-5-20250929', // Upgraded to Sonnet 4.5
+            model: WORKFLOW_MODEL, // Haiku 4.5 for workflow steps
             max_tokens: 3000, // Increased for detailed content points
             temperature: 0.7,
             system: `You are a YouTube content strategist and storytelling expert. Your content points must:

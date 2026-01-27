@@ -188,7 +188,7 @@ export default function BillingPage() {
             <div className="grid grid-cols-3 gap-4 pt-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Scripts</p>
-                <p className="font-medium">{MODEL_TIERS.FAST.baseCredits}-{MODEL_TIERS.PREMIUM.baseCredits} credits</p>
+                <p className="font-medium">{MODEL_TIERS.BALANCED.baseCredits}-{MODEL_TIERS.PREMIUM.baseCredits} credits</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Research</p>

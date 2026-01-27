@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { WORKFLOW_MODEL } from '@/lib/constants';
 
 // Helper function to calculate credit multiplier based on script length
 function getScriptLengthMultiplier(scriptLength) {
@@ -56,7 +57,7 @@ export async function POST(request) {
             'anthropic-version': '2023-06-01'
           },
           body: JSON.stringify({
-            model: 'claude-3-haiku-20240307',
+            model: WORKFLOW_MODEL, // Haiku 4.5 for workflow steps
             max_tokens: 4096,
             temperature: 0.7,
             system: 'You are an expert YouTube script editor specializing in retention optimization and viewer engagement.',

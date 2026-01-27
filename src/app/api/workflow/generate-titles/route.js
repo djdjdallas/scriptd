@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { ServerCreditManager } from '@/lib/credits/server-manager';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { WORKFLOW_MODEL } from '@/lib/constants';
 
 // Helper function to generate fallback titles
 function generateFallbackTitles(topic, keywords) {
@@ -51,7 +52,7 @@ export async function POST(request) {
             'anthropic-version': '2023-06-01'
           },
           body: JSON.stringify({
-            model: 'claude-3-haiku-20240307',
+            model: WORKFLOW_MODEL, // Haiku 4.5 for workflow steps
             max_tokens: 2048,
             temperature: 0.8,
             system: 'You are a YouTube title optimization expert. Generate compelling, click-worthy titles that maximize engagement.',

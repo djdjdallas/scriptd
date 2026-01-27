@@ -10,9 +10,10 @@ import ContentIdeaBanner from "../ContentIdeaBanner";
 
 // Helper function to normalize model names from old to new format
 const normalizeModelName = (model) => {
-  // Map old model names to new ones
+  // Map old model names to new ones (all script generation uses BALANCED or PREMIUM)
   const modelMapping = {
-    "claude-3-5-haiku": MODEL_TIERS.FAST.actualModel,
+    "claude-3-5-haiku": MODEL_TIERS.BALANCED.actualModel, // FAST tier disabled, use BALANCED
+    "claude-3-haiku": MODEL_TIERS.BALANCED.actualModel,
     "claude-3-5-sonnet": MODEL_TIERS.BALANCED.actualModel,
     "claude-3-opus": MODEL_TIERS.PREMIUM.actualModel,
     "claude-opus-4-1": MODEL_TIERS.PREMIUM.actualModel,
@@ -369,7 +370,7 @@ export default function DraftStep() {
       thumbnail: workflowData.thumbnail,
       sponsor: sponsorData, // ✅ Add sponsor data
       model: normalizeModelName(
-        workflowData.summary?.aiModel || MODEL_TIERS.FAST.actualModel
+        workflowData.summary?.aiModel || MODEL_TIERS.BALANCED.actualModel
       ),
       targetAudience: workflowData.summary?.targetAudience,
       tone: workflowData.summary?.tone,
@@ -849,7 +850,7 @@ export default function DraftStep() {
                 // Base rate: 0.33 credits per minute (so 10 min Professional = 5 credits)
                 const baseRate = 0.33;
                 const model = normalizeModelName(
-                  workflowData.summary?.aiModel || MODEL_TIERS.FAST.actualModel
+                  workflowData.summary?.aiModel || MODEL_TIERS.BALANCED.actualModel
                 );
                 const multiplier =
                   model === MODEL_TIERS.PREMIUM.actualModel
