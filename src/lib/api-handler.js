@@ -10,7 +10,7 @@ export function rateLimiter(options = {}) {
 
   return async (req) => {
     const key = getKey(req);
-    const result = checkRateLimit(key);
+    const result = await checkRateLimit(key, { maxRequests: max, windowSeconds: windowMs / 1000 });
 
     if (!result.success) {
       return new Response(

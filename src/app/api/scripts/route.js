@@ -6,6 +6,7 @@ import { createApiHandler, ApiError, paginate } from '@/lib/api-handler';
 import { apiLogger } from '@/lib/monitoring/logger';
 
 // GET /api/scripts - List user's scripts
+// Disable rate limiting for listing endpoint - it's read-only and frequently accessed
 export const GET = createApiHandler(async (req) => {
   const { user, supabase } = await getAuthenticatedUser();
 
@@ -107,7 +108,7 @@ export const GET = createApiHandler(async (req) => {
     pagination: pagination.getMetadata(count || 0),
     stats
   });
-});
+}, { rateLimit: false });
 
 // POST /api/scripts - Create new script (manual)
 export const POST = createApiHandler(async (req) => {
