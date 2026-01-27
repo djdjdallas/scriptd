@@ -5,6 +5,7 @@ import { apiLogger } from '@/lib/monitoring/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 800;
 
 export async function GET(request, { params }) {
   const { id } = await params;

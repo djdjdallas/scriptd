@@ -7,6 +7,8 @@ import {
 } from '@/lib/ai/remix-analyzer';
 import { apiLogger } from '@/lib/monitoring/logger';
 
+export const maxDuration = 800;
+
 export async function POST(request) {
   const encoder = new TextEncoder();
 

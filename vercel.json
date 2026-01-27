@@ -11,6 +11,12 @@
     },
     "src/app/api/workflow/generate-script/route.js": {
       "maxDuration": 800
+    },
+    "src/app/api/channels/[id]/analyze-sse/route.js": {
+      "maxDuration": 800
+    },
+    "src/app/api/channels/remix/analyze-sse/route.js": {
+      "maxDuration": 800
     }
   }
 }
