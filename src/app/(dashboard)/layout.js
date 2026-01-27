@@ -256,7 +256,8 @@ export default function DashboardLayout({ children }) {
         onMouseEnter={handleSidebarMouseEnter}
         onMouseLeave={handleSidebarMouseLeave}
         className={cn(
-          "fixed left-0 top-0 h-full glass border-r border-white/10 transition-all duration-500 ease-in-out z-40 flex flex-col overflow-hidden",
+          "fixed left-0 top-0 h-full glass border-r border-white/10 z-40 flex flex-col overflow-hidden",
+          "transition-[width] duration-200 ease-out will-change-[width]",
           sidebarCollapsed && !sidebarHovered ? "w-20" : "w-64",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -419,7 +420,7 @@ export default function DashboardLayout({ children }) {
       {/* Main Content */}
       <main
         className={cn(
-          "transition-all duration-500 ease-in-out",
+          "transition-[margin] duration-200 ease-out will-change-[margin]",
           sidebarCollapsed && !sidebarHovered ? "lg:ml-20" : "lg:ml-64"
         )}
       >
