@@ -1,9 +1,13 @@
 import { createClient } from '@/lib/supabase/server';
 import { getChannelVideos } from '@/lib/youtube/channel';
 import { getVideoTranscript } from '@/lib/youtube/video';
+import { SUPADATA_RATE_LIMITS } from '@/lib/constants';
 
-/** Concurrency limit for parallel transcript fetching */
-const TRANSCRIPT_CONCURRENCY_LIMIT = 5;
+/** Concurrency limit for parallel transcript fetching - reduced to avoid rate limits */
+const TRANSCRIPT_CONCURRENCY_LIMIT = SUPADATA_RATE_LIMITS.MAX_CONCURRENT;
+
+/** Delay between batches to avoid rate limiting */
+const INTER_BATCH_DELAY_MS = SUPADATA_RATE_LIMITS.INTER_REQUEST_DELAY_MS;
 
 /**
  * Parse ISO 8601 duration string to seconds
@@ -62,6 +66,11 @@ async function fetchTranscriptsInBatches(videos, concurrencyLimit = TRANSCRIPT_C
       } else {
         failureCount++;
       }
+    }
+
+    // Add delay between batches to avoid overwhelming the Supadata API
+    if (i + concurrencyLimit < videos.length) {
+      await new Promise(resolve => setTimeout(resolve, INTER_BATCH_DELAY_MS));
     }
   }
 

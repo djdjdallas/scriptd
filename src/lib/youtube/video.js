@@ -3,6 +3,8 @@ import { getYouTubeClient, withRateLimit, getCached, setCache, getRequestOptions
 import { createClient } from '@/lib/supabase/server';
 import { apiLogger } from '@/lib/monitoring/logger';
 import { withRetry, isRateLimitError, createApiError } from '@/lib/utils/retry';
+import { withSupadataRateLimit } from './supadata-rate-limiter.js';
+import { SUPADATA_RATE_LIMITS } from '@/lib/constants';
 
 export async function getVideoById(videoId) {
   const cacheKey = `video-${videoId}`;
@@ -129,62 +131,95 @@ async function getTranscriptFromSupadata(videoId) {
   }
 
   try {
-    return await withRetry(
-      async () => {
-        const url = `https://api.supadata.ai/v1/youtube/transcript?videoId=${videoId}&text=false`;
+    // Wrap with rate limiter to prevent 429 errors
+    return await withSupadataRateLimit(async () => {
+      return await withRetry(
+        async () => {
+          const url = `https://api.supadata.ai/v1/youtube/transcript?videoId=${videoId}&text=false`;
 
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'x-api-key': apiKey,
-            'Content-Type': 'application/json'
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'x-api-key': apiKey,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw createApiError(
+              `Supadata API error (${response.status}): ${errorText}`,
+              response.status,
+              response
+            );
           }
-        });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw createApiError(
-            `Supadata API error (${response.status}): ${errorText}`,
-            response.status,
-            response
-          );
+          const data = await response.json();
+
+          // Check if response indicates an error (rate limit sometimes returned as 200 with error body)
+          if (data.error || data.message?.toLowerCase().includes('limit')) {
+            apiLogger.warn('Supadata returned error in response body', {
+              videoId,
+              error: data.error,
+              message: data.message
+            });
+            throw createApiError(
+              `Supadata API error: ${data.message || data.error}`,
+              429,
+              response
+            );
+          }
+
+          // Supadata returns: { content: [{text, offset, duration, lang}], lang, availableLangs }
+          if (!data.content || !Array.isArray(data.content)) {
+            // Log the actual response for debugging
+            apiLogger.warn('Unexpected Supadata response format', {
+              videoId,
+              responseKeys: Object.keys(data),
+              hasError: !!data.error,
+              hasMessage: !!data.message
+            });
+            throw new Error('Invalid Supadata API response format');
+          }
+
+          // Convert Supadata format to our format
+          const segments = data.content.map(chunk => ({
+            text: chunk.text,
+            offset: chunk.offset,
+            duration: chunk.duration
+          }));
+
+          const fullText = data.content
+            .map(chunk => chunk.text)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          return {
+            segments,
+            fullText,
+            hasTranscript: true,
+            source: 'supadata-api',
+            language: data.lang,
+            availableLanguages: data.availableLangs || []
+          };
+        },
+        {
+          maxRetries: 3,
+          baseDelayMs: 2000, // Increased from 1000ms
+          maxDelayMs: SUPADATA_RATE_LIMITS.MAX_RETRY_DELAY_MS, // 60s instead of default 8s
+          shouldRetry: isRateLimitError,
+          onRetry: (attempt, delay, error) => {
+            apiLogger.warn('Supadata API retry', {
+              videoId,
+              attempt,
+              delayMs: delay,
+              error: error.message
+            });
+          }
         }
-
-        const data = await response.json();
-
-        // Supadata returns: { content: [{text, offset, duration, lang}], lang, availableLangs }
-        if (!data.content || !Array.isArray(data.content)) {
-          throw new Error('Invalid Supadata API response format');
-        }
-
-        // Convert Supadata format to our format
-        const segments = data.content.map(chunk => ({
-          text: chunk.text,
-          offset: chunk.offset,
-          duration: chunk.duration
-        }));
-
-        const fullText = data.content
-          .map(chunk => chunk.text)
-          .join(' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-
-        return {
-          segments,
-          fullText,
-          hasTranscript: true,
-          source: 'supadata-api',
-          language: data.lang,
-          availableLanguages: data.availableLangs || []
-        };
-      },
-      {
-        maxRetries: 3,
-        baseDelayMs: 1000,
-        shouldRetry: isRateLimitError
-      }
-    );
+      );
+    });
   } catch (error) {
     // Log Supadata API failures for monitoring and debugging
     // This helps detect API key issues, quota exhaustion, or service outages

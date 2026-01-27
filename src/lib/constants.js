@@ -373,6 +373,14 @@ export const RATE_LIMITS = {
   }
 };
 
+// Supadata API Rate Limits (for transcript fetching)
+export const SUPADATA_RATE_LIMITS = {
+  REQUESTS_PER_MINUTE: 15,     // Conservative limit to avoid 429 errors
+  MAX_CONCURRENT: 2,           // Limit parallel requests
+  INTER_REQUEST_DELAY_MS: 500, // Minimum delay between requests
+  MAX_RETRY_DELAY_MS: 60000    // 60s max backoff (vs previous 8s)
+};
+
 // Cache TTL (in seconds)
 export const CACHE_TTL = {
   CHANNEL_DATA: 3600, // 1 hour
