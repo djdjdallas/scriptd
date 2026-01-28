@@ -43,6 +43,7 @@ export default function RootLayout({ children }) {
           richColors
           duration={4000}
         />
+        <SpeedInsights />
       </body>
     </html>
   );
