@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Script from "next/script";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { 
   homepageMetadata, 
   structuredData, 
@@ -41,6 +42,7 @@ export default function RootLayout({ children }) {
           richColors
           duration={4000}
         />
+        <SpeedInsights />
       </body>
     </html>
   );
