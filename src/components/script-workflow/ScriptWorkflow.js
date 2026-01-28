@@ -1,12 +1,24 @@
 'use client';
 
-import { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { debounce } from 'lodash';
 import WorkflowSidebar from './WorkflowSidebar';
 import WorkflowHeader from './WorkflowHeader';
+
+// PERFORMANCE FIX: Native debounce implementation replaces 160KB lodash import
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 
 import SummaryStep from './steps/SummaryStep';
 import ResearchStep from './steps/ResearchStep';

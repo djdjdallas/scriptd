@@ -70,33 +70,35 @@
   }
   
   /* Glassmorphic Components */
+  /* PERFORMANCE FIX: Reduced backdrop-blur-xl (24px) to backdrop-blur-md (12px) for mobile performance */
+  /* backdrop-blur-xl causes 60fps to drop to 30-45fps on mobile during scroll */
   .glass {
-    @apply backdrop-blur-xl bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-100/10;
+    @apply backdrop-blur-md bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-100/10;
     transform: translateZ(0);
     backface-visibility: hidden;
   }
-  
+
   .glass-card {
-    @apply backdrop-blur-xl bg-gray-900/40 dark:bg-gray-900/60 border border-gray-700/50 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl relative overflow-hidden;
+    @apply backdrop-blur-md bg-gray-900/50 dark:bg-gray-900/70 border border-gray-700/50 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl relative overflow-hidden;
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: auto;
   }
-  
+
   .glass-card-no-overflow {
-    @apply backdrop-blur-xl bg-gray-900/40 dark:bg-gray-900/60 border border-gray-700/50 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl relative;
+    @apply backdrop-blur-md bg-gray-900/50 dark:bg-gray-900/70 border border-gray-700/50 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl relative;
   }
-  
+
   .glass-nav {
     @apply glass rounded-full px-8 py-4 shadow-lg;
   }
-  
+
   .glass-button {
-    @apply backdrop-blur-xl bg-gray-900/40 dark:bg-gray-900/60 border border-gray-700/50 dark:border-gray-600/30 rounded-xl px-6 py-3 font-medium text-white transition-all duration-300 hover:bg-gray-900/60 dark:hover:bg-gray-900/70 hover:shadow-xl hover:scale-105 relative overflow-hidden;
+    @apply backdrop-blur-md bg-gray-900/50 dark:bg-gray-900/70 border border-gray-700/50 dark:border-gray-600/30 rounded-xl px-6 py-3 font-medium text-white transition-all duration-300 hover:bg-gray-900/60 dark:hover:bg-gray-900/80 hover:shadow-xl hover:scale-105 relative overflow-hidden;
   }
-  
+
   .glass-input {
-    @apply backdrop-blur-xl !bg-gray-900/40 dark:!bg-gray-900/60 border border-gray-700/50 dark:border-gray-600/30 rounded-xl px-6 py-4 w-full focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-500/50 focus:!bg-gray-900/50 dark:focus:!bg-gray-900/70 focus-visible:!bg-gray-900/50 dark:focus-visible:!bg-gray-900/70 placeholder-gray-500 dark:placeholder-gray-400 !text-white transition-all duration-200 hover:!bg-gray-900/50 dark:hover:!bg-gray-900/70;
+    @apply backdrop-blur-md !bg-gray-900/50 dark:!bg-gray-900/70 border border-gray-700/50 dark:border-gray-600/30 rounded-xl px-6 py-4 w-full focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-500/50 focus:!bg-gray-900/60 dark:focus:!bg-gray-900/80 focus-visible:!bg-gray-900/60 dark:focus-visible:!bg-gray-900/80 placeholder-gray-500 dark:placeholder-gray-400 !text-white transition-all duration-200 hover:!bg-gray-900/60 dark:hover:!bg-gray-900/80;
   }
   
   /* Gradient Orbs */

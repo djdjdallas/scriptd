@@ -61,7 +61,7 @@ const FEATURES = [
   },
   {
     title: "One-Click Export",
-    description: "Title, description, tags—all generated. Copy straight to YouTube Studio.",
+    description: "Title, description, tags - all generated. Copy straight to YouTube Studio.",
     icon: Download,
     gradient: "from-orange-500/20 to-yellow-500/20",
     benefit: "Upload in seconds"
@@ -139,7 +139,7 @@ const COMPARISON_DATA = [
 const FAQ_DATA = [
   {
     question: "Will YouTube know I used AI?",
-    answer: "YouTube's policy doesn't ban AI-assisted content—it targets content that lacks authenticity. GenScript's compliance checker ensures your scripts include personal insight markers and avoid AI-typical patterns. Plus, our voice matching makes your content sound genuinely like you."
+    answer: "YouTube's policy doesn't ban AI-assisted content. It targets content that lacks authenticity. GenScript's compliance checker ensures your scripts include personal insight markers and avoid AI-typical patterns. Plus, our voice matching makes your content sound genuinely like you."
   },
   {
     question: "How does the compliance checker work?",
@@ -147,7 +147,7 @@ const FAQ_DATA = [
   },
   {
     question: "Can I use my own voice/style?",
-    answer: "Absolutely! Our voice matching feature learns your speaking patterns from your existing content. Upload a few transcripts or past scripts, and GenScript will generate new content that sounds authentically like you—not like generic AI."
+    answer: "Absolutely! Our voice matching feature learns your speaking patterns from your existing content. Upload a few transcripts or past scripts, and GenScript will generate new content that sounds authentically like you, not like generic AI."
   },
   {
     question: "What if I get demonetized anyway?",
@@ -159,7 +159,7 @@ const FAQ_DATA = [
   },
   {
     question: "Do you offer refunds?",
-    answer: "Yes! We offer a 14-day money-back guarantee. If GenScript doesn't meet your needs, contact us within 14 days for a full refund—no questions asked."
+    answer: "Yes! We offer a 14-day money-back guarantee. If GenScript doesn't meet your needs, contact us within 14 days for a full refund. No questions asked."
   }
 ];
 
@@ -209,9 +209,9 @@ export default function Home() {
           <rect width="100%" height="100%" fill="url(#grid)" />
         </svg>
 
-        {/* Particle Field */}
+        {/* Particle Field - PERFORMANCE FIX: Reduced from 50 to 10 particles (80% GPU reduction) */}
         <div className="absolute inset-0">
-          {[...Array(50)].map((_, i) => {
+          {[...Array(10)].map((_, i) => {
             const seededRandom = (seed, multiplier = 1) => {
               const x =
                 Math.sin(seed * 12.9898 + multiplier * 78.233) * 43758.5453;

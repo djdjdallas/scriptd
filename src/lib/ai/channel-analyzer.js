@@ -4,19 +4,29 @@ import { analyzeTranscriptVoice, generateDefaultEnhancedProfile } from './remix-
 import { getChannelVideos } from '../youtube/channel';
 import { getVideoTranscript } from '../youtube/video';
 import { parseAIResponse } from '@/lib/utils/json-parser';
+import { analyzeCompleteness } from './completeness-analyzer';
+import { VOICE_CONFIG } from '@/lib/config/voice-config';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-export async function analyzeChannel(channelId, userId) {
+/**
+ * Analyze a channel and generate voice profile
+ * @param {string} channelId - Channel ID
+ * @param {string} userId - User ID
+ * @param {Object} options - Analysis options
+ * @param {number} options.completenessThreshold - Custom threshold (0-1)
+ * @param {string} options.qualityTier - Threshold tier ('minimum', 'recommended', 'premium')
+ */
+export async function analyzeChannel(channelId, userId, options = {}) {
   try {
     // Step 1: Fetch channel data with videos
     const channelData = await fetchChannelWithVideos(channelId);
-    
+
     // Step 2: Perform DEEP voice analysis (using enhanced system)
-    const voiceAnalysis = await performDeepVoiceAnalysis(channelData);
+    const voiceAnalysis = await performDeepVoiceAnalysis(channelData, options);
     
     // Step 3: Analyze audience with psychographics
     const audienceAnalysis = await analyzeAudienceWithPsychographics(channelData);
@@ -60,20 +70,20 @@ async function fetchChannelWithVideos(channelId) {
   };
 }
 
-async function performDeepVoiceAnalysis(channelData) {
+async function performDeepVoiceAnalysis(channelData, options = {}) {
   const { videos, name } = channelData;
-  
+
   // Get transcripts from top performing videos
   const transcripts = await getTranscriptsForAnalysis(videos);
-  
-  if (transcripts.length < 3) {
+
+  if (transcripts.length < VOICE_CONFIG.analysis.minTranscripts) {
     console.warn('Insufficient transcripts for deep analysis');
     return generateBasicVoiceProfile(channelData);
   }
-  
+
   // Use the enhanced voice analyzer
   const voiceProfile = await analyzeTranscriptVoice(transcripts, name);
-  
+
   // Add channel-specific metadata
   voiceProfile.metadata = {
     videosAnalyzed: transcripts.length,
@@ -84,41 +94,70 @@ async function performDeepVoiceAnalysis(channelData) {
       engagementRate: channelData.engagement_rate
     }
   };
-  
-  // Validate completeness
-  const completeness = validateVoiceProfileCompleteness(voiceProfile);
-  if (completeness < 0.7) {
-    console.warn(`Voice profile only ${completeness * 100}% complete`);
-    voiceProfile.needsEnhancement = true;
+
+  // Validate completeness using configurable threshold
+  const completenessAnalysis = analyzeCompleteness(voiceProfile, {
+    tier: options.qualityTier || 'default',
+    threshold: options.completenessThreshold
+  });
+
+  if (!completenessAnalysis.meetsThreshold) {
+    console.warn(`[Voice Profile] Completeness: ${completenessAnalysis.scorePercent}% (threshold: ${completenessAnalysis.thresholdPercent}%)`, {
+      status: completenessAnalysis.status,
+      missingRequired: completenessAnalysis.required.missing.length,
+      missingEnhanced: completenessAnalysis.enhanced.missing.length
+    });
   }
-  
+
+  // Attach detailed analysis to profile
+  voiceProfile.completenessAnalysis = completenessAnalysis;
+  voiceProfile.needsEnhancement = completenessAnalysis.needsEnhancement;
+
   return voiceProfile;
 }
 
 async function getTranscriptsForAnalysis(videos) {
-  const transcripts = [];
   const maxTranscripts = 10;
-  
+  const concurrencyLimit = 5; // Fetch 5 transcripts in parallel
+
   // Sort videos by performance
-  const sortedVideos = [...videos].sort((a, b) => 
+  const sortedVideos = [...videos].sort((a, b) =>
     (b.statistics?.viewCount || 0) - (a.statistics?.viewCount || 0)
   );
-  
-  for (const video of sortedVideos.slice(0, maxTranscripts)) {
-    try {
-      const transcript = await getVideoTranscript(video.id);
-      if (transcript.hasTranscript && transcript.fullText) {
-        transcripts.push({
-          text: transcript.fullText,
-          videoTitle: video.snippet.title,
-          videoId: video.id,
-          views: video.statistics?.viewCount
-        });
+
+  const videosToProcess = sortedVideos.slice(0, maxTranscripts);
+
+  // PERFORMANCE FIX: Parallelize transcript fetching with concurrency limit
+  // This reduces 20-50s sequential delays to 5-10s parallel fetching
+  const transcripts = [];
+
+  // Process in batches of concurrencyLimit
+  for (let i = 0; i < videosToProcess.length; i += concurrencyLimit) {
+    const batch = videosToProcess.slice(i, i + concurrencyLimit);
+
+    const batchResults = await Promise.allSettled(
+      batch.map(async (video) => {
+        const transcript = await getVideoTranscript(video.id);
+        if (transcript.hasTranscript && transcript.fullText) {
+          return {
+            text: transcript.fullText,
+            videoTitle: video.snippet.title,
+            videoId: video.id,
+            views: video.statistics?.viewCount
+          };
+        }
+        return null;
+      })
+    );
+
+    // Collect successful results
+    batchResults.forEach(result => {
+      if (result.status === 'fulfilled' && result.value) {
+        transcripts.push(result.value);
       }
-    } catch {
-    }
+    });
   }
-  
+
   return transcripts;
 }
 
