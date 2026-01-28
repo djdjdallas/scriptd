@@ -187,8 +187,7 @@ Be extremely detailed and specific. Provide actionable insights based on the cha
     return {
       success: true,
       analysis: analysis,
-      model: REMIX_MODEL,
-      parseMethod
+      model: REMIX_MODEL
     };
 
   } catch (error) {

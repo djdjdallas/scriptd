@@ -60,7 +60,28 @@ export function parseAIResponse(content, options = {}) {
     }
   }
 
-  // Strategy 4: Try repair on original content
+  // Strategy 4: Extract outermost balanced JSON structure
+  {
+    const balanced = extractBalancedJSON(extracted || content);
+    if (balanced) {
+      try {
+        return JSON.parse(balanced);
+      } catch (balancedError) {
+        if (repair) {
+          try {
+            const repaired = repairJSON(balanced);
+            return JSON.parse(repaired);
+          } catch (balancedRepairError) {
+            if (logErrors) {
+              console.debug('[JSON Parser] Balanced extraction + repair failed');
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Strategy 5: Try repair on original content
   if (repair) {
     try {
       const repaired = repairJSON(content);
@@ -111,6 +132,86 @@ export function extractJSONFromMarkdown(content) {
     }
   }
 
+  return null;
+}
+
+/**
+ * Extract the outermost balanced JSON structure from a string
+ * Handles trailing content after valid JSON and finds the matching close bracket/brace
+ * @param {string} content - String potentially containing JSON with extra content
+ * @returns {string|null} Balanced JSON string or null
+ */
+function extractBalancedJSON(content) {
+  if (!content || typeof content !== 'string') {
+    return null;
+  }
+
+  // Find the first { or [
+  const firstBrace = content.indexOf('{');
+  const firstBracket = content.indexOf('[');
+
+  let startIndex = -1;
+  let openChar = '';
+  let closeChar = '';
+
+  if (firstBrace === -1 && firstBracket === -1) return null;
+
+  if (firstBrace === -1) {
+    startIndex = firstBracket;
+    openChar = '[';
+    closeChar = ']';
+  } else if (firstBracket === -1) {
+    startIndex = firstBrace;
+    openChar = '{';
+    closeChar = '}';
+  } else if (firstBrace < firstBracket) {
+    startIndex = firstBrace;
+    openChar = '{';
+    closeChar = '}';
+  } else {
+    startIndex = firstBracket;
+    openChar = '[';
+    closeChar = ']';
+  }
+
+  // Walk through and find the matching close, tracking all bracket types
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = startIndex; i < content.length; i++) {
+    const ch = content[i];
+
+    if (escape) {
+      escape = false;
+      continue;
+    }
+
+    if (ch === '\\' && inString) {
+      escape = true;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) continue;
+
+    if (ch === '{' || ch === '[') {
+      depth++;
+    } else if (ch === '}' || ch === ']') {
+      depth--;
+    }
+
+    if (depth === 0 && i > startIndex) {
+      return content.substring(startIndex, i + 1);
+    }
+  }
+
+  // If we never balanced, the JSON might be truncated — return what we have
+  // and let repairJSON handle closing the open structures
   return null;
 }
 
@@ -189,33 +290,53 @@ export function repairJSON(jsonString) {
   fixed = fixed.replace(/\/\/.*$/gm, '');
   fixed = fixed.replace(/\/\*[\s\S]*?\*\//g, '');
 
-  // Step 11: Count and fix missing closing brackets/braces
-  const openBraces = (fixed.match(/\{/g) || []).length;
-  const closeBraces = (fixed.match(/\}/g) || []).length;
-  const openBrackets = (fixed.match(/\[/g) || []).length;
-  const closeBrackets = (fixed.match(/\]/g) || []).length;
+  // Step 11: Strip content after the outermost balanced closing brace/bracket
+  // Handles trailing garbage after valid JSON (e.g., AI adding explanatory text)
+  {
+    let depth = 0;
+    let inStr = false;
+    let esc = false;
+    let lastBalancedEnd = -1;
 
-  // Add missing closing brackets
-  if (openBrackets > closeBrackets) {
-    const missing = openBrackets - closeBrackets;
-    for (let i = 0; i < missing; i++) {
-      fixed += ']';
+    for (let i = 0; i < fixed.length; i++) {
+      const ch = fixed[i];
+      if (esc) { esc = false; continue; }
+      if (ch === '\\' && inStr) { esc = true; continue; }
+      if (ch === '"') { inStr = !inStr; continue; }
+      if (inStr) continue;
+      if (ch === '{' || ch === '[') depth++;
+      else if (ch === '}' || ch === ']') depth--;
+      if (depth === 0 && (ch === '}' || ch === ']')) {
+        lastBalancedEnd = i;
+        break;
+      }
+    }
+
+    if (lastBalancedEnd > 0 && lastBalancedEnd < fixed.length - 1) {
+      fixed = fixed.substring(0, lastBalancedEnd + 1);
     }
   }
 
-  // Add missing closing braces
-  if (openBraces > closeBraces) {
-    const missing = openBraces - closeBraces;
-    for (let i = 0; i < missing; i++) {
-      fixed += '}';
-    }
-  }
-
-  // Step 12: Fix incomplete string values at the end
+  // Step 12: Fix incomplete string values at the end (truncated responses)
   // Look for patterns like: "key": "incomplete value
   const incompleteStringMatch = fixed.match(/"[^"]*":\s*"[^"]*$/);
   if (incompleteStringMatch) {
     fixed += '"';
+  }
+
+  // Step 13: Count and fix missing closing brackets/braces
+  // This handles truncated AI responses where the JSON was cut off mid-structure
+  {
+    // Remove trailing comma before adding closers
+    fixed = fixed.replace(/,\s*$/, '');
+
+    const ob = (fixed.match(/\{/g) || []).length;
+    const cb = (fixed.match(/\}/g) || []).length;
+    const obrk = (fixed.match(/\[/g) || []).length;
+    const cbrk = (fixed.match(/\]/g) || []).length;
+
+    for (let i = 0; i < obrk - cbrk; i++) fixed += ']';
+    for (let i = 0; i < ob - cb; i++) fixed += '}';
   }
 
   return fixed.trim();

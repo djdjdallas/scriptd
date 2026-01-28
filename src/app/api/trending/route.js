@@ -8,6 +8,7 @@ import {
   getChannelStatistics,
   getChannelRecentVideos
 } from '@/lib/youtube/trending';
+import { createServiceClient } from '@/lib/supabase/service';
 import { apiLogger } from '@/lib/monitoring/logger';
 
 // YouTube category mappings for niches
@@ -769,7 +770,7 @@ function formatNumber(num) {
 // Store trending metrics in database for growth tracking
 async function storeTrendingMetrics(topics, channels) {
   try {
-    const supabase = await createClient();
+    const supabase = createServiceClient();
     const now = new Date().toISOString();
 
     // Store topic metrics with real hashtags
