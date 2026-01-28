@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Script from "next/script";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { 
   homepageMetadata, 
   structuredData, 
@@ -35,6 +36,7 @@ export default function RootLayout({ children }) {
           }}
         />
         {children}
+        <SpeedInsights />
         <Toaster
           position="bottom-right"
           expand={false}
