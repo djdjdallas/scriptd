@@ -7,6 +7,9 @@ import { extractJsonFromResponse } from '@/lib/utils/json-parser';
 import { fetchChannelRecentVideos, fetchChannelInfo } from '@/lib/youtube/supadata';
 import { apiLogger } from '@/lib/monitoring/logger';
 
+// Allow up to 800 seconds for action plan generation (multiple AI calls)
+export const maxDuration = 800;
+
 export async function POST(request) {
   try {
     const { channelName, topic, channelId, remixAnalytics, sessionId, channelDescription, channelBio } = await request.json();
