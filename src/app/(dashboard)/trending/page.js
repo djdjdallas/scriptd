@@ -27,7 +27,7 @@ import {
   Crown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TiltCard } from '@/components/ui/tilt-card';
+import { StaticCard } from '@/components/ui/static-card';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -311,11 +311,10 @@ export default function TrendingPage() {
 
   return (
     <div className="space-y-8">
-      {/* Background Effects */}
+      {/* Static Background - no animations for performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-purple-500/5 to-pink-500/5 rounded-full blur-3xl animate-pulse-slow" />
+        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
@@ -484,7 +483,7 @@ export default function TrendingPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {trendingTopics.length > 0 ? (
             trendingTopics.slice(0, 6).map((topic, index) => (
-              <TiltCard key={topic.id || index}>
+              <StaticCard key={topic.id || index}>
                 <div className="glass-card p-6 h-full animate-reveal" style={{ animationDelay: `${0.3 + index * 0.05}s` }}>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-2">
@@ -541,7 +540,7 @@ export default function TrendingPage() {
                     </Link>
                   </div>
                 </div>
-              </TiltCard>
+              </StaticCard>
             ))
           ) : (
             <div className="col-span-3 glass-card p-8 text-center">
@@ -574,7 +573,7 @@ export default function TrendingPage() {
         <div className="grid gap-4 md:grid-cols-2">
           {trendingChannels.length > 0 ? (
             trendingChannels.slice(0, 4).map((channel, index) => (
-              <TiltCard key={channel.id || index}>
+              <StaticCard key={channel.id || index}>
                 <div className="glass-card p-6 animate-reveal" style={{ animationDelay: `${0.5 + index * 0.05}s` }}>
                   <div className="flex items-start gap-4">
                     <div className="relative">
@@ -655,7 +654,7 @@ export default function TrendingPage() {
                     </div>
                   </div>
                 </div>
-              </TiltCard>
+              </StaticCard>
             ))
           ) : (
             <div className="col-span-2 glass-card p-8 text-center">
@@ -667,34 +666,34 @@ export default function TrendingPage() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <TiltCard>
+        <StaticCard>
           <div className="glass-card p-6 text-center animate-reveal" style={{ animationDelay: '0.7s' }}>
             <Flame className="h-8 w-8 text-orange-400 mx-auto mb-2" />
             <p className="text-2xl font-bold text-white">{stats.totalTopics || 0}</p>
             <p className="text-xs text-gray-400">Hot Topics</p>
           </div>
-        </TiltCard>
-        <TiltCard>
+        </StaticCard>
+        <StaticCard>
           <div className="glass-card p-6 text-center animate-reveal" style={{ animationDelay: '0.75s' }}>
             <TrendingUp className="h-8 w-8 text-green-400 mx-auto mb-2" />
             <p className="text-2xl font-bold text-white">{stats.avgGrowthRate || 0}%</p>
             <p className="text-xs text-gray-400">Avg Growth Rate</p>
           </div>
-        </TiltCard>
-        <TiltCard>
+        </StaticCard>
+        <StaticCard>
           <div className="glass-card p-6 text-center animate-reveal" style={{ animationDelay: '0.8s' }}>
             <Youtube className="h-8 w-8 text-red-400 mx-auto mb-2" />
             <p className="text-2xl font-bold text-white">{formatNumber(stats.totalChannels || 0)}</p>
             <p className="text-xs text-gray-400">Channels Rising</p>
           </div>
-        </TiltCard>
-        <TiltCard>
+        </StaticCard>
+        <StaticCard>
           <div className="glass-card p-6 text-center animate-reveal" style={{ animationDelay: '0.85s' }}>
             <Sparkles className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
             <p className="text-2xl font-bold text-white">{formatNumber(stats.totalSearchVolume || 0)}</p>
             <p className="text-xs text-gray-400">Total Searches</p>
           </div>
-        </TiltCard>
+        </StaticCard>
       </div>
 
       {/* Pro Tip */}

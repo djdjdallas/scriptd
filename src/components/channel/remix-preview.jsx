@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { TiltCard } from "@/components/ui/tilt-card";
+import { StaticCard } from "@/components/ui/static-card";
 import {
   Eye,
   Sparkles,
@@ -262,7 +262,7 @@ export function RemixPreview({
 
           {/* Main Analysis Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <TiltCard className="glass-card p-4">
+            <StaticCard className="glass-card p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Users className="h-5 w-5 text-blue-400" />
                 <h5 className="font-medium text-white">Combined Audience</h5>
@@ -285,9 +285,9 @@ export function RemixPreview({
                   </div>
                 </div>
               )}
-            </TiltCard>
+            </StaticCard>
 
-            <TiltCard className="glass-card p-4">
+            <StaticCard className="glass-card p-4">
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-5 w-5 text-green-400" />
                 <h5 className="font-medium text-white">Growth Potential</h5>
@@ -311,9 +311,9 @@ export function RemixPreview({
                   </ul>
                 </div>
               )}
-            </TiltCard>
+            </StaticCard>
 
-            <TiltCard className="glass-card p-4">
+            <StaticCard className="glass-card p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Target className="h-5 w-5 text-purple-400" />
                 <h5 className="font-medium text-white">Content Strategy</h5>
@@ -330,9 +330,9 @@ export function RemixPreview({
                   </p>
                 </div>
               )}
-            </TiltCard>
+            </StaticCard>
 
-            <TiltCard className="glass-card p-4">
+            <StaticCard className="glass-card p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Mic className="h-5 w-5 text-pink-400" />
                 <h5 className="font-medium text-white">Voice Profile</h5>
@@ -378,7 +378,7 @@ export function RemixPreview({
                     "Creating unique voice profile from selected channels..."}
                 </p>
               )}
-            </TiltCard>
+            </StaticCard>
           </div>
 
           {/* Synergy & Positioning */}

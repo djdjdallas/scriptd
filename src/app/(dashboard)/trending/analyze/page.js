@@ -27,7 +27,7 @@ import {
   Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TiltCard } from '@/components/ui/tilt-card';
+import { StaticCard } from '@/components/ui/static-card';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -195,10 +195,10 @@ export default function AnalyzeChannelPage() {
 
   return (
     <div className="space-y-8">
-      {/* Background Effects */}
+      {/* Static Background - no animations for performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-red-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
+        <div className="absolute top-20 right-20 w-96 h-96 bg-red-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}

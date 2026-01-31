@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { TiltCard } from '@/components/ui/tilt-card'
+import { StaticCard } from '@/components/ui/static-card'
 import { useToast } from '@/components/ui/use-toast'
 import { 
   Users, 
@@ -237,7 +237,7 @@ export default function TeamsPage() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Free Trial */}
-          <TiltCard className="relative h-full">
+          <StaticCard className="relative h-full">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between mb-2">
                 <Badge variant="outline" className="text-xs">
@@ -285,10 +285,10 @@ export default function TeamsPage() {
                 Start Free
               </Button>
             </CardContent>
-          </TiltCard>
+          </StaticCard>
 
           {/* Creator Plan */}
-          <TiltCard className="relative h-full border-primary/20">
+          <StaticCard className="relative h-full border-primary/20">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0">
                 Most Popular
@@ -344,10 +344,10 @@ export default function TeamsPage() {
                 Get Started
               </Button>
             </CardContent>
-          </TiltCard>
+          </StaticCard>
 
           {/* Professional Plan */}
-          <TiltCard className="relative h-full">
+          <StaticCard className="relative h-full">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between mb-2">
                 <Badge variant="outline" className="text-xs">
@@ -398,10 +398,10 @@ export default function TeamsPage() {
                 Get Started
               </Button>
             </CardContent>
-          </TiltCard>
+          </StaticCard>
 
           {/* Agency Plan */}
-          <TiltCard className="relative h-full">
+          <StaticCard className="relative h-full">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between mb-2">
                 <Badge variant="outline" className="text-xs bg-purple-500/10">
@@ -456,7 +456,7 @@ export default function TeamsPage() {
                 Get Started
               </Button>
             </CardContent>
-          </TiltCard>
+          </StaticCard>
         </div>
       </div>
 

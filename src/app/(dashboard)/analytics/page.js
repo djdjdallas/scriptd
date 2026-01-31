@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { TiltCard } from '@/components/ui/tilt-card';
+import { StaticCard } from '@/components/ui/static-card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
@@ -263,7 +263,7 @@ export default function AnalyticsPage() {
   };
 
   const StatCard = ({ icon: Icon, label, value, change, color }) => (
-    <TiltCard>
+    <StaticCard>
       <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-4">
           <div className={`glass w-12 h-12 rounded-xl flex items-center justify-center`}>
@@ -279,7 +279,7 @@ export default function AnalyticsPage() {
         <p className="text-sm text-gray-400 mb-1">{label}</p>
         <p className="text-2xl font-bold text-white">{value}</p>
       </div>
-    </TiltCard>
+    </StaticCard>
   );
 
   if (loading) {
@@ -295,10 +295,10 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Background Effects */}
+      {/* Static Background - no animations for performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-20 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
+        <div className="absolute top-20 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-20 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
@@ -369,7 +369,7 @@ export default function AnalyticsPage() {
       {/* Charts Grid */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Views Over Time */}
-        <TiltCard>
+        <StaticCard>
           <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.2s' }}>
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <Eye className="h-5 w-5 text-purple-400" />
@@ -403,10 +403,10 @@ export default function AnalyticsPage() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </TiltCard>
+        </StaticCard>
 
         {/* Script Performance */}
-        <TiltCard>
+        <StaticCard>
           <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.3s' }}>
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <Target className="h-5 w-5 text-pink-400" />
@@ -432,11 +432,11 @@ export default function AnalyticsPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </TiltCard>
+        </StaticCard>
       </div>
 
       {/* Top Performing Scripts */}
-      <TiltCard>
+      <StaticCard>
         <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.4s' }}>
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Award className="h-5 w-5 text-yellow-400" />
@@ -478,7 +478,7 @@ export default function AnalyticsPage() {
             <Zap className="h-4 w-4 ml-2" />
           </Button>
         </div>
-      </TiltCard>
+      </StaticCard>
 
       {/* Insights */}
       <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.5s' }}>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TiltCard } from '@/components/ui/tilt-card';
+import { StaticCard } from '@/components/ui/static-card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
 import { VoiceTrainingStatus } from '@/components/voice/voice-training-status';
@@ -310,10 +310,10 @@ export default function VoiceTrainingPage() {
 
   return (
     <div className="space-y-8">
-      {/* Background Effects */}
+      {/* Static Background - no animations for performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-40 left-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-40 right-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
+        <div className="absolute top-40 left-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-40 right-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
@@ -540,7 +540,7 @@ export default function VoiceTrainingPage() {
         
         <div className="grid gap-4">
           {voiceProfiles.map((profile) => (
-            <TiltCard key={profile.id}>
+            <StaticCard key={profile.id}>
               <div 
                 className={`glass-card glass-hover p-6 cursor-pointer ${
                   activeProfile === profile.id ? 'ring-2 ring-purple-400' : ''
@@ -707,7 +707,7 @@ export default function VoiceTrainingPage() {
                   </div>
                 )}
               </div>
-            </TiltCard>
+            </StaticCard>
           ))}
         </div>
       </div>

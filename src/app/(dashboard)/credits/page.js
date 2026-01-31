@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { CREDIT_PACKAGES, CREDIT_COSTS } from "@/lib/constants";
 import { loadStripe } from "@stripe/stripe-js";
-import { TiltCard } from "@/components/ui/tilt-card";
+import { StaticCard } from "@/components/ui/static-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -180,13 +180,10 @@ export default function CreditsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Background Effects */}
+      {/* Static Background - no animations for performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-        <div
-          className="absolute bottom-20 left-20 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl animate-float"
-          style={{ animationDelay: "5s" }}
-        />
+        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-20 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
@@ -202,7 +199,7 @@ export default function CreditsPage() {
       </div>
 
       {/* Current Balance */}
-      <TiltCard>
+      <StaticCard>
         <div
           className="glass-card p-8 text-center animate-reveal"
           style={{ animationDelay: "0.1s" }}
@@ -217,7 +214,7 @@ export default function CreditsPage() {
           <p className="text-sm text-gray-400">credits available</p>
 
         </div>
-      </TiltCard>
+      </StaticCard>
 
       {/* Success Alert */}
       {searchParams.get("success") === "true" && (
@@ -273,7 +270,7 @@ export default function CreditsPage() {
             };
 
             return (
-              <TiltCard key={pkg.id}>
+              <StaticCard key={pkg.id}>
                 <div
                   className={`glass-card glass-hover h-full relative ${
                     pkg.badge ? "ring-2 ring-purple-400" : ""
@@ -345,7 +342,7 @@ export default function CreditsPage() {
                     </Button>
                   </div>
                 </div>
-              </TiltCard>
+              </StaticCard>
             );
           })}
         </div>

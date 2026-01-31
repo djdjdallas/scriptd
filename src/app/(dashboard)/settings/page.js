@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { TiltCard } from '@/components/ui/tilt-card';
+import { StaticCard } from '@/components/ui/static-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -186,10 +186,10 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Background Effects */}
+      {/* Static Background - no animations for performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-40 right-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 left-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
+        <div className="absolute top-40 right-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
@@ -226,7 +226,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Content */}
-      <TiltCard>
+      <StaticCard>
         <div className="glass-card p-8 animate-reveal" style={{ animationDelay: '0.2s' }}>
           {/* Profile Tab */}
           {activeTab === 'profile' && (
@@ -473,7 +473,7 @@ export default function SettingsPage() {
             </Button>
           </div>
         </div>
-      </TiltCard>
+      </StaticCard>
 
       {/* Quick Links */}
       <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.3s' }}>

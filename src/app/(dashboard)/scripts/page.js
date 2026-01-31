@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { TiltCard } from "@/components/ui/tilt-card";
+import { StaticCard } from "@/components/ui/static-card";
 import {
   Plus,
   Search,
@@ -258,13 +258,10 @@ export default function ScriptsPage() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Background Effects */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="gradient-orb w-96 h-96 bg-purple-600 -top-48 -right-48 opacity-20" />
-        <div
-          className="gradient-orb w-96 h-96 bg-pink-600 -bottom-48 -left-48 opacity-20"
-          style={{ animationDelay: "10s" }}
-        />
+      {/* Static Background - no animations for performance */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute w-96 h-96 bg-purple-600/20 rounded-full blur-3xl -top-48 -right-48" />
+        <div className="absolute w-96 h-96 bg-pink-600/20 rounded-full blur-3xl -bottom-48 -left-48" />
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
       </div>
 
@@ -438,7 +435,7 @@ export default function ScriptsPage() {
           !isLoading && (
             <div className="grid gap-6 stagger-children">
               {scripts.map((script, index) => (
-                <TiltCard key={script.id}>
+                <StaticCard key={script.id}>
                   <div
                     className="glass-card glass-hover overflow-hidden group"
                     onMouseEnter={() => setHoveredScript(script.id)}
@@ -548,7 +545,7 @@ export default function ScriptsPage() {
                       )}
                     </div>
                   </div>
-                </TiltCard>
+                </StaticCard>
               ))}
             </div>
           )

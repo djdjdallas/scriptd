@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { TiltCard } from "@/components/ui/tilt-card";
+import { StaticCard } from "@/components/ui/static-card";
 import InteractiveFeatureDetail from "./InteractiveFeatureDetail";
 import {
   Mic,
@@ -102,7 +102,7 @@ export function OptimizedFeatures() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-children">
           {features.map((feature) => (
-            <TiltCard key={feature.id}>
+            <StaticCard key={feature.id}>
               <div
                 className="glass-card group cursor-pointer glass-hover h-full"
                 onMouseEnter={() => setActiveFeature(feature.id)}
@@ -142,7 +142,7 @@ export function OptimizedFeatures() {
                   )}
                 </div>
               </div>
-            </TiltCard>
+            </StaticCard>
           ))}
         </div>
       </div>

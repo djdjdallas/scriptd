@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TiltCard } from '@/components/ui/tilt-card';
+import { StaticCard } from '@/components/ui/static-card';
 import { useToast } from '@/components/ui/use-toast';
 import {
   Search,
@@ -178,7 +178,7 @@ export function ChannelSelector({ selectedChannels, onSelectChannel, onRemoveCha
     }
     
     return (
-      <TiltCard className="glass-card p-4 transition-all">
+      <StaticCard className="glass-card p-4 transition-all">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
             {channel.thumbnails?.default?.url ? (
@@ -291,7 +291,7 @@ export function ChannelSelector({ selectedChannels, onSelectChannel, onRemoveCha
             </Button>
           )}
         </div>
-      </TiltCard>
+      </StaticCard>
     );
   };
 

@@ -15,7 +15,7 @@ import {
   SortDesc
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TiltCard } from '@/components/ui/tilt-card';
+import { StaticCard } from '@/components/ui/static-card';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -204,10 +204,10 @@ export default function AllTrendingTopicsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Background Effects */}
+      {/* Static Background - no animations for performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
+        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
@@ -336,7 +336,7 @@ export default function AllTrendingTopicsPage() {
       {/* Topics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredTopics.map((topic, index) => (
-          <TiltCard key={`${topic.topic}-${topic.category}-${index}`}>
+          <StaticCard key={`${topic.topic}-${topic.category}-${index}`}>
             <div className="glass-card p-6 h-full animate-reveal" style={{ animationDelay: `${0.2 + (index % 9) * 0.05}s` }}>
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -392,7 +392,7 @@ export default function AllTrendingTopicsPage() {
                 </Button>
               </div>
             </div>
-          </TiltCard>
+          </StaticCard>
         ))}
       </div>
 

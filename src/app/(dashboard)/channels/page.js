@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { TiltCard } from '@/components/ui/tilt-card';
+import { StaticCard } from '@/components/ui/static-card';
 import { Button } from '@/components/ui/button';
 import { getChannelGrowthMetrics, storeChannelMetrics } from '@/lib/youtube/growth-metrics';
 import { 
@@ -162,10 +162,10 @@ export default function ChannelsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Background Effects */}
+      {/* Static Background - no animations for performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-64 h-64 bg-red-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
+        <div className="absolute top-20 right-20 w-64 h-64 bg-red-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
@@ -235,7 +235,7 @@ export default function ChannelsPage() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 stagger-children">
           {channels.map((channel, index) => (
-            <TiltCard key={channel.id}>
+            <StaticCard key={channel.id}>
               <div 
                 className="glass-card glass-hover overflow-hidden group h-full"
                 onMouseEnter={() => setHoveredChannel(channel.id)}
@@ -356,12 +356,12 @@ export default function ChannelsPage() {
                   )}
                 </div>
               </div>
-            </TiltCard>
+            </StaticCard>
           ))}
 
           {/* Add New Channel Card - Only show for premium or if under limit */}
           {(isPremium || channels.length < 1) && (
-            <TiltCard>
+            <StaticCard>
               <Link href="/channels/add">
                 <div className="glass-card glass-hover h-full flex flex-col items-center justify-center p-8 group cursor-pointer">
                   <div className="glass w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -373,7 +373,7 @@ export default function ChannelsPage() {
                   </p>
                 </div>
               </Link>
-            </TiltCard>
+            </StaticCard>
           )}
         </div>
       )}

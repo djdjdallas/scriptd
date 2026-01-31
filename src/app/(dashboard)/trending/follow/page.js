@@ -28,7 +28,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TiltCard } from '@/components/ui/tilt-card';
+import { StaticCard } from '@/components/ui/static-card';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { TransferToCalendar } from '@/components/trending/TransferToCalendar';
@@ -491,10 +491,10 @@ export default function FollowTrendPage() {
 
   return (
     <div className="space-y-8">
-      {/* Background Effects */}
+      {/* Static Background - no animations for performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-green-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
+        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-green-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Upgrade Required Message */}
@@ -752,7 +752,7 @@ export default function FollowTrendPage() {
 
         <div className="grid md:grid-cols-3 gap-4">
           {actionPlan.contentTemplates.map((template, index) => (
-            <TiltCard key={index}>
+            <StaticCard key={index}>
               <div className="glass-card p-6">
                 <div className="flex items-start justify-between mb-3">
                   <Video className="h-5 w-5 text-red-400" />
@@ -770,7 +770,7 @@ export default function FollowTrendPage() {
                   Use Template
                 </Button>
               </div>
-            </TiltCard>
+            </StaticCard>
           ))}
         </div>
         </div>

@@ -19,7 +19,7 @@ import {
   Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TiltCard } from '@/components/ui/tilt-card';
+import { StaticCard } from '@/components/ui/static-card';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -299,10 +299,10 @@ export default function AllRisingChannelsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Background Effects */}
+      {/* Static Background - no animations for performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-red-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
+        <div className="absolute top-20 right-20 w-96 h-96 bg-red-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
@@ -449,7 +449,7 @@ export default function AllRisingChannelsPage() {
           const isValidForAnalyze = hasId && notUndefined && notDemo && notUUID && longEnough;
 
           return (
-          <TiltCard key={channel.id || index}>
+          <StaticCard key={channel.id || index}>
             <div className="glass-card p-6 animate-reveal" style={{ animationDelay: `${0.2 + (index % 9) * 0.05}s` }}>
               <div className="flex items-start gap-4">
                 <div className="relative">
@@ -562,7 +562,7 @@ export default function AllRisingChannelsPage() {
                 </div>
               </div>
             </div>
-          </TiltCard>
+          </StaticCard>
           );
         })}
       </div>

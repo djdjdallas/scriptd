@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { TiltCard } from '@/components/ui/tilt-card';
+import { StaticCard } from '@/components/ui/static-card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
@@ -174,11 +174,11 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Background Effects */}
+      {/* Static Background - no animations for performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-40 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-40 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
-        <div className="absolute top-60 right-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '10s' }} />
+        <div className="absolute top-40 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-40 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-60 right-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
@@ -226,7 +226,7 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid md:grid-cols-4 gap-6 animate-reveal" style={{ animationDelay: '0.2s' }}>
-        <TiltCard>
+        <StaticCard>
           <div className="glass-card glass-hover p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 glass rounded-xl flex items-center justify-center">
@@ -241,9 +241,9 @@ export default function DashboardPage() {
               <span className="text-gray-500">from last month</span>
             </div>
           </div>
-        </TiltCard>
+        </StaticCard>
 
-        <TiltCard>
+        <StaticCard>
           <div className="glass-card glass-hover p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 glass rounded-xl flex items-center justify-center">
@@ -258,9 +258,9 @@ export default function DashboardPage() {
               <span className="text-gray-500">from last month</span>
             </div>
           </div>
-        </TiltCard>
+        </StaticCard>
 
-        <TiltCard>
+        <StaticCard>
           <div className="glass-card glass-hover p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 glass rounded-xl flex items-center justify-center">
@@ -275,9 +275,9 @@ export default function DashboardPage() {
               <span className="text-gray-500">connections</span>
             </div>
           </div>
-        </TiltCard>
+        </StaticCard>
 
-        <TiltCard>
+        <StaticCard>
           <div className="glass-card glass-hover p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 glass rounded-xl flex items-center justify-center">
@@ -294,7 +294,7 @@ export default function DashboardPage() {
               </Button>
             </Link>
           </div>
-        </TiltCard>
+        </StaticCard>
       </div>
 
       {/* Weekly Activity */}
