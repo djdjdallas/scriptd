@@ -192,11 +192,15 @@ export default function DashboardLayout({ children }) {
     const supabase = createClient();
 
     try {
+      // Clear client-side auth state
       await supabase.auth.signOut();
-      router.push("/login");
     } catch (error) {
-      // Silent fail - user will see they're still logged in
+      console.error('Sign out error:', error);
     }
+
+    // Hard navigation to clear server-side state via middleware
+    // Using window.location ensures full page reload and cookie clearing
+    window.location.href = '/login';
   };
 
   // Show loading state while checking auth
@@ -229,13 +233,10 @@ export default function DashboardLayout({ children }) {
         {/* Voice Training Notifications */}
         {user && <VoiceTrainingNotifications userId={user.id} />}
 
-      {/* Background Effects */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="gradient-orb w-96 h-96 bg-purple-600 -top-48 -left-48 opacity-10" />
-        <div
-          className="gradient-orb w-96 h-96 bg-pink-600 -bottom-48 -right-48 opacity-10"
-          style={{ animationDelay: "10s" }}
-        />
+      {/* Static Background - no animations for performance */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute w-96 h-96 bg-purple-600/10 rounded-full blur-3xl -top-48 -left-48" />
+        <div className="absolute w-96 h-96 bg-pink-600/10 rounded-full blur-3xl -bottom-48 -right-48" />
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
       </div>
 

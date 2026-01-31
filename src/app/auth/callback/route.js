@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { recordTrialStarted } from '@/lib/subscription/subscription-events'
+import { getPostHogClient } from '@/lib/posthog-server'
 
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url)
@@ -11,6 +13,24 @@ export async function GET(request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error && data?.user) {
+      // Identify user in PostHog for cross-session tracking
+      try {
+        const posthog = getPostHogClient()
+        posthog.identify({
+          distinctId: data.user.id,
+          properties: {
+            email: data.user.email,
+            name: data.user.user_metadata?.full_name,
+            auth_provider: data.user.app_metadata?.provider || 'email',
+            avatar_url: data.user.user_metadata?.avatar_url,
+          }
+        })
+        await posthog.shutdown()
+      } catch (e) {
+        // Don't block auth flow for analytics errors
+        console.error('Failed to identify user in PostHog:', e)
+      }
+
       // Check if this is a new user
       const { data: userData } = await supabase
         .from('users')
@@ -45,6 +65,18 @@ export async function GET(request) {
             name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
             avatar_url: data.user.user_metadata?.avatar_url
           })
+
+        // Track trial started event (user gets 50 free credits)
+        try {
+          await recordTrialStarted(data.user.id, {
+            auth_provider: data.user.app_metadata?.provider || 'email',
+            referrer: request.headers.get('referer'),
+            email: data.user.email
+          })
+        } catch (e) {
+          // Don't block auth flow for analytics errors
+          console.error('Failed to record trial_started event:', e)
+        }
 
         // Log onboarding skipped event (optional)
         try {
