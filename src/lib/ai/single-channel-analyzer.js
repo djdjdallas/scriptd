@@ -12,8 +12,14 @@ const ANALYSIS_MODEL = process.env.VOICE_MODEL || 'claude-sonnet-4-5-20250929';
 
 /**
  * Comprehensive single channel analysis using Claude
+ * @param {Object} channel - Channel data from YouTube API
+ * @param {Array} videos - Array of video data
+ * @param {Object} channelData - Database channel record
+ * @param {Object} options - Optional parameters
+ * @param {Function} options.onProgress - Progress callback (progress, message, stage)
  */
-export async function analyzeChannelWithClaude(channel, videos, channelData) {
+export async function analyzeChannelWithClaude(channel, videos, channelData, options = {}) {
+  const { onProgress } = options;
   try {
     // Prepare channel data for Claude
     const channelSummary = {
@@ -228,8 +234,14 @@ Respond ONLY with valid JSON, no markdown code blocks or extra text.`;
 
 /**
  * Generate comprehensive voice profile from real YouTube data
+ * @param {Object} channel - Channel data from YouTube API
+ * @param {Array} videos - Array of video data
+ * @param {Object} options - Optional parameters
+ * @param {Function} options.onProgress - Progress callback (progress, message, stage)
  */
-export async function generateChannelVoiceProfile(channel, videos) {
+export async function generateChannelVoiceProfile(channel, videos, options = {}) {
+  const { onProgress } = options;
+
   try {
     // Analyze actual videos for voice/style
     // Note: analyzeChannelVoicesFromYouTube expects an array of channels with youtube_channel_id
@@ -240,7 +252,8 @@ export async function generateChannelVoiceProfile(channel, videos) {
       name: channel.snippet?.title
     };
 
-    const channelAnalyses = await analyzeChannelVoicesFromYouTube([channelWithId], {});
+    // Pass onProgress callback through to voice analyzer
+    const channelAnalyses = await analyzeChannelVoicesFromYouTube([channelWithId], { onProgress });
     const voiceAnalysis = channelAnalyses[0]?.voiceAnalysis ? { success: true, voiceProfile: channelAnalyses[0].voiceAnalysis } : { success: false };
 
     if (voiceAnalysis.success) {

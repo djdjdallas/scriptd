@@ -375,10 +375,18 @@ export const RATE_LIMITS = {
 
 // Supadata API Rate Limits (for transcript fetching)
 export const SUPADATA_RATE_LIMITS = {
-  REQUESTS_PER_MINUTE: 15,     // Conservative limit to avoid 429 errors
-  MAX_CONCURRENT: 2,           // Limit parallel requests
-  INTER_REQUEST_DELAY_MS: 500, // Minimum delay between requests
-  MAX_RETRY_DELAY_MS: 60000    // 60s max backoff (vs previous 8s)
+  REQUESTS_PER_MINUTE: 10,     // Conservative limit to avoid 429 errors
+  MAX_CONCURRENT: 1,           // Force sequential requests to avoid rate limits
+  INTER_REQUEST_DELAY_MS: 1000, // 1 second between requests (Supadata free=1 req/sec)
+  MAX_RETRY_DELAY_MS: 60000    // 60s max backoff
+};
+
+// ScrapeCreators API Rate Limits (pay-per-use fallback)
+export const SCRAPECREATORS_RATE_LIMITS = {
+  REQUESTS_PER_MINUTE: 60,     // Higher limit - paid API
+  MAX_CONCURRENT: 5,           // More parallel requests allowed
+  INTER_REQUEST_DELAY_MS: 100, // Minimal delay between requests
+  MAX_RETRY_DELAY_MS: 10000    // 10s max backoff
 };
 
 // Cache TTL (in seconds)

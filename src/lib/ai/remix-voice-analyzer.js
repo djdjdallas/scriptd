@@ -27,6 +27,222 @@ const anthropic = new Anthropic({
 const VOICE_MODEL = process.env.VOICE_MODEL || process.env.PREMIUM_MODEL || 'claude-sonnet-4-5-20250929';
 
 /**
+ * Detect the primary niche/content type from transcript content
+ * Returns niche-specific analysis guidance
+ */
+function detectContentNiche(transcriptText) {
+  const text = transcriptText.toLowerCase();
+
+  // Niche detection patterns with associated analysis guidance
+  const nichePatterns = {
+    'psychology': {
+      keywords: ['psychology', 'mental', 'brain', 'behavior', 'cognitive', 'therapy', 'mindset', 'emotion', 'trauma', 'healing', 'anxiety', 'relationship', 'attachment', 'narcissist', 'depression', 'self-esteem'],
+      analysisGuidance: {
+        emotionalDynamics: `- Vulnerability frequency (how often they share struggles/admit difficulty)
+- Validation patterns ("this is normal", "you're not alone", "it's okay to feel")
+- Empathy expression (acknowledging pain, normalizing experiences)
+- Empowerment progression (understanding → validation → action)`,
+        contentPositioning: `- Creator identity (student/guide/fellow traveler/expert)
+- Relationship to audience (friend, mentor, therapist-like, peer)
+- Mission-driven language (helping, healing, overcoming)
+- Authority display (research-backed vs experiential)`,
+        culturalReferences: `- Psychology research citations
+- Personal growth journey metaphors
+- Recovery/healing journey references`,
+        technicalPatterns: `- Psychology terminology usage and simplification`,
+        engagementTechniques: `- Validation techniques ("If this resonates with you...")
+- Permission-giving language ("It's okay to...")
+- Normalization patterns ("Many of us...")`,
+        pacingDynamics: `- Calm, therapeutic pacing during vulnerable topics
+- Strategic pauses for emotional processing`
+      }
+    },
+    'cooking': {
+      keywords: ['recipe', 'cook', 'food', 'kitchen', 'chef', 'meal', 'ingredient', 'bake', 'cuisine', 'dish', 'flavor', 'taste', 'delicious'],
+      analysisGuidance: {
+        emotionalDynamics: `- Enthusiasm peaks during taste tests and reveals
+- Comfort and nostalgia triggers (family recipes, cultural connections)
+- Frustration/patience during technique demonstrations`,
+        contentPositioning: `- Teaching style (step-by-step vs intuitive cooking)
+- Expertise display (professional vs home cook perspective)
+- Cultural authority (authentic traditions vs fusion creativity)`,
+        culturalReferences: `- Cultural food traditions and history
+- Family stories and heritage connections
+- Restaurant/chef industry references`,
+        technicalPatterns: `- Culinary terminology and when it's explained
+- Measurement precision vs "to taste" flexibility`,
+        engagementTechniques: `- Sensory descriptions ("you'll smell...", "look for...")
+- Interactive prompts ("let me know your variations")
+- Recipe customization encouragement`,
+        pacingDynamics: `- Time-lapse during waiting periods
+- Real-time demonstration for techniques`
+      }
+    },
+    'fitness': {
+      keywords: ['workout', 'fitness', 'exercise', 'gym', 'muscle', 'strength', 'cardio', 'training', 'health', 'body', 'weight', 'reps', 'sets'],
+      analysisGuidance: {
+        emotionalDynamics: `- Motivational energy spikes
+- Empathy for struggle ("I know this burns")
+- Celebration of progress and achievements`,
+        contentPositioning: `- Coach vs workout buddy dynamic
+- Science-backed vs experience-based authority
+- Transformation promise style`,
+        culturalReferences: `- Fitness industry trends and debates
+- Athletic/sports references
+- Body positivity or aesthetic goal framing`,
+        technicalPatterns: `- Exercise terminology and form cues
+- Rep/set counting patterns`,
+        engagementTechniques: `- Real-time workout cues and countdowns
+- Progress tracking encouragement
+- Community challenge invitations`,
+        pacingDynamics: `- High energy during active portions
+- Rest period pacing and recovery talk`
+      }
+    },
+    'personal development': {
+      keywords: ['growth', 'mindset', 'motivation', 'success', 'habit', 'productivity', 'self-improvement', 'goal', 'discipline', 'potential', 'achieve'],
+      analysisGuidance: {
+        emotionalDynamics: `- Inspirational peaks and story climaxes
+- Vulnerability in sharing failures/setbacks
+- Empowerment crescendos`,
+        contentPositioning: `- Mentor vs fellow traveler positioning
+- Success story authority vs relatable journey
+- Framework/system creator identity`,
+        culturalReferences: `- Success story examples (business, sports, history)
+- Book and thought leader references
+- Scientific study citations`,
+        technicalPatterns: `- Framework and acronym usage
+- Step-by-step methodology presentation`,
+        engagementTechniques: `- Journaling/reflection prompts
+- Action step challenges
+- Accountability encouragement`,
+        pacingDynamics: `- Dramatic pauses for key insights
+- Building intensity toward calls-to-action`
+      }
+    },
+    'technology': {
+      keywords: ['tech', 'software', 'code', 'programming', 'ai', 'computer', 'app', 'digital', 'startup', 'innovation', 'developer'],
+      analysisGuidance: {
+        emotionalDynamics: `- Excitement during breakthrough reveals
+- Frustration acknowledgment in debugging/troubleshooting
+- Wonder at technological possibilities`,
+        contentPositioning: `- Expert educator vs curious explorer
+- Industry insider vs independent reviewer
+- Tutorial instructor vs thought leader`,
+        culturalReferences: `- Tech industry news and personalities
+- Startup and Silicon Valley culture
+- Programming community references`,
+        technicalPatterns: `- Technical jargon density and explanation depth
+- Code/demo walkthrough pacing`,
+        engagementTechniques: `- "Try this yourself" prompts
+- Code challenge invitations
+- Community feedback requests`,
+        pacingDynamics: `- Screen share and demonstration rhythm
+- Explanation depth variation based on complexity`
+      }
+    },
+    'true crime': {
+      keywords: ['murder', 'killer', 'crime', 'detective', 'investigation', 'case', 'criminal', 'death', 'victim', 'suspect', 'evidence'],
+      analysisGuidance: {
+        emotionalDynamics: `- Tension building and suspense creation
+- Empathy for victims and families
+- Dramatic revelation timing`,
+        contentPositioning: `- Investigative journalist vs storyteller
+- Respectful vs sensational approach
+- Advocacy vs entertainment balance`,
+        culturalReferences: `- Legal system and law enforcement references
+- Historical crime case comparisons
+- Media coverage analysis`,
+        technicalPatterns: `- Forensic and legal terminology
+- Timeline and evidence presentation`,
+        engagementTechniques: `- Cliffhanger and mystery hooks
+- Viewer theory invitations
+- Case update promises`,
+        pacingDynamics: `- Slow burn tension building
+- Strategic information reveals`
+      }
+    },
+    'education': {
+      keywords: ['learn', 'teach', 'tutorial', 'explain', 'course', 'lesson', 'study', 'education', 'knowledge', 'understand', 'concept'],
+      analysisGuidance: {
+        emotionalDynamics: `- "Aha moment" celebration
+- Patience with complex concepts
+- Encouragement during difficulty`,
+        contentPositioning: `- Expert teacher vs learning companion
+- Academic vs practical approach
+- Comprehensive vs focused teaching`,
+        culturalReferences: `- Academic and research citations
+- Real-world application examples
+- Historical context and origins`,
+        technicalPatterns: `- Progressive complexity building
+- Terminology introduction and reinforcement`,
+        engagementTechniques: `- Knowledge check questions
+- Practice exercise prompts
+- Resource and further learning suggestions`,
+        pacingDynamics: `- Concept explanation depth variation
+- Review and summary pacing`
+      }
+    },
+    'entertainment': {
+      keywords: ['funny', 'comedy', 'react', 'challenge', 'prank', 'viral', 'trending', 'celebrity', 'movie', 'show', 'review'],
+      analysisGuidance: {
+        emotionalDynamics: `- Comedic timing and punchline delivery
+- Authentic reaction expressions
+- Energy level variations for effect`,
+        contentPositioning: `- Entertainer vs commentator
+- Relatable everyperson vs personality brand
+- Reaction authenticity positioning`,
+        culturalReferences: `- Pop culture and meme references
+- Trending topic commentary
+- Celebrity and media industry knowledge`,
+        technicalPatterns: `- Editing rhythm and cut timing
+- Sound effect and music usage patterns`,
+        engagementTechniques: `- Subscription and like reminders
+- Comment section engagement
+- Challenge participation invites`,
+        pacingDynamics: `- Fast-paced editing and transitions
+- Comedic pause timing`
+      }
+    }
+  };
+
+  // Score each niche
+  let bestNiche = null;
+  let bestScore = 0;
+
+  for (const [niche, config] of Object.entries(nichePatterns)) {
+    const score = config.keywords.filter(kw => text.includes(kw)).length;
+    if (score > bestScore) {
+      bestScore = score;
+      bestNiche = niche;
+    }
+  }
+
+  // Return guidance for detected niche, or generic guidance if none detected
+  if (bestNiche && bestScore >= 2) {
+    return {
+      detectedNiche: bestNiche,
+      confidence: Math.min(bestScore / 5, 1),
+      guidance: nichePatterns[bestNiche].analysisGuidance
+    };
+  }
+
+  // Generic guidance for undetected niches
+  return {
+    detectedNiche: 'general',
+    confidence: 0,
+    guidance: {
+      emotionalDynamics: '',
+      contentPositioning: '',
+      culturalReferences: '',
+      technicalPatterns: '',
+      engagementTechniques: '',
+      pacingDynamics: ''
+    }
+  };
+}
+
+/**
  * Analyze transcript voice with deep linguistic profiling
  */
 async function analyzeTranscriptVoice(transcripts, channelName) {
@@ -36,18 +252,15 @@ async function analyzeTranscriptVoice(transcripts, channelName) {
 
   const transcriptText = transcripts.map(t => t.text).join('\n\n');
 
+  // Detect content niche for specialized analysis
+  const nicheInfo = detectContentNiche(transcriptText);
+  const nicheGuidance = nicheInfo.guidance;
+
   const enhancedPrompt = `Analyze this YouTube channel's speaking voice and create a comprehensive linguistic profile.
 Channel: ${channelName}
+${nicheInfo.detectedNiche !== 'general' ? `Detected Content Niche: ${nicheInfo.detectedNiche} (confidence: ${Math.round(nicheInfo.confidence * 100)}%)` : ''}
 
-${channelName.toLowerCase().includes('kee') ? `CRITICAL: This channel focuses on TRAUMA PSYCHOLOGY and EMOTIONAL HEALING.
-Analyze with special attention to:
-- Vulnerability markers and empathetic language
-- Validation of viewer experiences ("this is normal", "you're not alone")
-- Friend-to-friend addressing style vs teacher-student
-- Mission-driven language (helping, healing, overcoming)
-- Trauma-informed communication patterns
-
-` : ''}DEEP ANALYSIS REQUIREMENTS:
+DEEP ANALYSIS REQUIREMENTS:
 
 1. LINGUISTIC FINGERPRINTS
 - Signature opening patterns (exact phrases they use to start videos)
@@ -56,7 +269,6 @@ Analyze with special attention to:
 - Filler words and their frequency
 - Unique idioms or catchphrases
 - Question patterns (rhetorical vs engaging)
-${channelName.toLowerCase().includes('kee') ? `- IMPORTANT: Look for phrases like "Here's what fascinates me", "If you've ever felt", "This is one of those hidden variables"` : ''}
 
 2. NARRATIVE STRUCTURE
 - Story arc patterns (how they build narratives)
@@ -64,30 +276,21 @@ ${channelName.toLowerCase().includes('kee') ? `- IMPORTANT: Look for phrases lik
 - Example/evidence presentation patterns
 - Personal anecdote frequency and placement
 - Cliffhanger and hook placement patterns
-${channelName.toLowerCase().includes('kee') ? `- Trauma narrative progression (understanding → validation → healing)` : ''}
 
-3. EMOTIONAL DYNAMICS ${channelName.toLowerCase().includes('kee') ? '(CRITICAL FOR THIS CHANNEL)' : ''}
+3. EMOTIONAL DYNAMICS
 - Energy curve throughout videos (opening energy vs middle vs end)
 - Emotional beat patterns (e.g., serious→humorous→serious)
 - Authenticity markers (when they're most genuine)
 - Passion indicators (topics that elevate energy)
 - Vulnerability moments and frequency
-${channelName.toLowerCase().includes('kee') ? `- Vulnerability frequency (how often they share struggles/admit difficulty)
-- Validation patterns ("this is normal", "you're not alone", "it's okay to feel")
-- Empathy expression (acknowledging pain, normalizing experiences)
-- Empowerment progression (moving from understanding → validation → action)
-- Trauma-informed language usage` : ''}
+${nicheGuidance.emotionalDynamics || ''}
 
-4. CONTENT POSITIONING ${channelName.toLowerCase().includes('kee') ? '(CRITICAL FOR THIS CHANNEL)' : ''}
+4. CONTENT POSITIONING
 - Self-reference patterns (how often they mention personal experience)
 - Audience relationship (teacher, friend, fellow learner, critic)
 - Authority stance (expert vs explorer vs commentator)
 - Value proposition style (educate vs entertain vs inspire)
-${channelName.toLowerCase().includes('kee') ? `- Creator identity (student/guide/fellow traveler/expert)
-- Relationship to audience (friend, mentor, therapist-like, peer)
-- Mission statement implications (helping overcome trauma)
-- Value proposition (what transformation they promise)
-- Authority display (research-backed vs experiential)` : ''}
+${nicheGuidance.contentPositioning || ''}
 
 5. CULTURAL & TOPICAL REFERENCES
 - Types of examples used (pop culture, history, science, etc.)
@@ -95,9 +298,7 @@ ${channelName.toLowerCase().includes('kee') ? `- Creator identity (student/guide
 - Current events integration style
 - Meme/internet culture usage
 - Academic vs colloquial balance
-${channelName.toLowerCase().includes('kee') ? `- Psychology research citations
-- Childhood trauma references
-- Recovery/healing journey metaphors` : ''}
+${nicheGuidance.culturalReferences || ''}
 
 6. TECHNICAL PATTERNS
 - Average words per sentence
@@ -105,7 +306,7 @@ ${channelName.toLowerCase().includes('kee') ? `- Psychology research citations
 - Vocabulary complexity distribution
 - Technical jargon frequency and explanation style
 - Data/statistics presentation style
-${channelName.toLowerCase().includes('kee') ? `- Psychology terminology usage and simplification` : ''}
+${nicheGuidance.technicalPatterns || ''}
 
 7. ENGAGEMENT TECHNIQUES
 - Direct address frequency ("you" usage)
@@ -113,9 +314,7 @@ ${channelName.toLowerCase().includes('kee') ? `- Psychology terminology usage an
 - Call-to-action style and placement
 - Question deployment strategy
 - Community building language
-${channelName.toLowerCase().includes('kee') ? `- Validation techniques ("If this resonates with you...")
-- Permission-giving language ("It's okay to...")
-- Normalization patterns ("Many of us...")` : ''}
+${nicheGuidance.engagementTechniques || ''}
 
 8. PACING DYNAMICS
 - Speed variations and triggers
@@ -123,8 +322,7 @@ ${channelName.toLowerCase().includes('kee') ? `- Validation techniques ("If this
 - Emphasis techniques (repetition, volume, speed)
 - Breathing patterns affecting delivery
 - Edit rhythm preferences
-${channelName.toLowerCase().includes('kee') ? `- Calm, therapeutic pacing during vulnerable topics
-- Strategic pauses for emotional processing` : ''}
+${nicheGuidance.pacingDynamics || ''}
 
 TRANSCRIPTS TO ANALYZE:
 ${transcriptText}
@@ -1395,56 +1593,50 @@ export async function analyzeChannelVoicesFromYouTube(channels, options = {}) {
         onProgress(baseProgress, `Analyzing transcripts for ${channelName}...`);
       }
 
-      // Fetch transcripts from videos in PARALLEL for better performance
-      // ENHANCED: Use Promise.allSettled with concurrency limit
+      // Fetch transcripts SEQUENTIALLY to avoid Supadata 429 rate limit errors
+      // Free tier: 1 req/sec, Basic/Pro: 10 req/sec
       const transcripts = [];
       const analyzedVideos = [];
       const idealTranscripts = 5; // Ideal for full analysis
       const minTranscriptsForHybrid = 2; // Minimum for hybrid analysis
       const maxVideosToTry = 20; // Try up to 20 videos to get enough transcripts
-      const concurrencyLimit = 5; // Fetch 5 transcripts in parallel at a time
+      const interRequestDelay = 1000; // 1 second delay between requests
 
-      // Helper function to process videos in batches with concurrency limit
       const videosToProcess = videos.slice(0, maxVideosToTry);
 
-      for (let i = 0; i < videosToProcess.length && transcripts.length < idealTranscripts; i += concurrencyLimit) {
-        const batch = videosToProcess.slice(i, i + concurrencyLimit);
+      // Sequential fetch with delay to avoid rate limiting
+      for (let i = 0; i < videosToProcess.length && transcripts.length < idealTranscripts; i++) {
+        const video = videosToProcess[i];
 
-        // Update progress for each batch
+        // Update progress for each video
         if (onProgress) {
-          const batchNum = Math.floor(i / concurrencyLimit) + 1;
-          const totalBatches = Math.ceil(Math.min(videosToProcess.length, maxVideosToTry) / concurrencyLimit);
-          const batchProgress = 30 + (channelIndex / totalChannels) * 15 + 3 + (batchNum / totalBatches) * 10;
+          // Map transcript fetching to 30-55% progress range
+          const transcriptProgress = 30 + ((i + 1) / videosToProcess.length) * 25;
           onProgress(
-            Math.min(batchProgress, 45),
-            `Analyzing transcript ${Math.min(i + concurrencyLimit, videosToProcess.length)}/${videosToProcess.length} for ${channelName}...`
+            Math.min(transcriptProgress, 55),
+            `Fetching transcript ${i + 1}/${videosToProcess.length} for ${channelName}...`,
+            'transcripts'
           );
         }
 
-        // Fetch batch of transcripts in parallel
-        const batchResults = await Promise.allSettled(
-          batch.map(async (video) => {
-            try {
-              const transcript = await getVideoTranscript(video.id);
-              return { video, transcript };
-            } catch {
-              return { video, transcript: null };
-            }
-          })
-        );
-
-        // Process successful results
-        for (const result of batchResults) {
-          if (result.status === 'fulfilled' && result.value.transcript?.hasTranscript && result.value.transcript?.fullText) {
-            if (transcripts.length < idealTranscripts) {
-              transcripts.push(result.value.transcript.fullText);
-              analyzedVideos.push({
-                id: result.value.video.id,
-                title: result.value.video.snippet.title,
-                publishedAt: result.value.video.snippet.publishedAt
-              });
-            }
+        try {
+          const transcript = await getVideoTranscript(video.id);
+          if (transcript?.hasTranscript && transcript?.fullText) {
+            transcripts.push(transcript.fullText);
+            analyzedVideos.push({
+              id: video.id,
+              title: video.snippet.title,
+              publishedAt: video.snippet.publishedAt
+            });
           }
+        } catch (error) {
+          // Log but continue - some videos may not have transcripts
+          console.log(`Transcript fetch failed for video ${video.id}:`, error.message);
+        }
+
+        // Add delay between requests to avoid rate limiting (except after last request)
+        if (i < videosToProcess.length - 1 && transcripts.length < idealTranscripts) {
+          await new Promise(resolve => setTimeout(resolve, interRequestDelay));
         }
       }
 

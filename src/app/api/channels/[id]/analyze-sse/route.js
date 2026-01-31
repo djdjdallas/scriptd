@@ -68,8 +68,15 @@ export async function GET(request, { params }) {
           progress: 30
         });
 
+        // Create progress callback for granular updates
+        const progressCallback = (progress, message, stage = 'analyzing') => {
+          sendEvent('progress', { stage, message, progress: Math.round(progress) });
+        };
+
         // Run comprehensive Claude analysis
-        const claudeAnalysis = await analyzeChannelWithClaude(channel, videos, dbChannel);
+        const claudeAnalysis = await analyzeChannelWithClaude(channel, videos, dbChannel, {
+          onProgress: progressCallback
+        });
 
         if (!claudeAnalysis.success) {
           throw new Error('Failed to analyze channel: ' + claudeAnalysis.error);
@@ -78,11 +85,13 @@ export async function GET(request, { params }) {
         sendEvent('progress', {
           stage: 'voice_analysis',
           message: 'Generating voice profile from real data...',
-          progress: 60
+          progress: 55
         });
 
-        // Generate voice profile
-        const voiceProfileResult = await generateChannelVoiceProfile(channel, videos);
+        // Generate voice profile with progress callback
+        const voiceProfileResult = await generateChannelVoiceProfile(channel, videos, {
+          onProgress: progressCallback
+        });
 
         sendEvent('progress', {
           stage: 'processing',
