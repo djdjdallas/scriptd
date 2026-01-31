@@ -12,7 +12,7 @@ export const maxDuration = 800;
 
 export async function POST(request) {
   try {
-    const { channelName, topic, channelId, remixAnalytics, sessionId, channelDescription, channelBio } = await request.json();
+    const { channelName, topic, channelId, remixAnalytics, channelAnalytics, sessionId, channelDescription, channelBio } = await request.json();
 
     if (!channelName || !topic) {
       return NextResponse.json(
@@ -74,14 +74,14 @@ export async function POST(request) {
 
     // Fetch actual channel data from YouTube if possible
     let channelData = null;
-    let channelAnalytics = '';
+    let channelAnalyticsSummary = '';
     let recentVideos = []; // Declare at function scope
 
     // NEW: Check if this is a remix channel with analytics data
     if (remixAnalytics) {
       // Build analytics summary from remix channel data
 
-      channelAnalytics = `
+      channelAnalyticsSummary = `
 Remix Channel Analysis for "${channelName}":
 - Channel Type: Remix channel combining multiple successful channels
 - Combined Audience Reach: ${remixAnalytics.combinedReach || 'Multi-million combined reach'}
@@ -90,44 +90,116 @@ Remix Channel Analysis for "${channelName}":
 
       // Add content ideas if available
       if (remixAnalytics.contentIdeas && remixAnalytics.contentIdeas.length > 0) {
-        channelAnalytics += `\nExisting Verified Content Ideas (High-Potential):\n`;
+        channelAnalyticsSummary += `\nExisting Verified Content Ideas (High-Potential):\n`;
         remixAnalytics.contentIdeas.slice(0, 5).forEach((idea, index) => {
-          channelAnalytics += `${index + 1}. "${idea.title}" - ${idea.description}\n`;
+          channelAnalyticsSummary += `${index + 1}. "${idea.title}" - ${idea.description}\n`;
           if (idea.growth_potential) {
-            channelAnalytics += `   Growth Potential: ${idea.growth_potential}/10\n`;
+            channelAnalyticsSummary += `   Growth Potential: ${idea.growth_potential}/10\n`;
           }
           if (idea.tags && idea.tags.length > 0) {
-            channelAnalytics += `   Tags: ${idea.tags.join(', ')}\n`;
+            channelAnalyticsSummary += `   Tags: ${idea.tags.join(', ')}\n`;
           }
         });
       }
 
       // Add voice style if available
       if (remixAnalytics.voiceStyle) {
-        channelAnalytics += `\nVoice & Style Profile:\n`;
+        channelAnalyticsSummary += `\nVoice & Style Profile:\n`;
         if (remixAnalytics.voiceStyle.tone) {
-          channelAnalytics += `- Tone: ${Array.isArray(remixAnalytics.voiceStyle.tone) ? remixAnalytics.voiceStyle.tone.join(', ') : remixAnalytics.voiceStyle.tone}\n`;
+          channelAnalyticsSummary += `- Tone: ${Array.isArray(remixAnalytics.voiceStyle.tone) ? remixAnalytics.voiceStyle.tone.join(', ') : remixAnalytics.voiceStyle.tone}\n`;
         }
         if (remixAnalytics.voiceStyle.style) {
-          channelAnalytics += `- Style: ${Array.isArray(remixAnalytics.voiceStyle.style) ? remixAnalytics.voiceStyle.style.join(', ') : remixAnalytics.voiceStyle.style}\n`;
+          channelAnalyticsSummary += `- Style: ${Array.isArray(remixAnalytics.voiceStyle.style) ? remixAnalytics.voiceStyle.style.join(', ') : remixAnalytics.voiceStyle.style}\n`;
         }
         if (remixAnalytics.voiceStyle.energy) {
-          channelAnalytics += `- Energy: ${remixAnalytics.voiceStyle.energy}\n`;
+          channelAnalyticsSummary += `- Energy: ${remixAnalytics.voiceStyle.energy}\n`;
         }
       }
 
       // Add audience insights if available
       if (remixAnalytics.audienceProfile) {
-        channelAnalytics += `\nTarget Audience:\n`;
+        channelAnalyticsSummary += `\nTarget Audience:\n`;
         if (remixAnalytics.audienceProfile.interests) {
-          channelAnalytics += `- Interests: ${remixAnalytics.audienceProfile.interests.slice(0, 5).join(', ')}\n`;
+          channelAnalyticsSummary += `- Interests: ${remixAnalytics.audienceProfile.interests.slice(0, 5).join(', ')}\n`;
         }
         if (remixAnalytics.audienceProfile.demographics) {
-          channelAnalytics += `- Demographics: ${remixAnalytics.audienceProfile.demographics}\n`;
+          channelAnalyticsSummary += `- Demographics: ${remixAnalytics.audienceProfile.demographics}\n`;
         }
       }
 
-      channelAnalytics += `\nIMPORTANT: This is a high-quality remix channel. Generate content ideas that match the verified ideas listed above. Focus on investigative, documentary-style content with high production value and strong storytelling. The audience expects deep-dive analysis and well-researched content.`;
+      channelAnalyticsSummary += `\nIMPORTANT: This is a high-quality remix channel. Generate content ideas that match the verified ideas listed above. Focus on investigative, documentary-style content with high production value and strong storytelling. The audience expects deep-dive analysis and well-researched content.`;
+    }
+    // NEW: Check if this is a single channel with pre-analyzed data
+    else if (channelAnalytics) {
+      // Build analytics summary from single channel analysis data
+      channelAnalyticsSummary = `
+Channel Analysis for "${channelName}":
+${channelAnalytics.channelReach ? `- Subscribers: ${channelAnalytics.channelReach}` : ''}
+${channelAnalytics.totalViews ? `- Total Views: ${channelAnalytics.totalViews}` : ''}
+${channelAnalytics.videoCount ? `- Video Count: ${channelAnalytics.videoCount}` : ''}
+${channelAnalytics.performanceScore ? `- Performance Score: ${channelAnalytics.performanceScore}/100` : ''}
+${channelAnalytics.growthPotential ? `- Growth Potential: ${channelAnalytics.growthPotential}` : ''}
+${channelAnalytics.contentFocus ? `- Content Focus: ${channelAnalytics.contentFocus}` : ''}
+`;
+
+      // Add content ideas if available
+      if (channelAnalytics.contentIdeas && channelAnalytics.contentIdeas.length > 0) {
+        channelAnalyticsSummary += `\nExisting Content Ideas from Analysis:\n`;
+        channelAnalytics.contentIdeas.slice(0, 5).forEach((idea, index) => {
+          channelAnalyticsSummary += `${index + 1}. "${idea.title}" - ${idea.description || ''}\n`;
+          if (idea.growth_potential) {
+            channelAnalyticsSummary += `   Growth Potential: ${idea.growth_potential}/10\n`;
+          }
+          if (idea.tags && idea.tags.length > 0) {
+            channelAnalyticsSummary += `   Tags: ${idea.tags.join(', ')}\n`;
+          }
+        });
+      }
+
+      // Add voice style if available
+      if (channelAnalytics.voiceStyle) {
+        channelAnalyticsSummary += `\nVoice & Style Profile:\n`;
+        if (channelAnalytics.voiceStyle.tone) {
+          channelAnalyticsSummary += `- Tone: ${Array.isArray(channelAnalytics.voiceStyle.tone) ? channelAnalytics.voiceStyle.tone.join(', ') : channelAnalytics.voiceStyle.tone}\n`;
+        }
+        if (channelAnalytics.voiceStyle.style) {
+          channelAnalyticsSummary += `- Style: ${Array.isArray(channelAnalytics.voiceStyle.style) ? channelAnalytics.voiceStyle.style.join(', ') : channelAnalytics.voiceStyle.style}\n`;
+        }
+        if (channelAnalytics.voiceStyle.energy) {
+          channelAnalyticsSummary += `- Energy: ${channelAnalytics.voiceStyle.energy}\n`;
+        }
+      }
+
+      // Add audience insights if available
+      if (channelAnalytics.audienceProfile) {
+        channelAnalyticsSummary += `\nTarget Audience:\n`;
+        if (channelAnalytics.audienceProfile.interests && channelAnalytics.audienceProfile.interests.length > 0) {
+          channelAnalyticsSummary += `- Interests: ${channelAnalytics.audienceProfile.interests.slice(0, 5).join(', ')}\n`;
+        }
+        if (channelAnalytics.audienceProfile.demographics) {
+          channelAnalyticsSummary += `- Demographics: ${channelAnalytics.audienceProfile.demographics}\n`;
+        }
+        if (channelAnalytics.audienceProfile.coreValues && channelAnalytics.audienceProfile.coreValues.length > 0) {
+          channelAnalyticsSummary += `- Core Values: ${channelAnalytics.audienceProfile.coreValues.slice(0, 5).join(', ')}\n`;
+        }
+      }
+
+      // Add strengths and opportunities
+      if (channelAnalytics.strengths && channelAnalytics.strengths.length > 0) {
+        channelAnalyticsSummary += `\nChannel Strengths:\n`;
+        channelAnalytics.strengths.slice(0, 3).forEach((strength, index) => {
+          channelAnalyticsSummary += `${index + 1}. ${strength}\n`;
+        });
+      }
+
+      if (channelAnalytics.opportunities && channelAnalytics.opportunities.length > 0) {
+        channelAnalyticsSummary += `\nGrowth Opportunities:\n`;
+        channelAnalytics.opportunities.slice(0, 3).forEach((opportunity, index) => {
+          channelAnalyticsSummary += `${index + 1}. ${opportunity}\n`;
+        });
+      }
+
+      channelAnalyticsSummary += `\nIMPORTANT: This channel has been analyzed. Use the insights above to generate a personalized action plan that leverages the channel's strengths and addresses growth opportunities.`;
     }
     // EXISTING: Fall back to SupaData/YouTube API if no remix analytics
     else {
@@ -156,7 +228,7 @@ Remix Channel Analysis for "${channelName}":
             }
 
             // Build channel analytics from SupaData
-            channelAnalytics = `
+            channelAnalyticsSummary = `
 Actual Channel Data for "${supadataChannel.title}" (via SupaData):
 - Description: ${supadataChannel.description || 'No description'}
 - Subscribers: ${parseInt(supadataChannel.subscriberCount || 0).toLocaleString()}
@@ -264,7 +336,7 @@ This channel appears to focus on: ${supadataChannel.description ?
             }
 
             // Build channel analytics summary
-            channelAnalytics = `
+            channelAnalyticsSummary = `
 Actual Channel Data for "${channelData.snippet.title}" (via YouTube API):
 - Description: ${channelData.snippet.description || 'No description'}
 - Subscribers: ${parseInt(channelData.statistics?.subscriberCount || 0).toLocaleString()}
@@ -284,9 +356,9 @@ This channel appears to focus on: ${channelData.snippet.description ?
     } // End of else block (SupaData/YouTube API fallback)
 
     // FALLBACK: If no channel data was fetched and we have a provided description/bio, use it
-    if (!channelAnalytics && (channelDescription || channelBio)) {
+    if (!channelAnalyticsSummary && (channelDescription || channelBio)) {
       const providedDescription = channelDescription || channelBio;
-      channelAnalytics = `
+      channelAnalyticsSummary = `
 Channel Data for "${channelName}":
 - Description: ${providedDescription}
 - Channel Focus: Based on the description provided
@@ -295,8 +367,8 @@ This channel appears to focus on: ${providedDescription.substring(0, 300)}`;
     }
 
     // If still no analytics, create minimal fallback
-    if (!channelAnalytics) {
-      channelAnalytics = `
+    if (!channelAnalyticsSummary) {
+      channelAnalyticsSummary = `
 Channel: "${channelName}"
 - No channel data available
 - Analysis based on channel name only`;
@@ -362,7 +434,7 @@ Channel: "${channelName}"
     const prompt = `Create a detailed 30-day action plan for a YouTube channel named "${channelName}" to capitalize on the topic "${finalTopic}".
 
 CHANNEL CONTEXT:
-${channelAnalytics}
+${channelAnalyticsSummary}
 
 DETECTED NICHE: ${detectedNiche}
 

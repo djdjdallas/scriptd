@@ -46,6 +46,15 @@ export default function ChannelDetailPage({ params }) {
     return text.replace(/[^\x00-\x7F\u00C0-\u024F\u1E00-\u1EFF]/g, '').trim();
   };
 
+  // Check if channel has analysis data (for showing Create Action Plan button)
+  const hasAnalysisData = (ch) => {
+    return !!(
+      (ch.analytics_data && Object.keys(ch.analytics_data).length > 0) ||
+      (ch.insights && Object.keys(ch.insights).length > 0) ||
+      ch.last_analyzed_at
+    );
+  };
+
   useEffect(() => {
     fetchChannel();
   }, [channelId]);
@@ -127,8 +136,11 @@ export default function ChannelDetailPage({ params }) {
 
     try {
       // Extract topic from channel data
-      // Priority: 1) First content idea topic 2) First audience interest 3) Fallback
+      // Priority: 1) Top keywords 2) Content idea tags/titles 3) Audience interests 4) Fallback
       let topic = "Channel Growth Strategy";
+
+      // Try to get top keywords from analytics
+      const topKeywords = channel.analytics_data?.content?.topKeywords || [];
 
       // Try to get topic from content ideas
       const contentIdeas =
@@ -137,46 +149,47 @@ export default function ChannelDetailPage({ params }) {
         channel.contentStrategy?.ideas ||
         [];
 
-      if (contentIdeas && contentIdeas.length > 0) {
+      // Extract audience data
+      const audienceData =
+        channel.remix_analysis?.analysis_data?.audience?.audience_analysis ||
+        channel.analytics_data?.audience?.insights?.audience_analysis ||
+        channel.analytics_data?.audience?.audience_analysis;
+
+      if (topKeywords.length > 0) {
+        // Use top 2 keywords
+        topic = topKeywords.slice(0, 2).join(" & ");
+      } else if (contentIdeas && contentIdeas.length > 0) {
         // Use tags or title from first content idea
         if (contentIdeas[0].tags && contentIdeas[0].tags.length > 0) {
           topic = contentIdeas[0].tags.slice(0, 2).join(" & ");
         } else if (contentIdeas[0].title) {
           topic = contentIdeas[0].title;
         }
-      } else {
+      } else if (audienceData?.audience_overlap?.common_interests &&
+          audienceData.audience_overlap.common_interests.length > 0) {
         // Try to get from audience interests
-        const audienceData =
-          channel.remix_analysis?.analysis_data?.audience?.audience_analysis ||
-          channel.analytics_data?.audience?.insights?.audience_analysis ||
-          channel.analytics_data?.audience?.audience_analysis;
-
-        if (audienceData?.audience_overlap?.common_interests &&
-            audienceData.audience_overlap.common_interests.length > 0) {
-          topic = audienceData.audience_overlap.common_interests[0];
-        }
+        topic = audienceData.audience_overlap.common_interests[0];
+      } else if (audienceData?.psychographic_analysis?.core_values &&
+          audienceData.psychographic_analysis.core_values.length > 0) {
+        // Try core values as fallback
+        topic = audienceData.psychographic_analysis.core_values[0];
       }
 
-      // Build remix analytics object if this is a remix channel
-      let remixAnalytics = null;
+      // Build analytics object based on channel type
+      let channelAnalytics = null;
+
+      // Extract voice profile data
+      const voiceData =
+        channel.combined_voice_profile ||
+        channel.voice_profile ||
+        channel.remix_data?.combined_voice_profile ||
+        channel.analytics_data?.voiceProfile;
+
+      const basicVoice = voiceData?.voiceProfile?.basicProfile || voiceData?.basicProfile || voiceData?.basic || voiceData;
 
       if (channel.is_remix) {
-        // Extract voice profile data
-        const voiceData =
-          channel.combined_voice_profile ||
-          channel.voice_profile ||
-          channel.remix_data?.combined_voice_profile ||
-          channel.analytics_data?.voiceProfile;
-
-        const basicVoice = voiceData?.voiceProfile?.basicProfile || voiceData?.basicProfile || voiceData?.basic || voiceData;
-
-        // Extract audience data
-        const audienceData =
-          channel.remix_analysis?.analysis_data?.audience?.audience_analysis ||
-          channel.analytics_data?.audience?.insights?.audience_analysis ||
-          channel.analytics_data?.audience?.audience_analysis;
-
-        remixAnalytics = {
+        // Build remix-specific analytics
+        channelAnalytics = {
           combinedReach: audienceData?.total_combined_reach?.estimated_unique_audience
             ? `${(audienceData.total_combined_reach.estimated_unique_audience / 1000000).toFixed(1)}M+ combined reach`
             : "Multi-million combined reach",
@@ -185,7 +198,7 @@ export default function ChannelDetailPage({ params }) {
             ? `Investigative documentary - ${contentIdeas.map(i => i.tags?.[0]).filter(Boolean).slice(0, 3).join(", ")}`
             : "Educational documentary content",
 
-          contentIdeas: contentIdeas.slice(0, 10), // Pass all 10 verified ideas
+          contentIdeas: contentIdeas.slice(0, 10),
 
           voiceStyle: basicVoice ? {
             tone: basicVoice.tone,
@@ -200,6 +213,51 @@ export default function ChannelDetailPage({ params }) {
               : null,
           } : null,
         };
+      } else {
+        // Build single channel analytics
+        const insights = channel.insights || channel.analytics_data?.insights || {};
+        const metrics = insights.metrics || {};
+
+        channelAnalytics = {
+          // Basic stats
+          channelReach: channel.subscriber_count
+            ? `${(channel.subscriber_count / 1000).toFixed(1)}K subscribers`
+            : null,
+          totalViews: channel.view_count?.toLocaleString() || null,
+          videoCount: channel.video_count || null,
+
+          // Performance metrics from insights
+          performanceScore: metrics.performanceScore || null,
+          growthPotential: metrics.growthPotential || null,
+
+          // Content focus from analysis
+          contentFocus: channel.analytics_data?.content?.summary ||
+            (topKeywords.length > 0 ? topKeywords.slice(0, 5).join(", ") : null),
+
+          // Content ideas from analysis
+          contentIdeas: contentIdeas.slice(0, 10),
+
+          // Voice style if available
+          voiceStyle: basicVoice ? {
+            tone: basicVoice.tone,
+            style: basicVoice.style,
+            energy: basicVoice.energy,
+          } : null,
+
+          // Audience profile
+          audienceProfile: audienceData ? {
+            interests: audienceData.audience_overlap?.common_interests ||
+              audienceData.psychographic_analysis?.interests || [],
+            demographics: audienceData.demographic_profile?.age_distribution?.median_age
+              ? `Median age ${audienceData.demographic_profile.age_distribution.median_age}, ${audienceData.demographic_profile.gender_distribution?.male || 0}% male`
+              : null,
+            coreValues: audienceData.psychographic_analysis?.core_values || [],
+          } : null,
+
+          // Strengths and opportunities from insights
+          strengths: insights.strengths || [],
+          opportunities: insights.opportunities || [],
+        };
       }
 
       toast.loading("Generating your personalized action plan...");
@@ -213,7 +271,10 @@ export default function ChannelDetailPage({ params }) {
         body: JSON.stringify({
           channelName: channel.name || channel.title,
           topic: topic,
-          remixAnalytics: remixAnalytics, // Pass remix analytics if available
+          channelId: channel.youtube_channel_id,
+          remixAnalytics: channel.is_remix ? channelAnalytics : null,
+          channelAnalytics: !channel.is_remix ? channelAnalytics : null,
+          channelDescription: channel.description,
         }),
       });
 
@@ -331,7 +392,7 @@ export default function ChannelDetailPage({ params }) {
                 />
                 Refresh
               </Button>
-              {channel.is_remix && (
+              {(channel.is_remix || hasAnalysisData(channel)) && (
                 <Button
                   variant="default"
                   size="sm"
