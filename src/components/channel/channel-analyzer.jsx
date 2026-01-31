@@ -31,7 +31,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { TiltCard } from "@/components/ui/tilt-card";
+import { StaticCard } from "@/components/ui/static-card";
 
 export function ChannelAnalyzer({
   channelId,
@@ -47,7 +47,6 @@ export function ChannelAnalyzer({
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("insights");
   const [existingAnalysis, setExistingAnalysis] = useState(null);
-  const [sessionId, setSessionId] = useState(null);
 
   // Use channelData prop directly - no need for separate API call
   useEffect(() => {
@@ -135,65 +134,70 @@ export function ChannelAnalyzer({
     setProgressMessage('Starting analysis...');
     setProgressStage('initializing');
 
-    // Generate session ID for progress tracking
-    const newSessionId = `channel-${channelId}-${Date.now()}`;
-    setSessionId(newSessionId);
-
     try {
-      // Start analysis with session ID for progress tracking
-      const startResponse = await fetch(`/api/channels/${channelId}/analyze`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ sessionId: newSessionId }),
+      // Use SSE endpoint for real-time progress updates
+      const eventSource = new EventSource(`/api/channels/${channelId}/analyze-sse`);
+
+      eventSource.addEventListener('progress', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setProgress(data.progress || 0);
+          setProgressMessage(data.message || '');
+          setProgressStage(data.stage || '');
+        } catch (parseError) {
+          console.error('Failed to parse progress event:', parseError);
+        }
       });
 
-      if (!startResponse.ok) {
-        const errorData = await startResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to start analysis");
-      }
-
-      const startData = await startResponse.json();
-
-      // Poll for progress updates
-      const progressInterval = setInterval(async () => {
+      eventSource.addEventListener('complete', (event) => {
         try {
-          const progressResponse = await fetch(
-            `/api/channels/${channelId}/analyze-progress?sessionId=${newSessionId}`
-          );
+          const data = JSON.parse(event.data);
+          eventSource.close();
+          setProgress(100);
+          setIsAnalyzing(false);
+          toast.success("Channel analysis complete!", { duration: 3000 });
 
-          if (progressResponse.ok) {
-            const progressData = await progressResponse.json();
-
-            setProgress(progressData.progress || 0);
-            setProgressMessage(progressData.message || '');
-            setProgressStage(progressData.stage || '');
-
-            // Check if complete
-            if (progressData.stage === 'completed' || progressData.progress >= 100) {
-              clearInterval(progressInterval);
-              setProgress(100);
-              setIsAnalyzing(false);
-
-              toast.success("Channel analysis complete!", { duration: 3000 });
-
-              // Navigate to channel page
-              setTimeout(() => {
-                router.push(`/channels/${channelId}`);
-              }, 2000);
-            }
-          }
-        } catch (pollError) {
-          console.error("Progress poll error:", pollError);
-          // Continue polling even if one check fails
+          // Navigate to channel page to show updated data
+          setTimeout(() => {
+            router.push(`/channels/${channelId}`);
+          }, 2000);
+        } catch (parseError) {
+          console.error('Failed to parse complete event:', parseError);
+          eventSource.close();
+          setIsAnalyzing(false);
         }
-      }, 1000); // Poll every second for smooth progress updates
+      });
+
+      eventSource.addEventListener('error', (event) => {
+        let errorMsg = 'Analysis failed';
+        try {
+          if (event.data) {
+            const data = JSON.parse(event.data);
+            errorMsg = data.message || errorMsg;
+          }
+        } catch {}
+        eventSource.close();
+        setIsAnalyzing(false);
+        setError(errorMsg);
+        toast.error(errorMsg);
+      });
+
+      eventSource.onerror = (err) => {
+        // Check if this is a normal close or actual error
+        if (eventSource.readyState === EventSource.CLOSED) {
+          return; // Normal close, ignore
+        }
+        console.error('SSE connection error:', err);
+        eventSource.close();
+        setIsAnalyzing(false);
+        setError('Connection lost. Please try again.');
+        toast.error('Connection lost. Please try again.');
+      };
 
       // Set a maximum timeout (10 minutes)
       setTimeout(() => {
-        if (isAnalyzing) {
-          clearInterval(progressInterval);
+        if (eventSource.readyState !== EventSource.CLOSED) {
+          eventSource.close();
           setIsAnalyzing(false);
           setError("Analysis timed out. Please try again.");
           toast.error("Analysis took too long. Please try again.");
@@ -384,13 +388,10 @@ export function ChannelAnalyzer({
 
   return (
     <div className="space-y-8">
-      {/* Background Effects */}
+      {/* Static Background - no animations for performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-        <div
-          className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-float"
-          style={{ animationDelay: "5s" }}
-        />
+        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Existing Analysis Banner */}
@@ -423,7 +424,7 @@ export function ChannelAnalyzer({
       {/* Stats Cards - Hide for remix channels */}
       {!isRemix && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <TiltCard>
+          <StaticCard>
             <div className="glass-card p-6 group">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-400 text-sm">Total Views</span>
@@ -437,9 +438,9 @@ export function ChannelAnalyzer({
                 video
               </p>
             </div>
-          </TiltCard>
+          </StaticCard>
 
-          <TiltCard>
+          <StaticCard>
             <div className="glass-card p-6 group">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-400 text-sm">Subscribers</span>
@@ -455,9 +456,9 @@ export function ChannelAnalyzer({
                 view rate
               </p>
             </div>
-          </TiltCard>
+          </StaticCard>
 
-          <TiltCard>
+          <StaticCard>
             <div className="glass-card p-6 group">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-400 text-sm">Engagement Rate</span>
@@ -473,9 +474,9 @@ export function ChannelAnalyzer({
                 {formatNumber(analytics?.performance?.totalEngagements)} total
               </p>
             </div>
-          </TiltCard>
+          </StaticCard>
 
-          <TiltCard>
+          <StaticCard>
             <div className="glass-card p-6 group">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-400 text-sm">Videos</span>
@@ -491,7 +492,7 @@ export function ChannelAnalyzer({
                 analyzed
               </p>
             </div>
-          </TiltCard>
+          </StaticCard>
         </div>
       )}
 
@@ -1220,7 +1221,7 @@ export function ChannelAnalyzer({
 
             {/* Audience Insights */}
             <div className="grid md:grid-cols-3 gap-4">
-              <TiltCard>
+              <StaticCard>
                 <div className="glass-card p-6 text-center">
                   <div className="w-16 h-16 mx-auto mb-4 glass rounded-full flex items-center justify-center">
                     <Activity className="h-8 w-8 text-green-400" />
@@ -1232,9 +1233,9 @@ export function ChannelAnalyzer({
                     Your audience actively interacts with your content
                   </p>
                 </div>
-              </TiltCard>
+              </StaticCard>
 
-              <TiltCard>
+              <StaticCard>
                 <div className="glass-card p-6 text-center">
                   <div className="w-16 h-16 mx-auto mb-4 glass rounded-full flex items-center justify-center">
                     <TrendingUp className="h-8 w-8 text-blue-400" />
@@ -1246,9 +1247,9 @@ export function ChannelAnalyzer({
                     Consistent growth in viewer retention
                   </p>
                 </div>
-              </TiltCard>
+              </StaticCard>
 
-              <TiltCard>
+              <StaticCard>
                 <div className="glass-card p-6 text-center">
                   <div className="w-16 h-16 mx-auto mb-4 glass rounded-full flex items-center justify-center">
                     <Users className="h-8 w-8 text-purple-400" />
@@ -1260,7 +1261,7 @@ export function ChannelAnalyzer({
                     Strong viewer-to-subscriber conversion
                   </p>
                 </div>
-              </TiltCard>
+              </StaticCard>
             </div>
           </div>
         )}
@@ -1618,7 +1619,7 @@ export function ChannelAnalyzer({
 
             {/* Performance Metrics */}
             <div className="grid md:grid-cols-3 gap-4">
-              <TiltCard>
+              <StaticCard>
                 <div className="glass-card p-6">
                   <div className="flex items-center justify-between mb-3">
                     <Eye className="h-5 w-5 text-purple-400" />
@@ -1629,9 +1630,9 @@ export function ChannelAnalyzer({
                     {formatNumber(analytics?.performance?.avgViewsPerVideo)}
                   </p>
                 </div>
-              </TiltCard>
+              </StaticCard>
 
-              <TiltCard>
+              <StaticCard>
                 <div className="glass-card p-6">
                   <div className="flex items-center justify-between mb-3">
                     <Clock className="h-5 w-5 text-blue-400" />
@@ -1646,9 +1647,9 @@ export function ChannelAnalyzer({
                     h
                   </p>
                 </div>
-              </TiltCard>
+              </StaticCard>
 
-              <TiltCard>
+              <StaticCard>
                 <div className="glass-card p-6">
                   <div className="flex items-center justify-between mb-3">
                     <Activity className="h-5 w-5 text-green-400" />
@@ -1664,7 +1665,7 @@ export function ChannelAnalyzer({
                     %
                   </p>
                 </div>
-              </TiltCard>
+              </StaticCard>
             </div>
           </div>
         )}

@@ -103,12 +103,13 @@ Suggest 8-10 specific video ideas that would perform well based on:
 - Series or playlist opportunities
 
 CRITICAL REQUIREMENTS FOR VIDEO IDEAS:
-- ONLY suggest video topics based on REAL, VERIFIABLE events
-- If suggesting a specific incident (heist, hack, scandal, etc), it MUST have actually happened
-- Include the year and verifiable details if mentioning specific events
-- For true crime/documentary style content, only use documented cases
-- If you're unsure whether an event is real, DO NOT suggest it
-- Focus on well-documented stories that can be fact-checked
+- ONLY suggest video topics based on REAL, VERIFIABLE information relevant to the channel's niche
+- If suggesting specific events, studies, or cases, they MUST be documented and verifiable
+- Include the year and verifiable details when mentioning specific events or research
+- For documentary/educational content, only use well-documented, fact-checkable sources
+- Examples of verifiable sources: documented research studies, verified news events, published case studies, peer-reviewed findings
+- If you're unsure whether information is accurate, DO NOT suggest it
+- Focus on well-documented topics that can be independently verified
 - Hypothetical scenarios should be clearly labeled as "What If" or "Hypothetical"
 
 7. OPTIMIZATION OPPORTUNITIES
@@ -363,23 +364,113 @@ Format as detailed JSON.`;
 
 /**
  * Parse text response into structured format (fallback)
+ * Returns a properly structured object matching the expected schema
  */
 function parseTextResponse(text) {
-  // Basic parsing for when JSON extraction fails
-  const sections = {
-    channelIdentity: extractSection(text, 'CHANNEL IDENTITY', 'AUDIENCE PROFILE'),
-    audienceProfile: extractSection(text, 'AUDIENCE PROFILE', 'CONTENT ANALYSIS'),
-    contentAnalysis: extractSection(text, 'CONTENT ANALYSIS', 'VOICE & PRESENTATION'),
-    voiceAndStyle: extractSection(text, 'VOICE & PRESENTATION', 'GROWTH STRATEGY'),
-    growthStrategy: extractSection(text, 'GROWTH STRATEGY', 'CONTENT RECOMMENDATIONS'),
-    contentRecommendations: extractSection(text, 'CONTENT RECOMMENDATIONS', 'OPTIMIZATION'),
-    optimizationOpportunities: extractSection(text, 'OPTIMIZATION', 'COMPETITIVE'),
-    competitivePositioning: extractSection(text, 'COMPETITIVE', 'METRICS'),
-    metricsAndBenchmarks: extractSection(text, 'METRICS', 'ACTION PLAN'),
-    actionPlan: extractSection(text, 'ACTION PLAN', null)
-  };
+  // Extract sections from text-based response
+  const channelIdentityText = extractSection(text, 'CHANNEL IDENTITY', 'AUDIENCE PROFILE');
+  const audienceProfileText = extractSection(text, 'AUDIENCE PROFILE', 'CONTENT ANALYSIS');
+  const contentAnalysisText = extractSection(text, 'CONTENT ANALYSIS', 'VOICE & PRESENTATION');
+  const voiceAndStyleText = extractSection(text, 'VOICE & PRESENTATION', 'GROWTH STRATEGY');
+  const growthStrategyText = extractSection(text, 'GROWTH STRATEGY', 'CONTENT RECOMMENDATIONS');
+  const contentRecommendationsText = extractSection(text, 'CONTENT RECOMMENDATIONS', 'OPTIMIZATION');
+  const optimizationText = extractSection(text, 'OPTIMIZATION', 'COMPETITIVE');
+  const competitiveText = extractSection(text, 'COMPETITIVE', 'METRICS');
+  const metricsText = extractSection(text, 'METRICS', 'ACTION PLAN');
+  const actionPlanText = extractSection(text, 'ACTION PLAN', null);
 
-  return sections;
+  // Return properly structured object matching the expected schema
+  return {
+    channelIdentity: {
+      summary: channelIdentityText,
+      uniqueElements: [],
+      _fallback: true
+    },
+    audienceProfile: {
+      demographics: { ageRange: '', locations: [], gender: '' },
+      psychographics: { interests: [], values: [], goals: [], painPoints: [] },
+      contentPreferences: [],
+      viewingHabits: {},
+      problemsSolved: [],
+      subscriptionMotivation: '',
+      persona: audienceProfileText,
+      _fallback: true
+    },
+    contentAnalysis: {
+      summary: contentAnalysisText,
+      whatWorksWell: [],
+      contentGaps: [],
+      _fallback: true
+    },
+    voiceAndStyle: {
+      summary: voiceAndStyleText,
+      tone: [],
+      _fallback: true
+    },
+    growthStrategy: {
+      summary: growthStrategyText,
+      quickWins: [],
+      mediumTerm: [],
+      longTerm: [],
+      _fallback: true
+    },
+    contentRecommendations: extractVideoIdeasFromText(contentRecommendationsText),
+    optimizationOpportunities: {
+      summary: optimizationText,
+      thumbnails: '',
+      titles: '',
+      cta: '',
+      _fallback: true
+    },
+    competitivePositioning: {
+      summary: competitiveText,
+      uniqueAdvantages: [],
+      _fallback: true
+    },
+    metricsAndBenchmarks: {
+      summary: metricsText,
+      performanceScore: 70,
+      growthPotential: 75,
+      _fallback: true
+    },
+    actionPlan: {
+      summary: actionPlanText,
+      _fallback: true
+    },
+    _source: 'text-parser-fallback'
+  };
+}
+
+/**
+ * Extract video ideas from text content
+ */
+function extractVideoIdeasFromText(text) {
+  if (!text) return [];
+
+  // Try to find numbered items or bullet points
+  const lines = text.split('\n').filter(line => line.trim());
+  const ideas = [];
+
+  for (const line of lines) {
+    // Match numbered items like "1." or bullet points
+    const match = line.match(/^[\d.)\-•*]+\s*(.+)/);
+    if (match && match[1]) {
+      const title = match[1].trim();
+      if (title.length > 10 && title.length < 200) {
+        ideas.push({
+          title,
+          description: '',
+          format: 'unknown',
+          duration: '',
+          growth_potential: 5,
+          isVerified: false,
+          _fallback: true
+        });
+      }
+    }
+  }
+
+  return ideas.slice(0, 10); // Max 10 ideas
 }
 
 /**

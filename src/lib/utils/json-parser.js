@@ -88,12 +88,35 @@ export function parseAIResponse(content, options = {}) {
       return JSON.parse(repaired);
     } catch (finalError) {
       if (logErrors) {
-        console.warn('[JSON Parser] All parsing strategies failed', {
+        console.warn('[JSON Parser] Standard repair failed, trying aggressive quote repair', {
           contentPreview: content.substring(0, 100),
           error: finalError.message
         });
       }
     }
+  }
+
+  // Strategy 6: Try aggressive quote repair
+  if (repair) {
+    try {
+      const aggressiveRepaired = aggressiveQuoteRepair(content);
+      return JSON.parse(aggressiveRepaired);
+    } catch (aggressiveError) {
+      if (logErrors) {
+        console.warn('[JSON Parser] Aggressive quote repair failed', {
+          error: aggressiveError.message
+        });
+      }
+    }
+  }
+
+  // Strategy 7: Try to extract partial valid JSON
+  const partialJSON = extractPartialValidJSON(content);
+  if (partialJSON && Object.keys(partialJSON).length > 0) {
+    if (logErrors) {
+      console.warn('[JSON Parser] Returning partial JSON extraction');
+    }
+    return { ...partialJSON, _partial: true };
   }
 
   // Final fallback
@@ -365,6 +388,164 @@ export function safeJSONParse(jsonString, fallback = null) {
 
 // Alias for backwards compatibility
 export const safeJsonParse = safeJSONParse;
+
+/**
+ * Aggressively repair unescaped quotes in JSON string values
+ * Handles cases where quotes inside string values break JSON parsing
+ * @param {string} content - JSON content with potential unescaped quotes
+ * @returns {string} Repaired JSON string
+ */
+function aggressiveQuoteRepair(content) {
+  if (!content || typeof content !== 'string') {
+    return content;
+  }
+
+  let fixed = content.trim();
+
+  // Remove markdown code block markers
+  fixed = fixed.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '');
+
+  // State machine to track string contexts and repair quotes
+  let result = '';
+  let inString = false;
+  let escape = false;
+
+  for (let i = 0; i < fixed.length; i++) {
+    const ch = fixed[i];
+
+    if (escape) {
+      result += ch;
+      escape = false;
+      continue;
+    }
+
+    if (ch === '\\') {
+      result += ch;
+      escape = true;
+      continue;
+    }
+
+    if (ch === '"') {
+      if (!inString) {
+        // Starting a string
+        inString = true;
+        stringStart = i;
+        result += ch;
+      } else {
+        // Potentially ending a string - check what follows
+        // Valid endings: , } ] or whitespace followed by one of those, or end of content
+        const afterQuote = fixed.substring(i + 1).trimStart();
+        const firstNonSpace = afterQuote[0];
+
+        if (
+          firstNonSpace === ',' ||
+          firstNonSpace === '}' ||
+          firstNonSpace === ']' ||
+          firstNonSpace === ':' ||
+          afterQuote === '' ||
+          afterQuote.startsWith('\n')
+        ) {
+          // This is a real closing quote
+          inString = false;
+          result += ch;
+        } else {
+          // This is an unescaped quote inside a string - escape it
+          result += '\\"';
+        }
+      }
+    } else {
+      result += ch;
+    }
+  }
+
+  // If still in a string at the end, close it
+  if (inString) {
+    result += '"';
+  }
+
+  // Apply standard repairs
+  return repairJSON(result);
+}
+
+/**
+ * Extract the largest valid JSON structure from content
+ * Tries to parse progressively smaller portions to find valid JSON
+ * @param {string} content - Content potentially containing valid JSON subset
+ * @returns {Object|null} Parsed JSON object or null
+ */
+function extractPartialValidJSON(content) {
+  if (!content || typeof content !== 'string') {
+    return null;
+  }
+
+  // Clean up the content first
+  let cleaned = content.trim();
+  cleaned = cleaned.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '');
+
+  // Find the first { or [
+  const firstBrace = cleaned.indexOf('{');
+  if (firstBrace === -1) return null;
+
+  // Try to find complete top-level properties and build a valid object
+  const result = {};
+
+  // Extract key-value pairs using regex
+  // Match: "key": "string value" or "key": number or "key": boolean or "key": null
+  const simplePatterns = [
+    /"([^"]+)":\s*"([^"]*(?:\\.[^"]*)*)"/g,  // String values
+    /"([^"]+)":\s*(\d+(?:\.\d+)?)/g,          // Number values
+    /"([^"]+)":\s*(true|false|null)/g          // Boolean/null values
+  ];
+
+  for (const pattern of simplePatterns) {
+    let match;
+    pattern.lastIndex = 0; // Reset regex state
+    while ((match = pattern.exec(cleaned)) !== null) {
+      const key = match[1];
+      let value = match[2];
+
+      // Skip empty keys
+      if (!key) continue;
+
+      // Convert value types
+      if (value === 'true') value = true;
+      else if (value === 'false') value = false;
+      else if (value === 'null') value = null;
+      else if (/^\d+(?:\.\d+)?$/.test(value)) value = parseFloat(value);
+
+      result[key] = value;
+    }
+  }
+
+  // Try to extract arrays - look for "key": [...] patterns
+  const arrayPattern = /"([^"]+)":\s*\[([\s\S]*?)\]/g;
+  let arrayMatch;
+  while ((arrayMatch = arrayPattern.exec(cleaned)) !== null) {
+    const key = arrayMatch[1];
+    const arrayContent = arrayMatch[2];
+
+    if (!key) continue;
+
+    try {
+      // Try to parse the array content
+      const parsed = JSON.parse('[' + arrayContent + ']');
+      result[key] = parsed;
+    } catch {
+      // Try to extract string items from the array
+      const items = [];
+      const itemPattern = /"([^"]*(?:\\.[^"]*)*)"/g;
+      let itemMatch;
+      while ((itemMatch = itemPattern.exec(arrayContent)) !== null) {
+        items.push(itemMatch[1]);
+      }
+      if (items.length > 0) {
+        result[key] = items;
+      }
+    }
+  }
+
+  return Object.keys(result).length > 0 ? result : null;
+}
 
 /**
  * Extract JSON from AI response using multiple strategies
