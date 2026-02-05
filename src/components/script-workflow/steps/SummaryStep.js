@@ -63,6 +63,7 @@ export default function SummaryStep() {
   const [selectedChannel, setSelectedChannel] = useState(
     workflowData.summary?.channelId || ""
   );
+  const [channelAudienceData, setChannelAudienceData] = useState(null); // Store raw JSON for glimpse display
   const [targetDuration, setTargetDuration] = useState(
     workflowData.summary?.targetDuration || 300 // Default 5 minutes
   );
@@ -481,6 +482,9 @@ export default function SummaryStep() {
           if (audiencePersona && (audiencePersona.demographic_profile || audiencePersona.psychographic_analysis)) {
             console.log('[SummaryStep] ✅ Loaded comprehensive audience analysis from channel_analyses');
 
+            // Store raw JSON for UI glimpse display
+            setChannelAudienceData(audiencePersona);
+
             // Create token-efficient description that keeps ALL important data
             const audienceDescription = createComprehensiveAudienceDescription(audiencePersona);
             console.log('[SummaryStep] Created comprehensive audience description:', audienceDescription.substring(0, 200) + '...');
@@ -842,7 +846,10 @@ export default function SummaryStep() {
           {/* Audience Type Selector */}
           <div className="flex gap-2 mb-4">
             <button
-              onClick={() => setAudienceType("preset")}
+              onClick={() => {
+                setAudienceType("preset");
+                setChannelAudienceData(null);
+              }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 audienceType === "preset"
                   ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
@@ -865,7 +872,10 @@ export default function SummaryStep() {
               </button>
             )}
             <button
-              onClick={() => setAudienceType("custom")}
+              onClick={() => {
+                setAudienceType("custom");
+                setChannelAudienceData(null);
+              }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 audienceType === "custom"
                   ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
@@ -902,89 +912,77 @@ export default function SummaryStep() {
                   />
                   {selectedChannel && targetAudience && (
                     <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                      <p className="text-sm text-purple-300 mb-2 flex items-center gap-2">
+                      <p className="text-sm text-purple-300 mb-3 flex items-center gap-2">
                         <Sparkles className="h-4 w-4" />
                         Channel Audience Analysis
                       </p>
-                      {(() => {
-                        // Check if targetAudience is rich JSON data
-                        let audienceData;
-                        try {
-                          audienceData = JSON.parse(targetAudience);
-                        } catch (e) {
-                          // Not JSON, display as simple text
-                          return <p className="text-sm text-gray-300">{targetAudience}</p>;
-                        }
-
-                        // Display rich audience data summary
-                        if (audienceData?.demographic_profile || audienceData?.psychographic_analysis) {
-                          return (
-                            <div className="text-sm text-gray-300 space-y-2">
-                              {audienceData.demographic_profile?.age_distribution && (
-                                <div>
-                                  <span className="text-purple-300 font-medium">Demographics: </span>
+                      {channelAudienceData ? (
+                        <div className="space-y-3">
+                          {/* Demographics Row */}
+                          {channelAudienceData.demographic_profile && (
+                            <div className="flex flex-wrap gap-2">
+                              {channelAudienceData.demographic_profile.age_distribution && (
+                                <span className="text-xs bg-purple-500/20 text-purple-200 px-2 py-1 rounded">
                                   {(() => {
-                                    const ages = audienceData.demographic_profile.age_distribution;
-                                    const primaryAge = Object.entries(ages)
+                                    const ages = channelAudienceData.demographic_profile.age_distribution;
+                                    const sorted = Object.entries(ages)
                                       .sort((a, b) => {
                                         const percentA = parseInt(String(a[1]).replace('%', '')) || 0;
                                         const percentB = parseInt(String(b[1]).replace('%', '')) || 0;
                                         return percentB - percentA;
-                                      })[0]?.[0] || 'N/A';
-                                    const malePercent = audienceData.demographic_profile.gender_distribution?.male || 'N/A';
-                                    return `Primary age ${primaryAge}, ${malePercent}% male`;
+                                      });
+                                    const top = sorted[0];
+                                    return top ? `Age ${top[0]}: ${top[1]}` : 'Age: N/A';
                                   })()}
-                                </div>
+                                </span>
                               )}
-                              {audienceData.psychographic_analysis?.core_values && (
-                                <div>
-                                  <span className="text-purple-300 font-medium">Values: </span>
-                                  {Array.isArray(audienceData.psychographic_analysis.core_values)
-                                    ? audienceData.psychographic_analysis.core_values.slice(0, 3).join(', ')
-                                    : audienceData.psychographic_analysis.core_values}
-                                </div>
+                              {channelAudienceData.demographic_profile.gender_distribution?.male && (
+                                <span className="text-xs bg-blue-500/20 text-blue-200 px-2 py-1 rounded">
+                                  {channelAudienceData.demographic_profile.gender_distribution.male} male
+                                </span>
                               )}
-                              {audienceData.content_consumption_patterns?.preferred_video_length && (
-                                <div>
-                                  <span className="text-purple-300 font-medium">Preferred length: </span>
+                              {channelAudienceData.demographic_profile.geographic_distribution && (
+                                <span className="text-xs bg-green-500/20 text-green-200 px-2 py-1 rounded">
                                   {(() => {
-                                    const lengthData = audienceData.content_consumption_patterns.preferred_video_length;
-                                    // Handle both new format (object with percentages) and old format (optimal_range string)
-                                    if (typeof lengthData === 'object' && !lengthData.optimal_range) {
-                                      // New format: find highest percentage category
-                                      const topLength = Object.entries(lengthData)
-                                        .filter(([key]) => !key.startsWith('_'))
-                                        .sort((a, b) => {
-                                          const percentA = parseInt(String(a[1]).replace('%', '')) || 0;
-                                          const percentB = parseInt(String(b[1]).replace('%', '')) || 0;
-                                          return percentB - percentA;
-                                        })[0];
-                                      return topLength ? `${topLength[0].replace(/_/g, ' ')} (${topLength[1]})` : 'N/A';
-                                    }
-                                    // Old format: optimal_range string
-                                    return lengthData.optimal_range || lengthData.optimal_length || 'N/A';
+                                    const geo = channelAudienceData.demographic_profile.geographic_distribution;
+                                    const topCountries = Object.keys(geo).slice(0, 2).join(', ');
+                                    return topCountries || 'Global';
                                   })()}
-                                </div>
+                                </span>
                               )}
-                              {audienceData.monetization_potential?.product_categories?.high_interest && (
-                                <div>
-                                  <span className="text-purple-300 font-medium">Interests: </span>
-                                  {audienceData.monetization_potential.product_categories.high_interest.slice(0, 2).join(', ')}
-                                </div>
-                              )}
-                              {audienceData._parseMethod && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Parse method: {audienceData._parseMethod}
-                                </p>
-                              )}
-                              <p className="text-xs text-gray-400 mt-2">✨ Full demographic & psychographic analysis will be used for script generation</p>
                             </div>
-                          );
-                        }
+                          )}
 
-                        // Fallback
-                        return <p className="text-sm text-gray-300">{targetAudience}</p>;
-                      })()}
+                          {/* Psychographics - Core Values */}
+                          {channelAudienceData.psychographic_analysis?.core_values && (
+                            <div>
+                              <span className="text-xs text-gray-400">Values: </span>
+                              <span className="text-xs text-gray-300">
+                                {Array.isArray(channelAudienceData.psychographic_analysis.core_values)
+                                  ? channelAudienceData.psychographic_analysis.core_values.slice(0, 3).join(' • ')
+                                  : channelAudienceData.psychographic_analysis.core_values}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Interests */}
+                          {(channelAudienceData.audience_overlap?.common_interests ||
+                            channelAudienceData.monetization_potential?.product_categories?.high_interest) && (
+                            <div>
+                              <span className="text-xs text-gray-400">Interests: </span>
+                              <span className="text-xs text-gray-300">
+                                {(channelAudienceData.audience_overlap?.common_interests ||
+                                  channelAudienceData.monetization_potential?.product_categories?.high_interest || [])
+                                  .slice(0, 3).join(' • ')}
+                              </span>
+                            </div>
+                          )}
+
+                          <p className="text-xs text-green-400 mt-1">✓ Full analysis will be used for script generation</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-300">Audience data loaded for script generation</p>
+                      )}
                     </div>
                   )}
                 </>
