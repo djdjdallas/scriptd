@@ -64,7 +64,7 @@ const shortsDifference = [
   {
     icon: Timer,
     title: 'First 3 Seconds Matter',
-    description: 'Viewers swipe in under 2 seconds. Your hook must be immediate—no intros, no logos, straight to value.',
+    description: 'Viewers swipe in under 2 seconds. Your hook must be immediate -no intros, no logos, straight to value.',
     stat: '2s',
     statLabel: 'avg decision time'
   },
@@ -85,7 +85,7 @@ const shortsDifference = [
   {
     icon: ThumbsUp,
     title: 'Engagement Hooks',
-    description: 'Comments drive reach. We include engagement triggers—questions, debates, save-worthy tips—in every script.',
+    description: 'Comments drive reach. We include engagement triggers -questions, debates, save-worthy tips -in every script.',
     stat: '40%',
     statLabel: 'more comments'
   }
@@ -161,7 +161,7 @@ const faqs = [
   },
   {
     question: 'What length should I choose?',
-    answer: 'It depends on your content. 15s works for single reveals or quick tips. 30s is ideal for mini-tutorials or transformations. 60s gives you room for full narratives. Start with 30s—it\'s the sweet spot for most niches.'
+    answer: 'It depends on your content. 15s works for single reveals or quick tips. 30s is ideal for mini-tutorials or transformations. 60s gives you room for full narratives. Start with 30s -it\'s the sweet spot for most niches.'
   },
   {
     question: 'Can I use the same script for TikTok and Shorts?',
@@ -173,7 +173,7 @@ const faqs = [
   },
   {
     question: 'How many Shorts should I post?',
-    answer: 'Consistency beats volume. 1-2 high-quality Shorts per day outperforms 10 mediocre ones. Our Shorts generator helps you maintain quality at volume—batch generate a week\'s worth of scripts in one session.'
+    answer: 'Consistency beats volume. 1-2 high-quality Shorts per day outperforms 10 mediocre ones. Our Shorts generator helps you maintain quality at volume -batch generate a week\'s worth of scripts in one session.'
   },
   {
     question: 'Can I batch generate Shorts scripts?',
@@ -341,7 +341,7 @@ export default function YouTubeShortsScriptGeneratorPage() {
 
             <div className="p-3 bg-gray-800/50 rounded-lg">
               <div className="text-xs text-gray-500 mb-1">SOLUTION (8-25s)</div>
-              <p>&quot;Here&apos;s the fix—takes 10 seconds. Settings, Accessibility, Touch, Back Tap, Double Tap, and change it to Screenshot. Now watch...&quot;</p>
+              <p>&quot;Here&apos;s the fix -takes 10 seconds. Settings, Accessibility, Touch, Back Tap, Double Tap, and change it to Screenshot. Now watch...&quot;</p>
             </div>
 
             <div className="p-3 bg-green-500/10 rounded-lg border-l-4 border-green-500">

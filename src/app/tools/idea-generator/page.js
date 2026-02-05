@@ -103,200 +103,205 @@ export default function IdeaGeneratorPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold">Video Idea Generator</h1>
-        <p className="text-xl text-muted-foreground">
-          Never run out of content ideas with AI-powered suggestions
-        </p>
-      </div>
+    <div className="min-h-screen bg-black py-20 px-4">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold text-white">Video Idea Generator</h1>
+          <p className="text-xl text-gray-400">
+            Never run out of content ideas with AI-powered suggestions
+          </p>
+        </div>
 
-      {/* Generator Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Generate Video Ideas</CardTitle>
-          <CardDescription>
-            Enter your niche and preferences to get tailored video ideas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={generateIdeas} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="niche">Channel Niche/Topic *</Label>
-              <Input
-                id="niche"
-                placeholder="e.g., Personal finance, Web development tutorials"
-                value={niche}
-                onChange={(e) => setNiche(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Content Category</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Select a category (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="any">Any category</SelectItem>
-                  {CONTENT_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="audience">Target Audience (Optional)</Label>
-              <Input
-                id="audience"
-                placeholder="e.g., Beginners, Young professionals, Students"
-                value={targetAudience}
-                onChange={(e) => setTargetAudience(e.target.value)}
-                disabled={loading}
-              />
-              <p className="text-sm text-muted-foreground">
-                Specify your target audience for more relevant ideas
-              </p>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Generating Ideas...
-                </>
-              ) : (
-                <>
-                  <Lightbulb className="h-4 w-4 mr-2" />
-                  Generate Video Ideas
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Results */}
-      {ideas.length > 0 && (
-        <Card>
+        {/* Generator Form */}
+        <Card className="bg-gray-800/50 border-gray-700">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Generated Ideas</CardTitle>
-                <CardDescription>
-                  Click any idea to copy it to your clipboard
-                </CardDescription>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => generateIdeas(new Event('submit'))}
-                disabled={loading}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Regenerate
-              </Button>
-            </div>
+            <CardTitle className="text-white">Generate Video Ideas</CardTitle>
+            <CardDescription className="text-gray-400">
+              Enter your niche and preferences to get tailored video ideas
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {ideas.map((idea, index) => (
-                <div
-                  key={index}
-                  className="group p-4 rounded-lg border hover:border-primary hover:bg-muted/50 cursor-pointer transition-all"
-                  onClick={() => copyIdea(idea)}
+            <form onSubmit={generateIdeas} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="niche" className="text-gray-300">Channel Niche/Topic *</Label>
+                <Input
+                  id="niche"
+                  placeholder="e.g., Personal finance, Web development tutorials"
+                  value={niche}
+                  onChange={(e) => setNiche(e.target.value)}
+                  disabled={loading}
+                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category" className="text-gray-300">Content Category</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger id="category" className="bg-gray-900 border-gray-700 text-white">
+                    <SelectValue placeholder="Select a category (optional)" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900 border-gray-700">
+                    <SelectItem value="any">Any category</SelectItem>
+                    {CONTENT_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="audience" className="text-gray-300">Target Audience (Optional)</Label>
+                <Input
+                  id="audience"
+                  placeholder="e.g., Beginners, Young professionals, Students"
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value)}
+                  disabled={loading}
+                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                />
+                <p className="text-sm text-gray-400">
+                  Specify your target audience for more relevant ideas
+                </p>
+              </div>
+
+              <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating Ideas...
+                  </>
+                ) : (
+                  <>
+                    <Lightbulb className="h-4 w-4 mr-2" />
+                    Generate Video Ideas
+                  </>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Results */}
+        {ideas.length > 0 && (
+          <Card className="bg-gray-800/50 border-gray-700">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-white">Generated Ideas</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Click any idea to copy it to your clipboard
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => generateIdeas(new Event('submit'))}
+                  disabled={loading}
+                  className="border-gray-600 hover:bg-gray-700 text-white"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <h3 className="font-semibold text-lg">{idea.title}</h3>
-                        {idea.trending && (
-                          <Badge variant="secondary" className="gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            Trending
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-muted-foreground">{idea.description}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {idea.tags?.map((tag, tagIndex) => (
-                          <Badge key={tagIndex} variant="outline">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                      {idea.difficulty && (
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Target className="h-3 w-3" />
-                            Difficulty: {idea.difficulty}
-                          </span>
-                          {idea.potential && (
-                            <span className="flex items-center gap-1">
-                              <Star className="h-3 w-3" />
-                              Potential: {idea.potential}
-                            </span>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Regenerate
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {ideas.map((idea, index) => (
+                  <div
+                    key={index}
+                    className="group p-4 rounded-lg border border-gray-700 hover:border-purple-500 hover:bg-gray-700/50 cursor-pointer transition-all"
+                    onClick={() => copyIdea(idea)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <h3 className="font-semibold text-lg text-white">{idea.title}</h3>
+                          {idea.trending && (
+                            <Badge className="gap-1 bg-purple-500/20 text-purple-400 border-purple-500/30">
+                              <TrendingUp className="h-3 w-3" />
+                              Trending
+                            </Badge>
                           )}
                         </div>
-                      )}
+                        <p className="text-gray-400">{idea.description}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {idea.tags?.map((tag, tagIndex) => (
+                            <Badge key={tagIndex} variant="outline" className="border-gray-600 text-gray-300">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                        {idea.difficulty && (
+                          <div className="flex items-center gap-4 text-sm text-gray-400">
+                            <span className="flex items-center gap-1">
+                              <Target className="h-3 w-3" />
+                              Difficulty: {idea.difficulty}
+                            </span>
+                            {idea.potential && (
+                              <span className="flex items-center gap-1">
+                                <Star className="h-3 w-3" />
+                                Potential: {idea.potential}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-white"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Tips */}
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white">Content Ideation Tips</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-3">
+              <Sparkles className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-white">Mix evergreen and trending content</p>
+                <p className="text-sm text-gray-400">
+                  Balance timeless topics with current trends for consistent growth
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <TrendingUp className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-white">Research your competition</p>
+                <p className="text-sm text-gray-400">
+                  Look at what's working for similar channels and add your unique spin
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Target className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-white">Solve real problems</p>
+                <p className="text-sm text-gray-400">
+                  The best content ideas address actual pain points your audience faces
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {/* Tips */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Content Ideation Tips</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-3">
-            <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium">Mix evergreen and trending content</p>
-              <p className="text-sm text-muted-foreground">
-                Balance timeless topics with current trends for consistent growth
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex gap-3">
-            <TrendingUp className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium">Research your competition</p>
-              <p className="text-sm text-muted-foreground">
-                Look at what's working for similar channels and add your unique spin
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex gap-3">
-            <Target className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium">Solve real problems</p>
-              <p className="text-sm text-muted-foreground">
-                The best content ideas address actual pain points your audience faces
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

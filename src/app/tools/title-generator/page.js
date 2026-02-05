@@ -106,229 +106,234 @@ export default function TitleGeneratorPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold">YouTube Title Generator</h1>
-        <p className="text-xl text-muted-foreground">
-          Create compelling titles that get clicks and rank in search
-        </p>
-      </div>
+    <div className="min-h-screen bg-black py-20 px-4">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold text-white">YouTube Title Generator</h1>
+          <p className="text-xl text-gray-400">
+            Create compelling titles that get clicks and rank in search
+          </p>
+        </div>
 
-      {/* Generator Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Generate Titles</CardTitle>
-          <CardDescription>
-            Enter your video topic and we'll create optimized titles for you
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={generateTitles} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="topic">Video Topic *</Label>
-              <Input
-                id="topic"
-                placeholder="e.g., Making sourdough bread at home"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="keywords">Target Keywords (Optional)</Label>
-              <Input
-                id="keywords"
-                placeholder="e.g., sourdough, bread recipe, homemade"
-                value={keywords}
-                onChange={(e) => setKeywords(e.target.value)}
-                disabled={loading}
-              />
-              <p className="text-sm text-muted-foreground">
-                Add keywords you want to rank for in YouTube search
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <Label>Title Style</Label>
-              <RadioGroup value={style} onValueChange={setStyle}>
-                <div className="grid grid-cols-2 gap-3">
-                  {TITLE_STYLES.map((s) => {
-                    const Icon = s.icon;
-                    return (
-                      <div key={s.id}>
-                        <RadioGroupItem
-                          value={s.id}
-                          id={s.id}
-                          className="peer sr-only"
-                        />
-                        <Label
-                          htmlFor={s.id}
-                          className="flex items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-muted/50 peer-data-[state=checked]:border-primary cursor-pointer"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Icon className="h-5 w-5" />
-                            <div>
-                              <p className="font-medium">{s.label}</p>
-                              <p className="text-xs text-muted-foreground">{s.example}</p>
-                            </div>
-                          </div>
-                        </Label>
-                      </div>
-                    );
-                  })}
-                </div>
-              </RadioGroup>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Generate Titles
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Results */}
-      {hasGenerated && (
-        <Card>
+        {/* Generator Form */}
+        <Card className="bg-gray-800/50 border-gray-700">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Generated Titles</CardTitle>
-                <CardDescription>
-                  Click to copy any title to your clipboard
-                </CardDescription>
-              </div>
-              {titles.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={regenerate}
-                  disabled={loading}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Regenerate
-                </Button>
-              )}
-            </div>
+            <CardTitle className="text-white">Generate Titles</CardTitle>
+            <CardDescription className="text-gray-400">
+              Enter your video topic and we'll create optimized titles for you
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <form onSubmit={generateTitles} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="topic" className="text-gray-300">Video Topic *</Label>
+                <Input
+                  id="topic"
+                  placeholder="e.g., Making sourdough bread at home"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  disabled={loading}
+                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                />
               </div>
-            ) : titles.length > 0 ? (
+
+              <div className="space-y-2">
+                <Label htmlFor="keywords" className="text-gray-300">Target Keywords (Optional)</Label>
+                <Input
+                  id="keywords"
+                  placeholder="e.g., sourdough, bread recipe, homemade"
+                  value={keywords}
+                  onChange={(e) => setKeywords(e.target.value)}
+                  disabled={loading}
+                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                />
+                <p className="text-sm text-gray-400">
+                  Add keywords you want to rank for in YouTube search
+                </p>
+              </div>
+
               <div className="space-y-3">
-                {titles.map((title, index) => (
-                  <div
-                    key={index}
-                    className="group p-4 rounded-lg border hover:border-primary hover:bg-muted/50 cursor-pointer transition-all"
-                    onClick={() => copyTitle(title.text)}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <p className="font-medium">{title.text}</p>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                          <span>{title.text.length} characters</span>
-                          {title.score && (
-                            <Badge variant="secondary">
-                              Score: {title.score}/10
-                            </Badge>
-                          )}
+                <Label className="text-gray-300">Title Style</Label>
+                <RadioGroup value={style} onValueChange={setStyle}>
+                  <div className="grid grid-cols-2 gap-3">
+                    {TITLE_STYLES.map((s) => {
+                      const Icon = s.icon;
+                      return (
+                        <div key={s.id}>
+                          <RadioGroupItem
+                            value={s.id}
+                            id={s.id}
+                            className="peer sr-only"
+                          />
+                          <Label
+                            htmlFor={s.id}
+                            className="flex items-center justify-between rounded-md border-2 border-gray-700 bg-gray-900 p-4 hover:bg-gray-800 peer-data-[state=checked]:border-purple-500 cursor-pointer"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Icon className="h-5 w-5 text-purple-400" />
+                              <div>
+                                <p className="font-medium text-white">{s.label}</p>
+                                <p className="text-xs text-gray-400">{s.example}</p>
+                              </div>
+                            </div>
+                          </Label>
                         </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
+                      );
+                    })}
                   </div>
-                ))}
+                </RadioGroup>
               </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No titles generated yet</p>
-              </div>
-            )}
+
+              <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Titles
+                  </>
+                )}
+              </Button>
+            </form>
           </CardContent>
         </Card>
-      )}
 
-      {/* Tips */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Title Optimization Tips</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-3">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-xs font-semibold">1</span>
-            </div>
-            <div>
-              <p className="font-medium">Keep it under 60 characters</p>
-              <p className="text-sm text-muted-foreground">
-                YouTube truncates titles in search results and suggested videos
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex gap-3">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-xs font-semibold">2</span>
-            </div>
-            <div>
-              <p className="font-medium">Front-load important keywords</p>
-              <p className="text-sm text-muted-foreground">
-                Put your main keyword at the beginning for better SEO
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex gap-3">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-xs font-semibold">3</span>
-            </div>
-            <div>
-              <p className="font-medium">Create curiosity without clickbait</p>
-              <p className="text-sm text-muted-foreground">
-                Make viewers want to click while delivering on your promise
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Results */}
+        {hasGenerated && (
+          <Card className="bg-gray-800/50 border-gray-700">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-white">Generated Titles</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Click to copy any title to your clipboard
+                  </CardDescription>
+                </div>
+                {titles.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={regenerate}
+                    disabled={loading}
+                    className="border-gray-600 hover:bg-gray-700 text-white"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Regenerate
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              ) : titles.length > 0 ? (
+                <div className="space-y-3">
+                  {titles.map((title, index) => (
+                    <div
+                      key={index}
+                      className="group p-4 rounded-lg border border-gray-700 hover:border-purple-500 hover:bg-gray-700/50 cursor-pointer transition-all"
+                      onClick={() => copyTitle(title.text)}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="font-medium text-white">{title.text}</p>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
+                            <span>{title.text.length} characters</span>
+                            {title.score && (
+                              <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                                Score: {title.score}/10
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-white"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No titles generated yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-      {/* CTA */}
-      <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="pt-6 text-center">
-          <h3 className="text-lg font-semibold mb-2">
-            Want to Generate Complete Scripts?
-          </h3>
-          <p className="text-muted-foreground mb-4">
-            Sign up for free and get access to our full AI script generator
-          </p>
-          <Button asChild>
-            <Link href="/signup">
-              Get Started Free
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+        {/* Tips */}
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white">Title Optimization Tips</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-3">
+              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-semibold text-purple-400">1</span>
+              </div>
+              <div>
+                <p className="font-medium text-white">Keep it under 60 characters</p>
+                <p className="text-sm text-gray-400">
+                  YouTube truncates titles in search results and suggested videos
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-semibold text-purple-400">2</span>
+              </div>
+              <div>
+                <p className="font-medium text-white">Front-load important keywords</p>
+                <p className="text-sm text-gray-400">
+                  Put your main keyword at the beginning for better SEO
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-semibold text-purple-400">3</span>
+              </div>
+              <div>
+                <p className="font-medium text-white">Create curiosity without clickbait</p>
+                <p className="text-sm text-gray-400">
+                  Make viewers want to click while delivering on your promise
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* CTA */}
+        <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30">
+          <CardContent className="pt-6 text-center">
+            <h3 className="text-lg font-semibold mb-2 text-white">
+              Want to Generate Complete Scripts?
+            </h3>
+            <p className="text-gray-400 mb-4">
+              Sign up for free and get access to our full AI script generator
+            </p>
+            <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+              <Link href="/signup">
+                Get Started Free
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

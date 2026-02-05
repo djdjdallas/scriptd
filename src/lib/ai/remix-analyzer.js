@@ -336,9 +336,9 @@ function detectChannelResearchTopics(channels, config) {
       categories: ['technology', 'innovation']
     },
     'psychology': {
-      keywords: ['psychology', 'mental', 'brain', 'behavior', 'cognitive', 'therapy', 'mindset', 'emotion'],
-      searchTopics: ['psychology research', 'mental health breakthroughs', 'behavioral science'],
-      categories: ['psychology', 'mental health']
+      keywords: ['psychology', 'mental', 'brain', 'behavior', 'cognitive', 'therapy', 'mindset', 'emotion', 'trauma', 'healing', 'anxiety', 'relationship', 'attachment'],
+      searchTopics: ['psychology research', 'mental health breakthroughs', 'behavioral science', 'therapy methods'],
+      categories: ['psychology', 'mental health', 'self-help']
     },
     'business': {
       keywords: ['business', 'entrepreneur', 'startup', 'ceo', 'company', 'corporate', 'economy', 'market'],
@@ -369,6 +369,41 @@ function detectChannelResearchTopics(channels, config) {
       keywords: ['celebrity', 'hollywood', 'movie', 'actor', 'film', 'entertainment', 'fame'],
       searchTopics: ['entertainment news', 'celebrity stories', 'hollywood scandals'],
       categories: ['entertainment', 'celebrities']
+    },
+    'cooking': {
+      keywords: ['recipe', 'cook', 'food', 'kitchen', 'chef', 'meal', 'ingredient', 'bake', 'cuisine'],
+      searchTopics: ['food trends', 'viral recipes', 'culinary techniques'],
+      categories: ['cooking', 'food']
+    },
+    'fitness': {
+      keywords: ['workout', 'fitness', 'exercise', 'gym', 'muscle', 'strength', 'cardio', 'training', 'health'],
+      searchTopics: ['fitness trends', 'workout routines', 'health breakthroughs'],
+      categories: ['fitness', 'health']
+    },
+    'personal development': {
+      keywords: ['growth', 'mindset', 'motivation', 'success', 'habit', 'productivity', 'self-improvement', 'goal', 'discipline'],
+      searchTopics: ['personal development research', 'success stories', 'productivity methods'],
+      categories: ['self-improvement', 'personal growth']
+    },
+    'education': {
+      keywords: ['learn', 'teach', 'tutorial', 'explain', 'course', 'lesson', 'study', 'education', 'knowledge'],
+      searchTopics: ['educational content', 'learning methods', 'academic research'],
+      categories: ['education', 'learning']
+    },
+    'gaming': {
+      keywords: ['game', 'gaming', 'play', 'stream', 'esports', 'console', 'pc', 'gameplay', 'review'],
+      searchTopics: ['gaming news', 'game releases', 'esports events'],
+      categories: ['gaming', 'entertainment']
+    },
+    'beauty': {
+      keywords: ['makeup', 'beauty', 'skincare', 'cosmetic', 'tutorial', 'routine', 'product', 'style', 'fashion'],
+      searchTopics: ['beauty trends', 'skincare research', 'makeup techniques'],
+      categories: ['beauty', 'fashion']
+    },
+    'finance': {
+      keywords: ['invest', 'money', 'finance', 'stock', 'budget', 'wealth', 'saving', 'crypto', 'market'],
+      searchTopics: ['financial news', 'investment strategies', 'market trends'],
+      categories: ['finance', 'investing']
     }
   };
 

@@ -78,12 +78,12 @@ const nextConfig = {
     ],
   },
   webpack: (config, { isServer }) => {
-    // Optimize webpack cache to handle large strings better
+    // Optimize webpack cache to reduce serialization overhead
     if (!isServer) {
       config.cache = {
         type: 'filesystem',
         compression: 'gzip',
-        maxMemoryGenerations: 1,
+        maxMemoryGenerations: 5,  // Increased from 1 to reduce cache thrashing
       };
     }
     return config;

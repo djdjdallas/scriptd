@@ -52,7 +52,7 @@ const whyAI = [
   {
     icon: Mic,
     title: 'Voice Cloning',
-    description: 'Upload samples and our AI learns your unique style—word choices, rhythm, personality.',
+    description: 'Upload samples and our AI learns your unique style -word choices, rhythm, personality.',
     stat: '99%',
     statLabel: 'voice accuracy'
   },
@@ -108,7 +108,7 @@ const aiDifference = [
   },
   {
     title: 'Your Voice, Amplified',
-    description: 'We don\'t replace your creativity—we amplify it. Upload your best content and our AI captures your unique voice, then generates scripts that sound like you on your best day.',
+    description: 'We don\'t replace your creativity -we amplify it. Upload your best content and our AI captures your unique voice, then generates scripts that sound like you on your best day.',
     icon: Mic
   },
   {
@@ -130,7 +130,7 @@ const faqs = [
   },
   {
     question: 'Will my scripts sound robotic?',
-    answer: 'No. GenScript is specifically designed to avoid AI patterns that sound robotic—hedging language, formulaic transitions, and overly formal tone. Our compliance checker actively flags these issues and suggests natural alternatives.'
+    answer: 'No. GenScript is specifically designed to avoid AI patterns that sound robotic -hedging language, formulaic transitions, and overly formal tone. Our compliance checker actively flags these issues and suggests natural alternatives.'
   },
   {
     question: 'Can I use this for faceless channels?',
@@ -164,7 +164,7 @@ export default function AIScriptWriterYouTubePage() {
             <span className="text-3xl md:text-5xl text-gray-400">Built for YouTube</span>
           </>
         }
-        subtitle="The only AI script writer that understands YouTube's policies, matches your voice, and optimizes for retention. Not a generic tool—a YouTube specialist."
+        subtitle="The only AI script writer that understands YouTube's policies, matches your voice, and optimizes for retention. Not a generic tool -a YouTube specialist."
         primaryCTA={
           <Link href="/login">
             <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8">

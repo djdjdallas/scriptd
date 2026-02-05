@@ -130,7 +130,7 @@ const pricingComparison = {
     plans: [
       { name: 'Starter', price: 29, scripts: '10', perScript: '2.90' },
       { name: 'Creator', price: 79, scripts: '40', perScript: '1.98' },
-      { name: 'Business', price: 199, scripts: 'Unlimited', perScript: '—' }
+      { name: 'Business', price: 199, scripts: 'Unlimited', perScript: '-' }
     ]
   },
   genscript: {
@@ -164,7 +164,7 @@ const fairAssessment = {
 // The compliance advantage
 const complianceAdvantage = {
   title: 'The Compliance Gap',
-  description: 'Subscribr generates great scripts—but they don\'t check if those scripts could get you demonetized. In the era of YouTube\'s 2025 authenticity policy, that\'s a significant blind spot.',
+  description: 'Subscribr generates great scripts-but they don\'t check if those scripts could get you demonetized. In the era of YouTube\'s 2025 authenticity policy, that\'s a significant blind spot.',
   stats: [
     { value: '23%', label: 'of AI scripts get flagged for review' },
     { value: '85%', label: 'of those have fixable issues' },
@@ -176,7 +176,7 @@ const complianceAdvantage = {
 const faqs = [
   {
     question: 'Is Subscribr a bad tool?',
-    answer: 'No. Subscribr is a solid YouTube script generator with a good track record. This comparison isn\'t about Subscribr being bad—it\'s about GenScript offering compliance checking that Subscribr doesn\'t have. In 2025, that\'s an important differentiator.'
+    answer: 'No. Subscribr is a solid YouTube script generator with a good track record. This comparison isn\'t about Subscribr being bad-it\'s about GenScript offering compliance checking that Subscribr doesn\'t have. In 2025, that\'s an important differentiator.'
   },
   {
     question: 'Why is GenScript cheaper per script?',
@@ -196,7 +196,7 @@ const faqs = [
   },
   {
     question: 'Which tool has better customer support?',
-    answer: 'Both platforms offer responsive support. GenScript provides 24/7 support on Professional and Agency plans, plus an active community. We can\'t speak to Subscribr\'s current support quality—check their recent reviews.'
+    answer: 'Both platforms offer responsive support. GenScript provides 24/7 support on Professional and Agency plans, plus an active community. We can\'t speak to Subscribr\'s current support quality-check their recent reviews.'
   }
 ];
 
@@ -411,7 +411,7 @@ export default function GenScriptVsSubscribr() {
 
         <div className="text-center mt-8">
           <p className="text-gray-400 text-sm">
-            * GenScript credits are flexible—simple scripts use fewer credits.
+            * GenScript credits are flexible-simple scripts use fewer credits.
             <br />
             Subscribr pricing based on public information as of January 2025.
           </p>
@@ -424,7 +424,7 @@ export default function GenScriptVsSubscribr() {
           <h2 className="text-2xl font-bold text-white mb-4">Already Using Subscribr?</h2>
           <p className="text-gray-400 mb-6">
             You don&apos;t have to switch. Use GenScript&apos;s free compliance checker to verify any script
-            before publishing—regardless of where you generated it.
+            before publishing-regardless of where you generated it.
           </p>
           <Link href="/compliance-check">
             <Button className="bg-purple-600 hover:bg-purple-700">

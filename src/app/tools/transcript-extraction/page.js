@@ -122,260 +122,265 @@ export default function TranscriptExtractionPage() {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <Badge variant="secondary" className="gap-2">
-          <Sparkles className="h-3 w-3" />
-          Free YouTube Transcript Extractor
-        </Badge>
-        <h1 className="text-4xl font-bold">YouTube Transcript Extraction</h1>
-        <p className="text-xl text-muted-foreground">
-          Extract and analyze video transcripts in seconds for competitive research
-        </p>
-      </div>
-
-      {/* Extraction Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Extract Transcript</CardTitle>
-          <CardDescription>
-            Enter any YouTube video URL to extract its transcript
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={extractTranscript} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="url">YouTube Video URL *</Label>
-              <Input
-                id="url"
-                placeholder="https://www.youtube.com/watch?v=..."
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                disabled={loading}
-              />
-              <p className="text-sm text-muted-foreground">
-                Works with any public YouTube video that has captions
-              </p>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="timestamps"
-                checked={includeTimestamps}
-                onCheckedChange={setIncludeTimestamps}
-                disabled={loading}
-              />
-              <Label htmlFor="timestamps" className="cursor-pointer">
-                Include timestamps
-              </Label>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Extracting...
-                </>
-              ) : (
-                <>
-                  <Video className="h-4 w-4 mr-2" />
-                  Extract Transcript
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Results */}
-      {transcript && (
-        <>
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Extracted Transcript</CardTitle>
-                  <CardDescription>
-                    Video ID: {transcript.videoId}
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={copyTranscript}
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={downloadTranscript}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Hash className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">Word Count</span>
-                    </div>
-                    <p className="text-2xl font-bold">{transcript.wordCount}</p>
-                  </div>
-                  <div className="p-3 bg-muted rounded-lg">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">Read Time</span>
-                    </div>
-                    <p className="text-2xl font-bold">{transcript.estimatedReadTime} min</p>
-                  </div>
-                  <div className="p-3 bg-muted rounded-lg">
-                    <div className="flex items-center gap-2 mb-1">
-                      <FileText className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">Format</span>
-                    </div>
-                    <p className="text-2xl font-bold">{transcript.includeTimestamps ? 'Timed' : 'Plain'}</p>
-                  </div>
-                </div>
-
-                {/* Transcript Text */}
-                <Textarea
-                  value={transcript.transcript}
-                  readOnly
-                  rows={20}
-                  className="font-mono text-sm"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      {/* Features */}
-      <Card>
-        <CardHeader>
-          <CardTitle>What You Can Do With Transcripts</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-3">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <CheckCircle2 className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <p className="font-medium">Competitive Research</p>
-              <p className="text-sm text-muted-foreground">
-                Analyze successful videos in your niche to understand their structure
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <CheckCircle2 className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <p className="font-medium">Hook Analysis</p>
-              <p className="text-sm text-muted-foreground">
-                Study how top creators hook viewers in the first 30 seconds
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <CheckCircle2 className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <p className="font-medium">Topic Detection</p>
-              <p className="text-sm text-muted-foreground">
-                Identify key topics and themes covered in successful content
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <CheckCircle2 className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <p className="font-medium">Keyword Research</p>
-              <p className="text-sm text-muted-foreground">
-                Extract keywords and phrases that resonate with audiences
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tips */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Research Tips</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-3">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-xs font-semibold">1</span>
-            </div>
-            <div>
-              <p className="font-medium">Analyze Top Performers</p>
-              <p className="text-sm text-muted-foreground">
-                Extract transcripts from the top 10 videos in your niche for pattern recognition
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-xs font-semibold">2</span>
-            </div>
-            <div>
-              <p className="font-medium">Study Hook Patterns</p>
-              <p className="text-sm text-muted-foreground">
-                Focus on the first 30 seconds to understand what makes viewers stay
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-xs font-semibold">3</span>
-            </div>
-            <div>
-              <p className="font-medium">Compare Structures</p>
-              <p className="text-sm text-muted-foreground">
-                Look for common storytelling structures across multiple successful videos
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* CTA */}
-      <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="pt-6 text-center">
-          <h3 className="text-lg font-semibold mb-2">
-            Ready to Create Your Own Viral Scripts?
-          </h3>
-          <p className="text-muted-foreground mb-4">
-            Use the insights from transcript research to generate scripts in your unique voice
+    <div className="min-h-screen bg-black py-20 px-4">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <Badge className="gap-2 bg-purple-500/20 text-purple-400 border-purple-500/30">
+            <Sparkles className="h-3 w-3" />
+            Free YouTube Transcript Extractor
+          </Badge>
+          <h1 className="text-4xl font-bold text-white">YouTube Transcript Extraction</h1>
+          <p className="text-xl text-gray-400">
+            Extract and analyze video transcripts in seconds for competitive research
           </p>
-          <Button asChild>
-            <Link href="/signup">
-              Get Started Free
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Extraction Form */}
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white">Extract Transcript</CardTitle>
+            <CardDescription className="text-gray-400">
+              Enter any YouTube video URL to extract its transcript
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={extractTranscript} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="url" className="text-gray-300">YouTube Video URL *</Label>
+                <Input
+                  id="url"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  disabled={loading}
+                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                />
+                <p className="text-sm text-gray-400">
+                  Works with any public YouTube video that has captions
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="timestamps"
+                  checked={includeTimestamps}
+                  onCheckedChange={setIncludeTimestamps}
+                  disabled={loading}
+                />
+                <Label htmlFor="timestamps" className="cursor-pointer text-gray-300">
+                  Include timestamps
+                </Label>
+              </div>
+
+              <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Extracting...
+                  </>
+                ) : (
+                  <>
+                    <Video className="h-4 w-4 mr-2" />
+                    Extract Transcript
+                  </>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Results */}
+        {transcript && (
+          <>
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-white">Extracted Transcript</CardTitle>
+                    <CardDescription className="text-gray-400">
+                      Video ID: {transcript.videoId}
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyTranscript}
+                      className="border-gray-600 hover:bg-gray-700 text-white"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={downloadTranscript}
+                      className="border-gray-600 hover:bg-gray-700 text-white"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="p-3 bg-gray-900 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Hash className="h-4 w-4 text-purple-400" />
+                        <span className="text-sm font-medium text-gray-300">Word Count</span>
+                      </div>
+                      <p className="text-2xl font-bold text-white">{transcript.wordCount}</p>
+                    </div>
+                    <div className="p-3 bg-gray-900 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock className="h-4 w-4 text-purple-400" />
+                        <span className="text-sm font-medium text-gray-300">Read Time</span>
+                      </div>
+                      <p className="text-2xl font-bold text-white">{transcript.estimatedReadTime} min</p>
+                    </div>
+                    <div className="p-3 bg-gray-900 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <FileText className="h-4 w-4 text-purple-400" />
+                        <span className="text-sm font-medium text-gray-300">Format</span>
+                      </div>
+                      <p className="text-2xl font-bold text-white">{transcript.includeTimestamps ? 'Timed' : 'Plain'}</p>
+                    </div>
+                  </div>
+
+                  {/* Transcript Text */}
+                  <Textarea
+                    value={transcript.transcript}
+                    readOnly
+                    rows={20}
+                    className="font-mono text-sm bg-gray-900 border-gray-700 text-white"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {/* Features */}
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white">What You Can Do With Transcripts</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-3">
+              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CheckCircle2 className="h-4 w-4 text-purple-400" />
+              </div>
+              <div>
+                <p className="font-medium text-white">Competitive Research</p>
+                <p className="text-sm text-gray-400">
+                  Analyze successful videos in your niche to understand their structure
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CheckCircle2 className="h-4 w-4 text-purple-400" />
+              </div>
+              <div>
+                <p className="font-medium text-white">Hook Analysis</p>
+                <p className="text-sm text-gray-400">
+                  Study how top creators hook viewers in the first 30 seconds
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CheckCircle2 className="h-4 w-4 text-purple-400" />
+              </div>
+              <div>
+                <p className="font-medium text-white">Topic Detection</p>
+                <p className="text-sm text-gray-400">
+                  Identify key topics and themes covered in successful content
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CheckCircle2 className="h-4 w-4 text-purple-400" />
+              </div>
+              <div>
+                <p className="font-medium text-white">Keyword Research</p>
+                <p className="text-sm text-gray-400">
+                  Extract keywords and phrases that resonate with audiences
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tips */}
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white">Research Tips</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-3">
+              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-semibold text-purple-400">1</span>
+              </div>
+              <div>
+                <p className="font-medium text-white">Analyze Top Performers</p>
+                <p className="text-sm text-gray-400">
+                  Extract transcripts from the top 10 videos in your niche for pattern recognition
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-semibold text-purple-400">2</span>
+              </div>
+              <div>
+                <p className="font-medium text-white">Study Hook Patterns</p>
+                <p className="text-sm text-gray-400">
+                  Focus on the first 30 seconds to understand what makes viewers stay
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-semibold text-purple-400">3</span>
+              </div>
+              <div>
+                <p className="font-medium text-white">Compare Structures</p>
+                <p className="text-sm text-gray-400">
+                  Look for common storytelling structures across multiple successful videos
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* CTA */}
+        <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30">
+          <CardContent className="pt-6 text-center">
+            <h3 className="text-lg font-semibold mb-2 text-white">
+              Ready to Create Your Own Viral Scripts?
+            </h3>
+            <p className="text-gray-400 mb-4">
+              Use the insights from transcript research to generate scripts in your unique voice
+            </p>
+            <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+              <Link href="/signup">
+                Get Started Free
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -41,35 +41,35 @@ const allTemplates = {
     title: 'ChatGPT Alternative for Developer YouTubers - Code-Optimized Scripts | GenScript',
     description: 'Developer-focused YouTube script generator. Better than ChatGPT for programming tutorials with code formatting, technical accuracy, and 72% retention.',
     h1: 'ChatGPT Alternative Built for Developer Content Creators',
-    subheading: 'Generate technical tutorials that actually teach—with proper code formatting, zero hallucinations, and 72% retention rates.',
+    subheading: 'Generate technical tutorials that actually teach - with proper code formatting, zero hallucinations, and 72% retention rates.',
     stats: { retention: '72%', accuracy: '99.8%', generation: '45 sec', creators: '2.5K+' }
   },
   'developers-jasper': {
     title: 'Jasper AI Alternative for Developer YouTubers - Technical Script Generator | GenScript',
     description: 'Jasper alternative built for coding tutorials. Generate developer YouTube scripts with syntax highlighting, API documentation, and technical accuracy.',
     h1: 'Jasper AI Alternative for Programming Tutorial Creators',
-    subheading: 'Create coding tutorials that developers actually want to watch—with accurate syntax, clear explanations, and 70% retention.',
+    subheading: 'Create coding tutorials that developers actually want to watch - with accurate syntax, clear explanations, and 70% retention.',
     stats: { retention: '70%', accuracy: '99.5%', generation: '40 sec', creators: '2.1K+' }
   },
   'developers-writesonic': {
     title: 'Writesonic Alternative for Developer YouTubers - Code Tutorial Scripts | GenScript',
     description: 'Writesonic alternative for tech content creators. Generate programming tutorials with proper code blocks, debugging walkthroughs, and technical depth.',
     h1: 'Writesonic Alternative for Tech Tutorial Creators',
-    subheading: 'Build coding content that teaches effectively—with structured explanations, code examples, and developer-focused retention optimization.',
+    subheading: 'Build coding content that teaches effectively - with structured explanations, code examples, and developer-focused retention optimization.',
     stats: { retention: '69%', codeAccuracy: '99.2%', generation: '35 sec', creators: '1.9K+' }
   },
   'developers-copy-ai': {
     title: 'Copy.ai Alternative for Developer YouTubers - Programming Scripts | GenScript',
     description: 'Copy.ai alternative designed for developers. Create YouTube scripts for coding tutorials, tech reviews, and software walkthroughs with technical precision.',
     h1: 'Copy.ai Alternative for Software Development Creators',
-    subheading: 'Generate programming content that resonates with developers—featuring accurate terminology, best practices, and 68% average retention.',
+    subheading: 'Generate programming content that resonates with developers -featuring accurate terminology, best practices, and 68% average retention.',
     stats: { retention: '68%', techAccuracy: '99.3%', generation: '38 sec', creators: '1.7K+' }
   },
   'developers-rytr': {
     title: 'Rytr Alternative for Developer YouTubers - Technical Content Scripts | GenScript',
     description: 'Rytr alternative for programming content. Generate developer-focused YouTube scripts with code snippets, technical accuracy, and engagement optimization.',
     h1: 'Rytr Alternative for Developer Content Creators',
-    subheading: 'Create technical tutorials that keep developers engaged—with clean code examples, debugging tips, and 67% retention rates.',
+    subheading: 'Create technical tutorials that keep developers engaged - with clean code examples, debugging tips, and 67% retention rates.',
     stats: { retention: '67%', accuracy: '99.1%', generation: '32 sec', creators: '1.5K+' }
   },
 
@@ -78,7 +78,7 @@ const allTemplates = {
     title: 'ChatGPT Alternative for Business Educators - Professional YouTube Scripts | GenScript',
     description: 'ChatGPT alternative for business content. Generate professional YouTube scripts with case studies, data-driven insights, and executive credibility.',
     h1: 'ChatGPT Alternative for Business Education Channels',
-    subheading: 'Create business content that builds authority—with real case studies, market data, and 69% average viewer retention.',
+    subheading: 'Create business content that builds authority - with real case studies, market data, and 69% average viewer retention.',
     stats: { retention: '69%', conversion: '11%', generation: '35 sec', creators: '2.0K+' }
   },
   'business-educators-jasper': {
@@ -92,21 +92,21 @@ const allTemplates = {
     title: 'Writesonic Alternative for Business Educators - Executive Content Scripts | GenScript',
     description: 'Writesonic alternative for business YouTube. Generate professional scripts with industry insights, ROI frameworks, and thought leadership positioning.',
     h1: 'Writesonic Alternative for Business Content Creators',
-    subheading: 'Build business education content that establishes expertise—with data-backed insights, frameworks, and 67% retention.',
+    subheading: 'Build business education content that establishes expertise - with data-backed insights, frameworks, and 67% retention.',
     stats: { retention: '67%', leads: '+35%', generation: '32 sec', creators: '1.6K+' }
   },
   'business-educators-copy-ai': {
     title: 'Copy.ai Alternative for Business Educators - B2B YouTube Scripts | GenScript',
     description: 'Copy.ai alternative for business educators. Create YouTube scripts with market analysis, strategy frameworks, and professional credibility.',
     h1: 'Copy.ai Alternative for B2B Education Creators',
-    subheading: 'Generate business education content that converts viewers into clients—with proven frameworks and 66% retention rates.',
+    subheading: 'Generate business education content that converts viewers into clients - with proven frameworks and 66% retention rates.',
     stats: { retention: '66%', clientConversion: '9%', generation: '33 sec', creators: '1.4K+' }
   },
   'business-educators-rytr': {
     title: 'Rytr Alternative for Business Educators - Professional YouTube Content | GenScript',
     description: 'Rytr alternative for business YouTube channels. Generate scripts with industry expertise, actionable strategies, and thought leadership.',
     h1: 'Rytr Alternative for Business Education YouTubers',
-    subheading: 'Create professional business content that builds your brand—with strategic insights and 65% viewer retention.',
+    subheading: 'Create professional business content that builds your brand - with strategic insights and 65% viewer retention.',
     stats: { retention: '65%', authority: '+40%', generation: '28 sec', creators: '1.3K+' }
   },
 
@@ -115,14 +115,14 @@ const allTemplates = {
     title: 'ChatGPT Alternative for Faceless YouTube Channels - Bulk Script Generator | GenScript',
     description: 'ChatGPT alternative for faceless YouTube automation. Generate bulk scripts optimized for monetization, with proven hooks and 71% retention.',
     h1: 'ChatGPT Alternative for Faceless Channel Automation',
-    subheading: 'Scale your faceless empire with AI scripts optimized for the algorithm—bulk generation, proven niches, and maximum RPM.',
+    subheading: 'Scale your faceless empire with AI scripts optimized for the algorithm -bulk generation, proven niches, and maximum RPM.',
     stats: { retention: '71%', rpm: '$9-14', generation: '15 sec', creators: '6K+' }
   },
   'faceless-channels-jasper': {
     title: 'Jasper Alternative for Faceless YouTube Channels - Automated Scripts | GenScript',
     description: 'Jasper alternative for faceless content automation. Bulk script generation with voiceover optimization, trending topics, and monetization focus.',
     h1: 'Jasper Alternative for Faceless YouTube Automation',
-    subheading: 'Automate your faceless content pipeline—with scripts optimized for text-to-speech, viral potential, and 69% retention.',
+    subheading: 'Automate your faceless content pipeline - with scripts optimized for text-to-speech, viral potential, and 69% retention.',
     stats: { retention: '69%', rpm: '$7-11', generation: '18 sec', creators: '4.5K+' }
   },
   'faceless-channels-writesonic': {
@@ -136,14 +136,14 @@ const allTemplates = {
     title: 'Copy.ai Alternative for Faceless YouTube Channels - Bulk Content Scripts | GenScript',
     description: 'Copy.ai alternative for faceless YouTube. Mass produce monetization-ready scripts with trending topics, viral hooks, and algorithm optimization.',
     h1: 'Copy.ai Alternative for Faceless Channel Monetization',
-    subheading: 'Build your faceless content machine—with scripts designed for passive income, bulk production, and 68% retention.',
+    subheading: 'Build your faceless content machine - with scripts designed for passive income, bulk production, and 68% retention.',
     stats: { retention: '68%', rpm: '$7-10', generation: '22 sec', creators: '3.8K+' }
   },
   'faceless-channels-rytr': {
     title: 'Rytr Alternative for Faceless YouTube Channels - Automated Content | GenScript',
     description: 'Rytr alternative for faceless YouTube automation. Generate scripts for compilation channels, list videos, and evergreen content at scale.',
     h1: 'Rytr Alternative for Faceless YouTube Automation',
-    subheading: 'Scale faceless content production—with voiceover-optimized scripts, trending formats, and 67% average retention.',
+    subheading: 'Scale faceless content production - with voiceover-optimized scripts, trending formats, and 67% average retention.',
     stats: { retention: '67%', rpm: '$6-9', generation: '25 sec', creators: '3.2K+' }
   },
 
@@ -159,28 +159,28 @@ const allTemplates = {
     title: 'Jasper Alternative for Gaming YouTubers - Game Commentary Scripts | GenScript',
     description: 'Jasper alternative for gaming content. Generate scripts for gameplay, reviews, and esports coverage with authentic gamer voice.',
     h1: 'Jasper Alternative for Gaming Content Creators',
-    subheading: 'Create gaming content that resonates—with authentic commentary, hype moments, and 73% viewer retention.',
+    subheading: 'Create gaming content that resonates - with authentic commentary, hype moments, and 73% viewer retention.',
     stats: { retention: '73%', engagement: '7.8%', generation: '28 sec', creators: '2.8K+' }
   },
   'gaming-creators-writesonic': {
     title: 'Writesonic Alternative for Gaming YouTubers - Gameplay Commentary | GenScript',
     description: 'Writesonic alternative for gaming channels. Generate scripts for let\'s plays, game reviews, and esports content with community-first language.',
     h1: 'Writesonic Alternative for Gaming YouTubers',
-    subheading: 'Build gaming content that builds community—with authentic reactions, meta references, and 72% retention rates.',
+    subheading: 'Build gaming content that builds community - with authentic reactions, meta references, and 72% retention rates.',
     stats: { retention: '72%', subscribers: '+45%', generation: '25 sec', creators: '2.5K+' }
   },
   'gaming-creators-copy-ai': {
     title: 'Copy.ai Alternative for Gaming YouTubers - Game Review Scripts | GenScript',
     description: 'Copy.ai alternative for gaming content. Create scripts for gameplay commentary, reviews, and streaming highlights with gamer authenticity.',
     h1: 'Copy.ai Alternative for Gaming Channel Creators',
-    subheading: 'Generate gaming scripts that speak gamer—with genre-specific language, community references, and 71% retention.',
+    subheading: 'Generate gaming scripts that speak gamer - with genre-specific language, community references, and 71% retention.',
     stats: { retention: '71%', comments: '+60%', generation: '27 sec', creators: '2.2K+' }
   },
   'gaming-creators-rytr': {
     title: 'Rytr Alternative for Gaming YouTubers - Let\'s Play Scripts | GenScript',
     description: 'Rytr alternative for gaming YouTube. Generate scripts for gameplay videos, tier lists, and gaming news with authentic community voice.',
     h1: 'Rytr Alternative for Gaming Content Creators',
-    subheading: 'Create gaming content that gamers love—with meta awareness, community humor, and 70% average retention.',
+    subheading: 'Create gaming content that gamers love - with meta awareness, community humor, and 70% average retention.',
     stats: { retention: '70%', shares: '+50%', generation: '24 sec', creators: '1.9K+' }
   },
 
@@ -189,7 +189,7 @@ const allTemplates = {
     title: 'ChatGPT Alternative for Lifestyle Vloggers - Authentic Script Generator | GenScript',
     description: 'ChatGPT alternative for lifestyle content. Generate vlog scripts with personal storytelling, brand-friendly language, and authentic connection.',
     h1: 'ChatGPT Alternative for Lifestyle Content Creators',
-    subheading: 'Create vlogs that feel genuinely you—with natural storytelling, sponsor integration, and 66% viewer retention.',
+    subheading: 'Create vlogs that feel genuinely you - with natural storytelling, sponsor integration, and 66% viewer retention.',
     stats: { retention: '66%', sponsorships: '+40%', generation: '28 sec', creators: '3.8K+' }
   },
   'lifestyle-vloggers-jasper': {
@@ -203,21 +203,21 @@ const allTemplates = {
     title: 'Writesonic Alternative for Lifestyle Vloggers - Personal Brand Scripts | GenScript',
     description: 'Writesonic alternative for lifestyle content. Generate vlog scripts that maintain your voice, integrate sponsors naturally, and build community.',
     h1: 'Writesonic Alternative for Lifestyle YouTubers',
-    subheading: 'Build your personal brand with scripts that sound like you—authentic storytelling, natural sponsorships, and 64% retention.',
+    subheading: 'Build your personal brand with scripts that sound like you -authentic storytelling, natural sponsorships, and 64% retention.',
     stats: { retention: '64%', brandDeals: '+38%', generation: '26 sec', creators: '3.5K+' }
   },
   'lifestyle-vloggers-copy-ai': {
     title: 'Copy.ai Alternative for Lifestyle Vloggers - Authentic Content Scripts | GenScript',
     description: 'Copy.ai alternative for lifestyle creators. Create vlog scripts with genuine personality, audience connection, and sponsor-friendly structure.',
     h1: 'Copy.ai Alternative for Lifestyle Content Creators',
-    subheading: 'Generate lifestyle content that builds real connection—with authentic voice, brand partnerships, and 63% retention.',
+    subheading: 'Generate lifestyle content that builds real connection - with authentic voice, brand partnerships, and 63% retention.',
     stats: { retention: '63%', engagement: '+35%', generation: '24 sec', creators: '3.0K+' }
   },
   'lifestyle-vloggers-rytr': {
     title: 'Rytr Alternative for Lifestyle Vloggers - Personal Storytelling Scripts | GenScript',
     description: 'Rytr alternative for lifestyle YouTubers. Generate vlog scripts with personal narratives, day-in-the-life structure, and sponsor integration.',
     h1: 'Rytr Alternative for Lifestyle Vloggers',
-    subheading: 'Create lifestyle vlogs that feel authentic—with personal storytelling, natural flow, and 62% viewer retention.',
+    subheading: 'Create lifestyle vlogs that feel authentic - with personal storytelling, natural flow, and 62% viewer retention.',
     stats: { retention: '62%', community: '+30%', generation: '22 sec', creators: '2.7K+' }
   }
 };
@@ -342,40 +342,40 @@ export default function CreatorCompetitorAlternativePage({ params }) {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-black">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <section className="py-20 px-4 bg-gradient-to-b from-purple-50 to-white">
+      <section className="py-20 px-4 bg-black">
         <div className="container mx-auto max-w-6xl">
-          <Badge className="mb-4">
+          <Badge className="mb-4 bg-purple-500/10 text-purple-400 border-purple-500/20">
             <Users className="w-4 h-4 mr-1" />
             {formatCreatorType(creatorType)}
           </Badge>
-          
-          <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+
+          <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
             {content.h1}
           </h1>
-          
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl">
+
+          <p className="text-xl text-gray-400 mb-8 max-w-3xl">
             {content.subheading}
           </p>
 
           <div className="grid md:grid-cols-4 gap-4 mb-8">
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-purple-600">{content.stats.retention}</div>
-                <div className="text-sm text-gray-600">Avg Retention</div>
+                <div className="text-2xl font-bold text-purple-400">{content.stats.retention}</div>
+                <div className="text-sm text-gray-400">Avg Retention</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-2xl font-bold text-green-400">
                   {content.stats.accuracy || content.stats.conversion || content.stats.rpm || content.stats.engagement || content.stats.sponsorships}
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-400">
                   {content.stats.accuracy && 'Accuracy'}
                   {content.stats.conversion && 'Conversion'}
                   {content.stats.rpm && 'Avg RPM'}
@@ -384,28 +384,28 @@ export default function CreatorCompetitorAlternativePage({ params }) {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-blue-600">{content.stats.generation}</div>
-                <div className="text-sm text-gray-600">Generation Time</div>
+                <div className="text-2xl font-bold text-blue-400">{content.stats.generation}</div>
+                <div className="text-sm text-gray-400">Generation Time</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-orange-600">{content.stats.creators}</div>
-                <div className="text-sm text-gray-600">Active Creators</div>
+                <div className="text-2xl font-bold text-orange-400">{content.stats.creators}</div>
+                <div className="text-sm text-gray-400">Active Creators</div>
               </CardContent>
             </Card>
           </div>
 
           <div className="flex gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="gap-2">
+            <Link href="/login">
+              <Button size="lg" className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                 Start Creating Better Scripts <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
             <Link href={`/alternatives/${competitor}`}>
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" className="border-gray-700 hover:bg-gray-800 text-white">
                 Full {formatCompetitor(competitor)} Comparison
               </Button>
             </Link>
@@ -424,47 +424,47 @@ export default function CreatorCompetitorAlternativePage({ params }) {
       
       <CreatorTestimonials type={creatorType} />
 
-      <section className="py-16 px-4 bg-gray-50">
+      <section className="py-16 px-4 bg-gray-900">
         <div className="container mx-auto max-w-6xl">
-          <h2 className="text-3xl font-bold mb-12 text-center">
+          <h2 className="text-3xl font-bold mb-12 text-center text-white">
             Why {formatCreatorType(creatorType)} Switch from {formatCompetitor(competitor)}
           </h2>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <Target className="w-8 h-8 text-purple-600 mb-2" />
-                <CardTitle>Niche-Specific Training</CardTitle>
+                <Target className="w-8 h-8 text-purple-400 mb-2" />
+                <CardTitle className="text-white">Niche-Specific Training</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
-                  Unlike {formatCompetitor(competitor)}'s generic approach, we're trained specifically 
+                <p className="text-gray-400">
+                  Unlike {formatCompetitor(competitor)}&apos;s generic approach, we&apos;re trained specifically
                   on successful {formatCreatorType(creatorType).toLowerCase()} content.
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <Zap className="w-8 h-8 text-yellow-600 mb-2" />
-                <CardTitle>YouTube Optimization</CardTitle>
+                <Zap className="w-8 h-8 text-yellow-400 mb-2" />
+                <CardTitle className="text-white">YouTube Optimization</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
-                  Built for video scripts, not blog posts. Every script is optimized for 
+                <p className="text-gray-400">
+                  Built for video scripts, not blog posts. Every script is optimized for
                   retention, not just readability.
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <BarChart3 className="w-8 h-8 text-green-600 mb-2" />
-                <CardTitle>Proven Results</CardTitle>
+                <BarChart3 className="w-8 h-8 text-green-400 mb-2" />
+                <CardTitle className="text-white">Proven Results</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
-                  {content.stats.creators} {formatCreatorType(creatorType).toLowerCase()} seeing 
+                <p className="text-gray-400">
+                  {content.stats.creators} {formatCreatorType(creatorType).toLowerCase()} seeing
                   real growth with our specialized scripts.
                 </p>
               </CardContent>
@@ -473,69 +473,68 @@ export default function CreatorCompetitorAlternativePage({ params }) {
         </div>
       </section>
 
-      <section className="py-16 px-4">
+      <section className="py-16 px-4 bg-gray-900">
         <div className="container mx-auto max-w-6xl">
-          <h2 className="text-3xl font-bold mb-12 text-center">
+          <h2 className="text-3xl font-bold mb-12 text-center text-white">
             Pricing for {formatCreatorType(creatorType)}
           </h2>
-          
+
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle>Starter</CardTitle>
-                <div className="text-3xl font-bold">$39/mo</div>
+                <CardTitle className="text-white">Creator</CardTitle>
+                <div className="text-3xl font-bold text-white">$39/mo</div>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 mb-6">
-                  <li>✓ 50 scripts/month</li>
+                <ul className="space-y-2 mb-6 text-gray-300">
+                  <li>✓ 300 credits/month</li>
                   <li>✓ {formatCreatorType(creatorType)} templates</li>
-                  <li>✓ Basic optimization</li>
-                  <li>✓ Email support</li>
+                  <li>✓ Voice profiles</li>
+                  <li>✓ Priority email support</li>
                 </ul>
-                <Link href="/signup?plan=starter">
-                  <Button className="w-full">Start Free Trial</Button>
+                <Link href="/signup?plan=creator">
+                  <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">Start Free Trial</Button>
                 </Link>
               </CardContent>
             </Card>
 
-            <Card className="border-purple-500 relative">
-              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+            <Card className="bg-gray-800/50 border-purple-500/50 relative">
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600">
                 Most Popular
               </Badge>
               <CardHeader>
-                <CardTitle>Professional</CardTitle>
-                <div className="text-3xl font-bold">$99/mo</div>
+                <CardTitle className="text-white">Professional</CardTitle>
+                <div className="text-3xl font-bold text-white">$79/mo</div>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 mb-6">
-                  <li>✓ Unlimited scripts</li>
-                  <li>✓ All creator templates</li>
-                  <li>✓ Advanced AI optimization</li>
-                  <li>✓ Analytics & insights</li>
-                  <li>✓ API access</li>
+                <ul className="space-y-2 mb-6 text-gray-300">
+                  <li>✓ 800 credits/month</li>
+                  <li>✓ Professional & Hollywood quality</li>
+                  <li>✓ 10 channels</li>
+                  <li>✓ Team seats (3)</li>
                   <li>✓ Priority support</li>
                 </ul>
                 <Link href="/signup?plan=professional">
-                  <Button className="w-full">Start Free Trial</Button>
+                  <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">Start Free Trial</Button>
                 </Link>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle>Agency</CardTitle>
-                <div className="text-3xl font-bold">$299/mo</div>
+                <CardTitle className="text-white">Agency</CardTitle>
+                <div className="text-3xl font-bold text-white">$199/mo</div>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 mb-6">
-                  <li>✓ Everything in Pro</li>
-                  <li>✓ Multi-channel management</li>
-                  <li>✓ Custom AI training</li>
-                  <li>✓ Team collaboration</li>
+                <ul className="space-y-2 mb-6 text-gray-300">
+                  <li>✓ 2000 credits/month</li>
+                  <li>✓ Unlimited channels</li>
+                  <li>✓ Team seats (10)</li>
                   <li>✓ White label option</li>
+                  <li>✓ Dedicated support</li>
                 </ul>
                 <Link href="/contact">
-                  <Button className="w-full">Contact Sales</Button>
+                  <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">Contact Sales</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -544,6 +543,6 @@ export default function CreatorCompetitorAlternativePage({ params }) {
       </section>
 
       <CreatorCTA type={creatorType} competitor={competitor} />
-    </>
+    </div>
   );
 }

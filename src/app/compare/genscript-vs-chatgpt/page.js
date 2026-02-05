@@ -213,7 +213,7 @@ const faqs = [
   },
   {
     question: 'What if I already have ChatGPT workflows?',
-    answer: 'GenScript doesn\'t replace ChatGPT entirely—it handles the YouTube-specific parts. Use ChatGPT for research and brainstorming, then use GenScript for the actual script with compliance checking. Many users keep both.'
+    answer: 'GenScript doesn\'t replace ChatGPT entirely -it handles the YouTube-specific parts. Use ChatGPT for research and brainstorming, then use GenScript for the actual script with compliance checking. Many users keep both.'
   },
   {
     question: 'How does GenScript know about YouTube\'s 2025 policy?',
@@ -221,7 +221,7 @@ const faqs = [
   },
   {
     question: 'Can GenScript match my writing style like ChatGPT custom instructions?',
-    answer: 'Better. ChatGPT custom instructions are text-based and limited. GenScript\'s AI voice cloning analyzes your actual content patterns—word choices, sentence rhythms, personality quirks—and replicates them automatically.'
+    answer: 'Better. ChatGPT custom instructions are text-based and limited. GenScript\'s AI voice cloning analyzes your actual content patterns -word choices, sentence rhythms, personality quirks -and replicates them automatically.'
   },
   {
     question: 'What happens if YouTube\'s policy changes again?',
@@ -247,7 +247,7 @@ export default function GenScriptVsChatGPT() {
             <span className="text-3xl md:text-5xl text-gray-400">for YouTube Scripts</span>
           </>
         }
-        subtitle="ChatGPT is powerful—but it doesn't know YouTube's rules. Compare features, compliance, and why creators are switching."
+        subtitle="ChatGPT is powerful -but it doesn't know YouTube's rules. Compare features, compliance, and why creators are switching."
         primaryCTA={
           <Link href="/login">
             <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8">
@@ -447,8 +447,8 @@ export default function GenScriptVsChatGPT() {
                 Not to doom-scrolling. To switching between 47 browser tabs pretending I was being productive.
               </p>
               <p>
-                After tracking my work for 30 days—and I mean
-                <span className="bg-green-500/20 text-green-300 px-1"> obsessively, down to the minute</span>—I found
+                After tracking my work for 30 days -and I mean
+                <span className="bg-green-500/20 text-green-300 px-1"> obsessively, down to the minute</span> -I found
                 the real productivity killer.
                 <span className="bg-green-500/20 text-green-300 px-1"> It&apos;s not what the gurus say.</span> And
                 honestly? I was part of the problem recommending it.

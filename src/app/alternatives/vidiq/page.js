@@ -123,7 +123,7 @@ export default function VidIQAlternativePage() {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-black">
       {/* Structured Data for SEO */}
       <Script
         id="vidiq-structured-data"
@@ -134,34 +134,38 @@ export default function VidIQAlternativePage() {
       />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-purple-50 to-white dark:from-purple-950/20 dark:to-background py-20">
+      <section className="relative bg-gradient-to-b from-gray-900 via-black to-gray-900 py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center">
-            <Badge className="mb-4" variant="secondary">
+            <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30">
               <Star className="w-4 h-4 mr-1" />
               Trusted by 200+ Creators
             </Badge>
-            
+
             <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               VidIQ Alternative for YouTube Script Generation with Retention Optimization
             </h1>
-            
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              While VidIQ focuses on SEO, we optimize your scripts for <span className="font-semibold text-foreground">70%+ viewer retention</span>. 
+
+            <p className="text-xl text-gray-400 mb-8 max-w-3xl mx-auto">
+              While VidIQ focuses on SEO, we optimize your scripts for <span className="font-semibold text-white">70%+ viewer retention</span>.
               See why thousands of creators switched to Genscript for viral-ready content.
             </p>
 
             <div className="flex gap-4 justify-center mb-8">
-              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600">
-                Start Creating YouTube Scripts with 70%+ Retention
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline">
-                See Full Comparison
-              </Button>
+              <Link href="/login">
+                <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                  Start Creating YouTube Scripts with 70%+ Retention
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Link href="#comparison">
+                <Button size="lg" variant="outline" className="border-gray-700 hover:bg-gray-800 text-white">
+                  See Full Comparison
+                </Button>
+              </Link>
             </div>
 
-            <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-8 text-sm text-gray-400">
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                 <span>4.9/5 Rating</span>
@@ -174,38 +178,38 @@ export default function VidIQAlternativePage() {
       </section>
 
       {/* Comparison Table */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section id="comparison" className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             VidIQ vs Specialized YouTube Script Generator: Feature Comparison
           </h2>
-          
-          <Card>
+
+          <Card className="bg-gray-800/50 border-gray-700">
             <CardContent className="p-0">
               <table className="w-full">
-                <thead className="bg-muted/50">
+                <thead className="bg-gray-900">
                   <tr>
-                    <th className="text-left p-4">Feature</th>
-                    <th className="text-center p-4">VidIQ</th>
-                    <th className="text-center p-4 bg-purple-50 dark:bg-purple-950/20">Genscript</th>
+                    <th className="text-left p-4 text-gray-300">Feature</th>
+                    <th className="text-center p-4 text-gray-300">VidIQ</th>
+                    <th className="text-center p-4 bg-purple-500/10 text-purple-400">Genscript</th>
                   </tr>
                 </thead>
                 <tbody>
                   {comparisonData.map((row, idx) => (
-                    <tr key={idx} className="border-t">
-                      <td className="p-4 font-medium">{row.feature}</td>
+                    <tr key={idx} className="border-t border-gray-700">
+                      <td className="p-4 font-medium text-white">{row.feature}</td>
                       <td className="p-4 text-center">
                         {typeof row.vidiq === 'boolean' ? (
-                          row.vidiq ? <Check className="w-5 h-5 text-green-500 mx-auto" /> : <X className="w-5 h-5 text-gray-300 mx-auto" />
+                          row.vidiq ? <Check className="w-5 h-5 text-green-500 mx-auto" /> : <X className="w-5 h-5 text-gray-600 mx-auto" />
                         ) : (
-                          <span className="text-sm text-muted-foreground">{row.vidiq}</span>
+                          <span className="text-sm text-gray-400">{row.vidiq}</span>
                         )}
                       </td>
-                      <td className="p-4 text-center bg-purple-50 dark:bg-purple-950/20">
+                      <td className="p-4 text-center bg-purple-500/10">
                         {typeof row.genscript === 'boolean' ? (
                           <Check className="w-5 h-5 text-green-500 mx-auto" />
                         ) : (
-                          <span className="text-sm font-medium">{row.genscript}</span>
+                          <span className="text-sm font-medium text-white">{row.genscript}</span>
                         )}
                       </td>
                     </tr>
@@ -216,96 +220,98 @@ export default function VidIQAlternativePage() {
           </Card>
 
           <div className="text-center mt-8">
-            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600">
-              Switch from VidIQ to Specialized YouTube Tools
-              <Zap className="ml-2 w-5 h-5" />
-            </Button>
+            <Link href="/login">
+              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                Switch from VidIQ to Specialized YouTube Tools
+                <Zap className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Unique Value Props */}
-      <section className="py-20 bg-gradient-to-b from-white to-purple-50 dark:from-background dark:to-purple-950/20">
+      <section className="py-20 bg-gray-900">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             Why Genscript is the Best VidIQ Alternative for Script Writing in 2025
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
             VidIQ helps you get discovered. We help you keep viewers watching with retention-optimized scripts.
           </p>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <Card className="border-purple-200 dark:border-purple-800">
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <TrendingUp className="w-10 h-10 text-purple-600 mb-2" />
-                <CardTitle>70%+ Average View Duration</CardTitle>
+                <TrendingUp className="w-10 h-10 text-purple-400 mb-2" />
+                <CardTitle className="text-white">70%+ Average View Duration</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">
-                  Our AI analyzes millions of viral videos to understand what keeps viewers engaged. 
+                <p className="mb-4 text-gray-400">
+                  Our AI analyzes millions of viral videos to understand what keeps viewers engaged.
                   Every script is optimized for retention, not just discovery.
                 </p>
-                <div className="bg-muted rounded-lg p-4">
-                  <div className="text-sm font-medium mb-2">Average Results:</div>
+                <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                  <div className="text-sm font-medium mb-2 text-gray-300">Average Results:</div>
                   <div className="flex justify-between text-sm">
-                    <span>Before: 35% AVD</span>
-                    <span className="font-bold text-purple-600">After: 72% AVD</span>
+                    <span className="text-gray-400">Before: 35% AVD</span>
+                    <span className="font-bold text-purple-400">After: 72% AVD</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-purple-200 dark:border-purple-800">
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <Users className="w-10 h-10 text-purple-600 mb-2" />
-                <CardTitle>Voice Matching Technology</CardTitle>
+                <Users className="w-10 h-10 text-purple-400 mb-2" />
+                <CardTitle className="text-white">Voice Matching Technology</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">
-                  Your scripts sound like YOU, not generic AI. Our voice matching ensures authentic 
+                <p className="mb-4 text-gray-400">
+                  Your scripts sound like YOU, not generic AI. Our voice matching ensures authentic
                   content that resonates with your specific audience.
                 </p>
-                <div className="bg-muted rounded-lg p-4">
-                  <div className="text-sm font-medium mb-2">Creator Feedback:</div>
-                  <div className="text-sm italic">
+                <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                  <div className="text-sm font-medium mb-2 text-gray-300">Creator Feedback:</div>
+                  <div className="text-sm italic text-gray-400">
                     "Finally, AI scripts that sound like me!"
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-purple-200 dark:border-purple-800">
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <Shield className="w-10 h-10 text-purple-600 mb-2" />
-                <CardTitle>Built-in Fact Checking</CardTitle>
+                <Shield className="w-10 h-10 text-purple-400 mb-2" />
+                <CardTitle className="text-white">Built-in Fact Checking</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">
-                  Never worry about misinformation. Every script includes automatic fact-checking 
+                <p className="mb-4 text-gray-400">
+                  Never worry about misinformation. Every script includes automatic fact-checking
                   and source verification to protect your credibility.
                 </p>
-                <div className="bg-muted rounded-lg p-4">
-                  <div className="text-sm font-medium mb-2">Trust & Safety:</div>
-                  <div className="text-sm">
+                <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                  <div className="text-sm font-medium mb-2 text-gray-300">Trust & Safety:</div>
+                  <div className="text-sm text-gray-400">
                     100% verified facts with source citations
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-purple-200 dark:border-purple-800">
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <Zap className="w-10 h-10 text-purple-600 mb-2" />
-                <CardTitle>PVSS Viral Framework</CardTitle>
+                <Zap className="w-10 h-10 text-purple-400 mb-2" />
+                <CardTitle className="text-white">PVSS Viral Framework</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">
-                  Pattern-Value-Story-Surprise structure proven to maximize engagement. 
+                <p className="mb-4 text-gray-400">
+                  Pattern-Value-Story-Surprise structure proven to maximize engagement.
                   Used by top creators to consistently hit the algorithm.
                 </p>
-                <div className="bg-muted rounded-lg p-4">
-                  <div className="text-sm font-medium mb-2">Success Rate:</div>
-                  <div className="text-sm">
+                <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                  <div className="text-sm font-medium mb-2 text-gray-300">Success Rate:</div>
+                  <div className="text-sm text-gray-400">
                     3x more likely to go viral vs traditional scripts
                   </div>
                 </div>
@@ -316,65 +322,65 @@ export default function VidIQAlternativePage() {
       </section>
 
       {/* VidIQ Alternative with Fact Checking Section */}
-      <section className="py-20 bg-gradient-to-b from-purple-50 to-white dark:from-purple-950/20 dark:to-background">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             VidIQ Alternative with Built-in Fact Checking and Voice Matching
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-3xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-3xl mx-auto">
             Unlike VidIQ's SEO-only approach, Genscript ensures every script is factually accurate and matches your unique voice
           </p>
-          
+
           <div className="grid md:grid-cols-2 gap-8 mb-16">
-            <Card className="border-2 border-purple-200 dark:border-purple-800">
+            <Card className="bg-gray-800/50 border-purple-500/30">
               <CardHeader>
-                <Shield className="w-12 h-12 text-purple-600 mb-3" />
-                <CardTitle className="text-xl">YouTube Script Generator with Built-in Fact Checker 2025</CardTitle>
+                <Shield className="w-12 h-12 text-purple-400 mb-3" />
+                <CardTitle className="text-xl text-white">YouTube Script Generator with Built-in Fact Checker 2025</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">
-                  Never publish misinformation again. Unlike VidIQ, which focuses on keywords, Genscript verifies every 
+                <p className="mb-4 text-gray-400">
+                  Never publish misinformation again. Unlike VidIQ, which focuses on keywords, Genscript verifies every
                   claim and statistic in your scripts with real-time fact-checking powered by trusted sources.
                 </p>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                    <span>Automatic source verification for all claims</span>
+                    <span className="text-gray-300">Automatic source verification for all claims</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                    <span>Real-time fact-checking during generation</span>
+                    <span className="text-gray-300">Real-time fact-checking during generation</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                    <span>Citation links included for transparency</span>
+                    <span className="text-gray-300">Citation links included for transparency</span>
                   </li>
                 </ul>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-purple-200 dark:border-purple-800">
+            <Card className="bg-gray-800/50 border-purple-500/30">
               <CardHeader>
-                <Users className="w-12 h-12 text-purple-600 mb-3" />
-                <CardTitle className="text-xl">AI Script Writer That Adapts to Creator Voice Style</CardTitle>
+                <Users className="w-12 h-12 text-purple-400 mb-3" />
+                <CardTitle className="text-xl text-white">AI Script Writer That Adapts to Creator Voice Style</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">
-                  Your scripts sound authentically you. Our voice matching technology analyzes your existing content 
+                <p className="mb-4 text-gray-400">
+                  Your scripts sound authentically you. Our voice matching technology analyzes your existing content
                   to maintain consistency, something VidIQ's keyword tools can't provide.
                 </p>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                    <span>Analyzes your speaking patterns and vocabulary</span>
+                    <span className="text-gray-300">Analyzes your speaking patterns and vocabulary</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                    <span>Maintains your unique storytelling style</span>
+                    <span className="text-gray-300">Maintains your unique storytelling style</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                    <span>Perfect for maintaining brand consistency</span>
+                    <span className="text-gray-300">Perfect for maintaining brand consistency</span>
                   </li>
                 </ul>
               </CardContent>
@@ -384,65 +390,65 @@ export default function VidIQAlternativePage() {
       </section>
 
       {/* Switch from SEO to Retention Section */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-gray-900">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             Switch from VidIQ SEO to Retention-First YouTube Scripts
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-3xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-3xl mx-auto">
             Retention Analytics vs SEO: Why Scripts Matter More Than Keywords
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 mb-12">
-            <Card className="text-center">
+            <Card className="text-center bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <div className="text-4xl font-bold text-purple-600 mb-2">35%</div>
-                <CardTitle className="text-lg">VidIQ SEO Strategy</CardTitle>
+                <div className="text-4xl font-bold text-gray-400 mb-2">35%</div>
+                <CardTitle className="text-lg text-white">VidIQ SEO Strategy</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-400">
                   Average retention with keyword-focused content
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="text-center border-2 border-purple-500">
+            <Card className="text-center bg-gray-800/50 border-purple-500/50">
               <CardHeader>
-                <div className="text-4xl font-bold text-purple-600 mb-2">72%</div>
-                <CardTitle className="text-lg">Genscript Scripts</CardTitle>
+                <div className="text-4xl font-bold text-purple-400 mb-2">72%</div>
+                <CardTitle className="text-lg text-white">Genscript Scripts</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-400">
                   Average retention with psychology-optimized scripts
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="text-center">
+            <Card className="text-center bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <div className="text-4xl font-bold text-purple-600 mb-2">3.2x</div>
-                <CardTitle className="text-lg">Revenue Impact</CardTitle>
+                <div className="text-4xl font-bold text-green-400 mb-2">3.2x</div>
+                <CardTitle className="text-lg text-white">Revenue Impact</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-400">
                   Higher monetization from better watch time
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-0">
+          <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30">
             <CardContent className="p-8">
-              <h3 className="text-xl font-bold mb-4">VidIQ Alternative for Faceless YouTube Automation</h3>
-              <p className="mb-6">
-                Running a faceless channel? Your script IS your content. While VidIQ helps with discovery, 
-                Genscript ensures viewers stay engaged without on-camera charisma. Our PVSS framework and 
+              <h3 className="text-xl font-bold mb-4 text-white">VidIQ Alternative for Faceless YouTube Automation</h3>
+              <p className="mb-6 text-gray-300">
+                Running a faceless channel? Your script IS your content. While VidIQ helps with discovery,
+                Genscript ensures viewers stay engaged without on-camera charisma. Our PVSS framework and
                 psychographic targeting create scripts that hook viewers from second one.
               </p>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-semibold mb-2">Perfect for:</h4>
-                  <ul className="space-y-1 text-sm">
+                  <h4 className="font-semibold mb-2 text-white">Perfect for:</h4>
+                  <ul className="space-y-1 text-sm text-gray-400">
                     <li>• Educational content channels</li>
                     <li>• Documentary-style videos</li>
                     <li>• Explainer and how-to content</li>
@@ -450,8 +456,8 @@ export default function VidIQAlternativePage() {
                   </ul>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-2">Key Benefits:</h4>
-                  <ul className="space-y-1 text-sm">
+                  <h4 className="font-semibold mb-2 text-white">Key Benefits:</h4>
+                  <ul className="space-y-1 text-sm text-gray-400">
                     <li>• No personality needed - script does the work</li>
                     <li>• Consistent quality across all videos</li>
                     <li>• Scale content production efficiently</li>
@@ -461,7 +467,7 @@ export default function VidIQAlternativePage() {
               </div>
               <div className="mt-6">
                 <Link href="/for/faceless-channels">
-                  <Button className="bg-gradient-to-r from-purple-600 to-pink-600">
+                  <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                     Learn More About Faceless Channel Scripts
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
@@ -473,96 +479,98 @@ export default function VidIQAlternativePage() {
       </section>
 
       {/* Social Proof */}
-      <section className="py-20 bg-gradient-to-b from-white to-purple-50 dark:from-background dark:to-purple-950/20">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             Creators Who Switched from VidIQ
           </h2>
-          <p className="text-center text-muted-foreground mb-12">
+          <p className="text-center text-gray-400 mb-12">
             Join thousands who improved their retention and revenue
           </p>
 
           <div className="grid md:grid-cols-3 gap-6">
             {testimonials.map((testimonial, idx) => (
-              <Card key={idx}>
+              <Card key={idx} className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
                   <div className="flex items-center gap-2 mb-2">
                     {[...Array(testimonial.rating)].map((_, i) => (
                       <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                     ))}
                   </div>
-                  <CardTitle className="text-lg">{testimonial.name}</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg text-white">{testimonial.name}</CardTitle>
+                  <CardDescription className="text-gray-400">
                     {testimonial.channel} • {testimonial.subscribers} subscribers
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm italic">"{testimonial.quote}"</p>
+                  <p className="text-sm italic text-gray-300">"{testimonial.quote}"</p>
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          <div className="mt-12 p-8 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-950/50 dark:to-pink-950/50 rounded-2xl text-center">
-            <h3 className="text-2xl font-bold mb-4">
+          <div className="mt-12 p-8 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl text-center">
+            <h3 className="text-2xl font-bold mb-4 text-white">
               Join 200+ Creators Getting Better Results
             </h3>
             <div className="flex gap-8 justify-center mb-6 text-sm">
               <div>
-                <div className="text-3xl font-bold text-purple-600">2.5B+</div>
-                <div className="text-muted-foreground">Views Generated</div>
+                <div className="text-3xl font-bold text-purple-400">2.5B+</div>
+                <div className="text-gray-400">Views Generated</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-purple-600">72%</div>
-                <div className="text-muted-foreground">Avg. Retention</div>
+                <div className="text-3xl font-bold text-purple-400">72%</div>
+                <div className="text-gray-400">Avg. Retention</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-purple-600">3.2x</div>
-                <div className="text-muted-foreground">Revenue Increase</div>
+                <div className="text-3xl font-bold text-purple-400">3.2x</div>
+                <div className="text-gray-400">Revenue Increase</div>
               </div>
             </div>
-            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600">
-              Generate Your First Viral Script in 30 Seconds
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
+            <Link href="/login">
+              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                Generate Your First Viral Script in 30 Seconds
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Psychographic and Multi-Tier Features */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-gray-900">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="grid md:grid-cols-2 gap-12">
             <div>
-              <h3 className="text-2xl font-bold mb-4">YouTube Script Generator with Psychographic Analysis</h3>
-              <p className="text-muted-foreground mb-6">
-                Unlike VidIQ, Genscript analyzes your audience's psychology to create scripts that resonate on a deeper level. 
+              <h3 className="text-2xl font-bold mb-4 text-white">YouTube Script Generator with Psychographic Analysis</h3>
+              <p className="text-gray-400 mb-6">
+                Unlike VidIQ, Genscript analyzes your audience's psychology to create scripts that resonate on a deeper level.
                 We go beyond demographics to understand what truly motivates your viewers.
               </p>
-              <Card className="border-purple-200 dark:border-purple-800">
+              <Card className="bg-gray-800/50 border-gray-700">
                 <CardContent className="p-6">
-                  <h4 className="font-semibold mb-3">Psychographic Targeting Includes:</h4>
+                  <h4 className="font-semibold mb-3 text-white">Psychographic Targeting Includes:</h4>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-start gap-2">
                       <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                      <span>Emotional trigger identification</span>
+                      <span className="text-gray-300">Emotional trigger identification</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                      <span>Value system alignment</span>
+                      <span className="text-gray-300">Value system alignment</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                      <span>Interest and passion mapping</span>
+                      <span className="text-gray-300">Interest and passion mapping</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                      <span>Behavioral pattern analysis</span>
+                      <span className="text-gray-300">Behavioral pattern analysis</span>
                     </li>
                   </ul>
                   <div className="mt-4">
                     <Link href="/features/psychographic-targeting">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="border-gray-600 hover:bg-gray-700 text-white">
                         Learn More About Psychographic Targeting
                         <ArrowRight className="ml-2 w-4 h-4" />
                       </Button>
@@ -573,35 +581,35 @@ export default function VidIQAlternativePage() {
             </div>
 
             <div>
-              <h3 className="text-2xl font-bold mb-4">Fast, Premium, Balanced: YouTube Script Generator Quality Tiers</h3>
-              <p className="text-muted-foreground mb-6">
-                Choose your speed and quality preference. VidIQ gives you templates; we give you flexibility with three 
+              <h3 className="text-2xl font-bold mb-4 text-white">Fast, Premium, Balanced: YouTube Script Generator Quality Tiers</h3>
+              <p className="text-gray-400 mb-6">
+                Choose your speed and quality preference. VidIQ gives you templates; we give you flexibility with three
                 generation modes tailored to your needs.
               </p>
               <div className="space-y-3">
-                <Card className="border-green-200 dark:border-green-800">
+                <Card className="bg-gray-800/50 border-green-500/30">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div>
-                      <h5 className="font-semibold text-green-600">Fast Mode</h5>
-                      <p className="text-sm text-muted-foreground">30 seconds • Good for daily content</p>
+                      <h5 className="font-semibold text-green-400">Fast Mode</h5>
+                      <p className="text-sm text-gray-400">30 seconds • Good for daily content</p>
                     </div>
                     <Zap className="w-6 h-6 text-green-500" />
                   </CardContent>
                 </Card>
-                <Card className="border-blue-200 dark:border-blue-800">
+                <Card className="bg-gray-800/50 border-blue-500/30">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div>
-                      <h5 className="font-semibold text-blue-600">Balanced Mode</h5>
-                      <p className="text-sm text-muted-foreground">2 minutes • Optimal quality/speed</p>
+                      <h5 className="font-semibold text-blue-400">Balanced Mode</h5>
+                      <p className="text-sm text-gray-400">2 minutes • Optimal quality/speed</p>
                     </div>
                     <TrendingUp className="w-6 h-6 text-blue-500" />
                   </CardContent>
                 </Card>
-                <Card className="border-purple-200 dark:border-purple-800">
+                <Card className="bg-gray-800/50 border-purple-500/30">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div>
-                      <h5 className="font-semibold text-purple-600">Premium Mode</h5>
-                      <p className="text-sm text-muted-foreground">5 minutes • Maximum retention</p>
+                      <h5 className="font-semibold text-purple-400">Premium Mode</h5>
+                      <p className="text-sm text-gray-400">5 minutes • Maximum retention</p>
                     </div>
                     <Star className="w-6 h-6 text-purple-500" />
                   </CardContent>
@@ -609,7 +617,7 @@ export default function VidIQAlternativePage() {
               </div>
               <div className="mt-4">
                 <Link href="/features/quality-tiers">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="border-gray-600 hover:bg-gray-700 text-white">
                     Compare Quality Tiers
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
@@ -619,46 +627,46 @@ export default function VidIQAlternativePage() {
           </div>
 
           {/* PVSS Methodology Section */}
-          <Card className="mt-12 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-0">
+          <Card className="mt-12 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30">
             <CardContent className="p-8">
-              <h3 className="text-2xl font-bold mb-4">PVSS Structure YouTube Script Generator Tool</h3>
-              <p className="mb-6">
-                Scripts built on proven viral content frameworks. The PVSS (Pattern-Value-Story-Surprise) methodology 
+              <h3 className="text-2xl font-bold mb-4 text-white">PVSS Structure YouTube Script Generator Tool</h3>
+              <p className="mb-6 text-gray-300">
+                Scripts built on proven viral content frameworks. The PVSS (Pattern-Value-Story-Surprise) methodology
                 has generated over 2.5 billion views for our users - something VidIQ's keyword tools alone can't achieve.
               </p>
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="bg-white dark:bg-background rounded-lg p-4 mb-2">
-                    <div className="text-2xl font-bold text-purple-600">P</div>
+                  <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-2">
+                    <div className="text-2xl font-bold text-purple-400">P</div>
                   </div>
-                  <h5 className="font-semibold">Pattern</h5>
-                  <p className="text-sm text-muted-foreground">Hook with familiar concepts</p>
+                  <h5 className="font-semibold text-white">Pattern</h5>
+                  <p className="text-sm text-gray-400">Hook with familiar concepts</p>
                 </div>
                 <div className="text-center">
-                  <div className="bg-white dark:bg-background rounded-lg p-4 mb-2">
-                    <div className="text-2xl font-bold text-purple-600">V</div>
+                  <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-2">
+                    <div className="text-2xl font-bold text-purple-400">V</div>
                   </div>
-                  <h5 className="font-semibold">Value</h5>
-                  <p className="text-sm text-muted-foreground">Deliver immediate benefit</p>
+                  <h5 className="font-semibold text-white">Value</h5>
+                  <p className="text-sm text-gray-400">Deliver immediate benefit</p>
                 </div>
                 <div className="text-center">
-                  <div className="bg-white dark:bg-background rounded-lg p-4 mb-2">
-                    <div className="text-2xl font-bold text-purple-600">S</div>
+                  <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-2">
+                    <div className="text-2xl font-bold text-purple-400">S</div>
                   </div>
-                  <h5 className="font-semibold">Story</h5>
-                  <p className="text-sm text-muted-foreground">Engage with narrative</p>
+                  <h5 className="font-semibold text-white">Story</h5>
+                  <p className="text-sm text-gray-400">Engage with narrative</p>
                 </div>
                 <div className="text-center">
-                  <div className="bg-white dark:bg-background rounded-lg p-4 mb-2">
-                    <div className="text-2xl font-bold text-purple-600">S</div>
+                  <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-2">
+                    <div className="text-2xl font-bold text-purple-400">S</div>
                   </div>
-                  <h5 className="font-semibold">Surprise</h5>
-                  <p className="text-sm text-muted-foreground">Twist for memorability</p>
+                  <h5 className="font-semibold text-white">Surprise</h5>
+                  <p className="text-sm text-gray-400">Twist for memorability</p>
                 </div>
               </div>
               <div className="mt-6 text-center">
                 <Link href="/features/pvss-framework">
-                  <Button className="bg-gradient-to-r from-purple-600 to-pink-600">
+                  <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                     Learn the PVSS Framework
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
@@ -670,21 +678,21 @@ export default function VidIQAlternativePage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-gradient-to-b from-white to-purple-50 dark:from-background dark:to-purple-950/20">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-3xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Frequently Asked Questions
           </h2>
 
           <div className="space-y-4">
             {faqs.map((faq, idx) => (
-              <Card key={idx}>
+              <Card key={idx} className="bg-gray-800/50 border-gray-700">
                 <Collapsible open={openFAQ === idx} onOpenChange={() => setOpenFAQ(openFAQ === idx ? null : idx)}>
                   <CollapsibleTrigger className="w-full">
-                    <CardHeader className="text-left hover:bg-muted/50 transition-colors cursor-pointer">
-                      <CardTitle className="text-lg flex justify-between items-center">
+                    <CardHeader className="text-left hover:bg-gray-700/50 transition-colors cursor-pointer">
+                      <CardTitle className="text-lg flex justify-between items-center text-white">
                         {faq.question}
-                        <span className="text-muted-foreground">
+                        <span className="text-gray-400">
                           {openFAQ === idx ? '−' : '+'}
                         </span>
                       </CardTitle>
@@ -692,7 +700,7 @@ export default function VidIQAlternativePage() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <CardContent>
-                      <p className="text-muted-foreground">{faq.answer}</p>
+                      <p className="text-gray-400">{faq.answer}</p>
                     </CardContent>
                   </CollapsibleContent>
                 </Collapsible>
@@ -714,20 +722,24 @@ export default function VidIQAlternativePage() {
           <p className="text-xl mb-8 opacity-90">
             Stop optimizing for clicks. Start optimizing for retention.
           </p>
-          
+
           <div className="bg-white/10 backdrop-blur rounded-2xl p-8 max-w-2xl mx-auto mb-8">
             <h3 className="text-2xl font-bold mb-4">Limited Time Offer</h3>
             <p className="text-lg mb-6">
               Switch from VidIQ and get 50% off your first 3 months + free migration assistance
             </p>
             <div className="flex gap-4 justify-center">
-              <Button size="lg" variant="secondary">
-                Get the YouTube Script Generator Built for Retention
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
-                Talk to Sales
-              </Button>
+              <Link href="/login">
+                <Button size="lg" variant="secondary">
+                  Get the YouTube Script Generator Built for Retention
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Link href="/contact">
+                <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+                  Talk to Sales
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -736,6 +748,6 @@ export default function VidIQAlternativePage() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

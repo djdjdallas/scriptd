@@ -8,6 +8,12 @@ import { PLANS, CREDIT_PACKAGES } from '@/lib/constants';
 import { emailService } from '@/lib/email/email-service';
 import { getPostHogClient } from '@/lib/posthog-server';
 import { logger } from '@/lib/monitoring/logger';
+import {
+  recordSubscriptionEvent,
+  getUserCurrentTier,
+  recordPaymentFailed
+} from '@/lib/subscription/subscription-events';
+import { getSubscriptionEventType } from '@/lib/subscription/tier-utils';
 
 // Check if webhook event was already processed (idempotency)
 async function isEventProcessed(supabase, eventId) {
@@ -320,8 +326,8 @@ async function handleCheckoutComplete(session) {
 // Handle subscription updates
 async function handleSubscriptionUpdate(subscription) {
   const supabase = createServiceClient();
-  
-  const { 
+
+  const {
     metadata,
     status,
     current_period_end,
@@ -334,7 +340,7 @@ async function handleSubscriptionUpdate(subscription) {
   // Handle team subscription updates
   if (teamId) {
     const planTier = metadata?.planTier;
-    
+
     // Update team subscription status
     await supabase
       .from('teams')
@@ -366,13 +372,16 @@ async function handleSubscriptionUpdate(subscription) {
     return;
   }
 
+  // FETCH CURRENT USER STATE BEFORE UPDATE (for upgrade/downgrade detection)
+  const { tier: previousTier, status: previousStatus } = await getUserCurrentTier(userId);
+
   // Determine plan from price ID
   const priceId = items.data[0]?.price.id;
   const priceInfo = PRICE_TO_CREDITS[priceId];
-  
+
   let planId = 'free';
   let credits = 0;
-  
+
   if (priceInfo) {
     planId = priceInfo.tier;
     credits = priceInfo.credits;
@@ -390,6 +399,14 @@ async function handleSubscriptionUpdate(subscription) {
     }
   }
 
+  const billingInterval = priceInfo?.interval || 'month';
+
+  // Determine if this is a reactivation (cancelled -> active)
+  const isReactivation = previousStatus === 'cancelled' && status === 'active';
+
+  // Determine subscription event type (started, upgraded, downgraded, reactivated)
+  const eventType = getSubscriptionEventType(previousTier, planId, isReactivation);
+
   // Update user subscription info
   await supabase
     .from('users')
@@ -398,9 +415,32 @@ async function handleSubscriptionUpdate(subscription) {
       subscription_tier: planId, // Use subscription_tier field
       subscription_period_end: new Date(current_period_end * 1000).toISOString(),
       stripe_subscription_id: subscription.id,
-      billing_interval: priceInfo?.interval || 'month'
+      billing_interval: billingInterval
     })
     .eq('id', userId);
+
+  // Record subscription event if there's a meaningful change
+  if (eventType && status === 'active') {
+    const amount = items.data[0]?.price?.unit_amount
+      ? items.data[0].price.unit_amount / 100
+      : null;
+
+    await recordSubscriptionEvent({
+      eventType,
+      userId,
+      previousTier,
+      newTier: planId,
+      stripeSubscriptionId: subscription.id,
+      stripeCustomerId: subscription.customer,
+      amount,
+      currency: subscription.currency || 'usd',
+      billingInterval,
+      metadata: {
+        credits_granted: credits,
+        price_id: priceId
+      }
+    });
+  }
 
   // If subscription is active, grant monthly credits
   if (status === 'active' && credits > 0) {
@@ -423,7 +463,7 @@ async function handleSubscriptionUpdate(subscription) {
           priceId: priceId
         }
       });
-    
+
     logger.info('Subscription credits granted', { userId, credits, planId });
   }
 }
@@ -431,7 +471,7 @@ async function handleSubscriptionUpdate(subscription) {
 // Handle subscription deletion
 async function handleSubscriptionDeleted(subscription) {
   const supabase = createServiceClient();
-  
+
   const { metadata } = subscription;
   const userId = metadata?.userId;
   const teamId = metadata?.teamId;
@@ -470,6 +510,9 @@ async function handleSubscriptionDeleted(subscription) {
     return;
   }
 
+  // Fetch current tier before deletion for tracking
+  const { tier: previousTier } = await getUserCurrentTier(userId);
+
   // Update user to free plan
   await supabase
     .from('users')
@@ -482,17 +525,20 @@ async function handleSubscriptionDeleted(subscription) {
     })
     .eq('id', userId);
 
-  // Track subscription cancelled event in PostHog
-  const posthog = getPostHogClient();
-  posthog.capture({
-    distinctId: userId,
-    event: 'subscription_cancelled',
-    properties: {
-      previous_tier: metadata?.planTier || 'unknown',
-      subscription_id: subscription.id,
+  // Record subscription cancelled event (to both PostHog and Supabase)
+  await recordSubscriptionEvent({
+    eventType: 'subscription_cancelled',
+    userId,
+    previousTier,
+    newTier: 'free',
+    stripeSubscriptionId: subscription.id,
+    stripeCustomerId: subscription.customer,
+    metadata: {
+      cancellation_reason: metadata?.cancellation_reason || 'user_cancelled'
     }
   });
-  await posthog.shutdown();
+
+  logger.info('Subscription cancelled', { userId, previousTier });
 }
 
 // Handle successful invoice payment
@@ -513,7 +559,7 @@ async function handleInvoicePaymentSucceeded(invoice) {
 // Handle failed invoice payment
 async function handleInvoicePaymentFailed(invoice) {
   const supabase = createServiceClient();
-  
+
   const { subscription, customer, next_payment_attempt } = invoice;
 
   if (!subscription) return;
@@ -521,7 +567,7 @@ async function handleInvoicePaymentFailed(invoice) {
   // Get user by Stripe customer ID
   const { data: user } = await supabase
     .from('users')
-    .select('id, email, full_name')
+    .select('id, email, full_name, subscription_tier')
     .eq('stripe_customer_id', customer)
     .single();
 
@@ -540,18 +586,18 @@ async function handleInvoicePaymentFailed(invoice) {
       nextAttemptDate: next_payment_attempt ? new Date(next_payment_attempt * 1000) : null
     });
 
-    // Track payment failed event in PostHog
-    const posthog = getPostHogClient();
-    posthog.capture({
-      distinctId: user.id,
-      event: 'payment_failed',
-      properties: {
-        subscription_id: subscription,
+    // Record payment failed event (to both PostHog and Supabase)
+    await recordPaymentFailed(user.id, {
+      previousTier: user.subscription_tier,
+      newTier: user.subscription_tier, // Tier unchanged on failed payment
+      stripeSubscriptionId: subscription,
+      stripeCustomerId: customer,
+      metadata: {
         error_message: invoice.last_payment_error?.message,
         next_retry_date: next_payment_attempt ? new Date(next_payment_attempt * 1000).toISOString() : null,
+        invoice_id: invoice.id
       }
     });
-    await posthog.shutdown();
 
     logger.info('Payment failed notification sent', { email: user.email });
   }

@@ -1,5 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { processVoiceTraining } from './processor';
+import {
+  notifyTrainingStarted,
+  notifyTrainingCompleted,
+  notifyTrainingFailed,
+  notifyTrainingRetrying
+} from './webhooks';
 
 export async function queueVoiceTraining({
   channelId,
@@ -85,10 +91,16 @@ export async function processVoiceTrainingJob(jobId) {
     // Update channel status
     await supabase
       .from('channels')
-      .update({ 
+      .update({
         voice_training_status: 'in_progress'
       })
       .eq('id', job.channel_id);
+
+    // Webhook: Training started
+    await notifyTrainingStarted(job.channel_id, {
+      jobId: job.id,
+      channelName: job.channels?.title
+    });
 
     // Process voice training (FREE - no credit check needed)
     const result = await processVoiceTraining({
@@ -133,10 +145,17 @@ export async function processVoiceTrainingJob(jobId) {
         }
       });
 
+    // Webhook: Training completed
+    await notifyTrainingCompleted(job.channel_id, {
+      profileId: result.profileId,
+      completeness: result.profile?.completenessAnalysis?.scorePercent,
+      trainingStats: result.trainingStats
+    });
+
     // Send success notification
     await sendNotification(job.user_id, {
       type: 'voice_training_complete',
-      title: 'Voice Training Complete! 🎉',
+      title: 'Voice Training Complete!',
       message: 'Your AI voice model is ready to use. Start generating scripts in your unique style! (This was FREE - no credits were charged)',
       channelId: job.channel_id
     });
@@ -173,8 +192,13 @@ export async function processVoiceTrainingJob(jobId) {
 
     // Retry if under max attempts
     if (job && job.attempt_count < job.max_attempts) {
+      // Webhook: Training retrying
+      await notifyTrainingRetrying(job.channel_id, job.attempt_count + 1, job.max_attempts);
       setTimeout(() => processVoiceTrainingJob(jobId), 30000 * (job.attempt_count + 1)); // Exponential backoff
     } else {
+      // Webhook: Training failed (final)
+      await notifyTrainingFailed(job.channel_id, error, job?.attempt_count || 1);
+
       // Send failure notification
       await sendNotification(job.user_id, {
         type: 'voice_training_failed',

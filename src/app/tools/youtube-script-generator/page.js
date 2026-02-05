@@ -103,7 +103,7 @@ const scriptTypes = [
 const faqs = [
   {
     question: 'Is this YouTube script generator free?',
-    answer: 'Yes! You get 50 free credits when you sign up—no credit card required. Each script uses 1-3 credits depending on length and complexity. That\'s enough for dozens of scripts to try the platform.'
+    answer: 'Yes! You get 50 free credits when you sign up -no credit card required. Each script uses 1-3 credits depending on length and complexity. That\'s enough for dozens of scripts to try the platform.'
   },
   {
     question: 'How is this different from ChatGPT?',
@@ -111,7 +111,7 @@ const faqs = [
   },
   {
     question: 'Will YouTube know my script is AI-generated?',
-    answer: 'GenScript scripts are designed to pass YouTube\'s authenticity review. Our compliance checker identifies AI patterns and suggests how to add original insight—the exact things YouTube looks for when evaluating content authenticity.'
+    answer: 'GenScript scripts are designed to pass YouTube\'s authenticity review. Our compliance checker identifies AI patterns and suggests how to add original insight -the exact things YouTube looks for when evaluating content authenticity.'
   },
   {
     question: 'What video lengths does it support?',
@@ -119,7 +119,7 @@ const faqs = [
   },
   {
     question: 'Can I edit the generated scripts?',
-    answer: 'Absolutely. Every script opens in our editor where you can make changes with real-time compliance feedback. We encourage adding personal stories and opinions—that\'s what makes scripts pass YouTube\'s authenticity review.'
+    answer: 'Absolutely. Every script opens in our editor where you can make changes with real-time compliance feedback. We encourage adding personal stories and opinions -that\'s what makes scripts pass YouTube\'s authenticity review.'
   },
   {
     question: 'Does it work for any niche?',
@@ -275,7 +275,7 @@ export default function YouTubeScriptGeneratorPage() {
               </h2>
               <p className="text-gray-300 mb-4">
                 YouTube&apos;s new policy targets AI-generated content that lacks original value. Every GenScript
-                script is analyzed in real-time against compliance criteria—repetitiveness, original insight,
+                script is analyzed in real-time against compliance criteria -repetitiveness, original insight,
                 AI patterns, and structure. You see potential issues before publishing, not after demonetization.
               </p>
               <Link href="/resources/youtube-compliance-whitepaper">

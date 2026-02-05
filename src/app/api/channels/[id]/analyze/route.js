@@ -4,6 +4,7 @@ import { getChannelById, getChannelVideos } from '@/lib/youtube/channel';
 import { analyzeChannelWithClaude, generateChannelVoiceProfile } from '@/lib/ai/single-channel-analyzer';
 import { updateProgress, PROGRESS_STAGES } from '@/lib/utils/progress-tracker';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { analyzeCompleteness } from '@/lib/ai/completeness-analyzer';
 
 // Configure Vercel Pro timeout (800 seconds max for Pro plan)
 export const maxDuration = 800;
@@ -274,6 +275,7 @@ export async function POST(request, { params }) {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
     const sessionId = body.sessionId || `channel-${id}-${Date.now()}`;
+    const { qualityTier, completenessThreshold } = body;
 
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -529,6 +531,17 @@ export async function POST(request, { params }) {
       var voiceProfileResult = await generateChannelVoiceProfile(channel, videos);
     }
 
+    // Analyze voice profile completeness with configurable threshold
+    const completenessAnalysis = analyzeCompleteness(voiceProfileResult.voiceProfile, {
+      tier: qualityTier || 'default',
+      threshold: completenessThreshold
+    });
+
+    // Attach completeness analysis to voice profile result
+    voiceProfileResult.voiceProfile.completenessAnalysis = completenessAnalysis;
+    voiceProfileResult.voiceProfile.needsEnhancement = completenessAnalysis.needsEnhancement;
+    voiceProfileResult.completeness = completenessAnalysis;
+
     // Extract analysis sections
     const analysis = claudeAnalysis.analysis;
 
@@ -771,7 +784,14 @@ export async function POST(request, { params }) {
         contentIdeasGenerated: (analysis.contentRecommendations || []).length,
         hasVoiceProfile: voiceProfileResult.success,
         hasAudienceInsights: hasDeepAnalysis,
-        analysisDate: new Date().toISOString()
+        analysisDate: new Date().toISOString(),
+        voiceCompleteness: voiceProfileResult.completeness ? {
+          score: voiceProfileResult.completeness.scorePercent,
+          threshold: voiceProfileResult.completeness.thresholdPercent,
+          meetsThreshold: voiceProfileResult.completeness.meetsThreshold,
+          status: voiceProfileResult.completeness.status,
+          needsEnhancement: voiceProfileResult.completeness.needsEnhancement
+        } : null
       }
     });
 

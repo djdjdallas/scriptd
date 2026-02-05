@@ -8,6 +8,69 @@ import { toast } from 'sonner';
 import ContentIdeaBanner from '../ContentIdeaBanner';
 import ResearchAdequacyMeter from '@/components/research/ResearchAdequacyMeter';
 
+/**
+ * Normalize spaced-out text that may come from PDFs or poor OCR
+ * Detects patterns like "s p a c e d  t e x t" and converts to "spaced text"
+ */
+function normalizeSpacedText(text) {
+  if (!text || typeof text !== 'string') return text;
+
+  // First, handle zero-width chars and unusual unicode spaces
+  let normalized = text
+    .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width chars
+    .replace(/\u00A0/g, ' '); // Replace non-breaking spaces with regular spaces
+
+  // Check if text is spaced-out by looking for patterns
+  // Pattern: sequences of single letters with spaces between them
+  const words = normalized.split(/\s+/);
+
+  // Calculate average word length and ratio of single-char "words"
+  const singleCharCount = words.filter(w => w.length === 1 && /[a-zA-Z]/.test(w)).length;
+  const avgWordLength = words.reduce((sum, w) => sum + w.length, 0) / words.length;
+
+  // If average word length is very low and many single chars, it's likely spaced text
+  const isSpacedText = (avgWordLength < 2.5 && singleCharCount > 10) ||
+                       (singleCharCount / words.length > 0.35 && words.length > 15);
+
+  if (isSpacedText) {
+    // Strategy: Find sequences of single letters separated by single spaces
+    // and collapse them, while preserving actual word boundaries (double spaces or more)
+
+    // First, normalize multiple spaces to mark word boundaries
+    // Double space = word boundary, single space between single chars = needs removal
+    normalized = normalized.replace(/\s{2,}/g, '  '); // Normalize to double space for boundaries
+
+    // Split by double-space (word boundaries) and process each "word"
+    const segments = normalized.split(/\s{2,}/);
+
+    const fixedSegments = segments.map(segment => {
+      // Check if this segment is spaced-out (single chars with single spaces)
+      const segmentWords = segment.trim().split(/\s+/);
+      const singleChars = segmentWords.filter(w => w.length === 1).length;
+
+      if (singleChars / segmentWords.length > 0.6) {
+        // Collapse: remove all single spaces between single characters
+        return segment.replace(/\b(\w)\s+(?=\w\b)/g, '$1');
+      }
+      return segment;
+    });
+
+    normalized = fixedSegments.join(' ');
+
+    // Also try a more direct approach for very spaced text:
+    // Pattern like "t h e   q u i c k   b r o w n" -> "the quick brown"
+    // Look for: letter space letter space letter (repeated)
+    normalized = normalized.replace(/(\b[a-zA-Z])\s([a-zA-Z])\s([a-zA-Z])(?:\s([a-zA-Z]))?(?:\s([a-zA-Z]))?(?:\s([a-zA-Z]))?(?:\s([a-zA-Z]))?(?:\s([a-zA-Z]))?(?:\s([a-zA-Z]))?(?:\s([a-zA-Z]))?(?:\s([a-zA-Z]))?(?:\s([a-zA-Z]))?\b/g,
+      (match, ...chars) => chars.filter(c => c).join(''));
+  }
+
+  // Final cleanup
+  return normalized
+    .replace(/\s{3,}/g, '  ') // Max double space
+    .replace(/\s{2}/g, ' ')   // Collapse remaining double spaces to single
+    .trim();
+}
+
 export default function ResearchStep() {
   const { workflowData, updateStepData, markStepComplete, workflowId, trackCredits, goToStep } = useWorkflow();
   const [sources, setSources] = useState(workflowData.research?.sources || []);
@@ -57,13 +120,13 @@ export default function ResearchStep() {
           } else if (researchData && researchData.length > 0) {
             console.log(`Loading ${researchData.length} saved research sources from database`);
 
-            // Convert database format to component format
+            // Convert database format to component format (normalize any spaced-out text)
             const loadedSources = researchData.map(source => ({
               id: source.id,
               source_type: source.source_type,
               source_url: source.source_url,
               source_title: source.source_title,
-              source_content: source.source_content,
+              source_content: normalizeSpacedText(source.source_content),
               fact_check_status: source.fact_check_status,
               is_starred: source.is_starred,
               relevance: source.relevance || 0.5
@@ -212,13 +275,13 @@ export default function ResearchStep() {
             setRelatedQuestions(results.relatedQuestions);
           }
 
-          // Map results to source format
+          // Map results to source format (normalize spaced-out text from PDFs/OCR)
           const newSources = (results.results || results.sources || []).map(result => ({
             id: result.id || crypto.randomUUID(),
             source_type: result.source_type || 'web',
             source_url: result.source_url,
             source_title: result.source_title,
-            source_content: result.source_content,
+            source_content: normalizeSpacedText(result.source_content),
             fact_check_status: result.fact_check_status || 'verified',
             is_starred: result.is_starred || false,
             relevance: result.relevance || 0.8,
@@ -913,7 +976,7 @@ export default function ResearchStep() {
         source_type: 'youtube_transcript',
         source_url: transcript.videoUrl,
         source_title: `Transcript: ${transcript.videoTitle}`,
-        source_content: researchData.source_content,
+        source_content: normalizeSpacedText(researchData.source_content),
         fact_check_status: 'verified',
         is_starred: true,
         relevance: 0.9
@@ -1650,7 +1713,7 @@ export default function ResearchStep() {
                             )}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-400 mb-2 break-words whitespace-pre-wrap">{source.source_content}</p>
+                        <p className="text-sm text-gray-400 mb-2 break-words whitespace-pre-wrap">{normalizeSpacedText(source.source_content)}</p>
                         {source.source_url !== '#synthesized' && source.source_type !== 'document' && (
                           <a 
                             href={source.source_url} 

@@ -307,7 +307,7 @@ export default function ComplianceCheckPage() {
 
             <p>
               The key distinction is <strong className="text-white">authenticity</strong>.
-              YouTube isn&apos;t banning AI—they&apos;re targeting content that could have been created
+              YouTube isn&apos;t banning AI -they&apos;re targeting content that could have been created
               by anyone because it lacks unique human perspective. Your scripts should reflect
               your genuine expertise, opinions, and experiences.
             </p>

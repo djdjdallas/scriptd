@@ -1,10 +1,7 @@
-import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
 import { getYouTubeClient, withRateLimit, getCached, setCache, getRequestOptions } from './client.js';
 import { createClient } from '@/lib/supabase/server';
 import { apiLogger } from '@/lib/monitoring/logger';
-import { withRetry, isRateLimitError, createApiError } from '@/lib/utils/retry';
-import { withSupadataRateLimit } from './supadata-rate-limiter.js';
-import { SUPADATA_RATE_LIMITS } from '@/lib/constants';
+import { fetchTranscriptWithFallback, getProviderStatus } from './transcript-provider-manager.js';
 
 export async function getVideoById(videoId) {
   const cacheKey = `video-${videoId}`;
@@ -118,120 +115,8 @@ async function saveTranscriptToCache(videoId, transcriptData) {
   }
 }
 
-/**
- * Fetch transcript from Supadata.ai API (fallback when scraping fails)
- * API Docs: https://docs.supadata.ai/youtube/get-transcript
- * Uses retry with exponential backoff for rate limit handling
- */
-async function getTranscriptFromSupadata(videoId) {
-  const apiKey = process.env.SUPADATA_API_KEY;
-
-  if (!apiKey) {
-    return null;
-  }
-
-  try {
-    // Wrap with rate limiter to prevent 429 errors
-    return await withSupadataRateLimit(async () => {
-      return await withRetry(
-        async () => {
-          const url = `https://api.supadata.ai/v1/youtube/transcript?videoId=${videoId}&text=false`;
-
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'x-api-key': apiKey,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw createApiError(
-              `Supadata API error (${response.status}): ${errorText}`,
-              response.status,
-              response
-            );
-          }
-
-          const data = await response.json();
-
-          // Check if response indicates an error (rate limit sometimes returned as 200 with error body)
-          if (data.error || data.message?.toLowerCase().includes('limit')) {
-            apiLogger.warn('Supadata returned error in response body', {
-              videoId,
-              error: data.error,
-              message: data.message
-            });
-            throw createApiError(
-              `Supadata API error: ${data.message || data.error}`,
-              429,
-              response
-            );
-          }
-
-          // Supadata returns: { content: [{text, offset, duration, lang}], lang, availableLangs }
-          if (!data.content || !Array.isArray(data.content)) {
-            // Log the actual response for debugging
-            apiLogger.warn('Unexpected Supadata response format', {
-              videoId,
-              responseKeys: Object.keys(data),
-              hasError: !!data.error,
-              hasMessage: !!data.message
-            });
-            throw new Error('Invalid Supadata API response format');
-          }
-
-          // Convert Supadata format to our format
-          const segments = data.content.map(chunk => ({
-            text: chunk.text,
-            offset: chunk.offset,
-            duration: chunk.duration
-          }));
-
-          const fullText = data.content
-            .map(chunk => chunk.text)
-            .join(' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-
-          return {
-            segments,
-            fullText,
-            hasTranscript: true,
-            source: 'supadata-api',
-            language: data.lang,
-            availableLanguages: data.availableLangs || []
-          };
-        },
-        {
-          maxRetries: 3,
-          baseDelayMs: 2000, // Increased from 1000ms
-          maxDelayMs: SUPADATA_RATE_LIMITS.MAX_RETRY_DELAY_MS, // 60s instead of default 8s
-          shouldRetry: isRateLimitError,
-          onRetry: (attempt, delay, error) => {
-            apiLogger.warn('Supadata API retry', {
-              videoId,
-              attempt,
-              delayMs: delay,
-              error: error.message
-            });
-          }
-        }
-      );
-    });
-  } catch (error) {
-    // Log Supadata API failures for monitoring and debugging
-    // This helps detect API key issues, quota exhaustion, or service outages
-    apiLogger.error('Supadata API failed to fetch transcript after retries', error, {
-      videoId,
-      hasApiKey: !!process.env.SUPADATA_API_KEY,
-      service: 'supadata'
-    });
-
-    return null;
-  }
-}
+// Re-export provider status for monitoring
+export { getProviderStatus };
 
 export async function getVideoTranscript(videoId) {
   // Check in-memory cache first (fast)
@@ -249,87 +134,40 @@ export async function getVideoTranscript(videoId) {
   }
 
   try {
-    let transcript = null;
-    let lastError = null;
+    // Use the multi-provider fallback chain
+    const result = await fetchTranscriptWithFallback(videoId);
 
-    // The youtube-transcript package has issues with language codes
-    // Try without any config first - this often works best
-    try {
-      transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    } catch (e) {
-      lastError = e;
-
-      // Try different approaches based on error
-      const attempts = [
-        { config: { lang: 'en' }, name: 'lang: en' },
-        { config: { country: 'US' }, name: 'country: US' },
-        { config: { lang: 'en', country: 'US' }, name: 'lang: en, country: US' }
-      ];
-
-      for (const attempt of attempts) {
-        try {
-          transcript = await YoutubeTranscript.fetchTranscript(videoId, attempt.config);
-
-          if (transcript && transcript.length > 0) {
-            break;
-          }
-        } catch (e2) {
-          lastError = e2;
-        }
-      }
+    if (result && result.hasTranscript) {
+      // Save to both caches
+      setCache(cacheKey, result); // Memory cache
+      await saveTranscriptToCache(videoId, result); // DB cache
+      return result;
     }
 
-    if (!transcript || transcript.length === 0) {
-      // FALLBACK: Try Supadata.ai API before giving up
-
-      const apiTranscript = await getTranscriptFromSupadata(videoId);
-
-      if (apiTranscript) {
-        // Success! Cache and return
-        setCache(cacheKey, apiTranscript);
-        await saveTranscriptToCache(videoId, apiTranscript);
-        return apiTranscript;
-      }
-
-      // Both scraping AND API failed - cache negative result
-      const noTranscriptResult = {
-        segments: [],
-        fullText: '',
-        hasTranscript: false,
-        error: lastError?.message || 'No transcript found (tried scraping + API)'
-      };
-
-      await saveTranscriptToCache(videoId, noTranscriptResult);
-      throw lastError || new Error('No transcript found');
-    }
-
-    // Combine transcript segments into full text
-    const fullText = transcript
-      .map(segment => segment.text)
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    const result = {
-      segments: transcript,
-      fullText,
-      hasTranscript: true,
-      source: 'youtube-scraping' // Track that this came from scraping
-    };
-
-    // Save to both caches
-    setCache(cacheKey, result); // Memory cache
-    await saveTranscriptToCache(videoId, result); // DB cache
-
-    return result;
-  } catch (error) {
-    apiLogger.warn('Error fetching transcript', { videoId, error: error.message });
-    return {
+    // No transcript found - cache negative result
+    const noTranscriptResult = {
       segments: [],
       fullText: '',
       hasTranscript: false,
-      error: error.message,
+      error: 'No transcript found (all providers failed)'
     };
+
+    await saveTranscriptToCache(videoId, noTranscriptResult);
+    return noTranscriptResult;
+  } catch (error) {
+    apiLogger.warn('Error fetching transcript', { videoId, error: error.message });
+
+    // Cache negative result to avoid repeated failures
+    const failedResult = {
+      segments: [],
+      fullText: '',
+      hasTranscript: false,
+      error: error.message
+    };
+
+    await saveTranscriptToCache(videoId, failedResult);
+
+    return failedResult;
   }
 }
 

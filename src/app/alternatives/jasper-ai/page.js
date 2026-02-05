@@ -129,7 +129,7 @@ export default function JasperAIAlternativePage() {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-black">
       {/* Structured Data for SEO */}
       <Script
         id="jasper-structured-data"
@@ -140,34 +140,38 @@ export default function JasperAIAlternativePage() {
       />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-red-50 to-white dark:from-red-950/20 dark:to-background py-20">
+      <section className="relative bg-black py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center">
-            <Badge className="mb-4" variant="secondary">
+            <Badge className="mb-4 bg-purple-500/10 text-purple-400 border-purple-500/20">
               <Youtube className="w-4 h-4 mr-1" />
               Built Exclusively for YouTube Creators
             </Badge>
-            
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               Jasper Alternative for YouTube Script Generation with Viral Frameworks
             </h1>
-            
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Jasper writes blogs. Genscript writes videos that keep viewers watching. Get <span className="font-semibold text-foreground">YouTube scripts with 70%+ retention</span>, 
+
+            <p className="text-xl text-gray-400 mb-8 max-w-3xl mx-auto">
+              Jasper writes blogs. Genscript writes videos that keep viewers watching. Get <span className="font-semibold text-white">YouTube scripts with 70%+ retention</span>,
               viral hooks, perfect pacing, and audience-specific optimization.
             </p>
 
             <div className="flex gap-4 justify-center mb-8">
-              <Button size="lg" className="bg-gradient-to-r from-red-600 to-orange-600">
-                Try Free - No Credit Card
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline">
-                See Results From Ex-Jasper Users
-              </Button>
+              <Link href="/login">
+                <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                  Try Free - No Credit Card
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Link href="#results">
+                <Button size="lg" variant="outline" className="border-gray-700 hover:bg-gray-800">
+                  See Results From Ex-Jasper Users
+                </Button>
+              </Link>
             </div>
 
-            <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-8 text-sm text-gray-400">
               <div className="flex items-center gap-1">
                 <DollarSign className="w-4 h-4" />
                 <span>50% Cheaper than Jasper</span>
@@ -276,10 +280,12 @@ export default function JasperAIAlternativePage() {
                 Higher retention means YouTube promotes your videos more. Better CTR means more views. 
                 Combined, this leads to exponential channel growth that Jasper simply can't deliver.
               </p>
-              <Button size="lg" className="bg-gradient-to-r from-red-600 to-orange-600">
-                Get These Results for Your Channel
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
+              <Link href="/login">
+                <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                  Get These Results for Your Channel
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
@@ -328,10 +334,12 @@ export default function JasperAIAlternativePage() {
           </Card>
 
           <div className="text-center mt-8">
-            <Button size="lg" className="bg-gradient-to-r from-red-600 to-orange-600">
-              Switch & Save 50% vs Jasper
-              <DollarSign className="ml-2 w-5 h-5" />
-            </Button>
+            <Link href="/login">
+              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                Switch & Save 50% vs Jasper
+                <DollarSign className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -490,21 +498,25 @@ export default function JasperAIAlternativePage() {
             </div>
             
             <div className="flex gap-4 justify-center">
-              <Button size="lg" variant="secondary">
-                Claim 3 Months Free
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
-                Compare Plans
-              </Button>
+              <Link href="/signup?source=jasper-switch&offer=3months">
+                <Button size="lg" variant="secondary">
+                  Claim 3 Months Free
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Link href="/pricing">
+                <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+                  Compare Plans
+                </Button>
+              </Link>
             </div>
           </div>
 
           <div className="text-sm opacity-75">
-            No payment required for 90 days • Instant access • 5 minute setup
+            No payment required for 90 days - Instant access - 5 minute setup
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

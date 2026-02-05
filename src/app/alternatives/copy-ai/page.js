@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Script from 'next/script';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -154,7 +155,7 @@ export default function CopyAIAlternativePage() {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-black">
       {/* Structured Data for SEO */}
       <Script
         id="copyai-structured-data"
@@ -165,7 +166,7 @@ export default function CopyAIAlternativePage() {
       />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-orange-50 to-white dark:from-orange-950/20 dark:to-background py-20">
+      <section className="relative bg-gradient-to-b from-gray-900 via-black to-gray-900 py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center">
             <Badge className="mb-4" variant="secondary">
@@ -173,28 +174,32 @@ export default function CopyAIAlternativePage() {
               60% Less Cost, 100% More Value
             </Badge>
             
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
               The Copy.ai Alternative Built for YouTube Creators
             </h1>
-            
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Copy.ai writes marketing copy. We write <span className="font-semibold text-foreground">viral YouTube scripts</span> with 
-              <span className="font-semibold text-foreground"> {socialProofData.metrics.averageRetention}%+ retention</span>. 
+
+            <p className="text-xl text-gray-400 mb-8 max-w-3xl mx-auto">
+              Copy.ai writes marketing copy. We write <span className="font-semibold text-white">viral YouTube scripts</span> with
+              <span className="font-semibold text-white"> {socialProofData.metrics.averageRetention}%+ retention</span>.
               Unlimited scripts for less than half the price.
             </p>
 
             <div className="flex gap-4 justify-center mb-8">
-              <Button size="lg" className="bg-gradient-to-r from-orange-600 to-red-600">
-                Start Creating Unlimited Scripts
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline">
-                Compare Pricing
-                <DollarSign className="ml-2 w-5 h-5" />
-              </Button>
+              <Link href="/login">
+                <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+                  Start Creating Unlimited Scripts
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Link href="/pricing">
+                <Button size="lg" variant="outline" className="border-gray-700 hover:bg-gray-800 text-white">
+                  Compare Pricing
+                  <DollarSign className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
             </div>
 
-            <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-8 text-sm text-gray-500">
               <div className="flex items-center gap-1">
                 <Youtube className="w-4 h-4" />
                 <span>YouTube-Only Focus</span>
@@ -210,9 +215,9 @@ export default function CopyAIAlternativePage() {
       </section>
 
       {/* Wrong Tool Alert */}
-      <section className="py-16 bg-white dark:bg-background border-y">
+      <section className="py-16 bg-gray-950 border-y border-gray-800">
         <div className="container mx-auto px-4 max-w-5xl">
-          <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
+          <Alert className="border-purple-500/30 bg-purple-500/10">
             <AlertTriangle className="h-4 w-4 text-orange-600" />
             <AlertDescription className="text-base">
               <strong>Using Copy.ai for YouTube?</strong> You're using a hammer when you need a precision tool. 
@@ -221,10 +226,10 @@ export default function CopyAIAlternativePage() {
           </Alert>
           
           <div className="grid md:grid-cols-2 gap-6 mt-8">
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Copy className="w-5 h-5 text-gray-500" />
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Copy className="w-5 h-5 text-gray-400" />
                   Copy.ai Creates
                 </CardTitle>
               </CardHeader>
@@ -246,10 +251,10 @@ export default function CopyAIAlternativePage() {
               </CardContent>
             </Card>
             
-            <Card className="border-orange-200 dark:border-orange-800">
+            <Card className="bg-gray-800/50 border-purple-500/30">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Youtube className="w-5 h-5 text-orange-600" />
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Youtube className="w-5 h-5 text-purple-400" />
                   Genscript Creates
                 </CardTitle>
               </CardHeader>
@@ -269,23 +274,23 @@ export default function CopyAIAlternativePage() {
       </section>
 
       {/* Pricing Comparison */}
-      <section className="py-20 bg-gradient-to-b from-white to-orange-50 dark:from-background dark:to-orange-950/20">
+      <section className="py-20 bg-gray-950">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             More Features, Less Cost
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
             Why pay more for generic templates when you can get YouTube-specific excellence for less?
           </p>
           
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <Card>
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardDescription>Copy.ai Free</CardDescription>
-                <CardTitle className="text-3xl">$0/mo</CardTitle>
+                <CardDescription className="text-gray-400">Copy.ai Free</CardDescription>
+                <CardTitle className="text-3xl text-white">$0/mo</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm">
+                <ul className="space-y-2 text-sm text-gray-300">
                   <li className="flex items-center gap-2">
                     <XCircle className="w-4 h-4 text-red-500" />
                     <span>2,000 words only</span>
@@ -301,40 +306,40 @@ export default function CopyAIAlternativePage() {
                 </ul>
               </CardContent>
             </Card>
-            
-            <Card className="border-orange-200 dark:border-orange-800 relative">
+
+            <Card className="bg-gray-800/50 border-purple-500/50 relative">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-orange-600 text-white">BEST VALUE</Badge>
+                <Badge className="bg-purple-600 text-white">BEST VALUE</Badge>
               </div>
               <CardHeader>
-                <CardDescription>Genscript Pro</CardDescription>
-                <CardTitle className="text-3xl">$39/mo</CardTitle>
+                <CardDescription className="text-gray-400">Genscript Pro</CardDescription>
+                <CardTitle className="text-3xl text-white">$39/mo</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm">
+                <ul className="space-y-2 text-sm text-gray-300">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    <span className="font-medium">Unlimited scripts</span>
+                    <span className="font-medium text-white">Unlimited scripts</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    <span className="font-medium">68%+ retention</span>
+                    <span className="font-medium text-white">68%+ retention</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    <span className="font-medium">YouTube-specific</span>
+                    <span className="font-medium text-white">YouTube-specific</span>
                   </li>
                 </ul>
               </CardContent>
             </Card>
-            
-            <Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardDescription>Copy.ai Pro</CardDescription>
-                <CardTitle className="text-3xl">$49/mo</CardTitle>
+                <CardDescription className="text-gray-400">Copy.ai Pro</CardDescription>
+                <CardTitle className="text-3xl text-white">$49/mo</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm">
+                <ul className="space-y-2 text-sm text-gray-300">
                   <li className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-yellow-500" />
                     <span>40K words limit</span>
@@ -351,20 +356,22 @@ export default function CopyAIAlternativePage() {
               </CardContent>
             </Card>
           </div>
-          
+
           <div className="text-center mt-8">
-            <Button size="lg" className="bg-gradient-to-r from-orange-600 to-red-600">
-              Get More for Less - Start Free
-              <Zap className="ml-2 w-5 h-5" />
-            </Button>
+            <Link href="/login">
+              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+                Get More for Less - Start Free
+                <Zap className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Comparison Table */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-5xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Detailed Feature Comparison
           </h2>
           
@@ -377,47 +384,47 @@ export default function CopyAIAlternativePage() {
       </section>
 
       {/* ROI Section */}
-      <section className="py-20 bg-gradient-to-b from-white to-orange-50 dark:from-background dark:to-orange-950/20">
+      <section className="py-20 bg-gray-950">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
             Calculate Your Savings
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
             See how much you'll save while getting better results
           </p>
-          
+
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             <ROICalculator />
-            
-            <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30">
+
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle>Cost Per Script Comparison</CardTitle>
+                <CardTitle className="text-white">Cost Per Script Comparison</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-4 bg-white dark:bg-black/20 rounded-lg">
+                  <div className="p-4 bg-gray-900 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">Copy.ai Pro</span>
-                      <span className="text-2xl font-bold text-red-600">$12.25</span>
+                      <span className="font-medium text-gray-300">Copy.ai Pro</span>
+                      <span className="text-2xl font-bold text-red-400">$12.25</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Based on 40K words/mo ÷ 4 scripts
+                    <p className="text-xs text-gray-500">
+                      Based on 40K words/mo / 4 scripts
                     </p>
                   </div>
-                  
-                  <div className="p-4 bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg">
+
+                  <div className="p-4 bg-purple-500/10 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">Genscript</span>
-                      <span className="text-2xl font-bold text-green-600">$0.63</span>
+                      <span className="font-medium text-gray-300">Genscript</span>
+                      <span className="text-2xl font-bold text-green-400">$0.63</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-gray-500">
                       Based on unlimited scripts (30/mo average)
                     </p>
                   </div>
-                  
-                  <div className="text-center pt-4 border-t">
-                    <div className="text-3xl font-bold text-orange-600">95% Cheaper</div>
-                    <p className="text-sm text-muted-foreground">Per script created</p>
+
+                  <div className="text-center pt-4 border-t border-gray-700">
+                    <div className="text-3xl font-bold text-purple-400">95% Cheaper</div>
+                    <p className="text-sm text-gray-500">Per script created</p>
                   </div>
                 </div>
               </CardContent>
@@ -427,18 +434,18 @@ export default function CopyAIAlternativePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Creators Who Switched from Copy.ai
           </h2>
-          
+
           <TestimonialCarousel testimonials={testimonials} />
         </div>
       </section>
 
       {/* Migration Offer */}
-      <section className="py-20 bg-gradient-to-b from-white to-orange-50 dark:from-background dark:to-orange-950/20">
+      <section className="py-20 bg-gray-950">
         <div className="container mx-auto px-4 max-w-4xl">
           <MigrationOffer
             competitor="Copy.ai"
@@ -451,29 +458,29 @@ export default function CopyAIAlternativePage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-white dark:bg-background">
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4 max-w-3xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">
             Frequently Asked Questions
           </h2>
 
           <div className="space-y-4">
             {faqs.map((faq, idx) => (
-              <Card key={idx}>
+              <Card key={idx} className="bg-gray-800/50 border-gray-700">
                 <Collapsible open={openFAQ === idx} onOpenChange={() => setOpenFAQ(openFAQ === idx ? null : idx)}>
                   <CollapsibleTrigger className="w-full">
-                    <CardHeader className="text-left hover:bg-muted/50 transition-colors cursor-pointer">
-                      <CardTitle className="text-lg flex justify-between items-center">
+                    <CardHeader className="text-left hover:bg-gray-700/50 transition-colors cursor-pointer">
+                      <CardTitle className="text-lg flex justify-between items-center text-white">
                         {faq.question}
-                        <span className="text-muted-foreground">
-                          {openFAQ === idx ? '−' : '+'}
+                        <span className="text-gray-400">
+                          {openFAQ === idx ? '-' : '+'}
                         </span>
                       </CardTitle>
                     </CardHeader>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <CardContent>
-                      <p className="text-muted-foreground">{faq.answer}</p>
+                      <p className="text-gray-400">{faq.answer}</p>
                     </CardContent>
                   </CollapsibleContent>
                 </Collapsible>
@@ -484,16 +491,16 @@ export default function CopyAIAlternativePage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 bg-gradient-to-r from-orange-600 to-red-600 text-white">
+      <section className="py-20 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
         <div className="container mx-auto px-4 max-w-4xl text-center">
           <h2 className="text-4xl font-bold mb-6">
             Stop Using the Wrong Tool for YouTube
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Get unlimited YouTube scripts with {socialProofData.metrics.averageRetention}%+ retention 
+            Get unlimited YouTube scripts with {socialProofData.metrics.averageRetention}%+ retention
             for less than half of Copy.ai's price.
           </p>
-          
+
           <div className="grid md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
             <div className="flex items-center justify-center gap-2">
               <CheckCircle2 className="w-5 h-5" />
@@ -508,18 +515,22 @@ export default function CopyAIAlternativePage() {
               <span>YouTube-specific</span>
             </div>
           </div>
-          
+
           <div className="flex gap-4 justify-center">
-            <Button size="lg" variant="secondary">
-              Start Your Free Trial
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-            <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
-              See Full Comparison
-            </Button>
+            <Link href="/login">
+              <Button size="lg" variant="secondary">
+                Start Your Free Trial
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
+            <Link href="/compare/genscript-vs-chatgpt">
+              <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+                See Full Comparison
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
