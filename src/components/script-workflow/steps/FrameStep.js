@@ -51,6 +51,14 @@ export default function FrameStep() {
   };
 
   const generateFrameSuggestions = async () => {
+    const topic = workflowData.summary?.topic;
+
+    // Validate topic before making the request
+    if (!topic) {
+      toast.error('Please complete the Summary step first to set a topic');
+      return;
+    }
+
     try {
       toast.loading('Generating frame from research...');
 
@@ -58,7 +66,7 @@ export default function FrameStep() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          topic: workflowData.summary?.topic,
+          topic,
           framework: selectedFramework,
           workflowId: workflowData.id,
           researchSources: workflowData.research?.sources,
@@ -66,9 +74,26 @@ export default function FrameStep() {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to generate suggestions');
+      const data = await response.json();
 
-      const { suggestions, sourcesUsed } = await response.json();
+      if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 401) {
+          throw new Error('Please sign in to generate suggestions');
+        } else if (response.status === 402) {
+          throw new Error(data.error || 'Insufficient credits. Please upgrade your plan.');
+        } else if (response.status === 400) {
+          throw new Error(data.error || 'Missing required information');
+        } else {
+          throw new Error(data.error || 'Failed to generate suggestions');
+        }
+      }
+
+      const { suggestions, sourcesUsed } = data;
+
+      if (!suggestions || !suggestions.problem) {
+        throw new Error('Invalid response from server');
+      }
 
       setProblemStatement(suggestions.problem);
       setSolutionApproach(suggestions.solution);
@@ -79,7 +104,7 @@ export default function FrameStep() {
     } catch (error) {
       console.error('Frame suggestion error:', error);
       toast.dismiss();
-      toast.error('Failed to generate suggestions');
+      toast.error(error.message || 'Failed to generate suggestions');
     }
   };
 
