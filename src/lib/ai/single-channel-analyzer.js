@@ -202,6 +202,15 @@ Respond ONLY with valid JSON, no markdown code blocks or extra text.`;
       logErrors: true
     });
 
+    // Log parsing results for debugging
+    console.log('[Channel Analyzer] Parse result:', {
+      hasAnalysis: !!analysis,
+      isPartial: analysis?._partial,
+      keys: analysis ? Object.keys(analysis).slice(0, 10) : [],
+      hasContentRecommendations: !!(analysis?.contentRecommendations || analysis?.['CONTENT RECOMMENDATIONS'] || analysis?.['6. CONTENT RECOMMENDATIONS']),
+      contentRecommendationsCount: (analysis?.contentRecommendations || analysis?.['CONTENT RECOMMENDATIONS'] || analysis?.['6. CONTENT RECOMMENDATIONS'] || []).length
+    });
+
     // Check if we got a partial or insufficient result
     const isPartialOrInsufficient = !analysis ||
       analysis._partial ||
@@ -210,6 +219,26 @@ Respond ONLY with valid JSON, no markdown code blocks or extra text.`;
     if (isPartialOrInsufficient) {
       console.log('[Channel Analyzer] JSON parse returned partial/insufficient result, using text fallback');
       analysis = parseTextResponse(content);
+
+      // If text parsing also fails to get content recommendations, try direct extraction
+      if (!analysis.contentRecommendations || analysis.contentRecommendations.length === 0) {
+        const directExtracted = extractContentRecommendationsDirectly(content);
+        if (directExtracted.length > 0) {
+          console.log('[Channel Analyzer] Extracted', directExtracted.length, 'content recommendations directly');
+          analysis.contentRecommendations = directExtracted;
+        }
+      }
+    } else {
+      // Even if parsing succeeded, check if contentRecommendations is missing
+      const contentRecs = analysis.contentRecommendations || analysis['CONTENT RECOMMENDATIONS'] || analysis['6. CONTENT RECOMMENDATIONS'];
+      if (!contentRecs || (Array.isArray(contentRecs) && contentRecs.length === 0)) {
+        console.log('[Channel Analyzer] Content recommendations empty in parsed result, trying direct extraction');
+        const directExtracted = extractContentRecommendationsDirectly(content);
+        if (directExtracted.length > 0) {
+          console.log('[Channel Analyzer] Extracted', directExtracted.length, 'content recommendations directly');
+          analysis.contentRecommendations = directExtracted;
+        }
+      }
     }
 
     // Normalize keys to camelCase if they came with different formatting
@@ -494,6 +523,120 @@ function extractVideoIdeasFromText(text) {
   }
 
   return ideas.slice(0, 10); // Max 10 ideas
+}
+
+/**
+ * Directly extract contentRecommendations array from raw AI response
+ * Uses pattern matching to find and parse individual recommendation objects
+ */
+function extractContentRecommendationsDirectly(content) {
+  const recommendations = [];
+
+  if (!content || typeof content !== 'string') return recommendations;
+
+  // Look for the contentRecommendations or CONTENT RECOMMENDATIONS section
+  const patterns = [
+    /"contentRecommendations"\s*:\s*\[/i,
+    /"CONTENT RECOMMENDATIONS"\s*:\s*\[/i,
+    /CONTENT RECOMMENDATIONS[^[]*\[/i,
+    /"6\. CONTENT RECOMMENDATIONS"\s*:\s*\[/i
+  ];
+
+  let startIndex = -1;
+  for (const pattern of patterns) {
+    const match = content.match(pattern);
+    if (match) {
+      startIndex = content.indexOf(match[0]) + match[0].length - 1;
+      break;
+    }
+  }
+
+  if (startIndex === -1) return recommendations;
+
+  // Find the end of the array (matching ])
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  let endIndex = -1;
+
+  for (let i = startIndex; i < content.length; i++) {
+    if (esc) { esc = false; continue; }
+    if (content[i] === '\\' && inStr) { esc = true; continue; }
+    if (content[i] === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (content[i] === '[') depth++;
+    else if (content[i] === ']') {
+      depth--;
+      if (depth === 0) {
+        endIndex = i;
+        break;
+      }
+    }
+  }
+
+  // Extract the array content
+  const arrayContent = content.substring(startIndex, endIndex > startIndex ? endIndex + 1 : content.length);
+
+  // Try to parse each object in the array individually
+  // Find objects by matching { ... } patterns
+  let objStart = -1;
+  depth = 0;
+  inStr = false;
+  esc = false;
+
+  for (let i = 0; i < arrayContent.length; i++) {
+    if (esc) { esc = false; continue; }
+    if (arrayContent[i] === '\\' && inStr) { esc = true; continue; }
+    if (arrayContent[i] === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+
+    if (arrayContent[i] === '{') {
+      if (depth === 0) objStart = i;
+      depth++;
+    } else if (arrayContent[i] === '}') {
+      depth--;
+      if (depth === 0 && objStart >= 0) {
+        const objStr = arrayContent.substring(objStart, i + 1);
+        try {
+          const obj = JSON.parse(objStr);
+          if (obj.title) {
+            recommendations.push({
+              title: obj.title || '',
+              description: obj.description || '',
+              format: obj.format || 'video',
+              duration: obj.duration || obj.length || '',
+              growth_potential: obj.growth_potential || obj.growthPotential || 5,
+              isVerified: obj.isVerified || false,
+              verificationDetails: obj.verificationDetails || '',
+              tags: obj.tags || []
+            });
+          }
+        } catch {
+          // Try to extract at least title and description
+          const titleMatch = objStr.match(/"title"\s*:\s*"([^"]+)"/);
+          const descMatch = objStr.match(/"description"\s*:\s*"([^"]+)"/);
+          const formatMatch = objStr.match(/"format"\s*:\s*"([^"]+)"/);
+          const durationMatch = objStr.match(/"duration"\s*:\s*"([^"]+)"/);
+          const potentialMatch = objStr.match(/"growth_potential"\s*:\s*(\d+)/);
+
+          if (titleMatch) {
+            recommendations.push({
+              title: titleMatch[1],
+              description: descMatch ? descMatch[1] : '',
+              format: formatMatch ? formatMatch[1] : 'video',
+              duration: durationMatch ? durationMatch[1] : '',
+              growth_potential: potentialMatch ? parseInt(potentialMatch[1]) : 5,
+              isVerified: false,
+              _extracted: true
+            });
+          }
+        }
+        objStart = -1;
+      }
+    }
+  }
+
+  return recommendations.slice(0, 10); // Max 10 recommendations
 }
 
 /**

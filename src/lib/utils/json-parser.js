@@ -734,26 +734,112 @@ function deepJSONRepair(content) {
 
   // Try to parse and use error position to fix
   let lastError = null;
+  let lastErrorMsg = '';
   let attempts = 0;
-  const maxAttempts = 10;
+  const maxAttempts = 15;
 
   while (attempts < maxAttempts) {
     try {
       JSON.parse(fixed);
       return fixed; // Successfully parsed
     } catch (e) {
+      const errorMsg = e.message;
+
       // Extract position from error message
-      const posMatch = e.message.match(/position (\d+)/);
+      const posMatch = errorMsg.match(/position (\d+)/);
       if (!posMatch) break;
 
       const errorPos = parseInt(posMatch[1]);
-      if (lastError === errorPos) {
-        // Same error position - we're stuck
+      if (lastError === errorPos && lastErrorMsg === errorMsg) {
+        // Same error - we're stuck
         break;
       }
       lastError = errorPos;
+      lastErrorMsg = errorMsg;
 
-      // Check if there's an unescaped quote near the error
+      // Handle specific error patterns
+      const isArrayElementError = errorMsg.includes("after array element");
+      const isExpectedComma = errorMsg.includes("Expected ','");
+
+      // Check context around error position
+      const contextAfter = fixed.substring(errorPos, Math.min(fixed.length, errorPos + 50));
+      const charAtError = fixed[errorPos] || '';
+
+      // Strategy 1: Handle "Expected ',' or ']' after array element" errors
+      if (isArrayElementError || (isExpectedComma && charAtError === '{')) {
+        // Find the last complete array element by looking for } followed by { without comma
+        const lookback = Math.max(0, errorPos - 100);
+        const searchArea = fixed.substring(lookback, errorPos + 10);
+
+        // Look for } followed by whitespace and then { (missing comma between objects in array)
+        const missingCommaMatch = searchArea.match(/\}(\s*)(\{)/);
+        if (missingCommaMatch) {
+          const matchStart = lookback + searchArea.indexOf(missingCommaMatch[0]);
+          fixed = fixed.substring(0, matchStart + 1) + ',' + fixed.substring(matchStart + 1);
+          attempts++;
+          continue;
+        }
+
+        // Check if there's an incomplete object - look for unclosed string before error
+        // Find last { before error and see if it's properly closed
+        let depth = 0;
+        let lastObjStart = -1;
+        let inStr = false;
+        let esc = false;
+        for (let i = errorPos - 1; i >= Math.max(0, errorPos - 500); i--) {
+          if (esc) { esc = false; continue; }
+          if (fixed[i] === '\\' && inStr) { esc = true; continue; }
+          if (fixed[i] === '"' && !esc) { inStr = !inStr; continue; }
+          if (inStr) continue;
+          if (fixed[i] === '}') depth++;
+          if (fixed[i] === '{') {
+            if (depth === 0) {
+              lastObjStart = i;
+              break;
+            }
+            depth--;
+          }
+        }
+
+        // If we found an object start, check if it needs closing
+        if (lastObjStart >= 0) {
+          // Scan forward from object start to find issues
+          let objDepth = 0;
+          let inObjStr = false;
+          let objEsc = false;
+          for (let i = lastObjStart; i < errorPos; i++) {
+            if (objEsc) { objEsc = false; continue; }
+            if (fixed[i] === '\\' && inObjStr) { objEsc = true; continue; }
+            if (fixed[i] === '"') { inObjStr = !inObjStr; continue; }
+            if (inObjStr) continue;
+            if (fixed[i] === '{') objDepth++;
+            if (fixed[i] === '}') objDepth--;
+          }
+
+          if (objDepth > 0) {
+            // Object not properly closed - close it before the error position
+            let insertPos = errorPos;
+            // Find a good place to insert (after last complete value)
+            for (let i = errorPos - 1; i >= lastObjStart; i--) {
+              if (fixed[i] === '"' || fixed[i] === '}' || fixed[i] === ']' || /\d/.test(fixed[i])) {
+                insertPos = i + 1;
+                break;
+              }
+            }
+            // Remove trailing comma if present
+            const beforeInsert = fixed.substring(0, insertPos).trimEnd();
+            if (beforeInsert.endsWith(',')) {
+              fixed = beforeInsert.slice(0, -1) + '}' + fixed.substring(insertPos);
+            } else {
+              fixed = fixed.substring(0, insertPos) + '}' + fixed.substring(insertPos);
+            }
+            attempts++;
+            continue;
+          }
+        }
+      }
+
+      // Strategy 2: Handle unescaped quotes within strings
       // Find the last string start before error position
       let stringStart = -1;
       let inStr = false;
@@ -775,6 +861,7 @@ function deepJSONRepair(content) {
       // If we're in a string and hit an error, there's likely an unescaped quote
       if (inStr && stringStart >= 0) {
         // Find the problematic quote - scan from string start
+        let foundFix = false;
         for (let i = stringStart + 1; i < errorPos && i < fixed.length; i++) {
           if (fixed[i] === '\\') { i++; continue; }
           if (fixed[i] === '"') {
@@ -784,21 +871,60 @@ function deepJSONRepair(content) {
             if (afterThis[0] && !',:}]'.includes(afterThis[0]) && !afterThis.startsWith('"')) {
               // This quote needs escaping
               fixed = fixed.substring(0, i) + '\\"' + fixed.substring(i + 1);
+              foundFix = true;
               break;
             }
           }
         }
-      } else {
-        // Not in a string - might be missing comma or other issue
-        // Try inserting a comma before the error position
-        if (errorPos > 0 && (fixed[errorPos] === '"' || fixed[errorPos] === '{' || fixed[errorPos] === '[')) {
-          // Look back for a closing quote, }, or ]
+        if (foundFix) {
+          attempts++;
+          continue;
+        }
+
+        // If still in string at error, might need to close it
+        // Check if error position has something that looks like a key
+        if (/^"[^"]+"\s*:/.test(contextAfter)) {
+          // Close the current string and add comma
+          fixed = fixed.substring(0, errorPos) + '",' + fixed.substring(errorPos);
+          attempts++;
+          continue;
+        }
+      }
+
+      // Strategy 3: Not in a string - might be missing comma or other issue
+      if (!inStr) {
+        // Check for missing comma between values
+        if (charAtError === '"' || charAtError === '{' || charAtError === '[') {
+          // Look back for a closing quote, }, ], number, or keyword
           let lookback = errorPos - 1;
           while (lookback >= 0 && /\s/.test(fixed[lookback])) lookback--;
-          if (lookback >= 0 && (fixed[lookback] === '"' || fixed[lookback] === '}' || fixed[lookback] === ']')) {
-            // Might need a comma
-            fixed = fixed.substring(0, lookback + 1) + ',' + fixed.substring(lookback + 1);
+
+          const charBefore = fixed[lookback];
+          if (lookback >= 0 && (charBefore === '"' || charBefore === '}' || charBefore === ']' || /\d/.test(charBefore))) {
+            // Check it's not already followed by comma
+            const between = fixed.substring(lookback + 1, errorPos);
+            if (!between.includes(',')) {
+              fixed = fixed.substring(0, lookback + 1) + ',' + fixed.substring(lookback + 1);
+              attempts++;
+              continue;
+            }
           }
+
+          // Check for true/false/null before error position
+          const wordBefore = fixed.substring(Math.max(0, lookback - 5), lookback + 1);
+          if (/(?:true|false|null)$/.test(wordBefore)) {
+            fixed = fixed.substring(0, lookback + 1) + ',' + fixed.substring(lookback + 1);
+            attempts++;
+            continue;
+          }
+        }
+
+        // Handle extra/misplaced characters that break parsing
+        if (charAtError && !'{}[]",:\n\r\t '.includes(charAtError) && !/[a-zA-Z0-9\-_.]/.test(charAtError)) {
+          // Remove the problematic character
+          fixed = fixed.substring(0, errorPos) + fixed.substring(errorPos + 1);
+          attempts++;
+          continue;
         }
       }
 
@@ -812,6 +938,7 @@ function deepJSONRepair(content) {
 /**
  * Extract the largest valid JSON structure from content
  * Tries to parse progressively smaller portions to find valid JSON
+ * Handles complex nested arrays like contentRecommendations
  * @param {string} content - Content potentially containing valid JSON subset
  * @returns {Object|null} Parsed JSON object or null
  */
@@ -859,34 +986,266 @@ function extractPartialValidJSON(content) {
     }
   }
 
-  // Try to extract arrays - look for "key": [...] patterns
-  const arrayPattern = /"([^"]+)":\s*\[([\s\S]*?)\]/g;
-  let arrayMatch;
-  while ((arrayMatch = arrayPattern.exec(cleaned)) !== null) {
-    const key = arrayMatch[1];
-    const arrayContent = arrayMatch[2];
+  // Try to extract nested objects - look for "key": {...} patterns
+  // Uses a more sophisticated approach to find balanced braces
+  const objectKeyPattern = /"([a-zA-Z_][a-zA-Z0-9_]*)":\s*\{/g;
+  let objectMatch;
+  while ((objectMatch = objectKeyPattern.exec(cleaned)) !== null) {
+    const key = objectMatch[1];
+    const startIndex = objectMatch.index + objectMatch[0].length - 1; // Position of {
 
-    if (!key) continue;
+    // Find the matching closing brace
+    let depth = 0;
+    let inStr = false;
+    let esc = false;
+    let endIndex = -1;
 
-    try {
-      // Try to parse the array content
-      const parsed = JSON.parse('[' + arrayContent + ']');
-      result[key] = parsed;
-    } catch {
-      // Try to extract string items from the array
-      const items = [];
-      const itemPattern = /"([^"]*(?:\\.[^"]*)*)"/g;
-      let itemMatch;
-      while ((itemMatch = itemPattern.exec(arrayContent)) !== null) {
-        items.push(itemMatch[1]);
+    for (let i = startIndex; i < cleaned.length; i++) {
+      if (esc) { esc = false; continue; }
+      if (cleaned[i] === '\\' && inStr) { esc = true; continue; }
+      if (cleaned[i] === '"') { inStr = !inStr; continue; }
+      if (inStr) continue;
+      if (cleaned[i] === '{') depth++;
+      else if (cleaned[i] === '}') {
+        depth--;
+        if (depth === 0) {
+          endIndex = i;
+          break;
+        }
       }
-      if (items.length > 0) {
-        result[key] = items;
+    }
+
+    if (endIndex > startIndex) {
+      const objectContent = cleaned.substring(startIndex, endIndex + 1);
+      try {
+        const parsed = JSON.parse(objectContent);
+        result[key] = parsed;
+      } catch {
+        // If parsing fails, try repairing the object
+        try {
+          const repaired = repairJSON(objectContent);
+          const parsed = JSON.parse(repaired);
+          result[key] = parsed;
+        } catch {
+          // Continue without this object
+        }
+      }
+    }
+  }
+
+  // Try to extract arrays - look for "key": [...] patterns
+  // Use balanced bracket finding for complex arrays
+  const arrayKeyPattern = /"([a-zA-Z_][a-zA-Z0-9_]*)":\s*\[/g;
+  let arrayKeyMatch;
+  while ((arrayKeyMatch = arrayKeyPattern.exec(cleaned)) !== null) {
+    const key = arrayKeyMatch[1];
+    const startIndex = arrayKeyMatch.index + arrayKeyMatch[0].length - 1; // Position of [
+
+    // Find the matching closing bracket
+    let depth = 0;
+    let inStr = false;
+    let esc = false;
+    let endIndex = -1;
+
+    for (let i = startIndex; i < cleaned.length; i++) {
+      if (esc) { esc = false; continue; }
+      if (cleaned[i] === '\\' && inStr) { esc = true; continue; }
+      if (cleaned[i] === '"') { inStr = !inStr; continue; }
+      if (inStr) continue;
+      if (cleaned[i] === '[') depth++;
+      else if (cleaned[i] === ']') {
+        depth--;
+        if (depth === 0) {
+          endIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (endIndex > startIndex) {
+      const arrayContent = cleaned.substring(startIndex, endIndex + 1);
+      try {
+        const parsed = JSON.parse(arrayContent);
+        result[key] = parsed;
+      } catch {
+        // Try to repair the array
+        try {
+          const repaired = repairJSON(arrayContent);
+          const parsed = JSON.parse(repaired);
+          result[key] = parsed;
+        } catch {
+          // Try to extract individual objects from the array
+          const extractedItems = extractArrayItems(arrayContent);
+          if (extractedItems.length > 0) {
+            result[key] = extractedItems;
+          }
+        }
       }
     }
   }
 
   return Object.keys(result).length > 0 ? result : null;
+}
+
+/**
+ * Extract individual items from a potentially malformed array string
+ * Handles arrays of objects like contentRecommendations
+ * @param {string} arrayContent - Array content including [ and ]
+ * @returns {Array} Array of extracted items
+ */
+function extractArrayItems(arrayContent) {
+  const items = [];
+
+  // Remove outer brackets
+  let content = arrayContent.trim();
+  if (content.startsWith('[')) content = content.substring(1);
+  if (content.endsWith(']')) content = content.slice(0, -1);
+  content = content.trim();
+
+  if (!content) return items;
+
+  // Find individual objects in the array
+  let i = 0;
+  while (i < content.length) {
+    // Skip whitespace and commas
+    while (i < content.length && /[\s,]/.test(content[i])) i++;
+    if (i >= content.length) break;
+
+    if (content[i] === '{') {
+      // Find matching }
+      let depth = 0;
+      let inStr = false;
+      let esc = false;
+      let start = i;
+      let end = -1;
+
+      for (let j = i; j < content.length; j++) {
+        if (esc) { esc = false; continue; }
+        if (content[j] === '\\' && inStr) { esc = true; continue; }
+        if (content[j] === '"') { inStr = !inStr; continue; }
+        if (inStr) continue;
+        if (content[j] === '{') depth++;
+        else if (content[j] === '}') {
+          depth--;
+          if (depth === 0) {
+            end = j;
+            break;
+          }
+        }
+      }
+
+      if (end > start) {
+        const objStr = content.substring(start, end + 1);
+        try {
+          const obj = JSON.parse(objStr);
+          items.push(obj);
+        } catch {
+          // Try repairing the object
+          try {
+            const repaired = repairJSON(objStr);
+            const obj = JSON.parse(repaired);
+            items.push(obj);
+          } catch {
+            // Try extracting simple properties from this object
+            const simpleObj = extractSimpleObject(objStr);
+            if (simpleObj && Object.keys(simpleObj).length > 0) {
+              items.push(simpleObj);
+            }
+          }
+        }
+        i = end + 1;
+      } else {
+        // Couldn't find end, skip this character
+        i++;
+      }
+    } else if (content[i] === '"') {
+      // String item
+      let end = i + 1;
+      let esc = false;
+      while (end < content.length) {
+        if (esc) { esc = false; end++; continue; }
+        if (content[end] === '\\') { esc = true; end++; continue; }
+        if (content[end] === '"') break;
+        end++;
+      }
+      if (end < content.length) {
+        try {
+          const str = JSON.parse(content.substring(i, end + 1));
+          items.push(str);
+        } catch {
+          // Skip
+        }
+        i = end + 1;
+      } else {
+        i++;
+      }
+    } else {
+      // Number, boolean, or null
+      let end = i;
+      while (end < content.length && !/[\s,\]}]/.test(content[end])) end++;
+      const token = content.substring(i, end);
+      if (token === 'true') items.push(true);
+      else if (token === 'false') items.push(false);
+      else if (token === 'null') items.push(null);
+      else if (/^-?\d+(\.\d+)?$/.test(token)) items.push(parseFloat(token));
+      i = end;
+    }
+  }
+
+  return items;
+}
+
+/**
+ * Extract simple properties from a potentially malformed object string
+ * @param {string} objStr - Object string including { and }
+ * @returns {Object} Extracted properties
+ */
+function extractSimpleObject(objStr) {
+  const result = {};
+
+  // Try to match key-value pairs
+  const patterns = [
+    /"([^"]+)":\s*"([^"]*(?:\\.[^"]*)*)"/g,  // String values
+    /"([^"]+)":\s*(\d+(?:\.\d+)?)/g,          // Number values
+    /"([^"]+)":\s*(true|false|null)/g          // Boolean/null values
+  ];
+
+  for (const pattern of patterns) {
+    let match;
+    pattern.lastIndex = 0;
+    while ((match = pattern.exec(objStr)) !== null) {
+      const key = match[1];
+      let value = match[2];
+
+      if (!key) continue;
+
+      if (value === 'true') value = true;
+      else if (value === 'false') value = false;
+      else if (value === 'null') value = null;
+      else if (/^\d+(?:\.\d+)?$/.test(value)) value = parseFloat(value);
+
+      result[key] = value;
+    }
+  }
+
+  // Try to extract simple arrays (arrays of strings)
+  const simpleArrayPattern = /"([^"]+)":\s*\[\s*((?:"[^"]*"(?:\s*,\s*)?)+)\s*\]/g;
+  let arrMatch;
+  while ((arrMatch = simpleArrayPattern.exec(objStr)) !== null) {
+    const key = arrMatch[1];
+    const arrContent = arrMatch[2];
+    const items = [];
+    const itemPattern = /"([^"]*)"/g;
+    let itemMatch;
+    while ((itemMatch = itemPattern.exec(arrContent)) !== null) {
+      items.push(itemMatch[1]);
+    }
+    if (items.length > 0) {
+      result[key] = items;
+    }
+  }
+
+  return result;
 }
 
 /**
