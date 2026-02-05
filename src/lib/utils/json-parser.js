@@ -1,6 +1,9 @@
 /**
  * Centralized JSON parsing utilities for AI responses
  * Handles markdown extraction, JSON repair, and graceful fallbacks
+ *
+ * Based on techniques from jsonrepair and other LLM JSON repair libraries
+ * @see https://github.com/josdejong/jsonrepair
  */
 
 /**
@@ -88,7 +91,7 @@ export function parseAIResponse(content, options = {}) {
       return JSON.parse(repaired);
     } catch (finalError) {
       if (logErrors) {
-        console.warn('[JSON Parser] Standard repair failed, trying aggressive quote repair', {
+        console.warn('[JSON Parser] Standard repair failed, trying comprehensive repair', {
           contentPreview: content.substring(0, 100),
           error: finalError.message
         });
@@ -96,7 +99,21 @@ export function parseAIResponse(content, options = {}) {
     }
   }
 
-  // Strategy 6: Try aggressive quote repair
+  // Strategy 6: Try comprehensive tokenization-based repair
+  if (repair) {
+    try {
+      const comprehensiveRepaired = comprehensiveJSONRepair(extracted || content);
+      return JSON.parse(comprehensiveRepaired);
+    } catch (comprehensiveError) {
+      if (logErrors) {
+        console.warn('[JSON Parser] Comprehensive repair failed, trying aggressive quote repair', {
+          error: comprehensiveError.message
+        });
+      }
+    }
+  }
+
+  // Strategy 7: Try aggressive quote repair
   if (repair) {
     try {
       const aggressiveRepaired = aggressiveQuoteRepair(content);
@@ -110,7 +127,21 @@ export function parseAIResponse(content, options = {}) {
     }
   }
 
-  // Strategy 7: Try to extract partial valid JSON
+  // Strategy 8: Try deep JSON repair using error position feedback
+  if (repair) {
+    try {
+      const deepRepaired = deepJSONRepair(extracted || content);
+      return JSON.parse(deepRepaired);
+    } catch (deepError) {
+      if (logErrors) {
+        console.warn('[JSON Parser] Deep JSON repair failed', {
+          error: deepError.message
+        });
+      }
+    }
+  }
+
+  // Strategy 9: Try to extract partial valid JSON
   const partialJSON = extractPartialValidJSON(content);
   if (partialJSON && Object.keys(partialJSON).length > 0) {
     if (logErrors) {
@@ -174,27 +205,17 @@ function extractBalancedJSON(content) {
   const firstBracket = content.indexOf('[');
 
   let startIndex = -1;
-  let openChar = '';
-  let closeChar = '';
 
   if (firstBrace === -1 && firstBracket === -1) return null;
 
   if (firstBrace === -1) {
     startIndex = firstBracket;
-    openChar = '[';
-    closeChar = ']';
   } else if (firstBracket === -1) {
     startIndex = firstBrace;
-    openChar = '{';
-    closeChar = '}';
   } else if (firstBrace < firstBracket) {
     startIndex = firstBrace;
-    openChar = '{';
-    closeChar = '}';
   } else {
     startIndex = firstBracket;
-    openChar = '[';
-    closeChar = ']';
   }
 
   // Walk through and find the matching close, tracking all bracket types
@@ -421,7 +442,9 @@ function aggressiveQuoteRepair(content) {
 
     if (ch === '\\') {
       result += ch;
-      escape = true;
+      if (inString) {
+        escape = true;
+      }
       continue;
     }
 
@@ -429,13 +452,16 @@ function aggressiveQuoteRepair(content) {
       if (!inString) {
         // Starting a string
         inString = true;
-        stringStart = i;
         result += ch;
       } else {
         // Potentially ending a string - check what follows
-        // Valid endings: , } ] or whitespace followed by one of those, or end of content
+        // Valid endings: , } ] : or whitespace followed by one of those, or end of content
         const afterQuote = fixed.substring(i + 1).trimStart();
         const firstNonSpace = afterQuote[0];
+
+        // Also check if the next non-whitespace after potential closing quote
+        // looks like it could be a JSON key (starts a new "key": pattern)
+        const looksLikeNextKey = /^"[^"]+"\s*:/.test(afterQuote);
 
         if (
           firstNonSpace === ',' ||
@@ -443,7 +469,7 @@ function aggressiveQuoteRepair(content) {
           firstNonSpace === ']' ||
           firstNonSpace === ':' ||
           afterQuote === '' ||
-          afterQuote.startsWith('\n')
+          looksLikeNextKey
         ) {
           // This is a real closing quote
           inString = false;
@@ -465,6 +491,322 @@ function aggressiveQuoteRepair(content) {
 
   // Apply standard repairs
   return repairJSON(result);
+}
+
+/**
+ * Comprehensive tokenization-based JSON repair
+ * Handles complex issues like unescaped quotes, control characters, Python constants
+ * Based on techniques from jsonrepair library
+ * @param {string} content - JSON content to repair
+ * @returns {string} Repaired JSON string
+ */
+function comprehensiveJSONRepair(content) {
+  if (!content || typeof content !== 'string') {
+    return content;
+  }
+
+  let text = content.trim();
+
+  // Remove markdown code fences
+  text = text.replace(/^```json?\s*\n?/i, '').replace(/\n?\s*```$/i, '');
+
+  // Strip any text before first { or [ and after last matching } or ]
+  const firstBrace = text.indexOf('{');
+  const firstBracket = text.indexOf('[');
+  let startPos = -1;
+  if (firstBrace === -1 && firstBracket === -1) return text;
+  if (firstBrace === -1) startPos = firstBracket;
+  else if (firstBracket === -1) startPos = firstBrace;
+  else startPos = Math.min(firstBrace, firstBracket);
+
+  text = text.substring(startPos);
+
+  // Replace Python constants with JSON equivalents
+  text = text.replace(/\bNone\b/g, 'null');
+  text = text.replace(/\bTrue\b/g, 'true');
+  text = text.replace(/\bFalse\b/g, 'false');
+
+  // Replace special unicode quotes with regular quotes
+  text = text.replace(/[\u2018\u2019\u201B]/g, "'"); // Single quotes
+  text = text.replace(/[\u201C\u201D\u201F]/g, '"'); // Double quotes
+
+  // Replace special unicode whitespace
+  text = text.replace(/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, ' ');
+
+  // Remove ellipsis that AI sometimes adds
+  text = text.replace(/\.{3,}|…/g, '');
+
+  // Process character by character to handle complex cases
+  let result = '';
+  let i = 0;
+  let inString = false;
+  let stringQuote = '"';
+  let escape = false;
+  const stack = []; // Track { and [ nesting
+
+  while (i < text.length) {
+    const ch = text[i];
+    const nextCh = text[i + 1] || '';
+
+    if (escape) {
+      // Handle escape sequences
+      if ('"\\/bfnrtu'.includes(ch)) {
+        result += ch;
+      } else if (ch === '\n' || ch === '\r') {
+        // Unescaped newline in string - convert to \n
+        result += 'n';
+        if (ch === '\r' && nextCh === '\n') i++;
+      } else {
+        // Invalid escape - keep the character but escape it properly
+        result += ch;
+      }
+      escape = false;
+      i++;
+      continue;
+    }
+
+    if (inString) {
+      if (ch === '\\') {
+        result += ch;
+        escape = true;
+        i++;
+        continue;
+      }
+
+      if (ch === stringQuote) {
+        // Check if this is a valid string close
+        const after = text.substring(i + 1).trimStart();
+        const afterCh = after[0];
+
+        if (
+          afterCh === ',' ||
+          afterCh === '}' ||
+          afterCh === ']' ||
+          afterCh === ':' ||
+          after === '' ||
+          /^"[^"]*"\s*:/.test(after) // Next key-value pair
+        ) {
+          // Valid close
+          result += '"';
+          inString = false;
+        } else {
+          // Unescaped quote inside string
+          result += '\\"';
+        }
+        i++;
+        continue;
+      }
+
+      // Handle unescaped control characters in strings
+      if (ch === '\n' || ch === '\r' || ch === '\t') {
+        if (ch === '\n') result += '\\n';
+        else if (ch === '\r') result += '\\r';
+        else if (ch === '\t') result += '\\t';
+        i++;
+        continue;
+      }
+
+      // Regular character in string
+      result += ch;
+      i++;
+      continue;
+    }
+
+    // Not in a string
+    if (ch === '"' || ch === "'") {
+      inString = true;
+      stringQuote = ch === "'" ? "'" : '"';
+      result += '"'; // Always use double quotes
+      i++;
+      continue;
+    }
+
+    if (ch === '{' || ch === '[') {
+      stack.push(ch);
+      result += ch;
+      i++;
+      continue;
+    }
+
+    if (ch === '}' || ch === ']') {
+      // Remove trailing comma before closer
+      result = result.replace(/,\s*$/, '');
+      stack.pop();
+      result += ch;
+      i++;
+      continue;
+    }
+
+    if (ch === ',') {
+      // Check for trailing comma (comma before } or ])
+      const afterComma = text.substring(i + 1).trimStart();
+      if (afterComma[0] === '}' || afterComma[0] === ']') {
+        // Skip trailing comma
+        i++;
+        continue;
+      }
+      result += ch;
+      i++;
+      continue;
+    }
+
+    // Handle missing commas between values
+    if (/[}\]\d]/.test(result[result.length - 1]) || result.trimEnd().endsWith('true') || result.trimEnd().endsWith('false') || result.trimEnd().endsWith('null')) {
+      if (ch === '"' || ch === '{' || ch === '[' || /[a-zA-Z]/.test(ch)) {
+        // Might need a comma
+        const lastNonSpace = result.trimEnd().slice(-1);
+        if (lastNonSpace === '}' || lastNonSpace === ']' || lastNonSpace === '"' || /\d/.test(lastNonSpace)) {
+          // Check if the previous content looks like it needs a comma
+          const trimmed = result.trimEnd();
+          if (!trimmed.endsWith(',') && !trimmed.endsWith(':') && !trimmed.endsWith('{') && !trimmed.endsWith('[')) {
+            result = result.trimEnd() + ',';
+          }
+        }
+      }
+    }
+
+    // Handle unquoted property names
+    if (/[a-zA-Z_$]/.test(ch)) {
+      // Check if this looks like a property name (followed by :)
+      let identifier = ch;
+      let j = i + 1;
+      while (j < text.length && /[a-zA-Z0-9_$]/.test(text[j])) {
+        identifier += text[j];
+        j++;
+      }
+      // Skip whitespace after identifier
+      while (j < text.length && /\s/.test(text[j])) j++;
+
+      if (text[j] === ':') {
+        // This is an unquoted property name
+        result += '"' + identifier + '"';
+        i = j;
+        continue;
+      }
+    }
+
+    // Skip JS-style comments
+    if (ch === '/' && nextCh === '/') {
+      // Line comment
+      while (i < text.length && text[i] !== '\n') i++;
+      continue;
+    }
+    if (ch === '/' && nextCh === '*') {
+      // Block comment
+      i += 2;
+      while (i < text.length - 1 && !(text[i] === '*' && text[i + 1] === '/')) i++;
+      i += 2;
+      continue;
+    }
+
+    result += ch;
+    i++;
+  }
+
+  // Close unclosed string
+  if (inString) {
+    result += '"';
+  }
+
+  // Close unclosed brackets/braces
+  while (stack.length > 0) {
+    const open = stack.pop();
+    result = result.replace(/,\s*$/, ''); // Remove trailing comma
+    result += open === '{' ? '}' : ']';
+  }
+
+  return result;
+}
+
+/**
+ * Deep repair for AI-generated JSON with complex nested structures
+ * Uses error position feedback to locate and fix specific issues
+ * @param {string} content - JSON content to repair
+ * @returns {string} Repaired JSON string
+ */
+function deepJSONRepair(content) {
+  if (!content || typeof content !== 'string') {
+    return content;
+  }
+
+  let fixed = content.trim();
+  fixed = fixed.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '');
+
+  // Try to parse and use error position to fix
+  let lastError = null;
+  let attempts = 0;
+  const maxAttempts = 10;
+
+  while (attempts < maxAttempts) {
+    try {
+      JSON.parse(fixed);
+      return fixed; // Successfully parsed
+    } catch (e) {
+      // Extract position from error message
+      const posMatch = e.message.match(/position (\d+)/);
+      if (!posMatch) break;
+
+      const errorPos = parseInt(posMatch[1]);
+      if (lastError === errorPos) {
+        // Same error position - we're stuck
+        break;
+      }
+      lastError = errorPos;
+
+      // Check if there's an unescaped quote near the error
+      // Find the last string start before error position
+      let stringStart = -1;
+      let inStr = false;
+      let esc = false;
+      for (let i = 0; i < errorPos && i < fixed.length; i++) {
+        if (esc) { esc = false; continue; }
+        if (fixed[i] === '\\' && inStr) { esc = true; continue; }
+        if (fixed[i] === '"') {
+          if (!inStr) {
+            stringStart = i;
+            inStr = true;
+          } else {
+            inStr = false;
+            stringStart = -1;
+          }
+        }
+      }
+
+      // If we're in a string and hit an error, there's likely an unescaped quote
+      if (inStr && stringStart >= 0) {
+        // Find the problematic quote - scan from string start
+        for (let i = stringStart + 1; i < errorPos && i < fixed.length; i++) {
+          if (fixed[i] === '\\') { i++; continue; }
+          if (fixed[i] === '"') {
+            // Check if this quote breaks parsing by looking ahead
+            const afterThis = fixed.substring(i + 1).trimStart();
+            // If next non-whitespace is NOT a valid JSON token after string close
+            if (afterThis[0] && !',:}]'.includes(afterThis[0]) && !afterThis.startsWith('"')) {
+              // This quote needs escaping
+              fixed = fixed.substring(0, i) + '\\"' + fixed.substring(i + 1);
+              break;
+            }
+          }
+        }
+      } else {
+        // Not in a string - might be missing comma or other issue
+        // Try inserting a comma before the error position
+        if (errorPos > 0 && (fixed[errorPos] === '"' || fixed[errorPos] === '{' || fixed[errorPos] === '[')) {
+          // Look back for a closing quote, }, or ]
+          let lookback = errorPos - 1;
+          while (lookback >= 0 && /\s/.test(fixed[lookback])) lookback--;
+          if (lookback >= 0 && (fixed[lookback] === '"' || fixed[lookback] === '}' || fixed[lookback] === ']')) {
+            // Might need a comma
+            fixed = fixed.substring(0, lookback + 1) + ',' + fixed.substring(lookback + 1);
+          }
+        }
+      }
+
+      attempts++;
+    }
+  }
+
+  return fixed;
 }
 
 /**

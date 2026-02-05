@@ -197,10 +197,20 @@ Respond ONLY with valid JSON, no markdown code blocks or extra text.`;
     const content = response.content[0].text;
 
     // Parse the response using shared utility
-    const analysis = parseAIResponse(content, {
-      fallback: parseTextResponse(content),
+    let analysis = parseAIResponse(content, {
+      fallback: null,
       logErrors: true
     });
+
+    // Check if we got a partial or insufficient result
+    const isPartialOrInsufficient = !analysis ||
+      analysis._partial ||
+      (!analysis.channelIdentity && !analysis['CHANNEL IDENTITY'] && !analysis['1. CHANNEL IDENTITY']);
+
+    if (isPartialOrInsufficient) {
+      console.log('[Channel Analyzer] JSON parse returned partial/insufficient result, using text fallback');
+      analysis = parseTextResponse(content);
+    }
 
     // Normalize keys to camelCase if they came with different formatting
     const normalizedAnalysis = {
