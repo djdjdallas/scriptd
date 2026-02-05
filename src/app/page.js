@@ -35,6 +35,7 @@ import {
   FileText,
   Check,
   X,
+  Menu,
 } from "lucide-react";
 
 const FEATURES = [
@@ -166,6 +167,7 @@ const FAQ_DATA = [
 export default function Home() {
   const heroRef = useRef(null);
   const [openFaq, setOpenFaq] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 overflow-hidden">
@@ -247,6 +249,13 @@ export default function Home() {
           <Link href="/" className="text-2xl font-bold gradient-text">
             GenScript
           </Link>
+          <button
+            className="md:hidden text-white p-2"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
           <div className="hidden md:flex items-center gap-6">
             <Link
               href="/compliance-check"
@@ -307,6 +316,61 @@ export default function Home() {
           </div>
         </div>
       </nav>
+
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <div className="fixed top-24 left-4 right-4 z-40 glass-card p-4 md:hidden">
+          <div className="flex flex-col gap-4">
+            <Link
+              href="/compliance-check"
+              className="text-gray-200 hover:text-white transition-colors py-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Compliance Check
+            </Link>
+            <Link
+              href="/tools"
+              className="text-gray-200 hover:text-white transition-colors py-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Free Tools
+            </Link>
+            <div className="space-y-2">
+              <span className="text-gray-200 font-medium">Resources</span>
+              <div className="pl-4 space-y-2">
+                <Link
+                  href="/resources/youtube-compliance-whitepaper"
+                  className="block text-gray-400 hover:text-white transition-colors py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Compliance Whitepaper
+                </Link>
+                <Link
+                  href="/resources/creator-compliance-checklist"
+                  className="block text-gray-400 hover:text-white transition-colors py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Creator Checklist
+                </Link>
+                <Link
+                  href="/blog"
+                  className="block text-gray-400 hover:text-white transition-colors py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Blog
+                </Link>
+              </div>
+            </div>
+            <Link
+              href="/pricing"
+              className="text-gray-200 hover:text-white transition-colors py-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Pricing
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <section
