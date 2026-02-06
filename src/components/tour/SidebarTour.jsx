@@ -20,8 +20,8 @@ export function SidebarTour() {
 
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    // Small delay after scroll to get accurate position
-    requestAnimationFrame(() => {
+    // Wait for smooth scroll to finish before measuring position
+    setTimeout(() => {
       const rect = el.getBoundingClientRect();
       setTargetRect({
         top: rect.top,
@@ -31,7 +31,7 @@ export function SidebarTour() {
         right: rect.right,
         bottom: rect.bottom,
       });
-    });
+    }, 400);
   }, [currentStep]);
 
   // Recalculate on step change (250ms delay for sidebar animation)
