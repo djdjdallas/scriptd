@@ -164,7 +164,8 @@ Be extremely detailed and specific. Provide actionable insights based on the cha
 
     const response = await anthropic.messages.create({
       model: REMIX_MODEL,
-      max_tokens: 6000,
+      // 12000 tokens needed for full 9-section JSON response; 6000 risks truncation
+      max_tokens: 12000,
       temperature: 0.7,
       system: "You are an expert YouTube strategist who provides detailed, actionable insights for channel growth. CRITICAL: Respond ONLY with valid JSON. Never use empty keys like \"\": \"value\". All property names must be non-empty strings. Ensure all quotes are properly escaped. No trailing commas. Validate JSON syntax before responding.",
       messages: [
@@ -174,6 +175,17 @@ Be extremely detailed and specific. Provide actionable insights based on the cha
         }
       ]
     });
+
+    // Detect truncation — if the model hit the token limit, sections may be missing
+    const wasTruncated = response.stop_reason === 'max_tokens';
+    if (wasTruncated) {
+      console.warn('[Remix Analyzer] Response truncated (stop_reason=max_tokens)', {
+        model: REMIX_MODEL,
+        maxTokens: 12000,
+        inputTokens: response.usage?.input_tokens,
+        outputTokens: response.usage?.output_tokens
+      });
+    }
 
     // Parse the response with shared utility
     const content = response.content[0].text;
@@ -708,7 +720,8 @@ Be extremely detailed and specific. Provide realistic percentages that add up to
 
     const response = await anthropic.messages.create({
       model: REMIX_MODEL,
-      max_tokens: 4000,
+      // 8000 tokens needed for full 7-section audience insights JSON; 4000 risks truncation
+      max_tokens: 8000,
       temperature: 0.7,
       system: "You are a YouTube audience analyst who provides detailed, data-driven insights.",
       messages: [
@@ -718,6 +731,17 @@ Be extremely detailed and specific. Provide realistic percentages that add up to
         }
       ]
     });
+
+    // Detect truncation
+    const wasTruncated = response.stop_reason === 'max_tokens';
+    if (wasTruncated) {
+      console.warn('[Remix Analyzer] Audience insights truncated (stop_reason=max_tokens)', {
+        model: REMIX_MODEL,
+        maxTokens: 8000,
+        inputTokens: response.usage?.input_tokens,
+        outputTokens: response.usage?.output_tokens
+      });
+    }
 
     const content = response.content[0].text;
 

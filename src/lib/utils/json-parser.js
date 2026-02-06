@@ -29,7 +29,9 @@ export function parseAIResponse(content, options = {}) {
 
   // Strategy 1: Direct parse
   try {
-    return JSON.parse(content);
+    const result = JSON.parse(content);
+    if (logErrors) console.debug('[JSON Parser] Success via strategy 1: direct parse');
+    return result;
   } catch (directError) {
     if (logErrors) {
       console.debug('[JSON Parser] Direct parse failed, trying markdown extraction');
@@ -40,7 +42,9 @@ export function parseAIResponse(content, options = {}) {
   const extracted = extractJSONFromMarkdown(content);
   if (extracted) {
     try {
-      return JSON.parse(extracted);
+      const result = JSON.parse(extracted);
+      if (logErrors) console.debug('[JSON Parser] Success via strategy 2: markdown extraction');
+      return result;
     } catch (markdownError) {
       if (logErrors) {
         console.debug('[JSON Parser] Markdown JSON parse failed, trying repair');
@@ -50,7 +54,9 @@ export function parseAIResponse(content, options = {}) {
       if (repair) {
         try {
           const repaired = repairJSON(extracted);
-          return JSON.parse(repaired);
+          const result = JSON.parse(repaired);
+          if (logErrors) console.debug('[JSON Parser] Success via strategy 3: repair extracted content');
+          return result;
         } catch (repairError) {
           if (logErrors) {
             console.warn('[JSON Parser] Repair on extracted content failed', {
@@ -68,12 +74,16 @@ export function parseAIResponse(content, options = {}) {
     const balanced = extractBalancedJSON(extracted || content);
     if (balanced) {
       try {
-        return JSON.parse(balanced);
+        const result = JSON.parse(balanced);
+        if (logErrors) console.debug('[JSON Parser] Success via strategy 4a: balanced extraction');
+        return result;
       } catch (balancedError) {
         if (repair) {
           try {
             const repaired = repairJSON(balanced);
-            return JSON.parse(repaired);
+            const result = JSON.parse(repaired);
+            if (logErrors) console.debug('[JSON Parser] Success via strategy 4b: balanced extraction + repair');
+            return result;
           } catch (balancedRepairError) {
             if (logErrors) {
               console.debug('[JSON Parser] Balanced extraction + repair failed');
@@ -88,7 +98,9 @@ export function parseAIResponse(content, options = {}) {
   if (repair) {
     try {
       const repaired = repairJSON(content);
-      return JSON.parse(repaired);
+      const result = JSON.parse(repaired);
+      if (logErrors) console.debug('[JSON Parser] Success via strategy 5: repair original content');
+      return result;
     } catch (finalError) {
       if (logErrors) {
         console.warn('[JSON Parser] Standard repair failed, trying comprehensive repair', {
@@ -103,7 +115,9 @@ export function parseAIResponse(content, options = {}) {
   if (repair) {
     try {
       const comprehensiveRepaired = comprehensiveJSONRepair(extracted || content);
-      return JSON.parse(comprehensiveRepaired);
+      const result = JSON.parse(comprehensiveRepaired);
+      if (logErrors) console.debug('[JSON Parser] Success via strategy 6: comprehensive tokenization repair');
+      return result;
     } catch (comprehensiveError) {
       if (logErrors) {
         console.warn('[JSON Parser] Comprehensive repair failed, trying aggressive quote repair', {
@@ -117,7 +131,9 @@ export function parseAIResponse(content, options = {}) {
   if (repair) {
     try {
       const aggressiveRepaired = aggressiveQuoteRepair(content);
-      return JSON.parse(aggressiveRepaired);
+      const result = JSON.parse(aggressiveRepaired);
+      if (logErrors) console.debug('[JSON Parser] Success via strategy 7: aggressive quote repair');
+      return result;
     } catch (aggressiveError) {
       if (logErrors) {
         console.warn('[JSON Parser] Aggressive quote repair failed', {
@@ -131,7 +147,9 @@ export function parseAIResponse(content, options = {}) {
   if (repair) {
     try {
       const deepRepaired = deepJSONRepair(extracted || content);
-      return JSON.parse(deepRepaired);
+      const result = JSON.parse(deepRepaired);
+      if (logErrors) console.debug('[JSON Parser] Success via strategy 8: deep JSON repair');
+      return result;
     } catch (deepError) {
       if (logErrors) {
         console.warn('[JSON Parser] Deep JSON repair failed', {
@@ -145,7 +163,9 @@ export function parseAIResponse(content, options = {}) {
   const partialJSON = extractPartialValidJSON(content);
   if (partialJSON && Object.keys(partialJSON).length > 0) {
     if (logErrors) {
-      console.warn('[JSON Parser] Returning partial JSON extraction');
+      console.debug('[JSON Parser] Success via strategy 9: partial JSON extraction', {
+        keys: Object.keys(partialJSON).length
+      });
     }
     return { ...partialJSON, _partial: true };
   }

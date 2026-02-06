@@ -182,7 +182,8 @@ Respond ONLY with valid JSON, no markdown code blocks or extra text.`;
 
     const response = await anthropic.messages.create({
       model: ANALYSIS_MODEL,
-      max_tokens: 6000,
+      // 12000 tokens needed for full 10-section JSON response; 6000 caused truncation around section 6
+      max_tokens: 12000,
       temperature: 0.7,
       system: "You are an expert YouTube strategist who provides detailed, actionable insights for channel growth. Always respond with valid JSON.",
       messages: [
@@ -192,6 +193,17 @@ Respond ONLY with valid JSON, no markdown code blocks or extra text.`;
         }
       ]
     });
+
+    // Detect truncation — if the model hit the token limit, sections may be missing
+    const wasTruncated = response.stop_reason === 'max_tokens';
+    if (wasTruncated) {
+      console.warn('[Channel Analyzer] Response truncated (stop_reason=max_tokens)', {
+        model: ANALYSIS_MODEL,
+        maxTokens: 12000,
+        inputTokens: response.usage?.input_tokens,
+        outputTokens: response.usage?.output_tokens
+      });
+    }
 
     // Parse the response
     const content = response.content[0].text;
@@ -206,6 +218,7 @@ Respond ONLY with valid JSON, no markdown code blocks or extra text.`;
     console.log('[Channel Analyzer] Parse result:', {
       hasAnalysis: !!analysis,
       isPartial: analysis?._partial,
+      wasTruncated,
       keys: analysis ? Object.keys(analysis).slice(0, 10) : [],
       hasContentRecommendations: !!(analysis?.contentRecommendations || analysis?.['CONTENT RECOMMENDATIONS'] || analysis?.['6. CONTENT RECOMMENDATIONS']),
       contentRecommendationsCount: (analysis?.contentRecommendations || analysis?.['CONTENT RECOMMENDATIONS'] || analysis?.['6. CONTENT RECOMMENDATIONS'] || []).length
