@@ -51,10 +51,10 @@ export async function GET(request) {
             email: data.user.email,
             name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
             avatar_url: data.user.user_metadata?.avatar_url,
-            onboarding_completed: true, // Skip onboarding for launch
-            onboarding_step: 7, // Mark as completed
-            onboarding_started_at: new Date().toISOString(),
-            onboarding_completed_at: new Date().toISOString()
+            onboarding_completed: false,
+            onboarding_step: 0,
+            onboarding_started_at: null,
+            onboarding_completed_at: null
           })
 
         // Also create profile record
@@ -84,11 +84,11 @@ export async function GET(request) {
             .from('onboarding_analytics')
             .insert({
               user_id: data.user.id,
-              event_type: 'abandoned',
+              event_type: 'tour_pending',
               metadata: {
                 auth_provider: data.user.app_metadata?.provider || 'email',
                 referrer: request.headers.get('referer'),
-                reason: 'onboarding_disabled_for_launch'
+                reason: 'sidebar_tour_pending'
               }
             })
         } catch (e) {

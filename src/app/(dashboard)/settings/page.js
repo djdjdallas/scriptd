@@ -30,11 +30,16 @@ import {
   CheckCircle,
   ExternalLink,
   Trash2,
-  FileText
+  FileText,
+  HelpCircle
 } from 'lucide-react';
+import { useTour } from '@/contexts/TourContext';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
+  const { startTour } = useTour();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState(null);
@@ -393,6 +398,25 @@ export default function SettingsPage() {
                     checked={settings.autoSave}
                     onCheckedChange={(checked) => setSettings({ ...settings, autoSave: checked })}
                   />
+                </div>
+
+                <div className="flex items-center justify-between glass p-4 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <HelpCircle className="h-5 w-5 text-purple-400" />
+                    <div>
+                      <p className="text-white font-medium">Product Tour</p>
+                      <p className="text-sm text-gray-400">Restart the sidebar feature tour</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      startTour();
+                      router.push('/dashboard');
+                    }}
+                    className="glass-button text-white"
+                  >
+                    Restart Tour
+                  </Button>
                 </div>
               </div>
             </div>
