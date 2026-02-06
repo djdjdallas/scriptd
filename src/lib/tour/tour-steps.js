@@ -7,9 +7,6 @@ import {
   Bookmark,
   Brain,
   Mic,
-  BarChart3,
-  CreditCard,
-  Settings,
 } from 'lucide-react';
 
 export const tourSteps = [
@@ -60,23 +57,5 @@ export const tourSteps = [
     title: 'Voice Training',
     description: 'Train AI to write in your unique voice and style.',
     icon: Mic,
-  },
-  {
-    id: 'analytics',
-    title: 'Analytics',
-    description: 'Track script metrics, credit usage, and content performance.',
-    icon: BarChart3,
-  },
-  {
-    id: 'credits',
-    title: 'Credits',
-    description: 'View balance, purchase credits, or upgrade your plan.',
-    icon: CreditCard,
-  },
-  {
-    id: 'settings',
-    title: 'Settings',
-    description: 'Manage profile, preferences, and restart this tour anytime.',
-    icon: Settings,
   },
 ];

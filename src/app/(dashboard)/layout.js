@@ -226,8 +226,9 @@ function DashboardInner({ children, user, handleSignOut }) {
               const Icon = item.icon;
 
               return (
-                <div key={item.href} data-tour-step={item.href.replace(/^\//, '')}>
+                <div key={item.href}>
                   <div
+                    data-tour-step={item.href.replace(/^\//, '')}
                     onClick={() => {
                       if (isTourActive) return; // Prevent navigation during tour
                       if (
