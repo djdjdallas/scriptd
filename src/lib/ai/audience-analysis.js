@@ -97,7 +97,7 @@ Based on this data, provide a comprehensive analysis in the following JSON forma
 Provide thoughtful, specific analysis based on the actual channel data. Be detailed and insightful.`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 4000,
       temperature: 0.7,
       messages: [
@@ -147,7 +147,7 @@ Provide thoughtful, specific analysis based on the actual channel data. Be detai
       success: true,
       analysis,
       tokensUsed: response.usage?.total_tokens || 0,
-      model: 'claude-3-5-haiku-20241022'
+      model: 'claude-haiku-4-5-20251001'
     };
 
   } catch (error) {

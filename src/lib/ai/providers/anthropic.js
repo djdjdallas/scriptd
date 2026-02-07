@@ -13,7 +13,7 @@ export class AnthropicProvider extends BaseAIProvider {
   /**
    * @param {Object} config - Provider configuration
    * @param {string} config.apiKey - Anthropic API key
-   * @param {string} [config.model='claude-opus-4-1-20250805'] - Default model to use
+   * @param {string} [config.model='claude-opus-4-6'] - Default model to use
    * @param {string} [config.baseURL='https://api.anthropic.com'] - Base URL for API
    * @param {string} [config.version='2023-06-01'] - API version
    */
@@ -21,14 +21,17 @@ export class AnthropicProvider extends BaseAIProvider {
     super(config);
     this.baseURL = config.baseURL || 'https://api.anthropic.com';
     this.version = config.version || '2023-06-01';
-    this.model = config.model || 'claude-opus-4-1-20250805';
-    
-    // Model pricing (per 1K tokens) - Updated for 2025 models
+    this.model = config.model || 'claude-opus-4-6';
+
+    // Model pricing (per 1K tokens) - Updated for 2025/2026 models
     this.pricing = {
-      // Claude 4+ models
+      // Claude 4+ models (current)
+      'claude-opus-4-6': { input: 0.005, output: 0.025 },
+      'claude-sonnet-4-5-20250929': { input: 0.003, output: 0.015 },
+      'claude-haiku-4-5-20251001': { input: 0.001, output: 0.005 },
+      // Claude 4+ models (older)
       'claude-opus-4-1-20250805': { input: 0.020, output: 0.100 },
       'claude-4-opus-20250522': { input: 0.018, output: 0.090 },
-      'claude-sonnet-4-5-20250929': { input: 0.008, output: 0.040 },
       'claude-3.7-sonnet-20250224': { input: 0.008, output: 0.040 },
       // Claude 3.5 models
       'claude-3-5-haiku-20241022': { input: 0.00030, output: 0.00150 },
@@ -75,7 +78,6 @@ export class AnthropicProvider extends BaseAIProvider {
       maxTokens = 2000,
       temperature = 0.7,
       stream = false,
-      topP = 1,
       topK = null,
       system = null,
       stopSequences = null,
@@ -87,7 +89,6 @@ export class AnthropicProvider extends BaseAIProvider {
       messages: this._formatMessagesForClaude(messages),
       max_tokens: maxTokens,
       temperature,
-      top_p: topP,
       stream
     };
 
@@ -130,7 +131,7 @@ export class AnthropicProvider extends BaseAIProvider {
    * @returns {number} Estimated cost in USD
    */
   estimateCost(inputTokens, outputTokens, model = this.model) {
-    const pricing = this.pricing[model] || this.pricing['claude-3-sonnet-20240229'];
+    const pricing = this.pricing[model] || this.pricing['claude-sonnet-4-5-20250929'];
     const inputCost = (inputTokens / 1000) * pricing.input;
     const outputCost = (outputTokens / 1000) * pricing.output;
     return inputCost + outputCost;

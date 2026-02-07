@@ -63,7 +63,7 @@ Format each title on a new line without numbers or bullets.`;
 
     const response = await ai.generateText({
       prompt,
-      model: AI_MODELS.CLAUDE_3_HAIKU, // Uses FAST_MODEL (claude-3-5-haiku-20241022)
+      model: AI_MODELS.CLAUDE_3_HAIKU, // Uses FAST_MODEL (claude-haiku-4-5-20251001)
       temperature: 0.9,
       maxTokens: 500
     });

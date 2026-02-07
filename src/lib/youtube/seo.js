@@ -67,7 +67,7 @@ Generate 5 title variations, ranked by SEO potential.`;
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
       temperature: 0.7,
       messages: [
@@ -130,7 +130,7 @@ Generate an optimized description.`;
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1000,
       temperature: 0.7,
       messages: [
@@ -196,7 +196,7 @@ Generate a comma-separated list of tags.`;
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
       temperature: 0.8,
       messages: [

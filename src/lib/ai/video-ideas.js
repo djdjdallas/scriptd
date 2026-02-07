@@ -179,7 +179,7 @@ Generate 10 video ideas in this JSON format:
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 4000,
       temperature: 0.7, // Lower than before for more factual accuracy
       system: "You are a YouTube content strategist who ONLY creates ideas based on real, verified events. Never invent or embellish facts.",
@@ -378,7 +378,7 @@ Generate comprehensive video ideas in JSON format:
 Generate creative, specific, and actionable video ideas that align with the channel's brand and audience expectations while pushing creative boundaries.`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 4000,
       temperature: 0.9,
       messages: [

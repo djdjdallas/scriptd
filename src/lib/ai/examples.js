@@ -38,7 +38,7 @@ export function initializeAIService() {
       },
       anthropic: {
         apiKey: process.env.ANTHROPIC_API_KEY,
-        model: 'claude-3-opus-20240229'
+        model: 'claude-opus-4-6'
       }
     },
     taskProviders: {
@@ -319,7 +319,7 @@ export async function estimateGenerationCost() {
   // Estimate cost (assuming ~2000 output tokens for 20-min script)
   const estimatedCost = ai.estimateCost(inputTokens, 2000, {
     provider: 'anthropic',
-    model: 'claude-3-opus-20240229'
+    model: 'claude-opus-4-6'
   });
 
   return { inputTokens, estimatedCost };

@@ -39,6 +39,8 @@ function calculateCreditsForDuration(durationInSeconds, model) {
       'claude-3-5-sonnet': MODEL_TIERS.BALANCED.actualModel,
       'claude-3-opus': MODEL_TIERS.PREMIUM.actualModel,
       'claude-opus-4-1': MODEL_TIERS.PREMIUM.actualModel,
+      'claude-opus-4-5': MODEL_TIERS.PREMIUM.actualModel,
+      'claude-opus-4-6': MODEL_TIERS.PREMIUM.actualModel,
     };
     return mapping[m] || m;
   };

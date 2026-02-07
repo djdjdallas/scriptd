@@ -58,7 +58,7 @@ Requirements:
 Return ONLY a JSON array of 5-7 specific content points as strings. Each point should be one clear sentence that relates directly to "${title}". No additional text or formatting.`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1000,
       temperature: 0.7,
       messages: [

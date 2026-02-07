@@ -7,15 +7,15 @@ const anthropic = new Anthropic({
 export async function generateWithAI(prompt, model = 'claude-3-opus') {
   try {
     const modelMap = {
-      'claude-3-opus': process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805',
+      'claude-3-opus': process.env.PREMIUM_MODEL || 'claude-opus-4-6',
       'claude-3-sonnet': process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
-      'claude-3-haiku': process.env.FAST_MODEL || 'claude-3-5-haiku-20241022',
+      'claude-3-haiku': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001',
       // Map old GPT model names to Claude equivalents
-      'gpt-4-turbo': process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805',
-      'gpt-3.5-turbo': process.env.FAST_MODEL || 'claude-3-5-haiku-20241022'
+      'gpt-4-turbo': process.env.PREMIUM_MODEL || 'claude-opus-4-6',
+      'gpt-3.5-turbo': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001'
     };
 
-    const selectedModel = modelMap[model] || process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805';
+    const selectedModel = modelMap[model] || process.env.PREMIUM_MODEL || 'claude-opus-4-6';
 
     const response = await anthropic.messages.create({
       model: selectedModel,
@@ -28,7 +28,7 @@ export async function generateWithAI(prompt, model = 'claude-3-opus') {
         }
       ]
     });
-    
+
     return response.content[0].text;
   } catch (error) {
     console.error('Claude AI generation error:', error);
@@ -39,14 +39,14 @@ export async function generateWithAI(prompt, model = 'claude-3-opus') {
 export async function generateStructuredData(prompt, model = 'claude-3-opus') {
   try {
     const modelMap = {
-      'claude-3-opus': process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805',
+      'claude-3-opus': process.env.PREMIUM_MODEL || 'claude-opus-4-6',
       'claude-3-sonnet': process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
-      'claude-3-haiku': process.env.FAST_MODEL || 'claude-3-5-haiku-20241022',
-      'gpt-4-turbo': process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805',
-      'gpt-3.5-turbo': process.env.FAST_MODEL || 'claude-3-5-haiku-20241022'
+      'claude-3-haiku': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001',
+      'gpt-4-turbo': process.env.PREMIUM_MODEL || 'claude-opus-4-6',
+      'gpt-3.5-turbo': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001'
     };
 
-    const selectedModel = modelMap[model] || process.env.PREMIUM_MODEL || 'claude-opus-4-1-20250805';
+    const selectedModel = modelMap[model] || process.env.PREMIUM_MODEL || 'claude-opus-4-6';
 
     const response = await anthropic.messages.create({
       model: selectedModel,

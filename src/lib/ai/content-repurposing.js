@@ -274,7 +274,7 @@ Generate comprehensive repurposing strategies in JSON format:
 Generate creative, platform-specific repurposing ideas that maximize the value of the original content while adapting to each platform's unique requirements and audience expectations.`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 4000,
       temperature: 0.9,
       messages: [
