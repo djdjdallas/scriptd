@@ -157,9 +157,9 @@ export function ChannelAnalyzer({
           setIsAnalyzing(false);
           toast.success("Channel analysis complete!", { duration: 3000 });
 
-          // Navigate to channel page to show updated data
+          // Reload to show updated data from database
           setTimeout(() => {
-            router.push(`/channels/${channelId}`);
+            window.location.reload();
           }, 2000);
         } catch (parseError) {
           console.error('Failed to parse complete event:', parseError);
