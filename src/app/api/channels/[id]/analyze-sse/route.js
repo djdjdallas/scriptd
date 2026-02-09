@@ -102,6 +102,10 @@ export async function GET(request, { params }) {
         const analysis = claudeAnalysis.analysis;
         const stats = channel.statistics || {};
 
+        // Extract content keywords from video titles
+        const videoTitles = videos.map(v => v.snippet?.title || '').join(' ');
+        const topKeywords = extractTopKeywords(videoTitles, videos);
+
         // Format analytics
         const formattedAnalytics = {
           channel: {
@@ -120,13 +124,42 @@ export async function GET(request, { params }) {
               : 0,
             engagementRate: calculateEngagementRate(videos),
             performanceScore: analysis.metricsAndBenchmarks?.performanceScore || 70,
-            growthPotential: analysis.metricsAndBenchmarks?.growthPotential || 75
+            growthPotential: analysis.metricsAndBenchmarks?.growthPotential || 75,
+            totalEngagements: videos.reduce((sum, v) => {
+              return sum + parseInt(v.statistics?.likeCount || 0) + parseInt(v.statistics?.commentCount || 0);
+            }, 0)
           },
           audience: {
             demographics: analysis.audienceProfile?.demographics || {},
             interests: analysis.audienceProfile?.interests || [],
             psychographics: analysis.audienceProfile?.psychographics || {},
             viewingHabits: analysis.audienceProfile?.viewingHabits || {}
+          },
+          content: {
+            topKeywords: topKeywords,
+            contentTypes: analysis.contentAnalysis?.contentTypes || analysis.contentAnalysis?.contentPillars || {},
+            contentPillars: analysis.contentAnalysis?.contentPillars || [],
+            whatWorksWell: analysis.contentAnalysis?.whatWorksWell || [],
+            contentGaps: analysis.contentAnalysis?.contentGaps || [],
+            optimalLength: analysis.contentAnalysis?.optimalVideoLength || analysis.contentAnalysis?.videoLength || '10-15 minutes',
+            publishingFrequency: analysis.contentAnalysis?.publishingFrequency || analysis.contentAnalysis?.uploadSchedule || 'Weekly',
+            contentPatterns: analysis.contentAnalysis?.contentPatterns || {}
+          },
+          contentAnalysis: analysis.contentAnalysis || {},
+          voiceAndStyle: analysis.voiceAndStyle || {},
+          competitivePositioning: analysis.competitivePositioning || {},
+          topVideos: videos.slice(0, 10).map(v => ({
+            id: v.id,
+            title: v.snippet?.title,
+            views: parseInt(v.statistics?.viewCount || 0),
+            likes: parseInt(v.statistics?.likeCount || 0),
+            comments: parseInt(v.statistics?.commentCount || 0),
+            publishedAt: v.snippet?.publishedAt
+          })).sort((a, b) => b.views - a.views),
+          analysisMetadata: {
+            videosAnalyzed: videos.length,
+            analysisDate: new Date().toISOString(),
+            model: claudeAnalysis.model
           }
         };
 
@@ -156,26 +189,19 @@ export async function GET(request, { params }) {
             channel_id: id,
             user_id: user.id,
             analytics_data: formattedAnalytics,
-            audience_persona: analysis.audienceProfile?.persona || '',
+            audience_persona: analysis.audienceProfile || {},
             audience_description: formatAudienceDescription(analysis.audienceProfile),
             insights: comprehensiveInsights,
             content_ideas: analysis.contentRecommendations || [],
             videos_analyzed: videos.length,
-            analysis_date: new Date().toISOString(),
-            ai_analysis: {
-              channelIdentity: analysis.channelIdentity,
-              audienceProfile: analysis.audienceProfile,
-              contentAnalysis: analysis.contentAnalysis,
-              voiceAndStyle: analysis.voiceAndStyle,
-              growthStrategy: analysis.growthStrategy,
-              competitivePositioning: analysis.competitivePositioning,
-              metricsAndBenchmarks: analysis.metricsAndBenchmarks,
-              actionPlan: analysis.actionPlan,
-              model: claudeAnalysis.model
-            }
+            analysis_date: new Date().toISOString()
           })
           .select()
           .single();
+
+        if (saveError) {
+          apiLogger.error('Error saving analysis', saveError, { channelId: id, userId: user.id });
+        }
 
         // Update channel
         await supabase
@@ -302,6 +328,26 @@ function extractStrengths(analysis) {
   }
 
   return strengths;
+}
+
+function extractTopKeywords(videoTitles, videos) {
+  const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'been', 'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'what', 'which', 'who', 'when', 'where', 'why', 'how', 'my', 'your', 'his', 'her', 'its', 'our', 'their']);
+
+  const words = videoTitles
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 3 && !stopWords.has(word));
+
+  const wordCounts = {};
+  words.forEach(word => {
+    wordCounts[word] = (wordCounts[word] || 0) + 1;
+  });
+
+  return Object.entries(wordCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+    .map(([word, count]) => [word, count]);
 }
 
 function formatAudienceDescription(audienceProfile) {
