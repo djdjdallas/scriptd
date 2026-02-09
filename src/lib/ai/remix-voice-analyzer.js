@@ -324,28 +324,60 @@ ${nicheGuidance.engagementTechniques || ''}
 - Edit rhythm preferences
 ${nicheGuidance.pacingDynamics || ''}
 
+9. CORE VOICE CHARACTERISTICS
+Based on your analysis above, distill the channel's voice into these fundamental descriptors:
+- Tone: 3-5 adjectives describing the overall emotional quality (e.g., "authoritative", "conversational", "urgent", "empathetic")
+- Style: 3-5 adjectives describing the presentation approach (e.g., "investigative", "tutorial-based", "storytelling", "documentary")
+- Pace: overall speaking pace (slow/moderate/fast)
+- Energy: overall energy level (calm/medium/high)
+- Personality: 5-7 traits that come through in their content
+- Humor: humor style and frequency (none/rare/occasional/frequent + style description)
+
+10. IMPLEMENTATION GUIDANCE
+- Summary: A 2-3 sentence summary of the creator's overall voice
+- Dos: 5 specific things to do when writing in this voice
+- Don'ts: 5 specific things to avoid
+- Hooks: How this creator opens videos (specific patterns)
+- Transitions: How they move between topics
+- Engagement: How they keep viewers watching
+- Signature phrases: 3-5 exact phrases or patterns they frequently use
+
 TRANSCRIPTS TO ANALYZE:
 ${transcriptText}
 
-Return ONLY valid JSON (no markdown, no code blocks, just pure JSON). 
+Return ONLY valid JSON with the following top-level structure. Include ALL fields:
 
-CRITICAL JSON RULES:
-- All quotes inside string values MUST be escaped with backslash (\")
-- All newlines in strings must be escaped as \\n
-- No trailing commas in arrays or objects
-- All string values must be properly quoted
-
-Create a detailed voice profile with these categories, using specific examples from the transcripts. Include frequency metrics and confidence scores where applicable.
-
-IMPORTANT: When including example phrases, ensure all quotes are properly escaped. For example:
-Instead of: "She said "hello""
-Use: "She said \\"hello\\""
+{
+  "tone": ["adjective1", "adjective2", "adjective3"],
+  "style": ["adjective1", "adjective2", "adjective3"],
+  "pace": "moderate",
+  "energy": "medium",
+  "personality": ["trait1", "trait2", "trait3"],
+  "humor": "occasional - description of humor style",
+  "summary": "2-3 sentence voice summary",
+  "dos": ["do1", "do2", "do3", "do4", "do5"],
+  "donts": ["dont1", "dont2", "dont3", "dont4", "dont5"],
+  "hooks": "Description of opening patterns",
+  "transitions": "Description of transition style",
+  "engagement": "Description of engagement techniques",
+  "signature_phrases": ["phrase1", "phrase2", "phrase3"],
+  "linguisticFingerprints": { "openingPatterns": [], "transitionPhrases": [], "closingPatterns": [], "fillerWords": {}, "signaturePhrases": [], "questionPatterns": {} },
+  "narrativeStructure": { "storyArcPattern": "", "informationFlow": "", "exampleStyle": "", "anecdoteUsage": {}, "hookPlacement": [] },
+  "emotionalDynamics": { "energyCurve": [], "emotionalBeats": [], "authenticityMarkers": [], "passionTriggers": [], "vulnerabilityPattern": "" },
+  "contentPositioning": { "selfReferenceRate": 0, "audienceRelationship": "", "authorityStance": "", "valueProposition": "" },
+  "culturalReferences": { "exampleCategories": [], "metaphorTypes": [], "currentEventsStyle": "", "internetCultureUsage": "", "formalityBalance": "" },
+  "technicalPatterns": { "avgWordsPerSentence": 15, "vocabularyComplexity": "", "jargonUsage": {}, "dataPresentation": "" },
+  "engagementTechniques": { "directAddressFrequency": 0, "pronounUsage": {}, "ctaStyle": "", "questionStrategy": "", "communityLanguage": [] },
+  "pacingDynamics": { "speedVariations": [], "pausePatterns": {}, "emphasisTechniques": [], "rhythmPreferences": "" }
+}
 
 CRITICAL JSON RULES:
 - Respond ONLY with valid JSON (no markdown, no code blocks)
+- All quotes inside string values MUST be escaped with backslash (\")
+- All newlines in strings must be escaped as \\n
+- No trailing commas in arrays or objects
 - Never use empty keys (all keys must be non-empty strings)
-- Ensure all quotes are properly escaped
-- No trailing commas
+- When including example phrases, escape quotes: "She said \\"hello\\""
 - Validate the JSON structure before responding`;
 
   const response = await anthropic.messages.create({

@@ -1186,7 +1186,7 @@ export default function SummaryStep() {
                   )}
                 </div>
 
-                {(voiceProfile.basicProfile || voiceProfile.tone || voiceProfile.style || voiceProfile.summary) ? (
+                {(voiceProfile.basicProfile || voiceProfile.tone || voiceProfile.style || voiceProfile.summary || voiceProfile.pace || voiceProfile.energy) ? (
                   <>
                     {(voiceProfile.basicProfile?.summary || voiceProfile.summary) && (
                       <div className="pb-2">
@@ -1194,29 +1194,52 @@ export default function SummaryStep() {
                       </div>
                     )}
 
-                    {(voiceProfile.basicProfile?.tone || voiceProfile.tone) && (
-                      <div>
-                        <span className="text-purple-300 font-medium">Tone: </span>
-                        <span className="text-gray-300">
-                          {(() => {
-                            const tone = voiceProfile.basicProfile?.tone || voiceProfile.tone;
-                            return Array.isArray(tone) ? tone.join(', ') : tone;
-                          })()}
-                        </span>
-                      </div>
-                    )}
+                    {(() => {
+                      // Build tone with fallbacks from advanced profile data
+                      const rawTone = voiceProfile.basicProfile?.tone || voiceProfile.tone;
+                      const toneArr = Array.isArray(rawTone) ? rawTone.filter(Boolean) : (rawTone ? [rawTone] : []);
+                      // Fallback: extract from emotionalDynamics, contentPositioning, basic analyzer
+                      if (toneArr.length === 0) {
+                        const advanced = voiceProfile.voiceProfileData?.advanced || voiceProfile.voiceProfileData?.basic;
+                        if (advanced?.personality?.formalityScore?.level) toneArr.push(advanced.personality.formalityScore.level);
+                        if (advanced?.personality?.emotionalRange?.dominant) toneArr.push(advanced.personality.emotionalRange.dominant);
+                        const ed = voiceProfile.emotionalDynamics;
+                        if (ed?.passionTriggers?.length > 0) toneArr.push(ed.passionTriggers[0]);
+                        const cp = voiceProfile.contentPositioning;
+                        if (cp?.authorityStance && toneArr.length < 3) toneArr.push(cp.authorityStance);
+                        // Last resort: use formality from basic analyzer
+                        if (toneArr.length === 0 && advanced?.formality) toneArr.push(advanced.formality);
+                      }
+                      return toneArr.length > 0 && (
+                        <div>
+                          <span className="text-purple-300 font-medium">Tone: </span>
+                          <span className="text-gray-300">{toneArr.join(', ')}</span>
+                        </div>
+                      );
+                    })()}
 
-                    {(voiceProfile.basicProfile?.style || voiceProfile.style) && (
-                      <div>
-                        <span className="text-purple-300 font-medium">Style: </span>
-                        <span className="text-gray-300">
-                          {(() => {
-                            const style = voiceProfile.basicProfile?.style || voiceProfile.style;
-                            return Array.isArray(style) ? style.join(', ') : style;
-                          })()}
-                        </span>
-                      </div>
-                    )}
+                    {(() => {
+                      // Build style with fallbacks from advanced profile data
+                      const rawStyle = voiceProfile.basicProfile?.style || voiceProfile.style;
+                      const styleArr = Array.isArray(rawStyle) ? rawStyle.filter(Boolean) : (rawStyle ? [rawStyle] : []);
+                      // Fallback: extract from contentPositioning, narrativeStructure, basic analyzer
+                      if (styleArr.length === 0) {
+                        const advanced = voiceProfile.voiceProfileData?.advanced || voiceProfile.voiceProfileData?.basic;
+                        const cp = voiceProfile.contentPositioning;
+                        if (cp?.valueProposition) styleArr.push(cp.valueProposition);
+                        if (cp?.audienceRelationship) styleArr.push(cp.audienceRelationship);
+                        const ns = voiceProfile.narrativeStructure;
+                        if (ns?.informationFlow && styleArr.length < 3) styleArr.push(ns.informationFlow);
+                        if (advanced?.personality?.storytellingStyle?.primaryStyle) styleArr.push(advanced.personality.storytellingStyle.primaryStyle);
+                        if (advanced?.personality?.technicalDepth?.level && styleArr.length < 3) styleArr.push(advanced.personality.technicalDepth.level + ' content');
+                      }
+                      return styleArr.length > 0 && (
+                        <div>
+                          <span className="text-purple-300 font-medium">Style: </span>
+                          <span className="text-gray-300">{styleArr.join(', ')}</span>
+                        </div>
+                      );
+                    })()}
 
                     <div className="grid grid-cols-2 gap-2 pt-2">
                       {(voiceProfile.basicProfile?.pace || voiceProfile.pace) && (
