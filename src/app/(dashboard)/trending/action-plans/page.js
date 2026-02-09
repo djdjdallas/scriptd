@@ -397,7 +397,7 @@ export default function ActionPlansPage() {
                   <Link 
                     href={`/trending/follow?channel=${encodeURIComponent(plan.channel_name)}&topic=${encodeURIComponent(plan.topic)}&planId=${plan.id}`}
                   >
-                    <Button size="sm" className="glass-button text-white">
+                    <Button size="sm" variant="ghost" className="glass-button">
                       <Eye className="mr-1 h-3 w-3" />
                       View
                     </Button>

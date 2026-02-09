@@ -532,8 +532,7 @@ export default function FollowTrendPage() {
                 </Button>
                 <Button
                   onClick={() => router.push('/trending/action-plans')}
-                  variant="outline"
-                  className="glass-button text-white"
+                  className="glass-button"
                 >
                   View My Action Plan
                 </Button>
