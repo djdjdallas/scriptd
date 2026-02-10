@@ -37,6 +37,8 @@ export async function POST(request) {
 
     const { topic, keywords, audience, tone, voiceProfile } = await request.json();
 
+    console.log('[generate-titles] Starting for topic:', topic);
+
     // Deduct credits BEFORE generation so we fail fast if insufficient
     const creditResult = await ServerCreditManager.deductCredits(
       supabase,
@@ -46,11 +48,14 @@ export async function POST(request) {
     );
 
     if (!creditResult.success) {
+      console.log('[generate-titles] Credit deduction failed:', creditResult.error);
       return NextResponse.json(
         { error: creditResult.error || 'Insufficient credits' },
         { status: 402 }
       );
     }
+
+    console.log('[generate-titles] Credits deducted, generating with model:', WORKFLOW_MODEL);
 
     let titles = [];
     let creditsUsed = 1;
@@ -102,11 +107,14 @@ Return ONLY a JSON array of exactly 10 title objects with this structure:
           })
         });
 
+        console.log('[generate-titles] Claude API response status:', claudeResponse.status);
+
         if (claudeResponse.ok) {
           const claudeData = await claudeResponse.json();
 
           try {
             const content = claudeData.content?.[0]?.text || '';
+            console.log('[generate-titles] Claude response length:', content.length, 'preview:', content.substring(0, 100));
             // Strip markdown code blocks if present
             const jsonContent = content.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
             titles = JSON.parse(jsonContent);
@@ -115,30 +123,36 @@ Return ONLY a JSON array of exactly 10 title objects with this structure:
             if (!Array.isArray(titles) || titles.length === 0) {
               throw new Error('Invalid response format');
             }
+            console.log('[generate-titles] Successfully parsed', titles.length, 'titles');
           } catch (parseError) {
+            console.error('[generate-titles] Parse error:', parseError.message);
             apiLogger.error('Title parse error', parseError, { content: claudeData.content?.[0]?.text?.substring(0, 200) });
             titles = generateFallbackTitles(topic, keywords);
           }
         } else {
           // Claude API returned non-200 — use fallback titles
           const errorBody = await claudeResponse.text().catch(() => 'unknown');
+          console.error('[generate-titles] Claude API error:', claudeResponse.status, errorBody.substring(0, 300));
           apiLogger.error('Claude API error for titles', { status: claudeResponse.status, body: errorBody.substring(0, 200) });
           titles = generateFallbackTitles(topic, keywords);
         }
       } catch (fetchError) {
+        console.error('[generate-titles] Fetch error:', fetchError.message);
         apiLogger.error('Claude API fetch error for titles', fetchError);
         titles = generateFallbackTitles(topic, keywords);
       }
     } else {
-      // No Claude API key, use fallback
+      console.log('[generate-titles] No ANTHROPIC_API_KEY, using fallback');
       titles = generateFallbackTitles(topic, keywords);
     }
 
+    console.log('[generate-titles] Returning', titles.length, 'titles');
     return NextResponse.json({
       titles,
       creditsUsed
     });
   } catch (error) {
+    console.error('[generate-titles] Unhandled error:', error.message, error.stack);
     apiLogger.error('Title generation error', error);
     return NextResponse.json(
       { error: 'Failed to generate titles' },
