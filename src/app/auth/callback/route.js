@@ -51,6 +51,7 @@ export async function GET(request) {
             email: data.user.email,
             name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
             avatar_url: data.user.user_metadata?.avatar_url,
+            credits: 50,
             onboarding_completed: false,
             onboarding_step: 0,
             onboarding_started_at: null,
