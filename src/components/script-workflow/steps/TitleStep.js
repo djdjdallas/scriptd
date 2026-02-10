@@ -28,7 +28,9 @@ export default function TitleStep() {
           audience: workflowData.summary?.targetAudience || 'general',
           tone: workflowData.summary?.tone || 'professional',
           voiceProfile: workflowData.summary?.voiceProfile || null,
-          model: workflowData.summary?.aiModel || 'gpt-4-turbo'
+          researchSources: workflowData.research?.sources || [],
+          contentIdeaInfo: workflowData.summary?.contentIdeaInfo || null,
+          niche: workflowData.summary?.niche || null
         })
       });
 
