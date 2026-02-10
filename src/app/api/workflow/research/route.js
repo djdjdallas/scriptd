@@ -171,7 +171,8 @@ export async function POST(request) {
         .update({
           credits: currentUser.credits - creditsUsed
         })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .eq('credits', currentUser.credits); // Optimistic lock: prevent stale overwrites
 
       // Log transaction
       await supabase

@@ -41,78 +41,95 @@ export class ServerCreditManager {
   static async deductCredits(supabase, userId, feature, options = {}) {
     // Allow custom calculated cost to override feature cost
     const cost = options.calculatedCost || this.getFeatureCost(feature, options);
-    
+
     if (cost === 0) {
       return { success: true, cost: 0 };
     }
-    
-    // Check if user has enough credits
-    const balance = await this.checkBalance(supabase, userId);
-    
-    if (balance < cost) {
-      return { 
-        success: false, 
-        error: 'Insufficient credits',
-        required: cost,
-        balance: balance
-      };
-    }
-    
-    // Start a transaction to deduct credits
-    try {
-      // Update user's credit balance
-      const { data: updateData, error: updateError } = await supabase
-        .from('users')
-        .update({ 
-          credits: balance - cost,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId)
-        .select('credits')
-        .single();
-      
-      if (updateError) {
-        console.error('Error updating user credits:', updateError);
-        return { 
-          success: false, 
-          error: 'Failed to update credits',
-          details: updateError.message
+
+    // Attempt deduction with optimistic locking (up to 2 tries)
+    // This prevents race conditions where concurrent requests read the same
+    // balance and overwrite each other's decrements
+    for (let attempt = 0; attempt < 2; attempt++) {
+      // Read current balance
+      const balance = await this.checkBalance(supabase, userId);
+
+      if (balance < cost) {
+        return {
+          success: false,
+          error: 'Insufficient credits',
+          required: cost,
+          balance: balance
         };
       }
-      
-      // Record the transaction
-      const { error: txError } = await supabase
-        .from('credits_transactions')
-        .insert({
-          user_id: userId,
-          amount: -cost, // Negative for usage
-          type: 'usage',
-          description: this.getFeatureDescription(feature, options),
-          metadata: {
-            feature,
-            ...options
-          }
-        });
-      
-      if (txError) {
-        console.error('Error recording credit transaction:', txError);
-        // Transaction recording failed, but credits were deducted
-        // This is not ideal but we'll allow it to proceed
+
+      try {
+        // Optimistic lock: only update if credits still matches what we read.
+        // If another request changed the balance between our read and write,
+        // .eq('credits', balance) won't match and no rows are updated.
+        const { data: updateData, error: updateError } = await supabase
+          .from('users')
+          .update({
+            credits: balance - cost,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId)
+          .eq('credits', balance)
+          .select('credits')
+          .maybeSingle();
+
+        if (updateError) {
+          console.error('Error updating user credits:', updateError);
+          return {
+            success: false,
+            error: 'Failed to update credits',
+            details: updateError.message
+          };
+        }
+
+        if (!updateData) {
+          // Balance changed between read and write — retry
+          console.warn(`[Credits] Optimistic lock conflict for user ${userId}, attempt ${attempt + 1}`);
+          continue;
+        }
+
+        // Record the transaction
+        const { error: txError } = await supabase
+          .from('credits_transactions')
+          .insert({
+            user_id: userId,
+            amount: -cost,
+            type: 'usage',
+            description: this.getFeatureDescription(feature, options),
+            metadata: {
+              feature,
+              ...options
+            }
+          });
+
+        if (txError) {
+          console.error('Error recording credit transaction:', txError);
+        }
+
+        return {
+          success: true,
+          cost,
+          remainingBalance: updateData.credits
+        };
+      } catch (error) {
+        console.error('Error in credit deduction:', error);
+        return {
+          success: false,
+          error: 'Failed to deduct credits',
+          details: error.message
+        };
       }
-      
-      return { 
-        success: true, 
-        cost,
-        remainingBalance: updateData.credits
-      };
-    } catch (error) {
-      console.error('Error in credit deduction:', error);
-      return { 
-        success: false, 
-        error: 'Failed to deduct credits',
-        details: error.message
-      };
     }
+
+    // Both attempts had optimistic lock conflicts
+    return {
+      success: false,
+      error: 'Credit update failed due to concurrent requests. Please try again.'
+    };
   }
 
   static getFeatureCost(feature, options = {}) {
@@ -168,17 +185,18 @@ export class ServerCreditManager {
     try {
       // Get current balance
       const currentBalance = await this.checkBalance(supabase, userId);
-      
-      // Update user's credit balance
+
+      // Update with optimistic lock to prevent race conditions
       const { data: updateData, error: updateError } = await supabase
         .from('users')
-        .update({ 
+        .update({
           credits: currentBalance + amount,
           updated_at: new Date().toISOString()
         })
         .eq('id', userId)
+        .eq('credits', currentBalance)
         .select('credits')
-        .single();
+        .maybeSingle();
       
       if (updateError) {
         console.error('Error updating user credits:', updateError);
