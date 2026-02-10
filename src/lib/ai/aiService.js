@@ -4,18 +4,28 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Map legacy model names to current Claude model IDs.
+// If the model is already a valid Claude model ID (starts with "claude-"), use it directly.
+const MODEL_MAP = {
+  'claude-3-opus': process.env.PREMIUM_MODEL || 'claude-opus-4-6',
+  'claude-3-sonnet': process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
+  'claude-3-haiku': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001',
+  'gpt-4-turbo': process.env.PREMIUM_MODEL || 'claude-opus-4-6',
+  'gpt-3.5-turbo': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001'
+};
+
+function resolveModel(model) {
+  // If it's already a full Claude model ID (e.g. "claude-haiku-4-5-20251001"), use as-is
+  if (model && model.startsWith('claude-') && model.length > 15) {
+    return model;
+  }
+  return MODEL_MAP[model] || process.env.PREMIUM_MODEL || 'claude-opus-4-6';
+}
+
 export async function generateWithAI(prompt, model = 'claude-3-opus') {
   try {
-    const modelMap = {
-      'claude-3-opus': process.env.PREMIUM_MODEL || 'claude-opus-4-6',
-      'claude-3-sonnet': process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
-      'claude-3-haiku': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001',
-      // Map old GPT model names to Claude equivalents
-      'gpt-4-turbo': process.env.PREMIUM_MODEL || 'claude-opus-4-6',
-      'gpt-3.5-turbo': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001'
-    };
-
-    const selectedModel = modelMap[model] || process.env.PREMIUM_MODEL || 'claude-opus-4-6';
+    // If the model is already a valid Claude model ID, use it directly
+    const selectedModel = resolveModel(model);
 
     const response = await anthropic.messages.create({
       model: selectedModel,
@@ -38,15 +48,8 @@ export async function generateWithAI(prompt, model = 'claude-3-opus') {
 
 export async function generateStructuredData(prompt, model = 'claude-3-opus') {
   try {
-    const modelMap = {
-      'claude-3-opus': process.env.PREMIUM_MODEL || 'claude-opus-4-6',
-      'claude-3-sonnet': process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
-      'claude-3-haiku': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001',
-      'gpt-4-turbo': process.env.PREMIUM_MODEL || 'claude-opus-4-6',
-      'gpt-3.5-turbo': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001'
-    };
-
-    const selectedModel = modelMap[model] || process.env.PREMIUM_MODEL || 'claude-opus-4-6';
+    // If the model is already a valid Claude model ID, use it directly
+    const selectedModel = resolveModel(model);
 
     const response = await anthropic.messages.create({
       model: selectedModel,
