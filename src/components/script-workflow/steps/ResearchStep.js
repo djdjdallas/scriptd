@@ -516,6 +516,11 @@ export default function ResearchStep() {
       setIsSearching(false);
       setResearchProgress(0);
 
+      // Track credits used for this research query
+      if (data.creditsUsed) {
+        trackCredits(data.creditsUsed);
+      }
+
       toast.success(
         <div className="flex flex-col gap-1">
           <span>✅ Research completed!</span>

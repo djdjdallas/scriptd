@@ -270,6 +270,11 @@ VALIDATION CHECKLIST:
           } catch {
             points = generateFallbackPoints(topic, targetAudience, targetDuration);
           }
+        } else {
+          // Claude API returned non-200 — use fallback
+          const errorBody = await claudeResponse.text().catch(() => 'unknown');
+          apiLogger.error('Claude API error for content points', { status: claudeResponse.status, body: errorBody.substring(0, 200) });
+          points = generateFallbackPoints(topic, targetAudience, targetDuration);
         }
       } catch (claudeError) {
         apiLogger.error('Claude API error', claudeError);

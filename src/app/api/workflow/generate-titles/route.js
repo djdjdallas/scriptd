@@ -37,8 +37,22 @@ export async function POST(request) {
 
     const { topic, keywords, audience, tone, voiceProfile } = await request.json();
 
+    // Deduct credits BEFORE generation so we fail fast if insufficient
+    const creditResult = await ServerCreditManager.deductCredits(
+      supabase,
+      user.id,
+      'TITLE_GENERATION',
+      { workflowId: topic }
+    );
+
+    if (!creditResult.success) {
+      return NextResponse.json(
+        { error: creditResult.error || 'Insufficient credits' },
+        { status: 402 }
+      );
+    }
+
     let titles = [];
-    // Charge 1 credit for title generation
     let creditsUsed = 1;
 
     // Use Claude API to generate titles
@@ -55,7 +69,7 @@ export async function POST(request) {
             model: WORKFLOW_MODEL, // Haiku 4.5 for workflow steps
             max_tokens: 2048,
             temperature: 0.8,
-            system: 'You are a YouTube title optimization expert. Generate compelling, click-worthy titles that maximize engagement.',
+            system: 'You are a YouTube title optimization expert. Generate compelling, click-worthy titles that maximize engagement. Return ONLY valid JSON with no markdown formatting.',
             messages: [
               {
                 role: 'user',
@@ -90,43 +104,37 @@ Return ONLY a JSON array of exactly 10 title objects with this structure:
 
         if (claudeResponse.ok) {
           const claudeData = await claudeResponse.json();
-          
+
           try {
             const content = claudeData.content?.[0]?.text || '';
-            titles = JSON.parse(content);
-            
+            // Strip markdown code blocks if present
+            const jsonContent = content.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+            titles = JSON.parse(jsonContent);
+
             // Validate the structure
             if (!Array.isArray(titles) || titles.length === 0) {
               throw new Error('Invalid response format');
             }
           } catch (parseError) {
-            // Generate fallback titles if parsing fails
+            apiLogger.error('Title parse error', parseError, { content: claudeData.content?.[0]?.text?.substring(0, 200) });
             titles = generateFallbackTitles(topic, keywords);
           }
+        } else {
+          // Claude API returned non-200 — use fallback titles
+          const errorBody = await claudeResponse.text().catch(() => 'unknown');
+          apiLogger.error('Claude API error for titles', { status: claudeResponse.status, body: errorBody.substring(0, 200) });
+          titles = generateFallbackTitles(topic, keywords);
         }
-      } catch {
+      } catch (fetchError) {
+        apiLogger.error('Claude API fetch error for titles', fetchError);
         titles = generateFallbackTitles(topic, keywords);
       }
     } else {
       // No Claude API key, use fallback
       titles = generateFallbackTitles(topic, keywords);
     }
-    // Deduct credits using ServerCreditManager
-    const creditResult = await ServerCreditManager.deductCredits(
-      supabase,
-      user.id,
-      'TITLE_GENERATION',
-      { workflowId: topic } // Add metadata for tracking
-    );
 
-    if (!creditResult.success) {
-      return NextResponse.json(
-        { error: creditResult.error || 'Insufficient credits' },
-        { status: 402 }
-      );
-    }
-
-    return NextResponse.json({ 
+    return NextResponse.json({
       titles,
       creditsUsed
     });
