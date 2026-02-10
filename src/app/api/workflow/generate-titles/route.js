@@ -187,11 +187,12 @@ TITLE ARCHETYPES — Generate one title for EACH of these 10 YouTube-proven patt
     "Why the Biggest Cyber Attack Was Actually a Good Thing" / "Everyone Is Wrong About AI Taking Your Job"
 
 RULES:
-- Maximum 70 characters per title
+- Aim for 55-70 characters per title. Longer titles perform better on YouTube — use the full space to add specifics, emotional detail, or a second hook. Titles under 50 chars are too short.
 - Use "you", "your", "I" to make titles personal and conversational
 - Include REAL specifics from research (numbers, company names, dates) — never invent facts
 - Each title must create a specific curiosity gap (viewer needs to click to resolve it)
 - Titles should feel like YouTube, not CNN or a blog post
+- Add parenthetical hooks like "(Nobody's Talking About This)" or "— And It's Getting Worse" to fill space
 
 DO NOT:
 - Write generic news headlines like "Company X Hit by Cyber Attack"
@@ -202,7 +203,7 @@ DO NOT:
 Return ONLY a JSON array of exactly 10 objects:
 [
   {
-    "text": "The title text (max 70 chars)",
+    "text": "The title text (aim for 55-70 chars)",
     "emotion": "Primary emotional hook (curiosity/fear/excitement/urgency/shock/personal/authority)",
     "ctrEstimate": "High/Medium/Low",
     "archetype": "pattern-interrupt/hidden-truth/personal-stakes/numbered-list/explainer/investigation/comparison/emotional-hook/authority/contrarian"
