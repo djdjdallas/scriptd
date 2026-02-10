@@ -496,6 +496,11 @@ export default function DraftStep() {
 
         markStepComplete(8);
 
+        // Track credits used
+        if (responseData.creditsUsed) {
+          trackCredits(responseData.creditsUsed);
+        }
+
         // Show appropriate success message
         if (responseData.scriptId) {
           toast.success("Script generated and saved successfully!");
