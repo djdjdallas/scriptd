@@ -1500,6 +1500,26 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           }
         }
 
+        // Track script generation in PostHog
+        try {
+          const { getPostHogClient } = await import('@/lib/posthog-server');
+          const posthog = getPostHogClient();
+          posthog.capture({
+            distinctId: user.id,
+            event: 'script_generated',
+            properties: {
+              script_type: type,
+              duration_minutes: durationMinutes,
+              model,
+              credits_used: creditsUsed,
+              subscription_tier: userTier,
+            }
+          });
+          await posthog.shutdown();
+        } catch (e) {
+          // Don't block generation for analytics
+        }
+
         return NextResponse.json({
           script: script,
           creditsUsed: creditsUsed,

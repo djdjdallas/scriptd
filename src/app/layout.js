@@ -15,6 +15,13 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = homepageMetadata;
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#0a0a0a',
+};
+
 export default function RootLayout({ children }) {
   const allStructuredData = [
     structuredData,

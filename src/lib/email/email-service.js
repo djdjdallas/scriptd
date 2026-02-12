@@ -152,6 +152,64 @@ Need help? Check out our documentation at ${process.env.NEXT_PUBLIC_APP_URL}/doc
     return await this.sendEmail({ to: email, subject, html, text })
   }
 
+  async sendReengagementEmail({ email, name, daysSinceLastVisit, creditsRemaining }) {
+    const subject = `Your scripts are waiting for you, ${name || 'there'}!`
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333; margin-bottom: 20px;">We miss you!</h2>
+
+        <p style="color: #666; line-height: 1.6;">
+          Hi ${name || 'there'},
+        </p>
+
+        <p style="color: #666; line-height: 1.6;">
+          It's been ${daysSinceLastVisit} days since your last visit to GenScript.
+          ${creditsRemaining > 0 ? `You still have <strong>${creditsRemaining} credits</strong> ready to use.` : ''}
+        </p>
+
+        <p style="color: #666; line-height: 1.6;">
+          Your next great YouTube script is just a few clicks away. Pick up where you left off and keep creating.
+        </p>
+
+        <div style="margin: 30px 0;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="background-color: #7C3AED; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">
+            Continue Where You Left Off
+          </a>
+        </div>
+
+        <p style="color: #999; font-size: 14px; line-height: 1.6;">
+          If you no longer wish to receive these emails, you can ignore this message and we won't send another for 30 days.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+        <p style="color: #999; font-size: 12px;">
+          &copy; ${new Date().getFullYear()} GenScript. All rights reserved.
+        </p>
+      </div>
+    `
+
+    const text = `
+We miss you!
+
+Hi ${name || 'there'},
+
+It's been ${daysSinceLastVisit} days since your last visit to GenScript.
+${creditsRemaining > 0 ? `You still have ${creditsRemaining} credits ready to use.` : ''}
+
+Your next great YouTube script is just a few clicks away. Pick up where you left off and keep creating.
+
+Continue Where You Left Off: ${process.env.NEXT_PUBLIC_APP_URL}/dashboard
+
+If you no longer wish to receive these emails, you can ignore this message and we won't send another for 30 days.
+
+(c) ${new Date().getFullYear()} GenScript. All rights reserved.
+    `
+
+    return await this.sendEmail({ to: email, subject, html, text })
+  }
+
   async sendPaymentFailedNotification({ email, name, reason, nextAttemptDate }) {
     const subject = 'Payment Failed - Action Required'
     

@@ -333,5 +333,22 @@
   button[aria-haspopup="listbox"][data-state] > span {
     color: white !important;
   }
+
+  /* Disable animations for users who prefer reduced motion + mobile perf */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Reduce backdrop-blur to none on mobile for performance */
+  @media (max-width: 768px) {
+    .glass, .glass-card, .glass-nav, .glass-button {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
 }
 

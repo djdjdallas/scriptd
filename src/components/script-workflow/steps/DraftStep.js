@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useWorkflow } from "../ScriptWorkflow";
 import { FileText, Sparkles, ScrollText, Copy, Clock } from "lucide-react";
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ const normalizeModelName = (model) => {
 };
 
 export default function DraftStep() {
+  const router = useRouter();
   const {
     workflowData,
     generatedScript,
@@ -559,8 +561,17 @@ export default function DraftStep() {
           "CORS error: Server configuration issue. Please contact support.";
       } else if (error.message.includes("Unauthorized")) {
         errorMessage = "Authentication error: Please sign in again.";
-      } else if (error.message.includes("credits")) {
-        errorMessage = error.message; // Credit-related errors are already user-friendly
+      } else if (error.message.includes("credits") || error.message.includes("limit")) {
+        toast.error("Not enough credits", {
+          description: error.message,
+          action: {
+            label: "Buy Credits",
+            onClick: () => router.push('/dashboard/credits')
+          },
+        });
+        setIsGenerating(false);
+        setGenerationType("");
+        return; // Skip the generic toast.error below
       } else if (error.message) {
         errorMessage = error.message;
       }

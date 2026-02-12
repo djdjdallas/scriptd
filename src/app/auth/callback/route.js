@@ -13,6 +13,14 @@ export async function GET(request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error && data?.user) {
+      // Track last_login for ALL users (used for re-engagement emails)
+      try {
+        const loginSupabase = await createClient()
+        await loginSupabase.from('users').update({ last_login: new Date().toISOString() }).eq('id', data.user.id)
+      } catch (e) {
+        // Don't block auth flow
+      }
+
       // Identify user in PostHog for cross-session tracking
       try {
         const posthog = getPostHogClient()
@@ -66,6 +74,18 @@ export async function GET(request) {
             name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
             avatar_url: data.user.user_metadata?.avatar_url
           })
+
+        // Send welcome email to new user
+        try {
+          const { EmailService } = await import('@/lib/email/email-service')
+          const emailService = new EmailService()
+          await emailService.sendWelcomeEmail({
+            email: data.user.email,
+            name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0]
+          })
+        } catch (e) {
+          console.error('Failed to send welcome email:', e)
+        }
 
         // Track trial started event (user gets 50 free credits)
         try {

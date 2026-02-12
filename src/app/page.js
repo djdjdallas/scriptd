@@ -170,7 +170,7 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 overflow-x-hidden">
       {/* Animated Background Elements */}
       <div className="fixed inset-0 -z-10">
         {/* Gradient Orbs */}
@@ -319,7 +319,7 @@ export default function Home() {
 
       {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
-        <div className="fixed top-24 left-4 right-4 z-40 glass-card p-4 md:hidden">
+        <div className="absolute top-24 left-4 right-4 z-40 glass-card p-4 md:hidden">
           <div className="flex flex-col gap-4">
             <Link
               href="/compliance-check"

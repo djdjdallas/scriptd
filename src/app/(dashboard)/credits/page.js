@@ -216,6 +216,17 @@ export default function CreditsPage() {
         </div>
       </StaticCard>
 
+      {/* Low Credits Warning */}
+      {currentCredits < 15 && currentCredits > 0 && (
+        <Alert className="glass-card border-yellow-500/30 bg-yellow-500/5">
+          <AlertCircle className="h-4 w-4 text-yellow-400" />
+          <AlertDescription className="text-yellow-200">
+            You have {currentCredits} credits remaining — not enough for a full script generation.
+            Top up now to keep creating.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Success Alert */}
       {searchParams.get("success") === "true" && (
         <Alert className="glass-card border-green-500/50 bg-green-500/10">

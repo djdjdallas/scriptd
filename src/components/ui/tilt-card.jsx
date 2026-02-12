@@ -20,6 +20,10 @@ export function TiltCard({ children, className, ...props }) {
   const [glowStyle, setGlowStyle] = useState({})
   const itemRef = useRef(null)
 
+  // Disable 3D transforms on touch devices to prevent GPU thrashing
+  const isTouchDevice = typeof window !== 'undefined' &&
+    ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+
   // PERFORMANCE FIX: Throttled mouse handler to prevent 200+ re-renders/sec
   // Now limited to ~60fps (16ms throttle) instead of 100+ events/sec
   const handleMouseMove = useCallback(
@@ -53,22 +57,24 @@ export function TiltCard({ children, className, ...props }) {
   return (
     <div
       ref={itemRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      onMouseMove={isTouchDevice ? undefined : handleMouseMove}
+      onMouseLeave={isTouchDevice ? undefined : handleMouseLeave}
       style={{
-        transform: transformStyle,
-        transition: 'transform 0.3s ease-out'
+        transform: isTouchDevice ? undefined : transformStyle,
+        transition: isTouchDevice ? undefined : 'transform 0.3s ease-out'
       }}
       className={cn('relative', className)}
       {...props}
     >
-      <div
-        className="absolute inset-0 rounded-2xl transition-opacity duration-300"
-        style={{
-          ...glowStyle,
-          transition: 'opacity 0.3s ease-out'
-        }}
-      />
+      {!isTouchDevice && (
+        <div
+          className="absolute inset-0 rounded-2xl transition-opacity duration-300"
+          style={{
+            ...glowStyle,
+            transition: 'opacity 0.3s ease-out'
+          }}
+        />
+      )}
       {children}
     </div>
   )
