@@ -1,0 +1,78 @@
+# GenScript
+
+> AI-powered YouTube script generator that helps creators write viral scripts in their own voice.
+
+GenScript is a web platform at https://genscript.io that uses AI to generate high-quality YouTube scripts. Creators can train the AI on their speaking style, analyze channels, research trending topics, and produce publish-ready scripts — all from one dashboard.
+
+## Core Features
+
+- **AI Script Generation**: Generate YouTube scripts using Claude (Sonnet 4.5, Opus 4.6) and other models. Choose Professional or Hollywood Studio quality tiers.
+- **Voice Training**: Upload samples of your content so the AI learns your unique tone, vocabulary, and delivery style.
+- **Channel Analysis**: Analyze any YouTube channel to understand content patterns, top-performing formats, and audience engagement.
+- **Trending Research**: Track trending topics across YouTube, discover content opportunities, and create action plans.
+- **Hook Generator**: Create attention-grabbing opening hooks optimized for viewer retention.
+- **Title Generator**: Generate click-worthy titles with CTR optimization.
+- **Idea Generator**: Get AI-powered video ideas based on your niche and audience.
+- **Retention Optimizer**: Analyze and improve scripts for maximum viewer retention.
+- **Thumbnail Ideas**: Get thumbnail concepts paired with your script content.
+- **Transcript Extraction**: Extract and analyze transcripts from existing YouTube videos.
+- **PVSS Framework**: Generate scripts using the Problem-Value-Solution-Story methodology.
+- **Compliance Check**: Verify scripts meet YouTube's content policies before publishing.
+- **Team Collaboration**: Work on scripts with team members in shared workspaces.
+- **Credit System**: Pay-per-use credits with subscription plans for regular creators.
+
+## Pricing
+
+GenScript uses a credit-based system. Script costs depend on quality tier and video length:
+- Professional Quality (Sonnet 4.5): 8-28 credits per script
+- Hollywood Studio (Opus 4.6): 15-53 credits per script
+
+Subscription plans include monthly credit allocations. Free trial available.
+
+## Free Tools
+
+These tools are available without an account at https://genscript.io/tools:
+- Hook Generator
+- Title Generator
+- Idea Generator
+- Thumbnail Ideas
+- Hashtag Generator
+- Transcript Extraction
+- Retention Optimizer
+- Script Length Calculator
+- Voice Matching
+- Faceless YouTube Generator
+- PVSS Framework
+- YouTube Script Generator
+- AI Script Writer
+- YouTube Shorts Script Generator
+
+## Links
+
+- Website: https://genscript.io
+- Pricing: https://genscript.io/pricing
+- Free Tools: https://genscript.io/tools
+- Blog: https://genscript.io/blog
+- Terms: https://genscript.io/terms
+- Privacy: https://genscript.io/privacy
+- Support: support@genscript.io
+
+## Comparisons
+
+- GenScript vs ChatGPT: https://genscript.io/compare/genscript-vs-chatgpt
+- GenScript vs Subscribr: https://genscript.io/compare/genscript-vs-subscribr
+- Alternative to VidIQ: https://genscript.io/alternatives/vidiq
+- Alternative to TubeBuddy: https://genscript.io/alternatives/tubebuddy
+- Alternative to Jasper AI: https://genscript.io/alternatives/jasper-ai
+
+## For Creators
+
+- Business Educators: https://genscript.io/for/business-educators
+- Developers: https://genscript.io/for/developers
+
+## Technical Details
+
+- Built with Next.js 15 and Supabase
+- AI powered by Anthropic Claude (Sonnet 4.5, Opus 4.6) and OpenAI
+- Analytics by PostHog
+- Payments via Stripe
