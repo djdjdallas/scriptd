@@ -43,6 +43,12 @@ const adminNavItems = [
     label: 'Teams',
     icon: Users,
     description: 'Team management'
+  },
+  {
+    href: '/admin/posthog',
+    label: 'PostHog',
+    icon: Activity,
+    description: 'Product analytics & events'
   }
 ];
 
