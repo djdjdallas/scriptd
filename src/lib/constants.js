@@ -1,3 +1,4 @@
+// Models updated to Sonnet 4.6 - Feb 2026
 // Application-wide constants
 
 // API Configuration
@@ -12,7 +13,7 @@ export const AI_PROVIDERS = {
 };
 
 // Quality Tiers for Script Generation
-// FAST tier is disabled - all scripts use BALANCED (Sonnet 4.5) or PREMIUM (Opus 4.6)
+// FAST tier is disabled - all scripts use BALANCED (Sonnet 4.6) or PREMIUM (Opus 4.6)
 // Workflow steps (hooks, titles, frames, etc.) use WORKFLOW_MODEL (Haiku 4.5)
 export const MODEL_TIERS = {
   FAST: {
@@ -31,7 +32,7 @@ export const MODEL_TIERS = {
     name: 'Professional Quality',
     description: 'High-quality scripts for publishing',
     baseCredits: 8,
-    actualModel: process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
+    actualModel: process.env.BALANCED_MODEL || 'claude-sonnet-4-6',
     features: ['2-3 minute generation', 'Optimized for YouTube', 'Best value'],
     icon: '⭐',
     recommended: true
@@ -80,9 +81,9 @@ export const TIER_ACCESS_BY_SUBSCRIPTION = {
 // Only Claude models are supported
 export const AI_MODELS = {
   CLAUDE_3_OPUS: process.env.PREMIUM_MODEL || 'claude-opus-4-6',
-  CLAUDE_3_SONNET: process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
+  CLAUDE_3_SONNET: process.env.BALANCED_MODEL || 'claude-sonnet-4-6',
   CLAUDE_3_HAIKU: process.env.WORKFLOW_MODEL || 'claude-haiku-4-5-20251001',
-  CLAUDE_VOICE: process.env.VOICE_MODEL || 'claude-sonnet-4-5-20250929'
+  CLAUDE_VOICE: process.env.VOICE_MODEL || 'claude-sonnet-4-6'
 };
 
 // Script Types

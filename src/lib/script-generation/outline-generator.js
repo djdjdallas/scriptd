@@ -21,7 +21,7 @@ async function generateComprehensiveOutline({
   targetAudience,
   tone,
   apiKey,
-  model = process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929'
+  model = process.env.BALANCED_MODEL || 'claude-sonnet-4-6'
 }) {
 
   const minutesPerChunk = Math.ceil(totalMinutes / chunkCount);

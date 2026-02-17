@@ -543,7 +543,7 @@ IMPORTANT: Provide complete JSON without truncation - all arrays should be fully
     // STAGE 3: Generate action plan with enhanced prompt
     await updateProgress(sessionId, PROGRESS_STAGES.GENERATING, 'Creating personalized strategy with AI...', 55);
     const response = await claude.generateCompletion(prompt, {
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-sonnet-4-6',
       temperature: 0.7,
       maxTokens: 12000, // Further increased to prevent any truncation
     });

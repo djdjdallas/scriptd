@@ -90,7 +90,7 @@ Return in this JSON format:
 
   try {
     const response = await claude.generateCompletion(prompt, {
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-sonnet-4-6',
       temperature: 0.3,
       maxTokens: 300,
     });
@@ -125,7 +125,7 @@ Videos: ${recentVideos.join(', ')}
 Return ONLY a specific 2-4 word niche category. Examples: "Fitness Motivation", "Gaming Commentary", "Cooking Tutorials", "Life Advice", "Product Reviews"`;
 
       const simpleResponse = await claude.generateCompletion(simplePrompt, {
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'claude-sonnet-4-6',
         temperature: 0.3,
         maxTokens: 50,
       });
@@ -208,7 +208,7 @@ AVOID: Academic conferences, university seminars, scholarly colloquia (unless th
 Return ONLY a JSON array of events, no other text.`;
 
     const response = await claude.generateCompletion(prompt, {
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-sonnet-4-6',
       temperature: 0.5,
       maxTokens: 3000,
     });
@@ -273,7 +273,7 @@ Return a JSON array with validated ideas in this format:
 
   try {
     const response = await claude.generateCompletion(prompt, {
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-sonnet-4-6',
       temperature: 0.6,
       maxTokens: 3000,
     });
@@ -342,7 +342,7 @@ Generate based on ${niche} style:
 Return ONLY valid JSON: { "format": "...", "hook": "..." }`;
 
           const response = await claude.generateCompletion(prompt, {
-            model: 'claude-sonnet-4-5-20250929',
+            model: 'claude-sonnet-4-6',
             temperature: 0.7,
             maxTokens: 200,
           });
@@ -387,7 +387,7 @@ Answer in ONE sentence (10-20 words). Be specific to ${niche}.
 Return ONLY the purpose text, no quotes.`;
 
           const purpose = await claude.generateCompletion(prompt, {
-            model: 'claude-sonnet-4-5-20250929',
+            model: 'claude-sonnet-4-6',
             temperature: 0.5,
             maxTokens: 100,
           });

@@ -50,7 +50,7 @@ export async function callOpenAI(prompt, options = {}) {
  */
 export async function callAnthropic(prompt, options = {}) {
   const {
-    model = process.env.PREMIUM_MODEL || 'claude-sonnet-4-5-20250929',
+    model = process.env.PREMIUM_MODEL || 'claude-sonnet-4-6',
     temperature = 0.7,
     maxTokens = 4000
   } = options;
@@ -92,7 +92,7 @@ export async function callAIService(prompt, tier = 'balanced') {
   // Use Anthropic for balanced and fast tiers
   const model = tier === 'fast'
     ? 'claude-haiku-4-5-20251001'
-    : process.env.PREMIUM_MODEL || 'claude-sonnet-4-5-20250929';
+    : process.env.PREMIUM_MODEL || 'claude-sonnet-4-6';
     
   return callAnthropic(prompt, {
     model,

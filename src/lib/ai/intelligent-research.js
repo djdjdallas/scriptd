@@ -50,7 +50,7 @@ Return as JSON (no markdown, just raw JSON):
 
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [{
         role: 'user',
@@ -163,7 +163,7 @@ async function performSearch(query) {
 
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929', // Correct Sonnet 4.5 model
+      model: 'claude-sonnet-4-6',
       max_tokens: 16000,
       messages: [{
         role: 'user',
@@ -381,7 +381,7 @@ IMPORTANT: Each query should find DIFFERENT types of information, not more artic
 
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [{
         role: 'user',

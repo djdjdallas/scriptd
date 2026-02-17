@@ -479,7 +479,7 @@ export async function POST(request) {
     if (process.env.ANTHROPIC_API_KEY) {
       try {
         // Get the actual model name - normalize old model names to new ones
-        // All script generation uses BALANCED (Sonnet 4.5) or PREMIUM (Opus 4.1)
+        // All script generation uses BALANCED (Sonnet 4.6) or PREMIUM (Opus 4.6)
         const actualModel = (() => {
           // Map old model names to new ones - FAST tier disabled, use BALANCED
           const modelMapping = {
@@ -493,7 +493,7 @@ export async function POST(request) {
           if (modelMapping[model]) return modelMapping[model];
           // Check if it's already a valid new model ID
           if (model && model.includes('-202')) return model;
-          // Default to BALANCED model (Sonnet 4.5)
+          // Default to BALANCED model (Sonnet 4.6)
           return MODEL_TIERS.BALANCED.actualModel;
         })();
 

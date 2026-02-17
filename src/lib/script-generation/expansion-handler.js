@@ -130,7 +130,7 @@ function analyzeContentGaps(script, contentPoints, targetWords, chunkInfo = null
 /**
  * Generate expansion content for identified gaps
  */
-async function generateExpansion(script, gapAnalysis, research, apiKey, model = process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929', chunkInfo = null) {
+async function generateExpansion(script, gapAnalysis, research, apiKey, model = process.env.BALANCED_MODEL || 'claude-sonnet-4-6', chunkInfo = null) {
   const { gaps, wordsNeeded } = gapAnalysis;
 
   if (gaps.length === 0) {

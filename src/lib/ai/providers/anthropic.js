@@ -27,6 +27,7 @@ export class AnthropicProvider extends BaseAIProvider {
     this.pricing = {
       // Claude 4+ models (current)
       'claude-opus-4-6': { input: 0.005, output: 0.025 },
+      'claude-sonnet-4-6': { input: 0.003, output: 0.015 },
       'claude-sonnet-4-5-20250929': { input: 0.003, output: 0.015 },
       'claude-haiku-4-5-20251001': { input: 0.001, output: 0.005 },
       // Claude 4+ models (older)
@@ -131,7 +132,7 @@ export class AnthropicProvider extends BaseAIProvider {
    * @returns {number} Estimated cost in USD
    */
   estimateCost(inputTokens, outputTokens, model = this.model) {
-    const pricing = this.pricing[model] || this.pricing['claude-sonnet-4-5-20250929'];
+    const pricing = this.pricing[model] || this.pricing['claude-sonnet-4-6'];
     const inputCost = (inputTokens / 1000) * pricing.input;
     const outputCost = (outputTokens / 1000) * pricing.output;
     return inputCost + outputCost;

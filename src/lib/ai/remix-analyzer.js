@@ -8,7 +8,7 @@ const anthropic = new Anthropic({
 });
 
 // Use VOICE_MODEL for remix analysis (Sonnet is more cost-effective and provides excellent results)
-const REMIX_MODEL = process.env.VOICE_MODEL || process.env.REMIX_MODEL || 'claude-sonnet-4-5-20250929';
+const REMIX_MODEL = process.env.VOICE_MODEL || process.env.REMIX_MODEL || 'claude-sonnet-4-6';
 
 /**
  * Analyze channel combination and generate remix strategy using Claude

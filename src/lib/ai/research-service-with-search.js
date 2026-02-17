@@ -167,7 +167,7 @@ After completing your research, provide a comprehensive analysis including:
 Focus on quality over speed. Take the time to search thoroughly and fetch full content from the most relevant sources.`;
 
       const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-5-20250929', // Correct Sonnet 4.5 model
+        model: 'claude-sonnet-4-6',
         max_tokens: 16000, // Increased for search results + analysis
         temperature: 0.3,
         messages: [{

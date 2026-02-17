@@ -22,7 +22,7 @@ function getTierModel(tier) {
   // Fallback mapping using environment variables for flexibility
   const tierMappings = {
     'FAST': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001',
-    'BALANCED': process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
+    'BALANCED': process.env.BALANCED_MODEL || 'claude-sonnet-4-6',
     'PREMIUM': process.env.PREMIUM_MODEL || 'claude-opus-4-6'
   };
   

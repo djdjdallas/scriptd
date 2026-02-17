@@ -8,7 +8,7 @@ const anthropic = new Anthropic({
 // If the model is already a valid Claude model ID (starts with "claude-"), use it directly.
 const MODEL_MAP = {
   'claude-3-opus': process.env.PREMIUM_MODEL || 'claude-opus-4-6',
-  'claude-3-sonnet': process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
+  'claude-3-sonnet': process.env.BALANCED_MODEL || 'claude-sonnet-4-6',
   'claude-3-haiku': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001',
   'gpt-4-turbo': process.env.PREMIUM_MODEL || 'claude-opus-4-6',
   'gpt-3.5-turbo': process.env.FAST_MODEL || 'claude-haiku-4-5-20251001'

@@ -124,7 +124,7 @@ IMPORTANT: Return ONLY the JSON object, nothing else.`;
       });
 
       const response = await anthropic.messages.create({
-        model: process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929',
+        model: process.env.BALANCED_MODEL || 'claude-sonnet-4-6',
         max_tokens: 8192,
         temperature: 0.3,
         messages: [{

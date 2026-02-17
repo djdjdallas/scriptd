@@ -8,7 +8,7 @@ const anthropic = new Anthropic({
 });
 
 // Use the same model as remix for consistency
-const ANALYSIS_MODEL = process.env.VOICE_MODEL || 'claude-sonnet-4-5-20250929';
+const ANALYSIS_MODEL = process.env.VOICE_MODEL || 'claude-sonnet-4-6';
 
 /**
  * Comprehensive single channel analysis using Claude

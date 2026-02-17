@@ -17,7 +17,7 @@ async function generateContentPlan({
   totalMinutes,
   chunkCount,
   apiKey,
-  model = process.env.BALANCED_MODEL || 'claude-sonnet-4-5-20250929'
+  model = process.env.BALANCED_MODEL || 'claude-sonnet-4-6'
 }) {
   // If no content points, return basic time-based distribution
   if (!contentPoints || contentPoints.length === 0) {

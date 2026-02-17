@@ -64,7 +64,7 @@ export async function POST(request) {
       workflowId
     } = requestData;
 
-    // Normalize the model name (handle old model names) - default to BALANCED (Sonnet 4.5)
+    // Normalize the model name (handle old model names) - default to BALANCED (Sonnet 4.6)
     const model = normalizeModelName(requestData.model || MODEL_TIERS.BALANCED.actualModel);
 
     // Validate required parameters

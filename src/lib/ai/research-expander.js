@@ -92,7 +92,7 @@ Respond with ONLY the JSON, no other text.`;
 
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4000,
       messages: [{
         role: 'user',
@@ -164,7 +164,7 @@ Focus on finding sources that provide CONTEXTUAL or EDUCATIONAL information, not
 Format your response as a clear list of sources with their details.`;
 
       const message = await anthropic.messages.create({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'claude-sonnet-4-6',
         max_tokens: 8000,
         messages: [{
           role: 'user',
