@@ -20,7 +20,8 @@ import {
   Zap,
   AlertTriangle,
   Download,
-  RefreshCw
+  RefreshCw,
+  BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

@@ -19,7 +19,7 @@ class AdminService {
         return false;
       }
 
-      return data?.role === 'admin' || data?.role === 'super_admin';
+      return data?.role === 'admin';
     } catch (error) {
       console.error('Admin check error:', error);
       return false;
@@ -63,11 +63,11 @@ class AdminService {
         .from('users')
         .select('*', { count: 'exact', head: true });
 
-      // Active users (users who logged in within last 7 days)
+      // Active users (users with activity in last 7 days)
       const { count: activeUsers } = await this.supabase
         .from('users')
         .select('*', { count: 'exact', head: true })
-        .gte('last_sign_in_at', sevenDaysAgo.toISOString());
+        .gte('updated_at', sevenDaysAgo.toISOString());
 
       // New users this month
       const { count: newUsersThisMonth } = await this.supabase
@@ -130,14 +130,13 @@ class AdminService {
         .from('teams')
         .select('*', { count: 'exact', head: true });
 
-      // Active teams (teams with activity in last 7 days)
+      // Active teams (teams with member activity in last 7 days)
       const { data: activeTeamsData } = await this.supabase
         .from('team_members')
         .select('team_id')
-        .gte('last_activity_at', sevenDaysAgo.toISOString())
-        .group('team_id');
+        .gte('last_active', sevenDaysAgo.toISOString());
 
-      const activeTeams = activeTeamsData?.length || 0;
+      const activeTeams = new Set(activeTeamsData?.map(r => r.team_id)).size;
 
       return {
         total: totalTeams || 0,
@@ -187,7 +186,7 @@ class AdminService {
       const [recentScripts, recentUsers, recentTeams] = await Promise.all([
         this.supabase
           .from('scripts')
-          .select('id, title, created_at, user_id, users(email)')
+          .select('id, title, created_at, user_id')
           .order('created_at', { ascending: false })
           .limit(limit),
         
@@ -211,7 +210,7 @@ class AdminService {
         activities.push({
           id: `script-${script.id}`,
           type: 'script_created',
-          description: `New script "${script.title}" created by ${script.users?.email}`,
+          description: `New script "${script.title}" created`,
           timestamp: script.created_at,
           userId: script.user_id
         });
