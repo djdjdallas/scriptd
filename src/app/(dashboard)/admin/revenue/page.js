@@ -76,7 +76,7 @@ export default function AdminRevenuePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 flex">
+    <div className="-m-6 min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 flex">
       {/* Admin Sidebar */}
       <AdminNav
         collapsed={sidebarCollapsed}
@@ -84,7 +84,7 @@ export default function AdminRevenuePage() {
       />
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+      <div className="flex-1 min-w-0 transition-all duration-300">
         {/* Admin Header */}
         <header className="bg-slate-900/95 backdrop-blur border-b border-slate-800 px-6 py-4 sticky top-0 z-40">
           <div className="flex items-center justify-between">
