@@ -315,7 +315,7 @@ export default function Home() {
           </h1>
 
           <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed">
-            The only AI script engine that extracts your voice DNA —{" "}
+            The only AI script engine that extracts your voice DNA{" "}
             <span className="text-white">
               so every script sounds like you wrote it.
             </span>
@@ -494,7 +494,7 @@ export default function Home() {
               Your Voice, Reverse-Engineered
             </h2>
             <p className="text-gray-500 max-w-xl mx-auto">
-              We analyze your transcripts to map 20+ speech patterns — catchphrases, pacing, humor, transitions — then generate scripts that pass as yours.
+              We analyze your transcripts to map 20+ speech patterns like catchphrases, pacing, humor, and transitions, then generate scripts that pass as yours.
             </p>
           </div>
 
