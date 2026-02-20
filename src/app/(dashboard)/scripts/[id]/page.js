@@ -229,8 +229,8 @@ export default function ScriptPage({ params }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="glass-card p-8 animate-pulse-slow">
-          <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto" />
+        <div className="vb-card p-8 animate-pulse-slow">
+          <Loader2 className="h-12 w-12 animate-spin text-violet-400 mx-auto" />
           <p className="mt-4 text-gray-300">Loading script...</p>
         </div>
       </div>
@@ -240,7 +240,7 @@ export default function ScriptPage({ params }) {
   if (!script) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="glass-card p-8 text-center">
+        <div className="vb-card p-8 text-center">
           <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-white mb-2">
             Script Not Found
@@ -249,7 +249,7 @@ export default function ScriptPage({ params }) {
             This script doesn't exist or you don't have access to it.
           </p>
           <Link href="/scripts">
-            <Button className="glass-button">
+            <Button className="vb-btn-outline">
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back to Scripts
             </Button>
@@ -261,17 +261,11 @@ export default function ScriptPage({ params }) {
 
   return (
     <div className="min-h-screen p-6">
-      {/* Background Effects */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="gradient-orb w-96 h-96 bg-purple-600 -top-48 -right-48 opacity-20" />
-        <div className="gradient-orb w-96 h-96 bg-pink-600 -bottom-48 -left-48 opacity-20" />
-      </div>
-
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <Link href="/scripts">
-            <Button variant="ghost" className="glass-button">
+            <Button variant="ghost" className="vb-btn-outline">
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back to Scripts
             </Button>
@@ -279,20 +273,20 @@ export default function ScriptPage({ params }) {
 
           <div className="flex items-center gap-2">
             <Link href={`/scripts/${scriptId}/edit`}>
-              <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50">
+              <Button className="vb-btn-primary">
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Script
               </Button>
             </Link>
             <Link href={`/scripts/${scriptId}/history`}>
-              <Button className="glass-button">
+              <Button className="vb-btn-outline">
                 <History className="h-4 w-4 mr-2" />
                 View History
               </Button>
             </Link>
             <Button
               onClick={handleCopy}
-              className="glass-button"
+              className="vb-btn-outline"
               disabled={copying}
             >
               {copying ? (
@@ -302,13 +296,13 @@ export default function ScriptPage({ params }) {
               )}
               Copy
             </Button>
-            <Button onClick={handleDownload} className="glass-button">
+            <Button onClick={handleDownload} className="vb-btn-outline">
               <Download className="h-4 w-4 mr-2" />
               Download
             </Button>
             <Button
               onClick={handleDeleteClick}
-              className="glass-button hover:bg-red-500/20"
+              className="vb-btn-outline hover:bg-red-500/10"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
@@ -317,15 +311,14 @@ export default function ScriptPage({ params }) {
         </div>
 
         {/* Script Info Card */}
-        <div className="glass-card p-6">
+        <div className="vb-card p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+              <h1 className="font-display text-3xl md:text-4xl text-white">
                 {script.title}
-                <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
               </h1>
               <div className="flex items-center gap-4 mt-3 text-sm text-gray-400">
-                <Badge className="glass border-purple-400/50 text-purple-300">
+                <Badge className="vb-badge-violet">
                   {script.metadata?.type || "Script"}
                 </Badge>
                 <span className="flex items-center gap-1">
@@ -348,7 +341,7 @@ export default function ScriptPage({ params }) {
               {script.tags.map((tag, index) => (
                 <Badge
                   key={index}
-                  className="glass border-blue-400/50 text-blue-300"
+                  className="vb-badge-cyan"
                 >
                   #{tag}
                 </Badge>
@@ -358,8 +351,8 @@ export default function ScriptPage({ params }) {
 
           {/* Hook */}
           {script.hook && (
-            <div className="mb-4 p-4 glass-card bg-purple-500/10 border-l-4 border-purple-500">
-              <p className="text-sm font-semibold text-purple-300 mb-1">Hook</p>
+            <div className="mb-4 p-4 bg-violet-500/10 border border-violet-500/20 rounded-xl border-l-4 border-l-violet-500">
+              <p className="text-sm font-semibold text-violet-300 mb-1">Hook</p>
               <p className="text-white">{script.hook}</p>
             </div>
           )}
@@ -376,9 +369,9 @@ export default function ScriptPage({ params }) {
         </div>
 
         {/* Script Content */}
-        <div className="glass-card p-6">
+        <div className="vb-card p-6">
           <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-purple-400" />
+            <FileText className="h-5 w-5 text-violet-400" />
             Script Content
           </h2>
           <div className="prose prose-invert max-w-none">
@@ -390,7 +383,7 @@ export default function ScriptPage({ params }) {
 
         {/* Metadata */}
         {script.metadata && (
-          <div className="glass-card p-6">
+          <div className="vb-card p-6">
             <h3 className="text-lg font-semibold text-white mb-3">
               Generation Details
             </h3>

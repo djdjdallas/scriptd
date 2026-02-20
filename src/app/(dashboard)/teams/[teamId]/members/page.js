@@ -119,8 +119,8 @@ export default function TeamMembersPage() {
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-            <p className="text-gray-600">Loading team members...</p>
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-violet-400" />
+            <p className="text-white/50">Loading team members...</p>
           </div>
         </div>
       </div>
@@ -167,17 +167,17 @@ export default function TeamMembersPage() {
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-gray-900 truncate">
+              <h1 className="text-3xl font-bold font-display text-white truncate">
                 Team Members
               </h1>
               {team.user_role === 'owner' && (
                 <Crown className="w-6 h-6 text-yellow-500 flex-shrink-0" />
               )}
             </div>
-            <p className="text-gray-600 text-lg">
+            <p className="text-white/50 text-lg">
               Manage {team.name} team members and their roles
             </p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-white/40 mt-1">
               {members.length} {members.length === 1 ? 'member' : 'members'} total
             </p>
           </div>
@@ -199,8 +199,8 @@ export default function TeamMembersPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Owners</p>
-                <p className="text-2xl font-bold text-purple-600">{roleStats.owner}</p>
+                <p className="text-sm font-medium text-white/50">Owners</p>
+                <p className="text-2xl font-bold text-violet-400">{roleStats.owner}</p>
               </div>
               <div className="text-2xl">👑</div>
             </div>
@@ -211,7 +211,7 @@ export default function TeamMembersPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Admins</p>
+                <p className="text-sm font-medium text-white/50">Admins</p>
                 <p className="text-2xl font-bold text-red-600">{roleStats.admin}</p>
               </div>
               <div className="text-2xl">🔧</div>
@@ -223,8 +223,8 @@ export default function TeamMembersPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Editors</p>
-                <p className="text-2xl font-bold text-blue-600">{roleStats.editor}</p>
+                <p className="text-sm font-medium text-white/50">Editors</p>
+                <p className="text-2xl font-bold text-violet-400">{roleStats.editor}</p>
               </div>
               <div className="text-2xl">✏️</div>
             </div>
@@ -235,8 +235,8 @@ export default function TeamMembersPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Viewers</p>
-                <p className="text-2xl font-bold text-gray-600">{roleStats.viewer}</p>
+                <p className="text-sm font-medium text-white/50">Viewers</p>
+                <p className="text-2xl font-bold text-white/50">{roleStats.viewer}</p>
               </div>
               <div className="text-2xl">👁️</div>
             </div>
@@ -256,7 +256,7 @@ export default function TeamMembersPage() {
                 <span className="mr-1">{getRoleIcon('owner')}</span>
                 {ROLE_NAMES['owner']}
               </Badge>
-              <ul className="text-sm text-gray-600 space-y-1">
+              <ul className="text-sm text-white/50 space-y-1">
                 <li>• Full team control</li>
                 <li>• Manage all members</li>
                 <li>• Delete team</li>
@@ -269,7 +269,7 @@ export default function TeamMembersPage() {
                 <span className="mr-1">{getRoleIcon('admin')}</span>
                 {ROLE_NAMES['admin']}
               </Badge>
-              <ul className="text-sm text-gray-600 space-y-1">
+              <ul className="text-sm text-white/50 space-y-1">
                 <li>• Invite members</li>
                 <li>• Manage roles</li>
                 <li>• Edit team settings</li>
@@ -282,7 +282,7 @@ export default function TeamMembersPage() {
                 <span className="mr-1">{getRoleIcon('editor')}</span>
                 {ROLE_NAMES['editor']}
               </Badge>
-              <ul className="text-sm text-gray-600 space-y-1">
+              <ul className="text-sm text-white/50 space-y-1">
                 <li>• Create scripts</li>
                 <li>• Edit scripts</li>
                 <li>• View team content</li>
@@ -295,7 +295,7 @@ export default function TeamMembersPage() {
                 <span className="mr-1">{getRoleIcon('viewer')}</span>
                 {ROLE_NAMES['viewer']}
               </Badge>
-              <ul className="text-sm text-gray-600 space-y-1">
+              <ul className="text-sm text-white/50 space-y-1">
                 <li>• View scripts</li>
                 <li>• View team info</li>
                 <li>• Read-only access</li>

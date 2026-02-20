@@ -7,15 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Lightbulb, 
-  Copy, 
+import {
+  Lightbulb,
+  Copy,
   RefreshCw,
   Loader2,
   TrendingUp,
   Star,
-  Target,
-  Sparkles
+  Target
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -44,7 +43,7 @@ export default function IdeaGeneratorPage() {
 
   const generateIdeas = async (e) => {
     e.preventDefault();
-    
+
     if (!niche.trim()) {
       toast({
         title: "Niche Required",
@@ -103,18 +102,18 @@ export default function IdeaGeneratorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black py-20 px-4">
+    <div className="min-h-screen bg-[#030303] py-20 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-white">Video Idea Generator</h1>
+          <h1 className="text-4xl font-bold font-display text-white">Video Idea Generator</h1>
           <p className="text-xl text-gray-400">
             Never run out of content ideas with AI-powered suggestions
           </p>
         </div>
 
         {/* Generator Form */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Generate Video Ideas</CardTitle>
             <CardDescription className="text-gray-400">
@@ -131,17 +130,17 @@ export default function IdeaGeneratorPage() {
                   value={niche}
                   onChange={(e) => setNiche(e.target.value)}
                   disabled={loading}
-                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                  className="bg-white/[0.04] border-white/5 text-white placeholder:text-gray-500"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="category" className="text-gray-300">Content Category</Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger id="category" className="bg-gray-900 border-gray-700 text-white">
+                  <SelectTrigger id="category" className="bg-white/[0.04] border-white/5 text-white">
                     <SelectValue placeholder="Select a category (optional)" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-900 border-gray-700">
+                  <SelectContent className="bg-white/[0.04] border-white/5">
                     <SelectItem value="any">Any category</SelectItem>
                     {CONTENT_CATEGORIES.map((cat) => (
                       <SelectItem key={cat.value} value={cat.value}>
@@ -160,14 +159,14 @@ export default function IdeaGeneratorPage() {
                   value={targetAudience}
                   onChange={(e) => setTargetAudience(e.target.value)}
                   disabled={loading}
-                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                  className="bg-white/[0.04] border-white/5 text-white placeholder:text-gray-500"
                 />
                 <p className="text-sm text-gray-400">
                   Specify your target audience for more relevant ideas
                 </p>
               </div>
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" disabled={loading}>
+              <Button type="submit" className="w-full bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -186,7 +185,7 @@ export default function IdeaGeneratorPage() {
 
         {/* Results */}
         {ideas.length > 0 && (
-          <Card className="bg-gray-800/50 border-gray-700">
+          <Card className="bg-white/[0.04] border-white/5">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -200,7 +199,7 @@ export default function IdeaGeneratorPage() {
                   size="sm"
                   onClick={() => generateIdeas(new Event('submit'))}
                   disabled={loading}
-                  className="border-gray-600 hover:bg-gray-700 text-white"
+                  className="border-white/[0.06] hover:bg-white/[0.06] text-white"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Regenerate
@@ -212,7 +211,7 @@ export default function IdeaGeneratorPage() {
                 {ideas.map((idea, index) => (
                   <div
                     key={index}
-                    className="group p-4 rounded-lg border border-gray-700 hover:border-purple-500 hover:bg-gray-700/50 cursor-pointer transition-all"
+                    className="group p-4 rounded-lg border border-white/5 hover:border-violet-500 hover:bg-white/[0.06] cursor-pointer transition-all"
                     onClick={() => copyIdea(idea)}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -220,7 +219,7 @@ export default function IdeaGeneratorPage() {
                         <div className="flex items-start gap-2">
                           <h3 className="font-semibold text-lg text-white">{idea.title}</h3>
                           {idea.trending && (
-                            <Badge className="gap-1 bg-purple-500/20 text-purple-400 border-purple-500/30">
+                            <Badge className="gap-1 bg-violet-500/10 text-violet-400 border-violet-500/30">
                               <TrendingUp className="h-3 w-3" />
                               Trending
                             </Badge>
@@ -229,7 +228,7 @@ export default function IdeaGeneratorPage() {
                         <p className="text-gray-400">{idea.description}</p>
                         <div className="flex flex-wrap gap-2">
                           {idea.tags?.map((tag, tagIndex) => (
-                            <Badge key={tagIndex} variant="outline" className="border-gray-600 text-gray-300">
+                            <Badge key={tagIndex} variant="outline" className="border-white/[0.06] text-gray-300">
                               {tag}
                             </Badge>
                           ))}
@@ -265,13 +264,13 @@ export default function IdeaGeneratorPage() {
         )}
 
         {/* Tips */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Content Ideation Tips</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-3">
-              <Sparkles className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <TrendingUp className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Mix evergreen and trending content</p>
                 <p className="text-sm text-gray-400">
@@ -281,7 +280,7 @@ export default function IdeaGeneratorPage() {
             </div>
 
             <div className="flex gap-3">
-              <TrendingUp className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <TrendingUp className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Research your competition</p>
                 <p className="text-sm text-gray-400">
@@ -291,7 +290,7 @@ export default function IdeaGeneratorPage() {
             </div>
 
             <div className="flex gap-3">
-              <Target className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <Target className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Solve real problems</p>
                 <p className="text-sm text-gray-400">

@@ -4,10 +4,8 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { StaticCard } from '@/components/ui/static-card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 import {
-  Sparkles,
   FileText,
   Play,
   CreditCard,
@@ -15,7 +13,6 @@ import {
   Users,
   Clock,
   Zap,
-  Brain,
   Mic,
   BarChart3,
   Calendar,
@@ -23,11 +20,9 @@ import {
   ArrowRight,
   Plus,
   CheckCircle,
-  AlertCircle,
   Activity,
   Target,
   Award,
-  Rocket,
   Trophy
 } from 'lucide-react';
 
@@ -164,8 +159,8 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 animate-pulse-slow">
-          <BarChart3 className="h-12 w-12 text-purple-400 mx-auto animate-spin" />
+        <div className="vb-card p-8 animate-pulse-slow">
+          <BarChart3 className="h-12 w-12 text-violet-400 mx-auto animate-spin" />
           <p className="mt-4 text-gray-300">Loading dashboard...</p>
         </div>
       </div>
@@ -174,19 +169,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-40 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-40 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-60 right-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
-      </div>
-
       {/* Header */}
-      <div className="animate-reveal">
-        <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-          <Rocket className="h-10 w-10 text-purple-400 neon-glow" />
+      <div>
+        <h1 className="font-display text-4xl md:text-5xl text-white flex items-center gap-3">
           Dashboard
-          <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
         </h1>
         <p className="text-gray-400 mt-2">
           Welcome back! Here's your content creation overview
@@ -194,9 +180,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid md:grid-cols-3 gap-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
+      <div className="grid md:grid-cols-3 gap-4">
         <Link href="/scripts/create">
-          <Button className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white p-6 h-auto">
+          <Button className="w-full vb-btn-primary p-6 h-auto">
             <div className="flex flex-col items-center gap-2">
               <Plus className="h-8 w-8" />
               <span className="text-lg font-medium">Create Script</span>
@@ -205,18 +191,18 @@ export default function DashboardPage() {
           </Button>
         </Link>
         <Link href="/channels">
-          <Button className="w-full glass-button text-white p-6 h-auto hover:bg-blue-500/20">
+          <Button className="w-full vb-card-interactive text-white p-6 h-auto hover:border-cyan-500/20">
             <div className="flex flex-col items-center gap-2">
-              <Play className="h-8 w-8 text-blue-400" />
+              <Play className="h-8 w-8 text-cyan-400" />
               <span className="text-lg font-medium">Add Channel</span>
               <span className="text-sm text-gray-300">Connect YouTube</span>
             </div>
           </Button>
         </Link>
         <Link href="/voice">
-          <Button className="w-full glass-button text-white p-6 h-auto hover:bg-green-500/20">
+          <Button className="w-full vb-card-interactive text-white p-6 h-auto hover:border-emerald-500/20">
             <div className="flex flex-col items-center gap-2">
-              <Mic className="h-8 w-8 text-green-400" />
+              <Mic className="h-8 w-8 text-emerald-400" />
               <span className="text-lg font-medium">Train Voice</span>
               <span className="text-sm text-gray-300">Clone your style</span>
             </div>
@@ -225,70 +211,70 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid md:grid-cols-4 gap-6 animate-reveal" style={{ animationDelay: '0.2s' }}>
+      <div className="grid md:grid-cols-4 gap-5">
         <StaticCard>
-          <div className="glass-card glass-hover p-6">
+          <div className="vb-card-interactive p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 glass rounded-xl flex items-center justify-center">
-                <FileText className="h-6 w-6 text-purple-400" />
+              <div className="w-12 h-12 bg-violet-500/10 rounded-xl flex items-center justify-center">
+                <FileText className="h-6 w-6 text-violet-400" />
               </div>
-              <TrendingUp className="h-5 w-5 text-green-400" />
+              <TrendingUp className="h-5 w-5 text-emerald-400" />
             </div>
-            <p className="text-3xl font-bold text-white">{stats.totalScripts}</p>
+            <p className="font-mono text-3xl font-bold text-white">{stats.totalScripts}</p>
             <p className="text-sm text-gray-400 mt-1">Total Scripts</p>
             <div className="mt-4 flex items-center gap-2 text-xs">
-              <span className="text-green-400">+12%</span>
+              <span className="text-emerald-400">+12%</span>
               <span className="text-gray-500">from last month</span>
             </div>
           </div>
         </StaticCard>
 
         <StaticCard>
-          <div className="glass-card glass-hover p-6">
+          <div className="vb-card-interactive p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 glass rounded-xl flex items-center justify-center">
-                <Activity className="h-6 w-6 text-blue-400" />
+              <div className="w-12 h-12 bg-cyan-500/10 rounded-xl flex items-center justify-center">
+                <Activity className="h-6 w-6 text-cyan-400" />
               </div>
-              <TrendingUp className="h-5 w-5 text-green-400" />
+              <TrendingUp className="h-5 w-5 text-emerald-400" />
             </div>
-            <p className="text-3xl font-bold text-white">{stats.totalViews.toLocaleString()}</p>
+            <p className="font-mono text-3xl font-bold text-white">{stats.totalViews.toLocaleString()}</p>
             <p className="text-sm text-gray-400 mt-1">Total Views</p>
             <div className="mt-4 flex items-center gap-2 text-xs">
-              <span className="text-green-400">+23%</span>
+              <span className="text-emerald-400">+23%</span>
               <span className="text-gray-500">from last month</span>
             </div>
           </div>
         </StaticCard>
 
         <StaticCard>
-          <div className="glass-card glass-hover p-6">
+          <div className="vb-card-interactive p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 glass rounded-xl flex items-center justify-center">
-                <Users className="h-6 w-6 text-pink-400" />
+              <div className="w-12 h-12 bg-cyan-500/10 rounded-xl flex items-center justify-center">
+                <Users className="h-6 w-6 text-cyan-400" />
               </div>
-              <Award className="h-5 w-5 text-yellow-400" />
+              <Award className="h-5 w-5 text-amber-400" />
             </div>
-            <p className="text-3xl font-bold text-white">{stats.totalChannels}</p>
+            <p className="font-mono text-3xl font-bold text-white">{stats.totalChannels}</p>
             <p className="text-sm text-gray-400 mt-1">Channels</p>
             <div className="mt-4 flex items-center gap-2 text-xs">
-              <span className="text-yellow-400">Active</span>
+              <span className="text-amber-400">Active</span>
               <span className="text-gray-500">connections</span>
             </div>
           </div>
         </StaticCard>
 
         <StaticCard>
-          <div className="glass-card glass-hover p-6">
+          <div className="vb-card-interactive p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 glass rounded-xl flex items-center justify-center">
-                <CreditCard className="h-6 w-6 text-yellow-400" />
+              <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center">
+                <CreditCard className="h-6 w-6 text-amber-400" />
               </div>
-              <Zap className="h-5 w-5 text-yellow-400" />
+              <Zap className="h-5 w-5 text-amber-400" />
             </div>
-            <p className="text-3xl font-bold gradient-text">{stats.credits}</p>
+            <p className="font-mono text-3xl font-bold gradient-text">{stats.credits}</p>
             <p className="text-sm text-gray-400 mt-1">Credits</p>
             <Link href="/credits">
-              <Button className="w-full mt-3 glass-button text-white text-xs">
+              <Button className="w-full mt-3 vb-btn-outline text-white text-xs">
                 Get More
                 <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
@@ -298,21 +284,21 @@ export default function DashboardPage() {
       </div>
 
       {/* Weekly Activity */}
-      <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.3s' }}>
+      <div className="vb-card p-6">
         <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-purple-400" />
+          <Calendar className="h-5 w-5 text-violet-400" />
           Weekly Activity
         </h2>
         <div className="grid grid-cols-7 gap-2">
           {stats.weeklyActivity.map((day, index) => {
             const maxScripts = Math.max(...stats.weeklyActivity.map(d => d.scripts));
             const height = day.scripts === 0 ? 10 : (day.scripts / maxScripts) * 100;
-            
+
             return (
               <div key={index} className="text-center">
-                <div className="glass rounded-lg p-3 mb-2 relative overflow-hidden group hover:scale-105 transition-transform">
-                  <div 
-                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-purple-500/50 to-transparent transition-all"
+                <div className="bg-white/[0.02] border border-white/5 rounded-lg p-3 mb-2 relative overflow-hidden group hover:scale-105 transition-transform">
+                  <div
+                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-violet-500/50 to-transparent transition-all"
                     style={{ height: `${height}%` }}
                   />
                   <p className="text-2xl font-bold text-white relative z-10">{day.scripts}</p>
@@ -327,14 +313,14 @@ export default function DashboardPage() {
 
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Recent Scripts */}
-        <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.4s' }}>
+        <div className="vb-card p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-              <Clock className="h-5 w-5 text-purple-400" />
+              <Clock className="h-5 w-5 text-violet-400" />
               Recent Scripts
             </h2>
             <Link href="/scripts">
-              <Button className="glass-button text-white text-sm">
+              <Button className="vb-btn-outline text-white text-sm">
                 View All
                 <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
@@ -346,7 +332,7 @@ export default function DashboardPage() {
               <FileText className="h-12 w-12 text-gray-600 mx-auto mb-3" />
               <p className="text-gray-400">No scripts yet</p>
               <Link href="/scripts/create">
-                <Button className="mt-4 glass-button text-white">
+                <Button className="mt-4 vb-btn-primary text-white">
                   Create Your First Script
                 </Button>
               </Link>
@@ -355,10 +341,10 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {stats.recentScripts.map((script) => (
                 <Link key={script.id} href={`/scripts/${script.id}`}>
-                  <div className="glass p-4 rounded-xl hover:bg-white/10 transition-all cursor-pointer group mb-1">
+                  <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl hover:bg-white/[0.04] hover:border-white/10 transition-all cursor-pointer group mb-1">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <h3 className="text-white font-medium group-hover:text-purple-400 transition-colors">
+                        <h3 className="text-white font-medium group-hover:text-violet-400 transition-colors">
                           {script.title}
                         </h3>
                         <p className="text-sm text-gray-400 mt-1">
@@ -375,14 +361,14 @@ export default function DashboardPage() {
         </div>
 
         {/* Top Performing */}
-        <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.5s' }}>
+        <div className="vb-card p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-400" />
+              <Trophy className="h-5 w-5 text-amber-400" />
               Top Performing
             </h2>
             <Link href="/analytics">
-              <Button className="glass-button text-white text-sm">
+              <Button className="vb-btn-outline text-white text-sm">
                 Analytics
                 <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
@@ -398,10 +384,10 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-3">
               {stats.popularScripts.map((script, index) => (
-                <div key={script.id} className="glass p-4 rounded-xl">
+                <div key={script.id} className="bg-white/[0.02] border border-white/5 p-4 rounded-xl">
                   <div className="flex items-center gap-4">
-                    <div className={`w-8 h-8 glass rounded-lg flex items-center justify-center text-sm font-bold ${
-                      index === 0 ? 'text-yellow-400' : index === 1 ? 'text-gray-300' : 'text-orange-400'
+                    <div className={`w-8 h-8 bg-white/[0.04] border border-white/[0.06] rounded-lg flex items-center justify-center text-sm font-bold ${
+                      index === 0 ? 'text-amber-400' : index === 1 ? 'text-gray-300' : 'text-orange-400'
                     }`}>
                       {index + 1}
                     </div>
@@ -409,7 +395,7 @@ export default function DashboardPage() {
                       <h3 className="text-white font-medium">{script.title}</h3>
                       <p className="text-sm text-gray-400">{script.views} views</p>
                     </div>
-                    {index === 0 && <Trophy className="h-5 w-5 text-yellow-400" />}
+                    {index === 0 && <Trophy className="h-5 w-5 text-amber-400" />}
                   </div>
                 </div>
               ))}
@@ -419,9 +405,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Getting Started Tips */}
-      <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.6s' }}>
+      <div className="vb-card p-6">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <Target className="h-5 w-5 text-purple-400" />
+          <Target className="h-5 w-5 text-violet-400" />
           Getting Started Tips
         </h3>
         <div className="grid md:grid-cols-4 gap-4">

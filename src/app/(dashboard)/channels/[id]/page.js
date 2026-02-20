@@ -338,9 +338,7 @@ export default function ChannelDetailPage({ params }) {
 
   return (
     <div className="relative min-h-screen">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 -z-10" />
-      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
+      {/* Background provided by layout */}
 
       <div className="relative">
         {/* Header */}
@@ -362,7 +360,7 @@ export default function ChannelDetailPage({ params }) {
                 <img
                   src={channel.thumbnail_url}
                   alt={channel.name || channel.title}
-                  className="w-20 h-20 rounded-full object-cover border-2 border-white/20"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-white/10"
                 />
               ) : (
                 <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center">
@@ -370,7 +368,7 @@ export default function ChannelDetailPage({ params }) {
                 </div>
               )}
               <div>
-                <h1 className="text-3xl font-bold tracking-tight text-white">
+                <h1 className="text-3xl font-display font-bold tracking-tight text-white">
                   {channel.name || channel.title}
                 </h1>
                 <p className="text-white/70 mt-1">
@@ -398,7 +396,7 @@ export default function ChannelDetailPage({ params }) {
                   size="sm"
                   onClick={handleCreateActionPlan}
                   disabled={creatingActionPlan}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white"
                 >
                   <Zap
                     className={`mr-2 h-4 w-4 ${creatingActionPlan ? "animate-pulse" : ""}`}
@@ -422,7 +420,7 @@ export default function ChannelDetailPage({ params }) {
         {/* Stats Cards - Only show for non-remix channels */}
         {!channel.is_remix && (
           <div className="grid gap-4 md:grid-cols-3 mb-6">
-            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+            <Card className="bg-white/[0.02] border border-white/5 rounded-2xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-white/70">
                   Total Views
@@ -435,7 +433,7 @@ export default function ChannelDetailPage({ params }) {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+            <Card className="bg-white/[0.02] border border-white/5 rounded-2xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-white/70">
                   Videos
@@ -448,7 +446,7 @@ export default function ChannelDetailPage({ params }) {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+            <Card className="bg-white/[0.02] border border-white/5 rounded-2xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-white/70">
                   Channel Score
@@ -467,9 +465,9 @@ export default function ChannelDetailPage({ params }) {
         {/* Audience and Voice Profile Cards - Show for all channels */}
         <div className="grid gap-4 md:grid-cols-2 mt-8">
           {/* Audience Card */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+          <Card className="bg-white/[0.02] border border-white/5 rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-white font-display flex items-center gap-2">
                 <Users className="h-5 w-5" />
                 Target Audience
               </CardTitle>
@@ -559,7 +557,7 @@ export default function ChannelDetailPage({ params }) {
                             .map((value, i) => (
                               <span
                                 key={i}
-                                className="px-2 py-1 bg-purple-500/20 text-purple-200 text-xs rounded-full"
+                                className="px-2 py-1 bg-violet-500/10 text-violet-200 text-xs rounded-full"
                               >
                                 {value}
                               </span>
@@ -580,7 +578,7 @@ export default function ChannelDetailPage({ params }) {
                             .map((interest, i) => (
                               <span
                                 key={i}
-                                className="px-2 py-1 bg-purple-500/20 text-purple-200 text-xs rounded-full"
+                                className="px-2 py-1 bg-violet-500/10 text-violet-200 text-xs rounded-full"
                               >
                                 {interest}
                               </span>
@@ -595,9 +593,9 @@ export default function ChannelDetailPage({ params }) {
           </Card>
 
           {/* Voice Profile Card */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+          <Card className="bg-white/[0.02] border border-white/5 rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-white font-display flex items-center gap-2">
                 <Mic className="h-5 w-5" />
                 Voice Profile
               </CardTitle>
@@ -867,7 +865,7 @@ export default function ChannelDetailPage({ params }) {
                             return sanitized ? (
                               <span
                                 key={i}
-                                className="px-2 py-1 bg-purple-500/20 text-purple-200 text-xs rounded-full"
+                                className="px-2 py-1 bg-violet-500/10 text-violet-200 text-xs rounded-full"
                               >
                                 {sanitized}
                               </span>
@@ -950,9 +948,9 @@ export default function ChannelDetailPage({ params }) {
         {channel.is_remix &&
           channel.remix_source_ids &&
           channel.remix_source_ids.length > 0 && (
-            <Card className="mt-8 bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+            <Card className="mt-8 bg-white/[0.02] border border-white/5 rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-white font-display flex items-center gap-2">
                   <Sparkles className="h-5 w-5" />
                   Remix Sources
                 </CardTitle>
@@ -979,9 +977,9 @@ export default function ChannelDetailPage({ params }) {
         </div>
 
         {/* Channel Information Card */}
-        <Card className="mt-8 bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+        <Card className="mt-8 bg-white/[0.02] border border-white/5 rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-white">Channel Information</CardTitle>
+            <CardTitle className="text-white font-display">Channel Information</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="space-y-4">
@@ -1003,7 +1001,7 @@ export default function ChannelDetailPage({ params }) {
                       href={`https://youtube.com/${channel.custom_url}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-purple-300 hover:text-purple-200 hover:underline"
+                      className="text-violet-300 hover:text-violet-200 hover:underline"
                     >
                       {channel.custom_url}
                     </a>

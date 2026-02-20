@@ -143,8 +143,8 @@ export default function AcceptInvitationPage() {
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-            <p className="text-gray-600">Loading invitation...</p>
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-violet-400" />
+            <p className="text-white/50">Loading invitation...</p>
           </div>
         </div>
       </div>
@@ -156,11 +156,11 @@ export default function AcceptInvitationPage() {
       <div className="container mx-auto p-6 max-w-2xl">
         <Card>
           <CardContent className="p-12 text-center">
-            <AlertCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <AlertCircle className="w-16 h-16 text-red-400/60 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-white mb-2">
               Invitation Not Found
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-white/50 mb-6">
               {error}
             </p>
             <Button onClick={() => router.push('/teams')}>
@@ -178,15 +178,15 @@ export default function AcceptInvitationPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className="text-xl font-semibold text-white mb-2">
               Welcome to the Team!
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-white/50 mb-6">
               You've successfully joined <strong>{invitation.teams.name}</strong>. 
               You'll be redirected to the team dashboard shortly.
             </p>
             <div className="flex justify-center">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+              <Loader2 className="w-6 h-6 animate-spin text-violet-400" />
             </div>
           </CardContent>
         </Card>
@@ -198,28 +198,28 @@ export default function AcceptInvitationPage() {
     <div className="container mx-auto p-6 max-w-2xl">
       <Card>
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-            <Users className="w-8 h-8 text-blue-600" />
+          <div className="mx-auto mb-4 w-16 h-16 bg-violet-500/20 rounded-full flex items-center justify-center">
+            <Users className="w-8 h-8 text-violet-400" />
           </div>
           <CardTitle className="text-2xl">Team Invitation</CardTitle>
-          <p className="text-gray-600">
+          <p className="text-white/50">
             You've been invited to join a team
           </p>
         </CardHeader>
 
         <CardContent className="space-y-6">
           {/* Team Information */}
-          <div className="bg-blue-50 rounded-lg p-6">
-            <h3 className="font-semibold text-gray-900 mb-2">
+          <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl p-6">
+            <h3 className="font-semibold text-white mb-2">
               {invitation.teams.name}
             </h3>
             {invitation.teams.description && (
-              <p className="text-gray-600 text-sm mb-4">
+              <p className="text-white/50 text-sm mb-4">
                 {invitation.teams.description}
               </p>
             )}
             
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-4 text-sm text-white/50">
               <div className="flex items-center gap-1">
                 <UserCheck className="w-4 h-4" />
                 <span>Role: {ROLE_NAMES[invitation.role]}</span>
@@ -232,20 +232,20 @@ export default function AcceptInvitationPage() {
           </div>
 
           {/* Role Information */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+          <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
+            <h4 className="font-medium text-white mb-2 flex items-center gap-2">
               <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${getRoleBadgeColor(invitation.role)}`}>
                 <span className="mr-1">{getRoleIcon(invitation.role)}</span>
                 {ROLE_NAMES[invitation.role]}
               </span>
               Role Permissions
             </h4>
-            <p className="text-sm text-gray-600 mb-3">
+            <p className="text-sm text-white/50 mb-3">
               {ROLE_DESCRIPTIONS[invitation.role]}
             </p>
             
             {invitation.role === 'owner' && (
-              <ul className="text-xs text-gray-600 space-y-1">
+              <ul className="text-xs text-white/50 space-y-1">
                 <li>• Full control over team settings</li>
                 <li>• Manage all team members</li>
                 <li>• Create, edit, and delete scripts</li>
@@ -254,7 +254,7 @@ export default function AcceptInvitationPage() {
             )}
             
             {invitation.role === 'admin' && (
-              <ul className="text-xs text-gray-600 space-y-1">
+              <ul className="text-xs text-white/50 space-y-1">
                 <li>• Invite and manage team members</li>
                 <li>• Edit team settings</li>
                 <li>• Create, edit, and delete scripts</li>
@@ -263,7 +263,7 @@ export default function AcceptInvitationPage() {
             )}
             
             {invitation.role === 'editor' && (
-              <ul className="text-xs text-gray-600 space-y-1">
+              <ul className="text-xs text-white/50 space-y-1">
                 <li>• Create and edit team scripts</li>
                 <li>• Comment on scripts</li>
                 <li>• View team content</li>
@@ -272,7 +272,7 @@ export default function AcceptInvitationPage() {
             )}
             
             {invitation.role === 'viewer' && (
-              <ul className="text-xs text-gray-600 space-y-1">
+              <ul className="text-xs text-white/50 space-y-1">
                 <li>• View team scripts</li>
                 <li>• Comment on scripts</li>
                 <li>• View team information</li>
@@ -282,23 +282,23 @@ export default function AcceptInvitationPage() {
           </div>
 
           {/* User Information */}
-          <div className="bg-green-50 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-2">
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+            <h4 className="font-medium text-white mb-2">
               Joining as
             </h4>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-blue-600">
+              <div className="w-10 h-10 bg-violet-500/20 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-violet-400">
                   {user?.user_metadata?.full_name
                     ? user.user_metadata.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
                     : user?.email?.slice(0, 2).toUpperCase() || '??'}
                 </span>
               </div>
               <div>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-white">
                   {user?.user_metadata?.full_name || user?.email}
                 </p>
-                <p className="text-sm text-gray-600">{user?.email}</p>
+                <p className="text-sm text-white/50">{user?.email}</p>
               </div>
             </div>
           </div>
@@ -331,7 +331,7 @@ export default function AcceptInvitationPage() {
             </Button>
           </div>
 
-          <p className="text-xs text-center text-gray-500 pt-2">
+          <p className="text-xs text-center text-white/40 pt-2">
             By accepting this invitation, you'll be able to collaborate on team scripts 
             and access team resources based on your assigned role.
           </p>

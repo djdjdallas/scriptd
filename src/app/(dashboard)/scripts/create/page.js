@@ -36,7 +36,7 @@ export default function CreateScriptPage() {
   const hasContentIdeaData = searchParams.get('sourceType') === 'content-idea';
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#030303]">
       <ScriptWorkflow
         workflowId={workflowId}
         initialTemplateData={hasTemplateData ? templateData : null}

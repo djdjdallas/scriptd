@@ -21,7 +21,6 @@ import {
   CreditCard,
   LogOut,
   Save,
-  Sparkles,
   Moon,
   Sun,
   Volume2,
@@ -181,8 +180,8 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 animate-pulse-slow">
-          <Settings className="h-12 w-12 text-purple-400 mx-auto animate-spin" />
+        <div className="vb-card p-8 animate-pulse-slow">
+          <Settings className="h-12 w-12 text-violet-400 mx-auto animate-spin" />
           <p className="mt-4 text-gray-300">Loading settings...</p>
         </div>
       </div>
@@ -191,18 +190,11 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-40 right-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
-      </div>
-
       {/* Header */}
       <div className="animate-reveal">
-        <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-          <Settings className="h-10 w-10 text-purple-400 neon-glow" />
+        <h1 className="text-4xl font-bold font-display text-white flex items-center gap-3">
+          <Settings className="h-10 w-10 text-violet-400" />
           Settings
-          <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
         </h1>
         <p className="text-gray-400 mt-2">
           Manage your account and preferences
@@ -217,9 +209,9 @@ export default function SettingsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`glass-button px-4 py-2 flex items-center gap-2 whitespace-nowrap transition-all ${
+              className={`vb-btn-outline px-4 py-2 flex items-center gap-2 whitespace-nowrap transition-all ${
                 activeTab === tab.id
-                  ? 'bg-purple-500/20 text-white'
+                  ? 'bg-violet-500/10 text-white'
                   : 'text-gray-400 hover:text-white'
               }`}
             >
@@ -232,7 +224,7 @@ export default function SettingsPage() {
 
       {/* Content */}
       <StaticCard>
-        <div className="glass-card p-8 animate-reveal" style={{ animationDelay: '0.2s' }}>
+        <div className="vb-card p-8 animate-reveal" style={{ animationDelay: '0.2s' }}>
           {/* Profile Tab */}
           {activeTab === 'profile' && (
             <div className="space-y-6">
@@ -245,7 +237,7 @@ export default function SettingsPage() {
                     id="displayName"
                     value={settings.displayName}
                     onChange={(e) => setSettings({ ...settings, displayName: e.target.value })}
-                    className="glass-input text-white mt-2"
+                    className="vb-input text-white mt-2"
                     placeholder="Enter your name"
                   />
                 </div>
@@ -257,21 +249,21 @@ export default function SettingsPage() {
                     type="email"
                     value={settings.email}
                     disabled
-                    className="glass-input text-gray-400 mt-2"
+                    className="vb-input text-gray-400 mt-2"
                   />
                   <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
                 </div>
 
-                <div className="glass p-4 rounded-xl">
+                <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <CreditCard className="h-5 w-5 text-purple-400" />
+                      <CreditCard className="h-5 w-5 text-violet-400" />
                       <div>
                         <p className="text-white font-medium">Subscription</p>
                         <p className="text-sm text-gray-400">Free Plan</p>
                       </div>
                     </div>
-                    <Button className="glass-button text-white">
+                    <Button className="vb-btn-outline text-white">
                       Upgrade
                       <Zap className="h-4 w-4 ml-2" />
                     </Button>
@@ -287,9 +279,9 @@ export default function SettingsPage() {
               <h2 className="text-2xl font-semibold text-white mb-6">Notification Preferences</h2>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between glass p-4 rounded-xl">
+                <div className="flex items-center justify-between bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
                   <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-purple-400" />
+                    <Mail className="h-5 w-5 text-violet-400" />
                     <div>
                       <p className="text-white font-medium">Email Notifications</p>
                       <p className="text-sm text-gray-400">Receive updates via email</p>
@@ -353,7 +345,7 @@ export default function SettingsPage() {
                   <div className="flex gap-4 mt-3">
                     <button
                       onClick={() => setSettings({ ...settings, theme: 'light' })}
-                      className={`glass-button px-6 py-3 flex items-center gap-2 ${
+                      className={`vb-btn-outline px-6 py-3 flex items-center gap-2 ${
                         settings.theme === 'light' ? 'bg-white/20' : ''
                       }`}
                     >
@@ -362,7 +354,7 @@ export default function SettingsPage() {
                     </button>
                     <button
                       onClick={() => setSettings({ ...settings, theme: 'dark' })}
-                      className={`glass-button px-6 py-3 flex items-center gap-2 ${
+                      className={`vb-btn-outline px-6 py-3 flex items-center gap-2 ${
                         settings.theme === 'dark' ? 'bg-white/20' : ''
                       }`}
                     >
@@ -377,7 +369,7 @@ export default function SettingsPage() {
                   <select
                     value={settings.language}
                     onChange={(e) => setSettings({ ...settings, language: e.target.value })}
-                    className="glass-input text-white mt-2 w-full"
+                    className="vb-input text-white mt-2 w-full"
                   >
                     <option value="en">English</option>
                     <option value="es">Spanish</option>
@@ -386,9 +378,9 @@ export default function SettingsPage() {
                   </select>
                 </div>
 
-                <div className="flex items-center justify-between glass p-4 rounded-xl">
+                <div className="flex items-center justify-between bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
                   <div className="flex items-center gap-3">
-                    <Save className="h-5 w-5 text-purple-400" />
+                    <Save className="h-5 w-5 text-violet-400" />
                     <div>
                       <p className="text-white font-medium">Auto-Save</p>
                       <p className="text-sm text-gray-400">Automatically save your work</p>
@@ -400,9 +392,9 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between glass p-4 rounded-xl">
+                <div className="flex items-center justify-between bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
                   <div className="flex items-center gap-3">
-                    <HelpCircle className="h-5 w-5 text-purple-400" />
+                    <HelpCircle className="h-5 w-5 text-violet-400" />
                     <div>
                       <p className="text-white font-medium">Product Tour</p>
                       <p className="text-sm text-gray-400">Restart the sidebar feature tour</p>
@@ -413,7 +405,7 @@ export default function SettingsPage() {
                       startTour();
                       router.push('/dashboard');
                     }}
-                    className="glass-button text-white"
+                    className="vb-btn-outline text-white"
                   >
                     Restart Tour
                   </Button>
@@ -428,9 +420,9 @@ export default function SettingsPage() {
               <h2 className="text-2xl font-semibold text-white mb-6">Privacy & Security</h2>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between glass p-4 rounded-xl">
+                <div className="flex items-center justify-between bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
                   <div className="flex items-center gap-3">
-                    <Shield className="h-5 w-5 text-purple-400" />
+                    <Shield className="h-5 w-5 text-violet-400" />
                     <div>
                       <p className="text-white font-medium">Share Analytics</p>
                       <p className="text-sm text-gray-400">Help improve our service</p>
@@ -442,9 +434,9 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between glass p-4 rounded-xl">
+                <div className="flex items-center justify-between bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
                   <div className="flex items-center gap-3">
-                    <Globe className="h-5 w-5 text-purple-400" />
+                    <Globe className="h-5 w-5 text-violet-400" />
                     <div>
                       <p className="text-white font-medium">Public Profile</p>
                       <p className="text-sm text-gray-400">Show your profile to others</p>
@@ -456,7 +448,7 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                <div className="glass p-4 rounded-xl border border-red-500/20">
+                <div className="bg-white/[0.04] border border-red-500/20 rounded-xl p-4">
                   <h3 className="text-red-400 font-medium mb-2 flex items-center gap-2">
                     <AlertCircle className="h-5 w-5" />
                     Danger Zone
@@ -466,7 +458,7 @@ export default function SettingsPage() {
                   </p>
                   <Button
                     onClick={handleDeleteAccountClick}
-                    className="glass-button text-red-400 hover:bg-red-500/20"
+                    className="vb-btn-outline text-red-400 hover:bg-red-500/20"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Account
@@ -481,7 +473,7 @@ export default function SettingsPage() {
             <Button
               onClick={handleSaveSettings}
               disabled={saving}
-              className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+              className="vb-btn-primary text-white"
             >
               {saving ? (
                 <>
@@ -500,7 +492,7 @@ export default function SettingsPage() {
       </StaticCard>
 
       {/* Quick Links */}
-      <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.3s' }}>
+      <div className="vb-card p-6 animate-reveal" style={{ animationDelay: '0.3s' }}>
         <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
         <div className="grid md:grid-cols-3 gap-4">
           <a href="/docs" className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors">

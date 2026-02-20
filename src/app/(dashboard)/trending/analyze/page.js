@@ -169,12 +169,12 @@ export default function AnalyzeChannelPage() {
   if (error) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 text-center">
+        <div className="vb-card p-8 text-center">
           <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
           <p className="text-white text-lg mb-2">Failed to analyze channel</p>
           <p className="text-gray-400 text-sm">{error}</p>
           <Link href="/trending">
-            <Button className="glass-button mt-4">Back to Trending</Button>
+            <Button className="vb-btn-outline mt-4">Back to Trending</Button>
           </Link>
         </div>
       </div>
@@ -184,7 +184,7 @@ export default function AnalyzeChannelPage() {
   if (loading || !channelData) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 text-center">
+        <div className="vb-card p-8 text-center">
           <Youtube className="h-12 w-12 text-red-400 animate-pulse mx-auto mb-4" />
           <p className="text-white text-lg">Analyzing channel...</p>
           <p className="text-gray-400 text-sm mt-2">Fetching real-time data from YouTube</p>
@@ -195,16 +195,10 @@ export default function AnalyzeChannelPage() {
 
   return (
     <div className="space-y-8">
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-red-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
-      </div>
-
       {/* Header */}
       <div className="animate-reveal">
         <Link href="/trending/channels">
-          <Button variant="ghost" className="glass-button mb-4 text-gray-400 hover:text-white">
+          <Button variant="ghost" className="vb-btn-outline mb-4 text-gray-400 hover:text-white">
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back to Channels
           </Button>
@@ -215,7 +209,7 @@ export default function AnalyzeChannelPage() {
             <img 
               src={channelData.thumbnail} 
               alt={channelData.name}
-              className="w-24 h-24 rounded-full object-cover ring-4 ring-purple-400/50"
+              className="w-24 h-24 rounded-full object-cover ring-4 ring-violet-400/50"
             />
             {channelData.verified && (
               <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
@@ -226,14 +220,14 @@ export default function AnalyzeChannelPage() {
           
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-white">{channelData.name}</h1>
+              <h1 className="text-3xl font-display font-bold text-white">{channelData.name}</h1>
               <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
             </div>
             <p className="text-gray-400 mb-2">{channelData.handle} • {channelData.category}</p>
             <p className="text-gray-300 mb-4">{channelData.description}</p>
             <div className="flex gap-3">
               <Button 
-                className="glass-button text-white"
+                className="vb-btn-outline text-white"
                 onClick={() => {
                   toast.info('Channel tracking coming soon! You\'ll be able to get alerts when this channel posts new content.', {
                     duration: 4000
@@ -244,7 +238,7 @@ export default function AnalyzeChannelPage() {
                 Track Channel
               </Button>
               <Button 
-                className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+                className="vb-btn-primary text-white"
                 onClick={() => {
                   router.push(`/trending/follow?channelId=${channelId}&channel=${encodeURIComponent(channelData?.name || channelName)}&topic=${encodeURIComponent(channelData?.category || 'Content Creation')}`);
                 }}
@@ -256,7 +250,7 @@ export default function AnalyzeChannelPage() {
           </div>
           
           <div className="text-right">
-            <div className="text-4xl font-bold text-purple-400 mb-1">{channelData.scores.overall}</div>
+            <div className="text-4xl font-bold text-violet-400 mb-1">{channelData.scores.overall}</div>
             <p className="text-sm text-gray-400">Overall Score</p>
           </div>
         </div>
@@ -264,15 +258,15 @@ export default function AnalyzeChannelPage() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
-        <div className="glass-card p-4">
+        <div className="vb-card p-4">
           <div className="flex items-center justify-between mb-2">
-            <Users className="h-5 w-5 text-purple-400" />
+            <Users className="h-5 w-5 text-violet-400" />
             <span className="text-xs text-green-400">{channelData.stats.growth}</span>
           </div>
           <p className="text-2xl font-bold text-white">{channelData.stats.subscribers}</p>
           <p className="text-xs text-gray-400">Subscribers</p>
         </div>
-        <div className="glass-card p-4">
+        <div className="vb-card p-4">
           <div className="flex items-center justify-between mb-2">
             <Eye className="h-5 w-5 text-blue-400" />
             <span className="text-xs text-green-400">+15%</span>
@@ -280,7 +274,7 @@ export default function AnalyzeChannelPage() {
           <p className="text-2xl font-bold text-white">{channelData.stats.totalViews}</p>
           <p className="text-xs text-gray-400">Total Views</p>
         </div>
-        <div className="glass-card p-4">
+        <div className="vb-card p-4">
           <div className="flex items-center justify-between mb-2">
             <Video className="h-5 w-5 text-red-400" />
             <span className="text-xs text-yellow-400">{channelData.stats.uploadFreq}</span>
@@ -288,7 +282,7 @@ export default function AnalyzeChannelPage() {
           <p className="text-2xl font-bold text-white">{channelData.stats.totalVideos}</p>
           <p className="text-xs text-gray-400">Videos</p>
         </div>
-        <div className="glass-card p-4">
+        <div className="vb-card p-4">
           <div className="flex items-center justify-between mb-2">
             <ThumbsUp className="h-5 w-5 text-green-400" />
             <span className="text-xs text-green-400">High</span>
@@ -299,7 +293,7 @@ export default function AnalyzeChannelPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="glass-card p-2 animate-reveal" style={{ animationDelay: '0.2s' }}>
+      <div className="vb-card p-2 animate-reveal" style={{ animationDelay: '0.2s' }}>
         <div className="flex gap-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -309,7 +303,7 @@ export default function AnalyzeChannelPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
                   activeTab === tab.id
-                    ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-white'
+                    ? 'bg-gradient-to-r from-violet-500/30 to-cyan-500/30 text-white'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
               >
@@ -326,9 +320,9 @@ export default function AnalyzeChannelPage() {
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Performance Scores */}
-            <div className="glass-card p-6">
+            <div className="vb-card p-6">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <Target className="h-5 w-5 text-purple-400" />
+                <Target className="h-5 w-5 text-violet-400" />
                 Channel Performance Scores
               </h3>
               <div className="space-y-4">
@@ -343,7 +337,7 @@ export default function AnalyzeChannelPage() {
                         {value}/100
                       </span>
                     </div>
-                    <div className="relative h-3 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="relative h-3 bg-white/[0.06] rounded-full overflow-hidden">
                       <div 
                         className={`absolute inset-y-0 left-0 rounded-full transition-all duration-700 ${
                           value >= 90 ? 'bg-gradient-to-r from-green-500 to-green-400' :
@@ -360,7 +354,7 @@ export default function AnalyzeChannelPage() {
 
             {/* Analysis */}
             <div className="grid md:grid-cols-3 gap-6">
-              <div className="glass-card p-6">
+              <div className="vb-card p-6">
                 <h4 className="text-white font-bold mb-3 flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-400" />
                   Strengths
@@ -375,7 +369,7 @@ export default function AnalyzeChannelPage() {
                 </ul>
               </div>
 
-              <div className="glass-card p-6">
+              <div className="vb-card p-6">
                 <h4 className="text-white font-bold mb-3 flex items-center gap-2">
                   <AlertCircle className="h-5 w-5 text-yellow-400" />
                   Weaknesses
@@ -390,15 +384,15 @@ export default function AnalyzeChannelPage() {
                 </ul>
               </div>
 
-              <div className="glass-card p-6">
+              <div className="vb-card p-6">
                 <h4 className="text-white font-bold mb-3 flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-purple-400" />
+                  <Zap className="h-5 w-5 text-violet-400" />
                   Opportunities
                 </h4>
                 <ul className="space-y-2">
                   {channelData.analysis.opportunities.map((opportunity, index) => (
                     <li key={index} className="text-sm text-gray-300 flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 bg-purple-400 rounded-full mt-1.5" />
+                      <div className="w-1.5 h-1.5 bg-violet-400 rounded-full mt-1.5" />
                       {opportunity}
                     </li>
                   ))}
@@ -410,14 +404,14 @@ export default function AnalyzeChannelPage() {
 
         {activeTab === 'performance' && (
           <div className="space-y-6">
-            <div className="glass-card p-6">
+            <div className="vb-card p-6">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <PlayCircle className="h-5 w-5 text-red-400" />
                 Recent Video Performance
               </h3>
               <div className="space-y-3">
                 {channelData.recentVideos.map((video) => (
-                  <div key={video.id} className="glass p-4 rounded-lg">
+                  <div key={video.id} className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="text-white font-medium flex-1">{video.title}</h4>
                       <div className={`flex items-center gap-1 ${
@@ -460,9 +454,9 @@ export default function AnalyzeChannelPage() {
 
         {activeTab === 'content' && (
           <div className="space-y-6">
-            <div className="glass-card p-6">
+            <div className="vb-card p-6">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <Video className="h-5 w-5 text-purple-400" />
+                <Video className="h-5 w-5 text-violet-400" />
                 Content Patterns
               </h3>
               <div className="grid md:grid-cols-2 gap-6">
@@ -470,7 +464,7 @@ export default function AnalyzeChannelPage() {
                   <h4 className="text-white font-medium mb-3">Best Performing Topics</h4>
                   <div className="space-y-2">
                     {channelData.contentPatterns.bestPerforming.map((topic, index) => (
-                      <div key={index} className="glass px-3 py-2 rounded-lg text-purple-300">
+                      <div key={index} className="bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2 text-violet-300">
                         {topic}
                       </div>
                     ))}
@@ -480,7 +474,7 @@ export default function AnalyzeChannelPage() {
                   <h4 className="text-white font-medium mb-3">Upload Schedule</h4>
                   <div className="flex gap-2">
                     {channelData.contentPatterns.uploadSchedule.map((day, index) => (
-                      <span key={index} className="glass px-3 py-2 rounded-lg text-sm text-gray-300">
+                      <span key={index} className="bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2 text-sm text-gray-300">
                         {day}
                       </span>
                     ))}
@@ -495,7 +489,7 @@ export default function AnalyzeChannelPage() {
                 <h4 className="text-white font-medium mb-3">Top Keywords</h4>
                 <div className="flex flex-wrap gap-2">
                   {channelData.contentPatterns.topKeywords.map((keyword, index) => (
-                    <span key={index} className="glass px-3 py-1 rounded-full text-sm text-purple-300">
+                    <span key={index} className="bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-1 rounded-full text-sm text-violet-300">
                       #{keyword}
                     </span>
                   ))}
@@ -506,7 +500,7 @@ export default function AnalyzeChannelPage() {
         )}
 
         {activeTab === 'growth' && (
-          <div className="glass-card p-6">
+          <div className="vb-card p-6">
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-green-400" />
               Growth Trajectory
@@ -520,11 +514,11 @@ export default function AnalyzeChannelPage() {
         {activeTab === 'compete' && (
           <div className="space-y-4">
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <Users className="h-5 w-5 text-purple-400" />
+              <Users className="h-5 w-5 text-violet-400" />
               Competitor Comparison
             </h3>
             {channelData.competitors.map((competitor, index) => (
-              <div key={index} className="glass-card p-4 flex items-center justify-between">
+              <div key={index} className="vb-card p-4 flex items-center justify-between">
                 <div>
                   <h4 className="text-white font-medium">{competitor.name}</h4>
                   <p className="text-sm text-gray-400">{competitor.subscribers} subscribers</p>
@@ -535,10 +529,10 @@ export default function AnalyzeChannelPage() {
                     <p className="text-xs text-gray-400">Growth</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-sm text-purple-400 font-bold">{competitor.engagement}</p>
+                    <p className="text-sm text-violet-400 font-bold">{competitor.engagement}</p>
                     <p className="text-xs text-gray-400">Engagement</p>
                   </div>
-                  <Button size="sm" className="glass-button text-white">
+                  <Button size="sm" className="vb-btn-outline text-white">
                     Compare
                   </Button>
                 </div>

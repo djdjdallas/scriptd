@@ -79,7 +79,7 @@ const features = [
     icon: Sparkles,
     title: 'Voice Matching',
     description: 'Upload samples of your content and our AI learns your unique writing style and personality.',
-    gradient: 'from-purple-500/20 to-pink-500/20'
+    gradient: 'from-violet-500/10 to-cyan-500/20'
   },
   {
     icon: Zap,
@@ -129,7 +129,7 @@ const faqs = [
 
 export default function YouTubeScriptGeneratorPage() {
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#030303]">
       {/* Hero */}
       <MarketingHero
         badge={
@@ -138,11 +138,11 @@ export default function YouTubeScriptGeneratorPage() {
             <span className="text-sm text-gray-300">AI-Powered Script Generation</span>
           </>
         }
-        title="YouTube Script Generator"
+        title={<span className="font-display">YouTube Script Generator</span>}
         subtitle="Generate engaging, retention-optimized YouTube scripts in 30 seconds. With built-in compliance checking for YouTube's 2025 authenticity policy."
         primaryCTA={
           <Link href="/login">
-            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8">
+            <Button size="lg" className="bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700 text-white px-8">
               Generate Your First Script
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -150,7 +150,7 @@ export default function YouTubeScriptGeneratorPage() {
         }
         secondaryCTA={
           <Link href="/compliance-check">
-            <Button size="lg" variant="outline" className="border-gray-700 hover:bg-gray-800">
+            <Button size="lg" variant="outline" className="border-white/5 hover:bg-white/[0.06]">
               <Shield className="w-4 h-4 mr-2" />
               Try Compliance Checker
             </Button>
@@ -168,25 +168,25 @@ export default function YouTubeScriptGeneratorPage() {
         <MarketingCard className="p-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <div className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
                 30s
               </div>
               <div className="text-sm text-gray-400 mt-1">Average generation time</div>
             </div>
             <div>
-              <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <div className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
                 68%+
               </div>
               <div className="text-sm text-gray-400 mt-1">Avg view duration</div>
             </div>
             <div>
-              <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <div className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
                 95%
               </div>
               <div className="text-sm text-gray-400 mt-1">Compliance pass rate</div>
             </div>
             <div>
-              <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <div className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
                 Free
               </div>
               <div className="text-sm text-gray-400 mt-1">50 credits to start</div>
@@ -198,7 +198,7 @@ export default function YouTubeScriptGeneratorPage() {
       {/* How It Works */}
       <MarketingSection>
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">How It Works</h2>
+          <h2 className="text-4xl font-bold font-display text-white mb-4">How It Works</h2>
           <p className="text-xl text-gray-400">From idea to polished script in 4 simple steps</p>
         </div>
 
@@ -206,10 +206,10 @@ export default function YouTubeScriptGeneratorPage() {
           {howItWorks.map((step, idx) => (
             <div key={idx} className="relative">
               <MarketingCard className="p-6 h-full">
-                <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4">
-                  <step.icon className="w-6 h-6 text-purple-400" />
+                <div className="w-12 h-12 rounded-lg bg-violet-500/10 flex items-center justify-center mb-4">
+                  <step.icon className="w-6 h-6 text-violet-400" />
                 </div>
-                <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+                <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center">
                   <span className="text-white font-bold text-sm">{step.step}</span>
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2">{step.title}</h3>
@@ -228,7 +228,7 @@ export default function YouTubeScriptGeneratorPage() {
       {/* Features */}
       <MarketingSection>
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">Why Creators Choose GenScript</h2>
+          <h2 className="text-4xl font-bold font-display text-white mb-4">Why Creators Choose GenScript</h2>
           <p className="text-xl text-gray-400">Features that set us apart from generic AI tools</p>
         </div>
 
@@ -248,7 +248,7 @@ export default function YouTubeScriptGeneratorPage() {
       {/* Script Types */}
       <MarketingSection>
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">Scripts for Every Format</h2>
+          <h2 className="text-4xl font-bold font-display text-white mb-4">Scripts for Every Format</h2>
           <p className="text-xl text-gray-400">Optimized templates for all YouTube content types</p>
         </div>
 
@@ -270,7 +270,7 @@ export default function YouTubeScriptGeneratorPage() {
               <Shield className="w-8 h-8 text-green-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white mb-3">
+              <h2 className="text-2xl font-bold font-display text-white mb-3">
                 Built for YouTube&apos;s 2025 Authenticity Policy
               </h2>
               <p className="text-gray-300 mb-4">
@@ -313,7 +313,7 @@ export default function YouTubeScriptGeneratorPage() {
         ]}
         primaryButton={
           <Link href="/login">
-            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8">
+            <Button size="lg" className="bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700 text-white px-8">
               Generate Your First Script
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -321,7 +321,7 @@ export default function YouTubeScriptGeneratorPage() {
         }
         secondaryButton={
           <Link href="/pricing">
-            <Button size="lg" variant="outline" className="border-gray-700 hover:bg-gray-800">
+            <Button size="lg" variant="outline" className="border-white/5 hover:bg-white/[0.06]">
               View Pricing
             </Button>
           </Link>

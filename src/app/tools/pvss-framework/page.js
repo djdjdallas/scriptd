@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  ArrowRight, Sparkles, TrendingUp, Brain, 
+import {
+  ArrowRight, Sparkles, TrendingUp, Brain,
   Lightbulb, Zap, Target, BookOpen, Play,
   CheckCircle2, Award
 } from 'lucide-react';
@@ -20,9 +20,9 @@ export default function PVSSFrameworkPage() {
     fetch('/api/analytics/page-view', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         page: 'pvss-framework',
-        referrer: document.referrer 
+        referrer: document.referrer
       })
     });
   }, []);
@@ -130,7 +130,7 @@ export default function PVSSFrameworkPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#030303]">
       <head>
         <title>PVSS Viral Framework - The Secret Structure Behind Every Viral Video</title>
         <meta name="description" content="Master the Pattern-Value-Story-Surprise framework used by top creators. Transform any content into viral-worthy videos with our proven structure." />
@@ -138,15 +138,15 @@ export default function PVSSFrameworkPage() {
       </head>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-purple-950/40 via-black to-purple-950/20 py-20">
+      <section className="relative bg-gradient-to-b from-violet-950/40 via-[#030303] to-violet-950/20 py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center">
-            <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30">
+            <Badge className="mb-4 bg-violet-500/10 text-violet-400 border-violet-500/30">
               <Award className="w-4 h-4 mr-1" />
               Used in 10M+ View Videos
             </Badge>
 
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
+            <h1 className="font-display text-5xl font-bold mb-6 bg-gradient-to-r from-violet-400 via-cyan-400 to-orange-400 bg-clip-text text-transparent">
               The PVSS Framework: Your Blueprint for Viral Videos
             </h1>
 
@@ -157,12 +157,12 @@ export default function PVSSFrameworkPage() {
 
             <div className="flex gap-4 justify-center mb-8">
               <Link href="/signup">
-                <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                <Button size="lg" className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700">
                   Apply PVSS to Your Content
                   <Sparkles className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="border-gray-600 hover:bg-gray-800 text-white">
+              <Button size="lg" variant="outline" className="border-white/[0.06] hover:bg-white/[0.06] text-white">
                 See Real Examples
                 <Play className="ml-2 w-5 h-5" />
               </Button>
@@ -170,15 +170,15 @@ export default function PVSSFrameworkPage() {
 
             <div className="flex items-center justify-center gap-8 text-sm text-gray-400">
               <div className="flex items-center gap-1">
-                <TrendingUp className="w-4 h-4 text-purple-400" />
+                <TrendingUp className="w-4 h-4 text-violet-400" />
                 <span>3x Higher Virality</span>
               </div>
               <div className="flex items-center gap-1">
-                <Brain className="w-4 h-4 text-purple-400" />
+                <Brain className="w-4 h-4 text-violet-400" />
                 <span>Psychology-Based</span>
               </div>
               <div className="flex items-center gap-1">
-                <Zap className="w-4 h-4 text-purple-400" />
+                <Zap className="w-4 h-4 text-violet-400" />
                 <span>Instant Results</span>
               </div>
             </div>
@@ -187,9 +187,9 @@ export default function PVSSFrameworkPage() {
       </section>
 
       {/* Framework Breakdown */}
-      <section className="py-20 bg-black">
+      <section className="py-20 bg-[#030303]">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-12 text-white">
             Master Each Phase of PVSS
           </h2>
 
@@ -197,19 +197,19 @@ export default function PVSSFrameworkPage() {
             {Object.entries(frameworkPhases).map(([key, phase], idx) => (
               <Card
                 key={key}
-                className={`cursor-pointer transition-all bg-gray-800/50 border-gray-700 ${
+                className={`cursor-pointer transition-all bg-white/[0.04] border-white/5 ${
                   activePhase === key
-                    ? 'border-purple-500 shadow-lg shadow-purple-500/20 scale-105'
-                    : 'hover:shadow-md hover:border-gray-600'
+                    ? 'border-violet-500 shadow-lg shadow-violet-500/20 scale-105'
+                    : 'hover:shadow-md hover:border-white/[0.06]'
                 }`}
                 onClick={() => setActivePhase(key)}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between mb-2">
-                    <div className="p-2 bg-purple-900/30 rounded-lg text-purple-400">
+                    <div className="p-2 bg-violet-500/10 rounded-lg text-violet-400">
                       {phase.icon}
                     </div>
-                    <Badge variant="outline" className="border-gray-600 text-gray-300">Phase {idx + 1}</Badge>
+                    <Badge variant="outline" className="border-white/[0.06] text-gray-300">Phase {idx + 1}</Badge>
                   </div>
                   <CardTitle className="text-lg text-white">{phase.title}</CardTitle>
                   <CardDescription className="text-gray-400">{phase.timing}</CardDescription>
@@ -225,10 +225,10 @@ export default function PVSSFrameworkPage() {
           </div>
 
           {/* Detailed Phase Info */}
-          <Card className="mt-8 bg-gray-800/50 border-purple-500/50">
+          <Card className="mt-8 bg-white/[0.04] border-violet-500/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
-                <span className="text-purple-400">{frameworkPhases[activePhase].icon}</span>
+                <span className="text-violet-400">{frameworkPhases[activePhase].icon}</span>
                 {frameworkPhases[activePhase].title} - Deep Dive
               </CardTitle>
             </CardHeader>
@@ -250,7 +250,7 @@ export default function PVSSFrameworkPage() {
                   </ul>
                 </div>
 
-                <div className="p-4 bg-purple-950/30 rounded-lg border border-purple-500/30">
+                <div className="p-4 bg-violet-950/30 rounded-lg border border-violet-500/30">
                   <p className="text-sm font-medium mb-1 text-white">Example Usage:</p>
                   <p className="italic text-gray-400">{frameworkPhases[activePhase].example}</p>
                 </div>
@@ -261,9 +261,9 @@ export default function PVSSFrameworkPage() {
       </section>
 
       {/* Real World Examples */}
-      <section className="py-20 bg-gradient-to-b from-black to-purple-950/20">
+      <section className="py-20 bg-gradient-to-b from-[#030303] to-violet-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-4 text-white">
             PVSS in Action: Viral Video Breakdowns
           </h2>
           <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
@@ -272,24 +272,24 @@ export default function PVSSFrameworkPage() {
 
           <div className="space-y-6">
             {viralExamples.map((example, idx) => (
-              <Card key={idx} className="overflow-hidden bg-gray-800/50 border-gray-700">
+              <Card key={idx} className="overflow-hidden bg-white/[0.04] border-white/5">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="text-white">{example.video}</CardTitle>
                       <CardDescription className="text-gray-400">{example.channel}</CardDescription>
                     </div>
-                    <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+                    <Badge className="bg-gradient-to-r from-violet-600 to-cyan-600 text-white">
                       {example.views} views
                     </Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-4 gap-4">
-                    <div className="p-3 bg-purple-950/30 rounded-lg border border-purple-500/20">
+                    <div className="p-3 bg-violet-950/30 rounded-lg border border-violet-500/20">
                       <div className="flex items-center gap-2 mb-2">
-                        <Brain className="w-4 h-4 text-purple-400" />
-                        <span className="text-xs font-medium text-purple-400">Pattern</span>
+                        <Brain className="w-4 h-4 text-violet-400" />
+                        <span className="text-xs font-medium text-violet-400">Pattern</span>
                       </div>
                       <p className="text-sm text-gray-300">{example.pattern}</p>
                     </div>
@@ -326,31 +326,31 @@ export default function PVSSFrameworkPage() {
       </section>
 
       {/* Templates Section */}
-      <section className="py-20 bg-black">
+      <section className="py-20 bg-[#030303]">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-12 text-white">
             PVSS Templates for Your Niche
           </h2>
 
           <Tabs defaultValue="education" className="max-w-4xl mx-auto">
-            <TabsList className="grid w-full grid-cols-3 bg-gray-800">
-              <TabsTrigger value="education" className="data-[state=active]:bg-purple-600">Education</TabsTrigger>
-              <TabsTrigger value="entertainment" className="data-[state=active]:bg-purple-600">Entertainment</TabsTrigger>
-              <TabsTrigger value="tutorial" className="data-[state=active]:bg-purple-600">Tutorial</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 bg-white/[0.06]">
+              <TabsTrigger value="education" className="data-[state=active]:bg-violet-600">Education</TabsTrigger>
+              <TabsTrigger value="entertainment" className="data-[state=active]:bg-violet-600">Entertainment</TabsTrigger>
+              <TabsTrigger value="tutorial" className="data-[state=active]:bg-violet-600">Tutorial</TabsTrigger>
             </TabsList>
 
             {Object.entries(scriptTemplates).map(([key, template]) => (
               <TabsContent key={key} value={key} className="mt-8">
-                <Card className="bg-gray-800/50 border-gray-700">
+                <Card className="bg-white/[0.04] border-white/5">
                   <CardHeader>
                     <CardTitle className="text-white">PVSS Template: {key.charAt(0).toUpperCase() + key.slice(1)}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="p-4 bg-purple-950/30 rounded-lg border border-purple-500/20">
+                      <div className="p-4 bg-violet-950/30 rounded-lg border border-violet-500/20">
                         <div className="flex items-center gap-2 mb-2">
-                          <Brain className="w-5 h-5 text-purple-400" />
-                          <span className="font-medium text-purple-400">Pattern</span>
+                          <Brain className="w-5 h-5 text-violet-400" />
+                          <span className="font-medium text-violet-400">Pattern</span>
                         </div>
                         <p className="italic text-gray-300">{template.pattern}</p>
                       </div>
@@ -380,7 +380,7 @@ export default function PVSSFrameworkPage() {
                       </div>
 
                       <Link href="/signup">
-                        <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                        <Button className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700">
                           Use This Template
                         </Button>
                       </Link>
@@ -394,16 +394,16 @@ export default function PVSSFrameworkPage() {
       </section>
 
       {/* Results Section */}
-      <section className="py-20 bg-gradient-to-b from-black to-purple-950/20">
+      <section className="py-20 bg-gradient-to-b from-[#030303] to-violet-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-12 text-white">
             PVSS Framework Results
           </h2>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
-                <CardTitle className="text-4xl font-bold text-purple-400">3x</CardTitle>
+                <CardTitle className="text-4xl font-bold text-violet-400">3x</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-400">
@@ -412,9 +412,9 @@ export default function PVSSFrameworkPage() {
               </CardContent>
             </Card>
 
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
-                <CardTitle className="text-4xl font-bold text-purple-400">
+                <CardTitle className="text-4xl font-bold text-violet-400">
                   {socialProofData.metrics.averageRetention}%
                 </CardTitle>
               </CardHeader>
@@ -425,9 +425,9 @@ export default function PVSSFrameworkPage() {
               </CardContent>
             </Card>
 
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
-                <CardTitle className="text-4xl font-bold text-purple-400">89%</CardTitle>
+                <CardTitle className="text-4xl font-bold text-violet-400">89%</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-400">
@@ -440,9 +440,9 @@ export default function PVSSFrameworkPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white">
+      <section className="py-20 bg-gradient-to-r from-violet-600 via-cyan-600 to-orange-600 text-white">
         <div className="container mx-auto px-4 max-w-4xl text-center">
-          <h2 className="text-4xl font-bold mb-6">
+          <h2 className="font-display text-4xl font-bold mb-6">
             Start Using The PVSS Framework Today
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">

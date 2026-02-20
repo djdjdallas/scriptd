@@ -6,14 +6,13 @@ import { createClient } from '@/lib/supabase/client';
 import { StaticCard } from '@/components/ui/static-card';
 import { Button } from '@/components/ui/button';
 import { getChannelGrowthMetrics, storeChannelMetrics } from '@/lib/youtube/growth-metrics';
-import { 
-  Plus, 
-  Youtube, 
-  Users, 
-  Eye, 
+import {
+  Plus,
+  Youtube,
+  Users,
+  Eye,
   PlayCircle,
   TrendingUp,
-  Sparkles,
   BarChart3,
   CheckCircle,
   AlertCircle,
@@ -150,7 +149,7 @@ export default function ChannelsPage() {
   if (loading) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 animate-pulse-slow">
+        <div className="vb-card p-8 animate-pulse-slow">
           <Youtube className="h-12 w-12 text-red-400 mx-auto animate-pulse" />
           <p className="mt-4 text-gray-300">Loading channels...</p>
         </div>
@@ -162,19 +161,12 @@ export default function ChannelsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-64 h-64 bg-red-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-      </div>
-
       {/* Header */}
       <div className="flex items-center justify-between animate-reveal">
         <div>
-          <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-            <Youtube className="h-10 w-10 text-red-400 neon-glow" />
+          <h1 className="text-4xl font-bold font-display text-white flex items-center gap-3">
+            <Youtube className="h-10 w-10 text-red-400" />
             My Channels
-            <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
           </h1>
           <p className="text-gray-400 mt-2">
             Connect and manage your YouTube channels
@@ -187,7 +179,7 @@ export default function ChannelsPage() {
         </div>
         <Link href="/channels/add">
           <Button 
-            className="glass-button bg-gradient-to-r from-red-500/50 to-pink-500/50 text-white group"
+            className="vb-btn-primary text-white group"
             disabled={!isPremium && channels.length >= 1}
           >
             <Plus className="mr-2 h-4 w-4 group-hover:rotate-90 transition-transform" />
@@ -197,17 +189,16 @@ export default function ChannelsPage() {
       </div>
 
       {!hasChannels ? (
-        <div className="glass-card p-16 text-center animate-reveal" style={{ animationDelay: '0.1s' }}>
+        <div className="vb-card p-16 text-center animate-reveal" style={{ animationDelay: '0.1s' }}>
           <div className="relative inline-block mb-6">
-            <Youtube className="h-24 w-24 text-red-400 neon-glow mx-auto" />
-            <Sparkles className="h-10 w-10 text-yellow-400 absolute -top-2 -right-2 animate-pulse" />
+            <Youtube className="h-24 w-24 text-red-400 mx-auto" />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-4">No channels connected</h2>
+          <h2 className="text-3xl font-bold font-display text-white mb-4">No channels connected</h2>
           <p className="text-gray-400 max-w-md mx-auto mb-8">
             Connect your YouTube channel to start analyzing your content and growing your audience with AI-powered insights
           </p>
           <Link href="/channels/add">
-            <Button size="lg" className="glass-button bg-gradient-to-r from-red-500/50 to-pink-500/50 text-white">
+            <Button size="lg" className="vb-btn-primary text-white">
               <Plus className="mr-2 h-5 w-5" />
               Add Your First Channel
             </Button>
@@ -215,18 +206,18 @@ export default function ChannelsPage() {
           
           {/* Features Preview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12">
-            <div className="glass-card p-6">
+            <div className="vb-card p-6">
               <BarChart3 className="h-8 w-8 text-blue-400 mx-auto mb-3" />
               <h3 className="font-semibold text-white">Analytics</h3>
               <p className="text-sm text-gray-400">Track performance metrics</p>
             </div>
-            <div className="glass-card p-6">
+            <div className="vb-card p-6">
               <TrendingUp className="h-8 w-8 text-green-400 mx-auto mb-3" />
               <h3 className="font-semibold text-white">Growth Insights</h3>
               <p className="text-sm text-gray-400">AI-powered recommendations</p>
             </div>
-            <div className="glass-card p-6">
-              <Users className="h-8 w-8 text-purple-400 mx-auto mb-3" />
+            <div className="vb-card p-6">
+              <Users className="h-8 w-8 text-violet-400 mx-auto mb-3" />
               <h3 className="font-semibold text-white">Audience Analysis</h3>
               <p className="text-sm text-gray-400">Understand your viewers</p>
             </div>
@@ -237,7 +228,7 @@ export default function ChannelsPage() {
           {channels.map((channel, index) => (
             <StaticCard key={channel.id}>
               <div 
-                className="glass-card glass-hover overflow-hidden group h-full"
+                className="vb-card-interactive overflow-hidden group h-full"
                 onMouseEnter={() => setHoveredChannel(channel.id)}
                 onMouseLeave={() => setHoveredChannel(null)}
                 style={{ animationDelay: `${0.1 + index * 0.05}s` }}
@@ -260,7 +251,7 @@ export default function ChannelsPage() {
                           }}
                         />
                       ) : (
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500/20 to-pink-500/20 flex items-center justify-center ring-2 ring-red-400/50">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500/20 to-red-400/10 flex items-center justify-center ring-2 ring-red-400/50">
                           <Youtube className="h-8 w-8 text-red-400" />
                         </div>
                       )}
@@ -276,7 +267,7 @@ export default function ChannelsPage() {
 
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="glass p-3 rounded-lg">
+                    <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-3">
                       <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
                         <Users className="h-3 w-3" />
                         Subscribers
@@ -285,7 +276,7 @@ export default function ChannelsPage() {
                         {formatNumber(channel.subscriber_count || 0)}
                       </p>
                     </div>
-                    <div className="glass p-3 rounded-lg">
+                    <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-3">
                       <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
                         <Eye className="h-3 w-3" />
                         Total Views
@@ -294,7 +285,7 @@ export default function ChannelsPage() {
                         {channel.view_count ? formatNumber(channel.view_count) : '0'}
                       </p>
                     </div>
-                    <div className="glass p-3 rounded-lg">
+                    <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-3">
                       <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
                         <PlayCircle className="h-3 w-3" />
                         Videos
@@ -303,7 +294,7 @@ export default function ChannelsPage() {
                         {formatNumber(channel.video_count || 0)}
                       </p>
                     </div>
-                    <div className="glass p-3 rounded-lg">
+                    <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-3">
                       <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
                         <TrendingUp className="h-3 w-3" />
                         Growth (30d)
@@ -341,19 +332,13 @@ export default function ChannelsPage() {
                       )}
                     </div>
                     <Link href={`/channels/${channel.id}`}>
-                      <Button className="glass-button text-white text-sm">
+                      <Button className="vb-btn-outline text-white text-sm">
                         Manage
                         <ExternalLink className="h-3 w-3 ml-1" />
                       </Button>
                     </Link>
                   </div>
 
-                  {/* Hover effect indicator */}
-                  {hoveredChannel === channel.id && (
-                    <div className="absolute top-0 right-0 p-2">
-                      <Sparkles className="h-4 w-4 text-yellow-400 animate-pulse" />
-                    </div>
-                  )}
                 </div>
               </div>
             </StaticCard>
@@ -363,9 +348,9 @@ export default function ChannelsPage() {
           {(isPremium || channels.length < 1) && (
             <StaticCard>
               <Link href="/channels/add">
-                <div className="glass-card glass-hover h-full flex flex-col items-center justify-center p-8 group cursor-pointer">
-                  <div className="glass w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Plus className="h-8 w-8 text-purple-400" />
+                <div className="vb-card-interactive h-full flex flex-col items-center justify-center p-8 group cursor-pointer">
+                  <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Plus className="h-8 w-8 text-violet-400" />
                   </div>
                   <h3 className="text-white font-semibold mb-2">Add Channel</h3>
                   <p className="text-sm text-gray-400 text-center">
@@ -380,9 +365,9 @@ export default function ChannelsPage() {
 
       {/* Channel Limit Message for Free Users */}
       {!isPremium && channels.length >= 1 && (
-        <div className="glass-card p-6 animate-reveal border border-yellow-400/30 bg-yellow-400/5" style={{ animationDelay: '0.2s' }}>
+        <div className="vb-card p-6 animate-reveal border border-yellow-400/30 bg-yellow-400/5" style={{ animationDelay: '0.2s' }}>
           <div className="flex items-start gap-4">
-            <div className="glass w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 bg-yellow-400/20">
+            <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 bg-yellow-400/20">
               <Crown className="h-6 w-6 text-yellow-400" />
             </div>
             <div className="flex-1">
@@ -393,7 +378,7 @@ export default function ChannelsPage() {
                 You've reached the maximum of 1 channel for free accounts. Upgrade to add unlimited channels and unlock premium features.
               </p>
               <Link href="/pricing">
-                <Button className="glass-button bg-gradient-to-r from-yellow-500/50 to-orange-500/50 text-white">
+                <Button className="vb-btn-outline bg-gradient-to-r from-yellow-500/50 to-orange-500/50 text-white">
                   <Crown className="mr-2 h-4 w-4" />
                   Upgrade to Premium
                 </Button>
@@ -405,14 +390,13 @@ export default function ChannelsPage() {
 
       {/* Tips Section */}
       {hasChannels && (
-        <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.3s' }}>
-          <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-yellow-400" />
+        <div className="vb-card p-6 animate-reveal" style={{ animationDelay: '0.3s' }}>
+          <h3 className="text-lg font-semibold font-display text-white mb-3 flex items-center gap-2">
             Pro Tips
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
             <div className="flex gap-3">
-              <div className="glass w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl w-10 h-10 flex items-center justify-center flex-shrink-0">
                 <BarChart3 className="h-5 w-5 text-blue-400" />
               </div>
               <div>
@@ -421,7 +405,7 @@ export default function ChannelsPage() {
               </div>
             </div>
             <div className="flex gap-3">
-              <div className="glass w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl w-10 h-10 flex items-center justify-center flex-shrink-0">
                 <TrendingUp className="h-5 w-5 text-green-400" />
               </div>
               <div>
@@ -430,8 +414,8 @@ export default function ChannelsPage() {
               </div>
             </div>
             <div className="flex gap-3">
-              <div className="glass w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Users className="h-5 w-5 text-purple-400" />
+              <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl w-10 h-10 flex items-center justify-center flex-shrink-0">
+                <Users className="h-5 w-5 text-violet-400" />
               </div>
               <div>
                 <p className="text-sm text-white font-medium">Know Your Audience</p>

@@ -148,12 +148,12 @@ const faqs = [
 
 export default function AIScriptWriterYouTubePage() {
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#030303]">
       {/* Hero */}
       <MarketingHero
         badge={
           <>
-            <Brain className="w-4 h-4 text-purple-400" />
+            <Brain className="w-4 h-4 text-violet-400" />
             <span className="text-sm text-gray-300">AI-Powered Script Writing</span>
           </>
         }
@@ -167,7 +167,7 @@ export default function AIScriptWriterYouTubePage() {
         subtitle="The only AI script writer that understands YouTube's policies, matches your voice, and optimizes for retention. Not a generic tool -a YouTube specialist."
         primaryCTA={
           <Link href="/login">
-            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8">
+            <Button size="lg" className="bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700 text-white px-8">
               Try AI Script Writer Free
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -175,7 +175,7 @@ export default function AIScriptWriterYouTubePage() {
         }
         secondaryCTA={
           <Link href="/compare/genscript-vs-chatgpt">
-            <Button size="lg" variant="outline" className="border-gray-700 hover:bg-gray-800">
+            <Button size="lg" variant="outline" className="border-white/5 hover:bg-white/[0.06]">
               <RefreshCw className="w-4 h-4 mr-2" />
               See ChatGPT Comparison
             </Button>
@@ -191,18 +191,18 @@ export default function AIScriptWriterYouTubePage() {
       {/* Why AI for YouTube */}
       <MarketingSection>
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">Why Use AI for YouTube Scripts?</h2>
+          <h2 className="text-4xl font-bold font-display text-white mb-4">Why Use AI for YouTube Scripts?</h2>
           <p className="text-xl text-gray-400">Purpose-built AI that understands the platform</p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {whyAI.map((item, idx) => (
             <MarketingCard key={idx} className="p-6 text-center">
-              <div className="w-14 h-14 rounded-xl bg-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                <item.icon className="w-7 h-7 text-purple-400" />
+              <div className="w-14 h-14 rounded-xl bg-violet-500/10 flex items-center justify-center mx-auto mb-4">
+                <item.icon className="w-7 h-7 text-violet-400" />
               </div>
               <div className="text-3xl font-bold text-white mb-1">{item.stat}</div>
-              <div className="text-sm text-purple-400 mb-3">{item.statLabel}</div>
+              <div className="text-sm text-violet-400 mb-3">{item.statLabel}</div>
               <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
               <p className="text-sm text-gray-400">{item.description}</p>
             </MarketingCard>
@@ -213,7 +213,7 @@ export default function AIScriptWriterYouTubePage() {
       {/* AI vs Manual */}
       <MarketingSection>
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">AI vs Manual Script Writing</h2>
+          <h2 className="text-4xl font-bold font-display text-white mb-4">AI vs Manual Script Writing</h2>
           <p className="text-xl text-gray-400">See what you gain by switching to AI</p>
         </div>
 
@@ -221,18 +221,18 @@ export default function AIScriptWriterYouTubePage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-800">
+                <tr className="border-b border-white/5">
                   <th className="text-left py-4 px-6 text-gray-400 font-medium">Aspect</th>
                   <th className="text-center py-4 px-6 text-gray-400 font-medium">Manual Writing</th>
-                  <th className="text-center py-4 px-6 text-purple-400 font-medium">GenScript AI</th>
+                  <th className="text-center py-4 px-6 text-violet-400 font-medium">GenScript AI</th>
                 </tr>
               </thead>
               <tbody>
                 {aiVsManual.map((row, idx) => (
-                  <tr key={idx} className="border-b border-gray-800">
+                  <tr key={idx} className="border-b border-white/5">
                     <td className="py-4 px-6 text-white font-medium">{row.aspect}</td>
                     <td className="py-4 px-6 text-center text-gray-400">{row.manual}</td>
-                    <td className="py-4 px-6 text-center text-green-400 bg-purple-500/5">{row.ai}</td>
+                    <td className="py-4 px-6 text-center text-green-400 bg-violet-500/10">{row.ai}</td>
                   </tr>
                 ))}
               </tbody>
@@ -244,7 +244,7 @@ export default function AIScriptWriterYouTubePage() {
       {/* The GenScript Difference */}
       <MarketingSection>
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">The GenScript AI Difference</h2>
+          <h2 className="text-4xl font-bold font-display text-white mb-4">The GenScript AI Difference</h2>
           <p className="text-xl text-gray-400">What makes our AI different from generic tools</p>
         </div>
 
@@ -252,8 +252,8 @@ export default function AIScriptWriterYouTubePage() {
           {aiDifference.map((item, idx) => (
             <MarketingCard key={idx} className="p-6">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                  <item.icon className="w-6 h-6 text-purple-400" />
+                <div className="w-12 h-12 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+                  <item.icon className="w-6 h-6 text-violet-400" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-white mb-2">{item.title}</h3>
@@ -304,7 +304,7 @@ export default function AIScriptWriterYouTubePage() {
         subtitle="50 free credits. No credit card required. See the difference AI can make."
         badge={
           <>
-            <Brain className="w-4 h-4 text-purple-400" />
+            <Brain className="w-4 h-4 text-violet-400" />
             <span className="text-sm text-gray-300">YouTube-Specialized AI</span>
           </>
         }
@@ -316,7 +316,7 @@ export default function AIScriptWriterYouTubePage() {
         ]}
         primaryButton={
           <Link href="/login">
-            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8">
+            <Button size="lg" className="bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700 text-white px-8">
               Start Writing with AI
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -324,7 +324,7 @@ export default function AIScriptWriterYouTubePage() {
         }
         secondaryButton={
           <Link href="/tools/youtube-script-generator">
-            <Button size="lg" variant="outline" className="border-gray-700 hover:bg-gray-800">
+            <Button size="lg" variant="outline" className="border-white/5 hover:bg-white/[0.06]">
               Learn More
             </Button>
           </Link>

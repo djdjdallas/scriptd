@@ -201,8 +201,8 @@ export default function TeamSettingsPage() {
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-            <p className="text-gray-600">Loading team settings...</p>
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-violet-400" />
+            <p className="text-white/50">Loading team settings...</p>
           </div>
         </div>
       </div>
@@ -252,14 +252,14 @@ export default function TeamSettingsPage() {
         </Button>
 
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold font-display text-white">
             Team Settings
           </h1>
           {team.user_role === 'owner' && (
             <Crown className="w-6 h-6 text-yellow-500" />
           )}
         </div>
-        <p className="text-gray-600 text-lg">
+        <p className="text-white/50 text-lg">
           Manage settings for {team.name}
         </p>
       </div>
@@ -267,9 +267,9 @@ export default function TeamSettingsPage() {
       <div className="space-y-6">
         {/* Success Message */}
         {success && (
-          <Alert className="border-green-200 bg-green-50">
-            <CheckCircle className="w-4 h-4 text-green-600" />
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
+          <Alert className="border-green-500/20 bg-green-500/10">
+            <CheckCircle className="w-4 h-4 text-green-400" />
+            <AlertDescription className="text-green-300">{success}</AlertDescription>
           </Alert>
         )}
 
@@ -295,7 +295,7 @@ export default function TeamSettingsPage() {
                   disabled={isSaving}
                   maxLength={50}
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-white/40">
                   {formData.name.length}/50 characters
                 </p>
               </div>
@@ -313,7 +313,7 @@ export default function TeamSettingsPage() {
                   rows={3}
                   className="resize-none"
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-white/40">
                   {formData.description.length}/200 characters
                 </p>
               </div>
@@ -345,18 +345,18 @@ export default function TeamSettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label className="text-sm font-medium text-gray-600">Team ID</Label>
-                <p className="text-sm text-gray-900 font-mono">{team.id}</p>
+                <Label className="text-sm font-medium text-white/50">Team ID</Label>
+                <p className="text-sm text-white font-mono">{team.id}</p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-600">Owner</Label>
-                <p className="text-sm text-gray-900">
+                <Label className="text-sm font-medium text-white/50">Owner</Label>
+                <p className="text-sm text-white">
                   {team.user_role === 'owner' ? 'You' : 'Another team member'}
                 </p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-600">Created</Label>
-                <p className="text-sm text-gray-900">
+                <Label className="text-sm font-medium text-white/50">Created</Label>
+                <p className="text-sm text-white">
                   {new Date(team.created_at).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
@@ -367,8 +367,8 @@ export default function TeamSettingsPage() {
                 </p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-600">Last Updated</Label>
-                <p className="text-sm text-gray-900">
+                <Label className="text-sm font-medium text-white/50">Last Updated</Label>
+                <p className="text-sm text-white">
                   {new Date(team.updated_at).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
@@ -384,17 +384,17 @@ export default function TeamSettingsPage() {
 
         {/* Danger Zone - Only for owners */}
         {userPermissions.canDeleteTeam && (
-          <Card className="border-red-200">
+          <Card className="border-red-500/20">
             <CardHeader>
-              <CardTitle className="text-red-700 flex items-center gap-2">
+              <CardTitle className="text-red-400 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5" />
                 Danger Zone
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 bg-red-50 rounded-lg">
-                <h4 className="font-medium text-red-900 mb-2">Delete Team</h4>
-                <p className="text-sm text-red-800 mb-4">
+              <div className="p-4 bg-red-500/10 rounded-lg">
+                <h4 className="font-medium text-red-300 mb-2">Delete Team</h4>
+                <p className="text-sm text-red-400/80 mb-4">
                   Once you delete a team, there is no going back. This will permanently delete 
                   the team, remove all members, and delete all associated data including scripts.
                 </p>
@@ -416,7 +416,7 @@ export default function TeamSettingsPage() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-700">
+            <DialogTitle className="flex items-center gap-2 text-red-400">
               <AlertTriangle className="w-5 h-5" />
               Delete Team
             </DialogTitle>
@@ -427,7 +427,7 @@ export default function TeamSettingsPage() {
           </DialogHeader>
           
           <div className="py-4">
-            <ul className="text-sm text-gray-600 space-y-1 ml-4">
+            <ul className="text-sm text-white/40 space-y-1 ml-4">
               <li>• All team members will be removed</li>
               <li>• All team scripts will be deleted</li>
               <li>• All team activity history will be lost</li>
@@ -435,7 +435,7 @@ export default function TeamSettingsPage() {
             </ul>
           </div>
 
-          <div className="bg-red-50 p-3 rounded text-sm text-red-800">
+          <div className="bg-red-500/10 p-3 rounded text-sm text-red-300">
             <strong>Warning:</strong> This action is irreversible. Make sure you have backed up 
             any important scripts before proceeding.
           </div>

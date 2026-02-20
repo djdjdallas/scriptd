@@ -97,7 +97,7 @@ export default function CreateManualScriptPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="glass-card p-6">
+          <div className="vb-card p-6">
             <div className="space-y-4">
               <div>
                 <Label htmlFor="title">Title *</Label>
@@ -106,7 +106,7 @@ export default function CreateManualScriptPage() {
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
                   placeholder="Enter script title..."
-                  className="glass-input"
+                  className="vb-input"
                   required
                 />
               </div>
@@ -118,7 +118,7 @@ export default function CreateManualScriptPage() {
                   value={formData.hook}
                   onChange={(e) => setFormData({...formData, hook: e.target.value})}
                   placeholder="Attention-grabbing opening..."
-                  className="glass-input"
+                  className="vb-input"
                 />
               </div>
 
@@ -129,7 +129,7 @@ export default function CreateManualScriptPage() {
                   value={formData.content}
                   onChange={(e) => setFormData({...formData, content: e.target.value})}
                   placeholder="Your script content..."
-                  className="glass-input min-h-[300px]"
+                  className="vb-input min-h-[300px]"
                   required
                 />
               </div>
@@ -141,7 +141,7 @@ export default function CreateManualScriptPage() {
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   placeholder="Brief description of the script..."
-                  className="glass-input"
+                  className="vb-input"
                   rows={3}
                 />
               </div>
@@ -152,7 +152,7 @@ export default function CreateManualScriptPage() {
                   id="type"
                   value={formData.type}
                   onChange={(e) => setFormData({...formData, type: e.target.value})}
-                  className="glass-input w-full"
+                  className="vb-input w-full"
                 >
                   <option value="general">General</option>
                   <option value="educational">Educational</option>
@@ -172,7 +172,7 @@ export default function CreateManualScriptPage() {
                     tags: e.target.value.split(',').map(t => t.trim()).filter(t => t)
                   })}
                   placeholder="tag1, tag2, tag3..."
-                  className="glass-input"
+                  className="vb-input"
                 />
               </div>
             </div>
@@ -189,7 +189,7 @@ export default function CreateManualScriptPage() {
             </Button>
             <Button
               type="submit"
-              className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50"
+              className="vb-btn-primary"
               disabled={loading}
             >
               {loading ? (

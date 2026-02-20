@@ -152,7 +152,7 @@ export default function BillingPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Billing & Credits</h1>
+        <h1 className="text-3xl font-bold font-display">Billing & Credits</h1>
         <p className="text-muted-foreground">
           Manage your subscription and credit balance
         </p>
@@ -219,7 +219,7 @@ export default function BillingPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold">{currentPlan.name}</h3>
+                <h3 className="text-2xl font-bold font-display">{currentPlan.name}</h3>
                 <p className="text-muted-foreground">
                   {currentPlan.price ? `$${currentPlan.price}/month` : 'No subscription'}
                 </p>
@@ -249,7 +249,7 @@ export default function BillingPage() {
 
       {/* Credit Packages */}
       <div>
-        <h2 className="text-2xl font-bold mb-4">Buy Credits</h2>
+        <h2 className="text-2xl font-bold font-display mb-4">Buy Credits</h2>
         <div className="grid gap-4 md:grid-cols-3">
           {Object.values(CREDIT_PACKAGES).map((pkg) => (
             <Card key={pkg.id} className={pkg.badge ? 'border-primary' : ''}>
@@ -311,7 +311,7 @@ export default function BillingPage() {
                 <div key={tx.id} className="flex items-center justify-between py-2 border-b last:border-0">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-full ${
-                      tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                      tx.amount > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
                     }`}>
                       {tx.amount > 0 ? <Plus className="h-4 w-4" /> : <Download className="h-4 w-4" />}
                     </div>
@@ -323,7 +323,7 @@ export default function BillingPage() {
                     </div>
                   </div>
                   <p className={`font-medium ${
-                    tx.amount > 0 ? 'text-green-600' : 'text-red-600'
+                    tx.amount > 0 ? 'text-emerald-400' : 'text-red-400'
                   }`}>
                     {tx.amount > 0 ? '+' : ''}{tx.amount}
                   </p>

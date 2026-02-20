@@ -8,9 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { 
-  Sparkles, 
-  Copy, 
+import {
+  Sparkles,
+  Copy,
   RefreshCw,
   Loader2,
   AlertCircle,
@@ -40,7 +40,7 @@ export default function TitleGeneratorPage() {
 
   const generateTitles = async (e) => {
     e.preventDefault();
-    
+
     if (!topic.trim()) {
       toast({
         title: "Topic Required",
@@ -106,18 +106,18 @@ export default function TitleGeneratorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black py-20 px-4">
+    <div className="min-h-screen bg-[#030303] py-20 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-white">YouTube Title Generator</h1>
+          <h1 className="text-4xl font-bold font-display text-white">YouTube Title Generator</h1>
           <p className="text-xl text-gray-400">
             Create compelling titles that get clicks and rank in search
           </p>
         </div>
 
         {/* Generator Form */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Generate Titles</CardTitle>
             <CardDescription className="text-gray-400">
@@ -134,7 +134,7 @@ export default function TitleGeneratorPage() {
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   disabled={loading}
-                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                  className="bg-white/[0.04] border-white/5 text-white placeholder:text-gray-500"
                 />
               </div>
 
@@ -146,7 +146,7 @@ export default function TitleGeneratorPage() {
                   value={keywords}
                   onChange={(e) => setKeywords(e.target.value)}
                   disabled={loading}
-                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                  className="bg-white/[0.04] border-white/5 text-white placeholder:text-gray-500"
                 />
                 <p className="text-sm text-gray-400">
                   Add keywords you want to rank for in YouTube search
@@ -168,10 +168,10 @@ export default function TitleGeneratorPage() {
                           />
                           <Label
                             htmlFor={s.id}
-                            className="flex items-center justify-between rounded-md border-2 border-gray-700 bg-gray-900 p-4 hover:bg-gray-800 peer-data-[state=checked]:border-purple-500 cursor-pointer"
+                            className="flex items-center justify-between rounded-md border-2 border-white/5 bg-white/[0.04] p-4 hover:bg-white/[0.06] peer-data-[state=checked]:border-violet-500 cursor-pointer"
                           >
                             <div className="flex items-center gap-3">
-                              <Icon className="h-5 w-5 text-purple-400" />
+                              <Icon className="h-5 w-5 text-violet-400" />
                               <div>
                                 <p className="font-medium text-white">{s.label}</p>
                                 <p className="text-xs text-gray-400">{s.example}</p>
@@ -185,7 +185,7 @@ export default function TitleGeneratorPage() {
                 </RadioGroup>
               </div>
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" disabled={loading}>
+              <Button type="submit" className="w-full bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -204,7 +204,7 @@ export default function TitleGeneratorPage() {
 
         {/* Results */}
         {hasGenerated && (
-          <Card className="bg-gray-800/50 border-gray-700">
+          <Card className="bg-white/[0.04] border-white/5">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -219,7 +219,7 @@ export default function TitleGeneratorPage() {
                     size="sm"
                     onClick={regenerate}
                     disabled={loading}
-                    className="border-gray-600 hover:bg-gray-700 text-white"
+                    className="border-white/[0.06] hover:bg-white/[0.06] text-white"
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Regenerate
@@ -237,7 +237,7 @@ export default function TitleGeneratorPage() {
                   {titles.map((title, index) => (
                     <div
                       key={index}
-                      className="group p-4 rounded-lg border border-gray-700 hover:border-purple-500 hover:bg-gray-700/50 cursor-pointer transition-all"
+                      className="group p-4 rounded-lg border border-white/5 hover:border-violet-500 hover:bg-white/[0.06] cursor-pointer transition-all"
                       onClick={() => copyTitle(title.text)}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -246,7 +246,7 @@ export default function TitleGeneratorPage() {
                           <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
                             <span>{title.text.length} characters</span>
                             {title.score && (
-                              <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                              <Badge className="bg-violet-500/10 text-violet-400 border-violet-500/30">
                                 Score: {title.score}/10
                               </Badge>
                             )}
@@ -274,14 +274,14 @@ export default function TitleGeneratorPage() {
         )}
 
         {/* Tips */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Title Optimization Tips</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex gap-3">
-              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-semibold text-purple-400">1</span>
+              <div className="h-6 w-6 rounded-full bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-semibold text-violet-400">1</span>
               </div>
               <div>
                 <p className="font-medium text-white">Keep it under 60 characters</p>
@@ -292,8 +292,8 @@ export default function TitleGeneratorPage() {
             </div>
 
             <div className="flex gap-3">
-              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-semibold text-purple-400">2</span>
+              <div className="h-6 w-6 rounded-full bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-semibold text-violet-400">2</span>
               </div>
               <div>
                 <p className="font-medium text-white">Front-load important keywords</p>
@@ -304,8 +304,8 @@ export default function TitleGeneratorPage() {
             </div>
 
             <div className="flex gap-3">
-              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-semibold text-purple-400">3</span>
+              <div className="h-6 w-6 rounded-full bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-semibold text-violet-400">3</span>
               </div>
               <div>
                 <p className="font-medium text-white">Create curiosity without clickbait</p>
@@ -318,7 +318,7 @@ export default function TitleGeneratorPage() {
         </Card>
 
         {/* CTA */}
-        <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30">
+        <Card className="bg-gradient-to-r from-violet-500/50 to-cyan-500/50 border-violet-500/30">
           <CardContent className="pt-6 text-center">
             <h3 className="text-lg font-semibold mb-2 text-white">
               Want to Generate Complete Scripts?
@@ -326,7 +326,7 @@ export default function TitleGeneratorPage() {
             <p className="text-gray-400 mb-4">
               Sign up for free and get access to our full AI script generator
             </p>
-            <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+            <Button asChild className="bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700">
               <Link href="/signup">
                 Get Started Free
               </Link>

@@ -149,7 +149,7 @@ const shortsFeatures = [
     icon: Sparkles,
     title: 'Series Mode',
     description: 'Generate connected Shorts series that keep viewers coming back for more.',
-    gradient: 'from-purple-500/20 to-pink-500/20'
+    gradient: 'from-violet-500/10 to-cyan-500/20'
   }
 ];
 
@@ -183,7 +183,7 @@ const faqs = [
 
 export default function YouTubeShortsScriptGeneratorPage() {
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#030303]">
       {/* Hero */}
       <MarketingHero
         badge={
@@ -194,15 +194,15 @@ export default function YouTubeShortsScriptGeneratorPage() {
         }
         title={
           <>
-            YouTube Shorts
+            <span className="font-display">YouTube Shorts</span>
             <br />
-            <span className="text-3xl md:text-5xl text-gray-400">Script Generator</span>
+            <span className="text-3xl md:text-5xl text-gray-400 font-display">Script Generator</span>
           </>
         }
         subtitle="Generate scroll-stopping Shorts scripts in 15s, 30s, or 60s formats. Hooks that capture attention in under 2 seconds."
         primaryCTA={
           <Link href="/login">
-            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8">
+            <Button size="lg" className="bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700 text-white px-8">
               Generate Shorts Scripts
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -210,7 +210,7 @@ export default function YouTubeShortsScriptGeneratorPage() {
         }
         secondaryCTA={
           <Link href="/tools/youtube-script-generator">
-            <Button size="lg" variant="outline" className="border-gray-700 hover:bg-gray-800">
+            <Button size="lg" variant="outline" className="border-white/5 hover:bg-white/[0.06]">
               <FileText className="w-4 h-4 mr-2" />
               Long-Form Scripts
             </Button>
@@ -226,21 +226,21 @@ export default function YouTubeShortsScriptGeneratorPage() {
       {/* Format Selector */}
       <MarketingSection>
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">Choose Your Format</h2>
+          <h2 className="text-4xl font-bold font-display text-white mb-4">Choose Your Format</h2>
           <p className="text-xl text-gray-400">Optimized templates for every Shorts length</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
           {shortsFormats.map((format, idx) => (
             <MarketingCard key={idx} className="p-6 text-center">
-              <div className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
+              <div className="text-4xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent mb-2">
                 {format.duration}
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">{format.title}</h3>
               <p className="text-sm text-gray-400 mb-4">{format.description}</p>
-              <div className="p-3 bg-purple-500/10 rounded-lg mb-4">
+              <div className="p-3 bg-violet-500/10 rounded-lg mb-4">
                 <div className="text-xs text-gray-500 mb-1">Structure</div>
-                <div className="text-sm text-purple-300">{format.structure}</div>
+                <div className="text-sm text-violet-300">{format.structure}</div>
               </div>
               <div className="text-xs text-gray-500">
                 <strong className="text-gray-400">Best for:</strong> {format.bestFor}
@@ -253,18 +253,18 @@ export default function YouTubeShortsScriptGeneratorPage() {
       {/* What Makes Shorts Different */}
       <MarketingSection>
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">Shorts Are a Different Game</h2>
+          <h2 className="text-4xl font-bold font-display text-white mb-4">Shorts Are a Different Game</h2>
           <p className="text-xl text-gray-400">Why you need a specialized script generator</p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {shortsDifference.map((item, idx) => (
             <MarketingCard key={idx} className="p-6 text-center">
-              <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                <item.icon className="w-6 h-6 text-purple-400" />
+              <div className="w-12 h-12 rounded-lg bg-violet-500/10 flex items-center justify-center mx-auto mb-4">
+                <item.icon className="w-6 h-6 text-violet-400" />
               </div>
               <div className="text-2xl font-bold text-white mb-1">{item.stat}</div>
-              <div className="text-xs text-purple-400 mb-3">{item.statLabel}</div>
+              <div className="text-xs text-violet-400 mb-3">{item.statLabel}</div>
               <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
               <p className="text-sm text-gray-400">{item.description}</p>
             </MarketingCard>
@@ -275,7 +275,7 @@ export default function YouTubeShortsScriptGeneratorPage() {
       {/* Hook Styles */}
       <MarketingSection>
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">Scroll-Stopping Hook Styles</h2>
+          <h2 className="text-4xl font-bold font-display text-white mb-4">Scroll-Stopping Hook Styles</h2>
           <p className="text-xl text-gray-400">500+ proven hooks across 6 engagement patterns</p>
         </div>
 
@@ -283,7 +283,7 @@ export default function YouTubeShortsScriptGeneratorPage() {
           {hookStyles.map((hook, idx) => (
             <MarketingCard key={idx} className="p-4">
               <div className="font-semibold text-white mb-2">{hook.name}</div>
-              <div className="text-sm text-purple-400 italic mb-2">&quot;{hook.example}&quot;</div>
+              <div className="text-sm text-violet-400 italic mb-2">&quot;{hook.example}&quot;</div>
               <div className="text-xs text-gray-500">Best when: {hook.when}</div>
             </MarketingCard>
           ))}
@@ -293,7 +293,7 @@ export default function YouTubeShortsScriptGeneratorPage() {
       {/* Shorts Features */}
       <MarketingSection>
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">Built for Short-Form Success</h2>
+          <h2 className="text-4xl font-bold font-display text-white mb-4">Built for Short-Form Success</h2>
           <p className="text-xl text-gray-400">Features designed specifically for Shorts creators</p>
         </div>
 
@@ -313,7 +313,7 @@ export default function YouTubeShortsScriptGeneratorPage() {
       {/* Example Script */}
       <MarketingSection>
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">Example: 30-Second Script</h2>
+          <h2 className="text-4xl font-bold font-display text-white mb-4">Example: 30-Second Script</h2>
           <p className="text-xl text-gray-400">See what a GenScript Shorts script looks like</p>
         </div>
 
@@ -329,17 +329,17 @@ export default function YouTubeShortsScriptGeneratorPage() {
           </div>
 
           <div className="space-y-4 text-gray-300">
-            <div className="p-3 bg-purple-500/10 rounded-lg border-l-4 border-purple-500">
-              <div className="text-xs text-purple-400 mb-1">HOOK (0-3s)</div>
+            <div className="p-3 bg-violet-500/10 rounded-lg border-l-4 border-violet-600">
+              <div className="text-xs text-violet-400 mb-1">HOOK (0-3s)</div>
               <p className="text-white">&quot;Stop doing this with your iPhone.&quot;</p>
             </div>
 
-            <div className="p-3 bg-gray-800/50 rounded-lg">
+            <div className="p-3 bg-white/[0.04] rounded-lg">
               <div className="text-xs text-gray-500 mb-1">PROBLEM (3-8s)</div>
               <p>&quot;That double-tap screenshot thing? It&apos;s been saving to the wrong album this whole time.&quot;</p>
             </div>
 
-            <div className="p-3 bg-gray-800/50 rounded-lg">
+            <div className="p-3 bg-white/[0.04] rounded-lg">
               <div className="text-xs text-gray-500 mb-1">SOLUTION (8-25s)</div>
               <p>&quot;Here&apos;s the fix -takes 10 seconds. Settings, Accessibility, Touch, Back Tap, Double Tap, and change it to Screenshot. Now watch...&quot;</p>
             </div>
@@ -376,7 +376,7 @@ export default function YouTubeShortsScriptGeneratorPage() {
         ]}
         primaryButton={
           <Link href="/login">
-            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8">
+            <Button size="lg" className="bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700 text-white px-8">
               Generate Shorts Scripts
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -384,7 +384,7 @@ export default function YouTubeShortsScriptGeneratorPage() {
         }
         secondaryButton={
           <Link href="/tools/youtube-script-generator">
-            <Button size="lg" variant="outline" className="border-gray-700 hover:bg-gray-800">
+            <Button size="lg" variant="outline" className="border-white/5 hover:bg-white/[0.06]">
               Long-Form Scripts
             </Button>
           </Link>

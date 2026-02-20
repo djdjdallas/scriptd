@@ -60,7 +60,7 @@ export default function AdminPage() {
         <Card className="max-w-md w-full bg-slate-900/50 border-slate-800">
           <CardContent className="p-8 text-center">
             <AlertTriangle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-white mb-2">Access Denied</h2>
+            <h2 className="text-xl font-semibold font-display text-white mb-2">Access Denied</h2>
             <p className="text-slate-400 mb-6">
               You don't have admin permissions to access this area.
             </p>
@@ -92,7 +92,7 @@ export default function AdminPage() {
             <div className="flex items-center gap-3">
               <Shield className="h-6 w-6 text-red-500" />
               <div>
-                <h1 className="text-xl font-semibold text-white">Admin Dashboard</h1>
+                <h1 className="text-xl font-semibold font-display text-white">Admin Dashboard</h1>
                 <p className="text-sm text-slate-400">Platform Administration</p>
               </div>
             </div>

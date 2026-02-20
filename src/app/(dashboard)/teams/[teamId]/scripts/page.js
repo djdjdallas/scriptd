@@ -113,9 +113,9 @@ export default function TeamScriptsPage() {
 
   const getStatusColor = (status) => {
     const colors = {
-      draft: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      published: 'bg-green-100 text-green-800 border-green-200',
-      archived: 'bg-gray-100 text-gray-800 border-gray-200',
+      draft: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+      published: 'bg-green-500/10 text-green-400 border-green-500/20',
+      archived: 'bg-white/[0.06] text-white/50 border-white/10',
     };
     return colors[status] || colors.draft;
   };
@@ -130,8 +130,8 @@ export default function TeamScriptsPage() {
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-            <p className="text-gray-600">Loading team scripts...</p>
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-violet-400" />
+            <p className="text-white/50">Loading team scripts...</p>
           </div>
         </div>
       </div>
@@ -177,17 +177,17 @@ export default function TeamScriptsPage() {
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-gray-900 truncate">
+              <h1 className="text-3xl font-bold font-display text-white truncate">
                 Team Scripts
               </h1>
               {team.user_role === 'owner' && (
                 <Crown className="w-6 h-6 text-yellow-500 flex-shrink-0" />
               )}
             </div>
-            <p className="text-gray-600 text-lg">
+            <p className="text-white/50 text-lg">
               Collaborate on scripts for {team.name}
             </p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-white/40 mt-1">
               {scripts.length} {scripts.length === 1 ? 'script' : 'scripts'} total
             </p>
           </div>
@@ -209,7 +209,7 @@ export default function TeamScriptsPage() {
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex-1 min-w-[300px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/30" />
                 <Input
                   placeholder="Search scripts..."
                   value={searchQuery}
@@ -256,15 +256,15 @@ export default function TeamScriptsPage() {
                 Coming Soon
               </Badge>
             </div>
-            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <FileText className="w-16 h-16 text-white/20 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">
               Team Scripts Coming Soon
             </h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            <p className="text-white/50 mb-6 max-w-md mx-auto">
               We&apos;re working on team script collaboration features.
               Soon you&apos;ll be able to create, share, and collaborate on scripts with your team.
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-white/50">
               In the meantime, you can create individual scripts from the Scripts page.
             </p>
           </CardContent>
@@ -284,7 +284,7 @@ export default function TeamScriptsPage() {
                       <Badge className={getStatusColor(script.status)}>
                         {script.status}
                       </Badge>
-                      <div className="flex items-center text-xs text-gray-500">
+                      <div className="flex items-center text-xs text-white/40">
                         <User className="w-3 h-3 mr-1" />
                         {script.collaborators}
                       </div>
@@ -292,22 +292,22 @@ export default function TeamScriptsPage() {
                     <CardTitle className="text-lg line-clamp-2">
                       {script.title}
                     </CardTitle>
-                    <p className="text-sm text-gray-600 line-clamp-2">
+                    <p className="text-sm text-white/50 line-clamp-2">
                       {script.description}
                     </p>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                    <div className="flex items-center justify-between text-xs text-white/40 mb-3">
                       <span>{script.word_count} words</span>
                       <span>Updated {formatTimeAgo(script.updated_at)}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-medium text-blue-600">
+                      <div className="w-6 h-6 bg-violet-500/20 rounded-full flex items-center justify-center">
+                        <span className="text-xs font-medium text-violet-400">
                           {script.author.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                         </span>
                       </div>
-                      <span className="text-sm text-gray-600 truncate">
+                      <span className="text-sm text-white/50 truncate">
                         {script.author.name}
                       </span>
                     </div>
@@ -317,21 +317,21 @@ export default function TeamScriptsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0">
-                      <FileText className="w-8 h-8 text-blue-600" />
+                      <FileText className="w-8 h-8 text-violet-400" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold text-gray-900 truncate">
+                        <h3 className="font-semibold text-white truncate">
                           {script.title}
                         </h3>
                         <Badge className={getStatusColor(script.status)} size="sm">
                           {script.status}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600 line-clamp-1 mb-2">
+                      <p className="text-sm text-white/50 line-clamp-1 mb-2">
                         {script.description}
                       </p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <div className="flex items-center gap-4 text-xs text-white/40">
                         <span>{script.word_count} words</span>
                         <span className="flex items-center gap-1">
                           <User className="w-3 h-3" />
@@ -346,9 +346,9 @@ export default function TeamScriptsPage() {
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       {userPermissions.canEditScripts ? (
-                        <Edit className="w-4 h-4 text-gray-400" />
+                        <Edit className="w-4 h-4 text-white/30" />
                       ) : (
-                        <Eye className="w-4 h-4 text-gray-400" />
+                        <Eye className="w-4 h-4 text-white/30" />
                       )}
                     </div>
                   </div>
@@ -366,10 +366,10 @@ export default function TeamScriptsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Scripts</p>
-                  <p className="text-2xl font-bold text-gray-900">{scripts.length}</p>
+                  <p className="text-sm font-medium text-white/50">Total Scripts</p>
+                  <p className="text-2xl font-bold text-white">{scripts.length}</p>
                 </div>
-                <FileText className="w-8 h-8 text-blue-600" />
+                <FileText className="w-8 h-8 text-violet-400" />
               </div>
             </CardContent>
           </Card>
@@ -378,7 +378,7 @@ export default function TeamScriptsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Draft Scripts</p>
+                  <p className="text-sm font-medium text-white/50">Draft Scripts</p>
                   <p className="text-2xl font-bold text-yellow-600">
                     {scripts.filter(s => s.status === 'draft').length}
                   </p>
@@ -392,7 +392,7 @@ export default function TeamScriptsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Published</p>
+                  <p className="text-sm font-medium text-white/50">Published</p>
                   <p className="text-2xl font-bold text-green-600">
                     {scripts.filter(s => s.status === 'published').length}
                   </p>
@@ -406,12 +406,12 @@ export default function TeamScriptsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Words</p>
-                  <p className="text-2xl font-bold text-purple-600">
+                  <p className="text-sm font-medium text-white/50">Total Words</p>
+                  <p className="text-2xl font-bold text-violet-400">
                     {scripts.reduce((sum, script) => sum + script.word_count, 0).toLocaleString()}
                   </p>
                 </div>
-                <FileText className="w-8 h-8 text-purple-600" />
+                <FileText className="w-8 h-8 text-violet-400" />
               </div>
             </CardContent>
           </Card>

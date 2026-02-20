@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  ArrowRight, Star, Zap, TrendingUp, Brain, 
+import {
+  ArrowRight, Star, Zap, TrendingUp, Brain,
   Eye, EyeOff, Mic, Video, Bot, Sparkles,
   CheckCircle2, Play, DollarSign, Clock, Users
 } from 'lucide-react';
@@ -22,9 +22,9 @@ export default function FacelessYouTubeGeneratorPage() {
     fetch('/api/analytics/page-view', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         page: 'faceless-youtube-generator',
-        referrer: document.referrer 
+        referrer: document.referrer
       })
     });
   }, []);
@@ -54,7 +54,7 @@ export default function FacelessYouTubeGeneratorPage() {
   const facelessChannelTypes = [
     {
       type: 'Educational Explainers',
-      icon: <Brain className="w-8 h-8 text-purple-600" />,
+      icon: <Brain className="w-8 h-8 text-violet-600" />,
       examples: ['Science facts', 'History stories', 'Tech tutorials'],
       avgViews: '50K-500K',
       difficulty: 'Easy'
@@ -90,7 +90,7 @@ export default function FacelessYouTubeGeneratorPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#030303]">
       <head>
         <title>Faceless YouTube Channel Generator - Create Viral Videos Without Showing Your Face</title>
         <meta name="description" content="Generate complete faceless YouTube videos with AI. Scripts, voiceovers, and visuals in minutes. Join creators earning $10K+/month without being on camera." />
@@ -98,15 +98,15 @@ export default function FacelessYouTubeGeneratorPage() {
       </head>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-purple-950/40 via-black to-purple-950/20 py-20">
+      <section className="relative bg-gradient-to-b from-violet-950/40 via-[#030303] to-violet-950/20 py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center">
-            <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30">
+            <Badge className="mb-4 bg-violet-500/10 text-violet-400 border-violet-500/30">
               <EyeOff className="w-4 h-4 mr-1" />
               No Camera Required
             </Badge>
 
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <h1 className="font-display text-5xl font-bold mb-6 bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
               Create Viral Faceless YouTube Videos in Minutes
             </h1>
 
@@ -120,13 +120,13 @@ export default function FacelessYouTubeGeneratorPage() {
             <div className="flex gap-4 justify-center mb-8">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700"
                 onClick={handleGenerate}
               >
                 Generate Your First Video Free
                 <Video className="ml-2 w-5 h-5" />
               </Button>
-              <Button size="lg" variant="outline" className="border-gray-600 hover:bg-gray-800 text-white">
+              <Button size="lg" variant="outline" className="border-white/[0.06] hover:bg-white/[0.06] text-white">
                 See Success Stories
                 <Users className="ml-2 w-5 h-5" />
               </Button>
@@ -152,9 +152,9 @@ export default function FacelessYouTubeGeneratorPage() {
 
       {/* Live Generation Demo */}
       {isGenerating && (
-        <section className="py-16 bg-gray-900 border-y border-gray-800">
+        <section className="py-16 bg-white/[0.02] border-y border-white/5">
           <div className="container mx-auto px-4 max-w-4xl">
-            <Card className="bg-gradient-to-br from-purple-950/50 to-pink-950/50 border-gray-700">
+            <Card className="bg-gradient-to-br from-violet-950/50 to-cyan-950/50 border-white/5">
               <CardHeader>
                 <CardTitle className="text-white">Generating Your Faceless Video...</CardTitle>
               </CardHeader>
@@ -162,7 +162,7 @@ export default function FacelessYouTubeGeneratorPage() {
                 <div className="space-y-4">
                   {generationSteps.map((step, idx) => (
                     <div key={idx} className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${idx <= generationStep ? 'bg-purple-600 text-white' : 'bg-gray-700'}`}>
+                      <div className={`p-2 rounded-full ${idx <= generationStep ? 'bg-violet-600 text-white' : 'bg-white/[0.06]'}`}>
                         {idx <= generationStep ? <CheckCircle2 className="w-4 h-4" /> : step.icon}
                       </div>
                       <span className={idx <= generationStep ? 'font-medium text-white' : 'text-gray-400'}>
@@ -179,9 +179,9 @@ export default function FacelessYouTubeGeneratorPage() {
       )}
 
       {/* Channel Types */}
-      <section className="py-20 bg-gradient-to-b from-black to-purple-950/20">
+      <section className="py-20 bg-gradient-to-b from-[#030303] to-violet-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-4 text-white">
             Choose Your Faceless Channel Type
           </h2>
           <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
@@ -190,11 +190,11 @@ export default function FacelessYouTubeGeneratorPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {facelessChannelTypes.map((channel, idx) => (
-              <Card key={idx} className="bg-gray-800/50 border-gray-700 hover:border-purple-500 transition-all cursor-pointer">
+              <Card key={idx} className="bg-white/[0.04] border-white/5 hover:border-violet-500 transition-all cursor-pointer">
                 <CardHeader>
                   <div className="mb-3">{channel.icon}</div>
                   <CardTitle className="text-lg text-white">{channel.type}</CardTitle>
-                  <Badge className={channel.difficulty === 'Easy' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-gray-700 text-gray-300'}>
+                  <Badge className={channel.difficulty === 'Easy' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-white/[0.06] text-gray-300'}>
                     {channel.difficulty}
                   </Badge>
                 </CardHeader>
@@ -208,9 +208,9 @@ export default function FacelessYouTubeGeneratorPage() {
                         ))}
                       </ul>
                     </div>
-                    <div className="pt-3 border-t border-gray-700">
+                    <div className="pt-3 border-t border-white/5">
                       <p className="text-sm font-medium text-gray-300">Avg Views:</p>
-                      <p className="text-lg font-bold text-purple-400">{channel.avgViews}</p>
+                      <p className="text-lg font-bold text-violet-400">{channel.avgViews}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -221,14 +221,14 @@ export default function FacelessYouTubeGeneratorPage() {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-gray-900">
+      <section className="py-20 bg-white/[0.02]">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-12 text-white">
             From Idea to Published Video in 5 Minutes
           </h2>
 
           <Tabs defaultValue="script" className="max-w-4xl mx-auto">
-            <TabsList className="grid w-full grid-cols-4 bg-gray-800">
+            <TabsList className="grid w-full grid-cols-4 bg-white/[0.06]">
               <TabsTrigger value="script">1. Script</TabsTrigger>
               <TabsTrigger value="voice">2. Voice</TabsTrigger>
               <TabsTrigger value="visuals">3. Visuals</TabsTrigger>
@@ -236,7 +236,7 @@ export default function FacelessYouTubeGeneratorPage() {
             </TabsList>
 
             <TabsContent value="script" className="mt-8">
-              <Card className="bg-gray-800/50 border-gray-700">
+              <Card className="bg-white/[0.04] border-white/5">
                 <CardHeader>
                   <CardTitle className="text-white">AI-Generated Viral Scripts</CardTitle>
                 </CardHeader>
@@ -257,14 +257,14 @@ export default function FacelessYouTubeGeneratorPage() {
                         <span>Perfect 8-10 minute length</span>
                       </li>
                     </ul>
-                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">Generate Script Now</Button>
+                    <Button className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700">Generate Script Now</Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="voice" className="mt-8">
-              <Card className="bg-gray-800/50 border-gray-700">
+              <Card className="bg-white/[0.04] border-white/5">
                 <CardHeader>
                   <CardTitle className="text-white">Natural AI Voice Narration</CardTitle>
                 </CardHeader>
@@ -272,31 +272,31 @@ export default function FacelessYouTubeGeneratorPage() {
                   <div className="space-y-4">
                     <p className="text-gray-300">Choose from multiple voice options:</p>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 border border-gray-700 rounded-lg bg-gray-900">
+                      <div className="p-3 border border-white/5 rounded-lg bg-white/[0.04]">
                         <p className="font-medium text-white">Documentary Style</p>
                         <p className="text-sm text-gray-400">David Attenborough-like</p>
                       </div>
-                      <div className="p-3 border border-gray-700 rounded-lg bg-gray-900">
+                      <div className="p-3 border border-white/5 rounded-lg bg-white/[0.04]">
                         <p className="font-medium text-white">Energetic</p>
                         <p className="text-sm text-gray-400">MrBeast-inspired</p>
                       </div>
-                      <div className="p-3 border border-gray-700 rounded-lg bg-gray-900">
+                      <div className="p-3 border border-white/5 rounded-lg bg-white/[0.04]">
                         <p className="font-medium text-white">Storyteller</p>
                         <p className="text-sm text-gray-400">Engaging narrative</p>
                       </div>
-                      <div className="p-3 border border-gray-700 rounded-lg bg-gray-900">
+                      <div className="p-3 border border-white/5 rounded-lg bg-white/[0.04]">
                         <p className="font-medium text-white">Professional</p>
                         <p className="text-sm text-gray-400">News anchor style</p>
                       </div>
                     </div>
-                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">Generate Voiceover</Button>
+                    <Button className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700">Generate Voiceover</Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="visuals" className="mt-8">
-              <Card className="bg-gray-800/50 border-gray-700">
+              <Card className="bg-white/[0.04] border-white/5">
                 <CardHeader>
                   <CardTitle className="text-white">Automated Visual Generation</CardTitle>
                 </CardHeader>
@@ -321,14 +321,14 @@ export default function FacelessYouTubeGeneratorPage() {
                         <span>Background music</span>
                       </li>
                     </ul>
-                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">Add Visuals</Button>
+                    <Button className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700">Add Visuals</Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="publish" className="mt-8">
-              <Card className="bg-gray-800/50 border-gray-700">
+              <Card className="bg-white/[0.04] border-white/5">
                 <CardHeader>
                   <CardTitle className="text-white">One-Click Publishing</CardTitle>
                 </CardHeader>
@@ -353,7 +353,7 @@ export default function FacelessYouTubeGeneratorPage() {
                         <span>Eye-catching thumbnail</span>
                       </li>
                     </ul>
-                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                    <Button className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700">
                       Publish to YouTube
                     </Button>
                   </div>
@@ -365,9 +365,9 @@ export default function FacelessYouTubeGeneratorPage() {
       </section>
 
       {/* Monetization Potential */}
-      <section className="py-20 bg-gradient-to-b from-black to-purple-950/20">
+      <section className="py-20 bg-gradient-to-b from-[#030303] to-violet-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-4 text-white">
             Your Monetization Timeline
           </h2>
           <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
@@ -376,7 +376,7 @@ export default function FacelessYouTubeGeneratorPage() {
 
           <div className="grid md:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {monetizationPotential.map((milestone, idx) => (
-              <Card key={idx} className={`bg-gray-800/50 border-gray-700 ${idx === 3 ? 'border-purple-500 shadow-lg shadow-purple-500/20' : ''}`}>
+              <Card key={idx} className={`bg-white/[0.04] border-white/5 ${idx === 3 ? 'border-violet-500 shadow-lg shadow-violet-500/20' : ''}`}>
                 <CardHeader>
                   <CardDescription className="text-gray-400">Month {milestone.months}</CardDescription>
                   <CardTitle className="text-2xl text-white">{milestone.revenue}</CardTitle>
@@ -384,7 +384,7 @@ export default function FacelessYouTubeGeneratorPage() {
                 <CardContent>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-purple-400" />
+                      <Users className="w-4 h-4 text-violet-400" />
                       <span className="text-sm text-gray-300">{milestone.subscribers.toLocaleString()} subs</span>
                     </div>
                     <Progress value={(idx + 1) * 25} className="h-2" />
@@ -394,7 +394,7 @@ export default function FacelessYouTubeGeneratorPage() {
             ))}
           </div>
 
-          <div className="mt-12 p-8 bg-gradient-to-r from-purple-950/50 to-pink-950/50 rounded-2xl text-center max-w-3xl mx-auto border border-purple-500/30">
+          <div className="mt-12 p-8 bg-gradient-to-r from-violet-950/50 to-cyan-950/50 rounded-2xl text-center max-w-3xl mx-auto border border-violet-500/30">
             <h3 className="text-2xl font-bold mb-4 text-white">
               Start Your Faceless Channel Today
             </h3>
@@ -403,12 +403,12 @@ export default function FacelessYouTubeGeneratorPage() {
             </p>
             <div className="flex gap-4 justify-center">
               <Link href="/signup">
-                <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                <Button size="lg" className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700">
                   Start Free Trial
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="border-gray-600 hover:bg-gray-800 text-white">
+              <Button size="lg" variant="outline" className="border-white/[0.06] hover:bg-white/[0.06] text-white">
                 View Case Studies
               </Button>
             </div>
@@ -417,14 +417,14 @@ export default function FacelessYouTubeGeneratorPage() {
       </section>
 
       {/* Success Stories */}
-      <section className="py-20 bg-black">
+      <section className="py-20 bg-[#030303]">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-12 text-white">
             Real Faceless Channel Success Stories
           </h2>
 
           <div className="grid md:grid-cols-3 gap-6">
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <div className="flex items-center gap-2 mb-2">
                   {[...Array(5)].map((_, i) => (
@@ -440,12 +440,12 @@ export default function FacelessYouTubeGeneratorPage() {
                 </p>
                 <div className="flex justify-between text-sm text-gray-400">
                   <span>Videos: 24</span>
-                  <span className="font-bold text-purple-400">$3,200/mo</span>
+                  <span className="font-bold text-violet-400">$3,200/mo</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <div className="flex items-center gap-2 mb-2">
                   {[...Array(5)].map((_, i) => (
@@ -461,12 +461,12 @@ export default function FacelessYouTubeGeneratorPage() {
                 </p>
                 <div className="flex justify-between text-sm text-gray-400">
                   <span>Videos: 180</span>
-                  <span className="font-bold text-purple-400">$8,500/mo</span>
+                  <span className="font-bold text-violet-400">$8,500/mo</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <div className="flex items-center gap-2 mb-2">
                   {[...Array(5)].map((_, i) => (
@@ -482,7 +482,7 @@ export default function FacelessYouTubeGeneratorPage() {
                 </p>
                 <div className="flex justify-between text-sm text-gray-400">
                   <span>Videos: 365</span>
-                  <span className="font-bold text-purple-400">$15,000/mo</span>
+                  <span className="font-bold text-violet-400">$15,000/mo</span>
                 </div>
               </CardContent>
             </Card>
@@ -491,9 +491,9 @@ export default function FacelessYouTubeGeneratorPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+      <section className="py-20 bg-gradient-to-r from-violet-600 to-cyan-600 text-white">
         <div className="container mx-auto px-4 max-w-4xl text-center">
-          <h2 className="text-4xl font-bold mb-6">
+          <h2 className="font-display text-4xl font-bold mb-6">
             Your Faceless YouTube Empire Starts Here
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">

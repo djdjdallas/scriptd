@@ -9,8 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Clock, 
+import {
+  Clock,
   FileText,
   Gauge,
   Timer,
@@ -22,29 +22,29 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 
 const SPEAKING_PACES = [
-  { 
-    id: 'slow', 
-    label: 'Slow', 
-    wpm: 120, 
-    description: 'Educational, complex topics' 
+  {
+    id: 'slow',
+    label: 'Slow',
+    wpm: 120,
+    description: 'Educational, complex topics'
   },
-  { 
-    id: 'normal', 
-    label: 'Normal', 
-    wpm: 150, 
-    description: 'Most YouTube content' 
+  {
+    id: 'normal',
+    label: 'Normal',
+    wpm: 150,
+    description: 'Most YouTube content'
   },
-  { 
-    id: 'fast', 
-    label: 'Fast', 
-    wpm: 180, 
-    description: 'Entertainment, energetic content' 
+  {
+    id: 'fast',
+    label: 'Fast',
+    wpm: 180,
+    description: 'Entertainment, energetic content'
   },
-  { 
-    id: 'very-fast', 
-    label: 'Very Fast', 
-    wpm: 200, 
-    description: 'Quick tips, rapid-fire content' 
+  {
+    id: 'very-fast',
+    label: 'Very Fast',
+    wpm: 200,
+    description: 'Quick tips, rapid-fire content'
   }
 ];
 
@@ -89,7 +89,7 @@ export default function LengthCalculatorPage() {
 
     const estimatedMinutes = words / wpm;
     const estimatedSeconds = Math.round(estimatedMinutes * 60);
-    
+
     // Calculate words needed for target duration
     const targetSeconds = parseInt(targetDuration) || 600;
     const targetMinutes = targetSeconds / 60;
@@ -128,7 +128,7 @@ export default function LengthCalculatorPage() {
 
   const copyResults = () => {
     if (!results) return;
-    
+
     const text = `Script Analysis:
 • Word Count: ${results.words}
 • Estimated Duration: ${formatTime(results.estimatedSeconds)}
@@ -136,7 +136,7 @@ export default function LengthCalculatorPage() {
 • Target Duration: ${formatTime(results.targetSeconds)}
 • Words ${results.wordsRemaining >= 0 ? 'Needed' : 'Over'}: ${Math.abs(results.wordsRemaining)}
 • Completion: ${results.percentComplete}%`;
-    
+
     navigator.clipboard.writeText(text);
     toast({
       title: "Copied!",
@@ -145,18 +145,18 @@ export default function LengthCalculatorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black py-20 px-4">
+    <div className="min-h-screen bg-[#030303] py-20 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-white">Script Length Calculator</h1>
+          <h1 className="text-4xl font-bold font-display text-white">Script Length Calculator</h1>
           <p className="text-xl text-gray-400">
             Calculate the perfect script length for your target video duration
           </p>
         </div>
 
         {/* Calculator */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Script Calculator</CardTitle>
             <CardDescription className="text-gray-400">
@@ -173,7 +173,7 @@ export default function LengthCalculatorPage() {
                 value={script}
                 onChange={(e) => setScript(e.target.value)}
                 rows={8}
-                className="font-mono bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                className="font-mono vb-input text-white placeholder:text-gray-500"
               />
               <p className="text-sm text-gray-400">
                 Start typing or paste your script to see live calculations
@@ -184,10 +184,10 @@ export default function LengthCalculatorPage() {
             <div className="space-y-2">
               <Label htmlFor="duration" className="text-gray-300">Target Video Duration</Label>
               <Select value={targetDuration} onValueChange={setTargetDuration}>
-                <SelectTrigger id="duration" className="w-full bg-gray-900 border-gray-700 text-white">
+                <SelectTrigger id="duration" className="w-full bg-white/[0.04] border-white/5 text-white">
                   <SelectValue placeholder="Select duration" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-900 border-gray-700">
+                <SelectContent className="bg-white/[0.04] border-white/5">
                   {VIDEO_LENGTHS.map((length) => (
                     <SelectItem key={length.value} value={length.value.toString()}>
                       {length.label} ({length.type})
@@ -211,11 +211,11 @@ export default function LengthCalculatorPage() {
                       />
                       <Label
                         htmlFor={pace.id}
-                        className="flex flex-col gap-1 rounded-md border-2 border-gray-700 bg-gray-900 p-3 hover:bg-gray-800 peer-data-[state=checked]:border-purple-500 cursor-pointer"
+                        className="flex flex-col gap-1 rounded-md border-2 border-white/5 bg-white/[0.04] p-3 hover:bg-white/[0.06] peer-data-[state=checked]:border-violet-500 cursor-pointer"
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-medium text-white">{pace.label}</span>
-                          <Badge className="text-xs bg-purple-500/20 text-purple-400 border-purple-500/30">
+                          <Badge className="text-xs bg-violet-500/10 text-violet-400 border-violet-500/30">
                             {pace.wpm} WPM
                           </Badge>
                         </div>
@@ -238,7 +238,7 @@ export default function LengthCalculatorPage() {
                 onChange={(e) => setCustomWPM(e.target.value)}
                 min="50"
                 max="300"
-                className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                className="vb-input text-white placeholder:text-gray-500"
               />
               <p className="text-sm text-gray-400">
                 Override the speaking pace with a custom WPM value
@@ -250,7 +250,7 @@ export default function LengthCalculatorPage() {
         {/* Results */}
         {results && (
           <>
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -263,7 +263,7 @@ export default function LengthCalculatorPage() {
                     variant="outline"
                     size="sm"
                     onClick={copyResults}
-                    className="border-gray-600 hover:bg-gray-700 text-white"
+                    className="border-white/[0.06] hover:bg-white/[0.06] text-white"
                   >
                     <Copy className="h-4 w-4 mr-2" />
                     Copy Results
@@ -335,10 +335,10 @@ export default function LengthCalculatorPage() {
                       {results.percentComplete}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div className="w-full bg-white/5 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full transition-all ${
-                        results.percentComplete <= 110 ? 'bg-purple-500' : 'bg-red-500'
+                        results.percentComplete <= 110 ? 'bg-violet-500' : 'bg-red-500'
                       }`}
                       style={{ width: `${Math.min(100, results.percentComplete)}%` }}
                     />
@@ -357,7 +357,7 @@ export default function LengthCalculatorPage() {
             </Card>
 
             {/* Recommendations */}
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="text-white">Recommendations</CardTitle>
               </CardHeader>
@@ -417,13 +417,13 @@ export default function LengthCalculatorPage() {
         )}
 
         {/* Tips */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Script Length Tips</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-3">
-              <Clock className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <Clock className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Account for pauses and emphasis</p>
                 <p className="text-sm text-gray-400">
@@ -433,7 +433,7 @@ export default function LengthCalculatorPage() {
             </div>
 
             <div className="flex gap-3">
-              <Calculator className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <Calculator className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">B-roll and visuals add time</p>
                 <p className="text-sm text-gray-400">
@@ -443,7 +443,7 @@ export default function LengthCalculatorPage() {
             </div>
 
             <div className="flex gap-3">
-              <Timer className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <Timer className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Practice your delivery</p>
                 <p className="text-sm text-gray-400">

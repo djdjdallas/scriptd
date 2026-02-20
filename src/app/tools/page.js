@@ -49,7 +49,7 @@ const tools = [
     href: "/tools/transcript-extraction",
     category: "research",
     popularity: 5,
-    gradient: "from-purple-500/10 to-pink-500/10",
+    gradient: "from-violet-500/10 to-cyan-500/10",
   },
   {
     id: "title-generator",
@@ -255,7 +255,7 @@ export default function ToolsPage() {
                 </span>
               </div>
 
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-display tracking-tight">
                 YouTube Script <span className="text-primary">Tools</span>
               </h1>
 
@@ -476,7 +476,7 @@ export default function ToolsPage() {
 
       {/* Simplified CTA Section */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <Card className="relative overflow-hidden border-2 bg-gradient-to-br from-primary/5 to-purple-500/5">
+        <Card className="relative overflow-hidden border-2 bg-gradient-to-br from-primary/5 to-violet-500/5">
           <CardContent className="relative pt-12 pb-12 text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-6">
               <Sparkles className="h-4 w-4 text-primary" />
@@ -517,7 +517,7 @@ export default function ToolsPage() {
       {/* Cleaner FAQ Section */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">
+          <h2 className="text-4xl font-bold font-display mb-4">
             Frequently Asked Questions
           </h2>
           <p className="text-lg text-muted-foreground">

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import CalendarView from '@/components/calendar/CalendarView';
 import CalendarHeader from '@/components/calendar/CalendarHeader';
 import ContentForm from '@/components/calendar/ContentForm';
-import { Plus, Download, Filter, Sparkles, Loader2, Trash2 } from 'lucide-react';
+import { Plus, Download, Filter, Loader2, Trash2 } from 'lucide-react';
 import { loadFromStorage, saveToStorage } from '@/lib/calendar/storage';
 import { exportToCSV, exportToICS } from '@/lib/calendar/export-utils';
 import { createClient } from '@/lib/supabase/client';
@@ -221,12 +221,11 @@ export default function CalendarPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="glass-card p-6">
+      <div className="vb-card p-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+            <h1 className="text-3xl font-bold font-display text-white">
               Content Calendar
-              <Sparkles className="h-8 w-8 text-yellow-400 animate-pulse" />
             </h1>
             <p className="text-gray-400 mt-2">
               Plan and organize your content across all platforms
@@ -238,7 +237,7 @@ export default function CalendarPage() {
             <button 
               onClick={fetchCalendarContent}
               disabled={loading}
-              className="glass-button flex items-center"
+              className="vb-btn-outline flex items-center"
             >
               <Loader2 className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -247,12 +246,12 @@ export default function CalendarPage() {
             {/* Export Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="glass-button flex items-center">
+                <button className="vb-btn-outline flex items-center">
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="glass border-white/10">
+              <DropdownMenuContent className="bg-white/[0.04] border border-white/[0.06] rounded-xl border-white/10">
                 <DropdownMenuItem 
                   onClick={() => exportToCSV(contents)}
                   className="hover:bg-white/10"
@@ -284,7 +283,7 @@ export default function CalendarPage() {
             {/* Add Content Button */}
             <button 
               onClick={() => setIsFormOpen(true)}
-              className="glass-button bg-purple-600/30 hover:bg-purple-600/40 flex items-center"
+              className="vb-btn-outline bg-violet-600/20 hover:bg-violet-600/30 flex items-center"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Content
@@ -303,8 +302,8 @@ export default function CalendarPage() {
 
       {/* Calendar View */}
       {loading ? (
-        <div className="glass-card p-12 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+        <div className="vb-card p-12 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
           <span className="ml-3 text-gray-400">Loading calendar...</span>
         </div>
       ) : (
@@ -319,12 +318,12 @@ export default function CalendarPage() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="glass-card p-4">
+        <div className="vb-card p-4">
           <p className="text-gray-400 text-sm">Total Content</p>
           <p className="text-2xl font-bold text-white">{contents.length}</p>
         </div>
         
-        <div className="glass-card p-4">
+        <div className="vb-card p-4">
           <p className="text-gray-400 text-sm">This Month</p>
           <p className="text-2xl font-bold text-white">
             {contents.filter(c => {
@@ -334,14 +333,14 @@ export default function CalendarPage() {
           </p>
         </div>
         
-        <div className="glass-card p-4">
+        <div className="vb-card p-4">
           <p className="text-gray-400 text-sm">Scheduled</p>
           <p className="text-2xl font-bold text-white">
             {contents.filter(c => c.status === 'SCHEDULED').length}
           </p>
         </div>
         
-        <div className="glass-card p-4">
+        <div className="vb-card p-4">
           <p className="text-gray-400 text-sm">Published</p>
           <p className="text-2xl font-bold text-white">
             {contents.filter(c => c.status === 'PUBLISHED').length}

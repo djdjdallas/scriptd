@@ -1,7 +1,7 @@
 export const homepageMetadata = {
   metadataBase: new URL("https://genscript.io"),
-  title: "GenScript - AI YouTube Script Generator | 180% Faster Growth",
-  description: "Join 69M+ YouTube creators using AI. Generate viral scripts, boost CTR by 35%, and achieve 5x productivity. Trusted by 2,500+ creators. Start free.",
+  title: "GenScript — Scale Your Voice | AI YouTube Script Generator",
+  description: "Extract your voice DNA and generate YouTube scripts that sound like you. Compliance-checked, retention-optimized, trusted by 500+ creators. Start free.",
   keywords: [
     "YouTube script generator",
     "AI content creation",
@@ -23,8 +23,8 @@ export const homepageMetadata = {
   },
   manifest: '/site.webmanifest',
   openGraph: {
-    title: "GenScript - AI YouTube Script Generator | 180% Faster Growth",
-    description: "Join 69M+ YouTube creators using AI. Generate viral scripts in your voice. 35% higher CTR, 5x productivity boost. Free trial available.",
+    title: "GenScript — Scale Your Voice | AI YouTube Script Generator",
+    description: "Extract your voice DNA and generate YouTube scripts that sound like you. Compliance-checked, retention-optimized. Free trial available.",
     url: "https://genscript.io",
     siteName: "GenScript",
     type: "website",
@@ -39,8 +39,8 @@ export const homepageMetadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "GenScript - AI YouTube Script Generator",
-    description: "Generate viral YouTube scripts with AI. 180% faster growth, 35% higher CTR. Join 2,500+ creators.",
+    title: "GenScript — Scale Your Voice",
+    description: "Extract your voice DNA and generate YouTube scripts that sound authentically you. Trusted by 500+ creators.",
     images: ["/twitter-image.png"]
   },
   alternates: {
@@ -61,7 +61,7 @@ export const structuredData = {
     "@type": "Offer",
     "price": "0",
     "priceCurrency": "USD",
-    "priceValidUntil": "2025-12-31",
+    "priceValidUntil": "2026-12-31",
     "availability": "https://schema.org/InStock"
   },
   "aggregateRating": {
@@ -70,13 +70,13 @@ export const structuredData = {
     "reviewCount": "2500",
     "bestRating": "5"
   },
-  "description": "AI-powered YouTube script generator that helps creators achieve 180% faster growth with scripts in their unique voice.",
+  "description": "AI-powered YouTube script engine that extracts your voice DNA for compliance-checked, retention-optimized scripts.",
   "featureList": [
-    "AI Voice Cloning",
-    "Viral Content Analysis", 
-    "Smart Research Tools",
-    "Hook Generator",
-    "Performance Tracking",
+    "Voice DNA Extraction",
+    "Compliance Engine",
+    "Retention Optimizer",
+    "One-Click Export",
+    "Voice Matching",
     "Team Collaboration"
   ],
   "screenshot": "https://genscript.io/screenshot.png",

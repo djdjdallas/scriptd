@@ -227,8 +227,8 @@ export default function SavedVideosPage() {
   if (loading) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 text-center">
-          <Bookmark className="h-12 w-12 text-purple-400 animate-pulse mx-auto mb-4" />
+        <div className="vb-card p-8 text-center">
+          <Bookmark className="h-12 w-12 text-violet-400 animate-pulse mx-auto mb-4" />
           <p className="text-white text-lg">Loading saved videos...</p>
         </div>
       </div>
@@ -237,23 +237,17 @@ export default function SavedVideosPage() {
 
   return (
     <div className="space-y-8">
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
-      </div>
-
       {/* Header */}
       <div className="animate-reveal">
-        <h1 className="text-4xl font-bold text-white flex items-center gap-3 mb-2">
-          <Bookmark className="h-10 w-10 text-purple-400" />
+        <h1 className="text-4xl font-bold font-display text-white flex items-center gap-3 mb-2">
+          <Bookmark className="h-10 w-10 text-violet-400" />
           Saved Videos
         </h1>
         <p className="text-gray-400">Manage your watch later list</p>
       </div>
 
       {/* Controls */}
-      <div className="glass-card p-4 space-y-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
+      <div className="vb-card p-4 space-y-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
@@ -262,7 +256,7 @@ export default function SavedVideosPage() {
               placeholder="Search saved videos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 glass bg-white/5 border-white/10 text-white placeholder:text-gray-400"
+              className="pl-10 bg-white/[0.04] border border-white/[0.06] rounded-xl bg-white/5 border-white/10 text-white placeholder:text-gray-400"
             />
           </div>
 
@@ -271,7 +265,7 @@ export default function SavedVideosPage() {
             <select
               value={filterWatched}
               onChange={(e) => setFilterWatched(e.target.value)}
-              className="glass px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white"
+              className="bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2 rounded-lg bg-white/5 text-white"
             >
               <option value="all">All Videos</option>
               <option value="unwatched">Unwatched</option>
@@ -281,7 +275,7 @@ export default function SavedVideosPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="glass px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white"
+              className="bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2 rounded-lg bg-white/5 text-white"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -292,7 +286,7 @@ export default function SavedVideosPage() {
 
         {/* Bulk Actions */}
         {selectedVideos.size > 0 && (
-          <div className="flex items-center justify-between p-3 glass rounded-lg bg-purple-500/10">
+          <div className="flex items-center justify-between p-3 bg-white/[0.04] border border-white/[0.06] rounded-xl rounded-lg bg-violet-500/10">
             <span className="text-white">
               {selectedVideos.size} video{selectedVideos.size !== 1 ? 's' : ''} selected
             </span>
@@ -307,7 +301,7 @@ export default function SavedVideosPage() {
               </Button>
               <Button
                 size="sm"
-                className="glass-button bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                className="vb-btn-outline bg-red-500/20 text-red-400 hover:bg-red-500/30"
                 onClick={handleBulkDelete}
                 disabled={bulkAction === 'deleting'}
               >
@@ -321,27 +315,27 @@ export default function SavedVideosPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-reveal" style={{ animationDelay: '0.2s' }}>
-        <div className="glass-card p-4 text-center">
-          <Video className="h-8 w-8 text-purple-400 mx-auto mb-2" />
+        <div className="vb-card p-4 text-center">
+          <Video className="h-8 w-8 text-violet-400 mx-auto mb-2" />
           <p className="text-2xl font-bold text-white">{videos.length}</p>
           <p className="text-xs text-gray-400">Total Saved</p>
         </div>
-        <div className="glass-card p-4 text-center">
+        <div className="vb-card p-4 text-center">
           <Circle className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
           <p className="text-2xl font-bold text-white">
             {videos.filter(v => !v.watched).length}
           </p>
           <p className="text-xs text-gray-400">Unwatched</p>
         </div>
-        <div className="glass-card p-4 text-center">
+        <div className="vb-card p-4 text-center">
           <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
           <p className="text-2xl font-bold text-white">
             {videos.filter(v => v.watched).length}
           </p>
           <p className="text-xs text-gray-400">Watched</p>
         </div>
-        <div className="glass-card p-4 text-center">
-          <Calendar className="h-8 w-8 text-pink-400 mx-auto mb-2" />
+        <div className="vb-card p-4 text-center">
+          <Calendar className="h-8 w-8 text-cyan-400 mx-auto mb-2" />
           <p className="text-2xl font-bold text-white">
             {videos.length > 0 ? 
               Math.ceil((Date.now() - new Date(videos[videos.length - 1].saved_at)) / (1000 * 60 * 60 * 24))
@@ -354,7 +348,7 @@ export default function SavedVideosPage() {
 
       {/* Videos List */}
       {filteredVideos.length === 0 ? (
-        <div className="glass-card p-12 text-center animate-reveal" style={{ animationDelay: '0.3s' }}>
+        <div className="vb-card p-12 text-center animate-reveal" style={{ animationDelay: '0.3s' }}>
           <Bookmark className="h-16 w-16 text-gray-500 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-white mb-2">
             {searchTerm || filterWatched !== 'all' 
@@ -391,8 +385,8 @@ export default function SavedVideosPage() {
             return (
               <div 
                 key={video.video_id} 
-                className={`glass-card p-4 flex gap-4 transition-all ${
-                  isSelected ? 'ring-2 ring-purple-500' : ''
+                className={`vb-card p-4 flex gap-4 transition-all ${
+                  isSelected ? 'ring-2 ring-violet-500' : ''
                 }`}
               >
                 <button
@@ -400,7 +394,7 @@ export default function SavedVideosPage() {
                   className="flex-shrink-0 text-gray-400 hover:text-white transition-colors"
                 >
                   {isSelected ? (
-                    <CheckCircle className="h-5 w-5 text-purple-400" />
+                    <CheckCircle className="h-5 w-5 text-violet-400" />
                   ) : (
                     <Circle className="h-5 w-5" />
                   )}
@@ -416,7 +410,7 @@ export default function SavedVideosPage() {
                   <h4 className="text-white font-semibold mb-1 flex items-center gap-2">
                     {video.video_title}
                     {video.watched && (
-                      <span className="text-xs px-2 py-1 rounded-full glass bg-green-500/20 text-green-400">
+                      <span className="text-xs px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] bg-green-500/20 text-green-400">
                         Watched
                       </span>
                     )}
@@ -452,7 +446,7 @@ export default function SavedVideosPage() {
                 <div className="flex flex-col gap-2">
                   <Button 
                     size="sm" 
-                    className="glass-button text-white hover:bg-red-500/20 transition-all"
+                    className="vb-btn-outline text-white hover:bg-red-500/20 transition-all"
                     onClick={() => handleWatchVideo(video)}
                   >
                     <ExternalLink className="h-3 w-3 mr-1" />

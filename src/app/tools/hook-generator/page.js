@@ -7,9 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Zap, 
-  Copy, 
+import {
+  Zap,
+  Copy,
   RefreshCw,
   Loader2,
   Timer,
@@ -21,38 +21,38 @@ import { useToast } from '@/components/ui/use-toast';
 import { SCRIPT_TYPES } from '@/lib/constants';
 
 const HOOK_STYLES = [
-  { 
-    id: 'question', 
+  {
+    id: 'question',
     label: 'Question Hook',
     description: 'Start with an intriguing question',
     example: 'Have you ever wondered why...'
   },
-  { 
-    id: 'statistic', 
+  {
+    id: 'statistic',
     label: 'Statistic Hook',
     description: 'Open with a surprising fact or number',
     example: '90% of people don\'t know that...'
   },
-  { 
-    id: 'story', 
+  {
+    id: 'story',
     label: 'Story Hook',
     description: 'Begin with a personal anecdote',
     example: 'Last week, something incredible happened...'
   },
-  { 
-    id: 'challenge', 
+  {
+    id: 'challenge',
     label: 'Challenge Hook',
     description: 'Present a problem or challenge',
     example: 'Most people struggle with...'
   },
-  { 
-    id: 'promise', 
+  {
+    id: 'promise',
     label: 'Promise Hook',
     description: 'Make a bold promise or claim',
     example: 'In the next 5 minutes, you\'ll learn...'
   },
-  { 
-    id: 'controversy', 
+  {
+    id: 'controversy',
     label: 'Controversial Hook',
     description: 'Start with a controversial statement',
     example: 'Everyone is wrong about...'
@@ -69,7 +69,7 @@ export default function HookGeneratorPage() {
 
   const generateHooks = async (e) => {
     e.preventDefault();
-    
+
     if (!topic.trim()) {
       toast({
         title: "Topic Required",
@@ -128,22 +128,22 @@ export default function HookGeneratorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black py-20 px-4">
+    <div className="min-h-screen bg-[#030303] py-20 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-white">YouTube Hook Generator</h1>
+          <h1 className="text-4xl font-bold font-display text-white">YouTube Hook Generator</h1>
           <p className="text-xl text-gray-400">
             Create compelling hooks that grab attention in the first 15 seconds
           </p>
-          <Badge className="gap-1 bg-purple-500/20 text-purple-400 border-purple-500/30">
+          <Badge className="gap-1 bg-violet-500/10 text-violet-400 border-violet-500/30">
             <Timer className="h-3 w-3" />
             15-second hooks
           </Badge>
         </div>
 
         {/* Generator Form */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Generate Hooks</CardTitle>
             <CardDescription className="text-gray-400">
@@ -160,17 +160,17 @@ export default function HookGeneratorPage() {
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   disabled={loading}
-                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                  className="bg-white/[0.04] border-white/5 text-white placeholder:text-gray-500"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="type" className="text-gray-300">Video Type</Label>
                 <Select value={videoType} onValueChange={setVideoType}>
-                  <SelectTrigger id="type" className="bg-gray-900 border-gray-700 text-white">
+                  <SelectTrigger id="type" className="bg-white/[0.04] border-white/5 text-white">
                     <SelectValue placeholder="Select video type (optional)" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-900 border-gray-700">
+                  <SelectContent className="bg-white/[0.04] border-white/5">
                     <SelectItem value="any">Any type</SelectItem>
                     {Object.entries(SCRIPT_TYPES).map(([key, value]) => (
                       <SelectItem key={key} value={value}>{value}</SelectItem>
@@ -187,11 +187,11 @@ export default function HookGeneratorPage() {
                   value={targetAudience}
                   onChange={(e) => setTargetAudience(e.target.value)}
                   disabled={loading}
-                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                  className="bg-white/[0.04] border-white/5 text-white placeholder:text-gray-500"
                 />
               </div>
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" disabled={loading}>
+              <Button type="submit" className="w-full bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -209,7 +209,7 @@ export default function HookGeneratorPage() {
         </Card>
 
         {/* Hook Styles Reference */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Hook Styles</CardTitle>
             <CardDescription className="text-gray-400">
@@ -231,7 +231,7 @@ export default function HookGeneratorPage() {
 
         {/* Results */}
         {hooks.length > 0 && (
-          <Card className="bg-gray-800/50 border-gray-700">
+          <Card className="bg-white/[0.04] border-white/5">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -245,7 +245,7 @@ export default function HookGeneratorPage() {
                   size="sm"
                   onClick={() => generateHooks(new Event('submit'))}
                   disabled={loading}
-                  className="border-gray-600 hover:bg-gray-700 text-white"
+                  className="border-white/[0.06] hover:bg-white/[0.06] text-white"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Regenerate
@@ -257,12 +257,12 @@ export default function HookGeneratorPage() {
                 {hooks.map((hook, index) => (
                   <div
                     key={index}
-                    className="group p-4 rounded-lg border border-gray-700 hover:border-purple-500 hover:bg-gray-700/50 cursor-pointer transition-all"
+                    className="group p-4 rounded-lg border border-white/5 hover:border-violet-500 hover:bg-white/[0.06] cursor-pointer transition-all"
                     onClick={() => copyHook(hook)}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 space-y-2">
-                        <Badge variant="outline" className="text-xs border-gray-600 text-gray-300">
+                        <Badge variant="outline" className="text-xs border-white/[0.06] text-gray-300">
                           {hook.style}
                         </Badge>
                         <p className="font-medium text-white">{hook.text}</p>
@@ -295,13 +295,13 @@ export default function HookGeneratorPage() {
         )}
 
         {/* Best Practices */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Hook Best Practices</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-3">
-              <TrendingUp className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <TrendingUp className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Front-load the value</p>
                 <p className="text-sm text-gray-400">
@@ -311,7 +311,7 @@ export default function HookGeneratorPage() {
             </div>
 
             <div className="flex gap-3">
-              <Users className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <Users className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Address your audience directly</p>
                 <p className="text-sm text-gray-400">
@@ -321,7 +321,7 @@ export default function HookGeneratorPage() {
             </div>
 
             <div className="flex gap-3">
-              <AlertTriangle className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Create urgency without clickbait</p>
                 <p className="text-sm text-gray-400">

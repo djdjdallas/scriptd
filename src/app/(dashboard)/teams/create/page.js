@@ -37,8 +37,8 @@ export default function CreateTeamPage() {
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Loading...</p>
+            <div className="w-8 h-8 border-2 border-violet-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-white/50">Loading...</p>
           </div>
         </div>
       </div>
@@ -59,10 +59,10 @@ export default function CreateTeamPage() {
         </Button>
         
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold font-display text-white mb-2">
             Create a New Team
           </h1>
-          <p className="text-gray-600">
+          <p className="text-white/50">
             Set up a collaborative workspace for your YouTube scripts
           </p>
         </div>
@@ -78,14 +78,14 @@ export default function CreateTeamPage() {
 
       {/* Additional Info */}
       <div className="mt-12 max-w-2xl mx-auto">
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">
+        <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-6">
+          <h3 className="font-semibold text-white mb-4">
             Team Management Features
           </h3>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <h4 className="font-medium text-gray-800 mb-2">Role-Based Access</h4>
-              <ul className="text-sm text-gray-600 space-y-1">
+              <h4 className="font-medium text-white/70 mb-2">Role-Based Access</h4>
+              <ul className="text-sm text-white/50 space-y-1">
                 <li>• Owner: Full team control</li>
                 <li>• Admin: Manage members & settings</li>
                 <li>• Editor: Create & edit scripts</li>
@@ -93,8 +93,8 @@ export default function CreateTeamPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-medium text-gray-800 mb-2">Collaboration Tools</h4>
-              <ul className="text-sm text-gray-600 space-y-1">
+              <h4 className="font-medium text-white/70 mb-2">Collaboration Tools</h4>
+              <ul className="text-sm text-white/50 space-y-1">
                 <li>• Email invitations</li>
                 <li>• Activity tracking</li>
                 <li>• Script sharing</li>

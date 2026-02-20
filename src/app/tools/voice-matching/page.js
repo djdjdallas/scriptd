@@ -22,9 +22,9 @@ export default function VoiceMatchingPage() {
     fetch('/api/analytics/page-view', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         page: 'voice-matching-ai',
-        referrer: document.referrer 
+        referrer: document.referrer
       })
     });
   }, []);
@@ -138,7 +138,7 @@ export default function VoiceMatchingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#030303]">
       <head>
         <title>Voice Matching AI - Deep Linguistic Profiling with 100+ Voice Metrics</title>
         <meta name="description" content="Advanced 8-category deep linguistic profiling system that analyzes 100+ voice metrics from real YouTube transcripts. Pattern enforcement, compliance scoring, and authentic voice replication." />
@@ -146,15 +146,15 @@ export default function VoiceMatchingPage() {
       </head>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-blue-950/40 via-purple-950/20 to-black py-20">
+      <section className="relative bg-gradient-to-b from-blue-950/40 via-violet-950/20 to-[#030303] py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center">
-            <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30">
+            <Badge className="mb-4 bg-violet-500/10 text-violet-400 border-violet-500/30">
               <Fingerprint className="w-4 h-4 mr-1" />
               Your Unique Voice DNA
             </Badge>
 
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <h1 className="font-display text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-violet-400 to-cyan-400 bg-clip-text text-transparent">
               AI That Writes Exactly Like You Do
             </h1>
 
@@ -167,13 +167,13 @@ export default function VoiceMatchingPage() {
             <div className="flex gap-4 justify-center mb-8">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700"
                 onClick={handleAnalyze}
               >
                 Analyze Your Voice
                 <Mic className="ml-2 w-5 h-5" />
               </Button>
-              <Button size="lg" variant="outline" className="border-gray-600 hover:bg-gray-800 text-white">
+              <Button size="lg" variant="outline" className="border-white/[0.06] hover:bg-white/[0.06] text-white">
                 See Examples
                 <Play className="ml-2 w-5 h-5" />
               </Button>
@@ -181,15 +181,15 @@ export default function VoiceMatchingPage() {
 
             <div className="flex items-center justify-center gap-8 text-sm text-gray-400">
               <div className="flex items-center gap-1">
-                <Brain className="w-4 h-4 text-purple-400" />
+                <Brain className="w-4 h-4 text-violet-400" />
                 <span>AI Learning</span>
               </div>
               <div className="flex items-center gap-1">
-                <Fingerprint className="w-4 h-4 text-purple-400" />
+                <Fingerprint className="w-4 h-4 text-violet-400" />
                 <span>Unique Voice Print</span>
               </div>
               <div className="flex items-center gap-1">
-                <CheckCircle2 className="w-4 h-4 text-purple-400" />
+                <CheckCircle2 className="w-4 h-4 text-violet-400" />
                 <span>95%+ Accuracy</span>
               </div>
             </div>
@@ -199,9 +199,9 @@ export default function VoiceMatchingPage() {
 
       {/* Voice Analysis Demo */}
       {isAnalyzing && (
-        <section className="py-16 bg-black border-y border-gray-800">
+        <section className="py-16 bg-[#030303] border-y border-white/5">
           <div className="container mx-auto px-4 max-w-4xl">
-            <Card className="bg-gradient-to-br from-blue-950/30 to-purple-950/30 border-gray-700">
+            <Card className="bg-gradient-to-br from-blue-950/30 to-violet-950/30 border-white/5">
               <CardHeader>
                 <CardTitle className="text-white">Analyzing Your Voice Pattern...</CardTitle>
               </CardHeader>
@@ -211,8 +211,8 @@ export default function VoiceMatchingPage() {
                     <div key={idx} className="flex items-center gap-3">
                       <div className={`p-2 rounded-full ${
                         idx <= analysisStep
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-700 text-gray-400'
+                          ? 'bg-violet-600 text-white'
+                          : 'bg-white/[0.06] text-gray-400'
                       }`}>
                         {idx <= analysisStep ? <CheckCircle2 className="w-4 h-4" /> : step.icon}
                       </div>
@@ -231,9 +231,9 @@ export default function VoiceMatchingPage() {
 
       {/* Voice Profile Results */}
       {voiceProfile && (
-        <section className="py-16 bg-gradient-to-b from-black to-blue-950/20">
+        <section className="py-16 bg-gradient-to-b from-[#030303] to-blue-950/20">
           <div className="container mx-auto px-4 max-w-4xl">
-            <Card className="bg-gray-800/50 border-purple-500/50">
+            <Card className="bg-white/[0.04] border-violet-500/50">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white">Your Voice Profile</CardTitle>
@@ -267,11 +267,11 @@ export default function VoiceMatchingPage() {
                 </div>
 
                 <div className="mt-6 space-y-4">
-                  <div className="p-4 bg-purple-950/30 rounded-lg border border-purple-500/20">
+                  <div className="p-4 bg-violet-950/30 rounded-lg border border-violet-500/20">
                     <p className="text-sm font-medium mb-2 text-white">Your Signature Phrases:</p>
                     <div className="flex flex-wrap gap-2">
                       {voiceProfile.uniquePhrases.map((phrase, idx) => (
-                        <Badge key={idx} className="bg-purple-500/20 text-purple-400 border-purple-500/30">"{phrase}"</Badge>
+                        <Badge key={idx} className="bg-violet-500/10 text-violet-400 border-violet-500/30">"{phrase}"</Badge>
                       ))}
                     </div>
                   </div>
@@ -297,7 +297,7 @@ export default function VoiceMatchingPage() {
                 </div>
 
                 <Link href="/signup">
-                  <Button className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                  <Button className="w-full mt-6 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700">
                     Start Creating in Your Voice
                   </Button>
                 </Link>
@@ -308,14 +308,14 @@ export default function VoiceMatchingPage() {
       )}
 
       {/* How It Works */}
-      <section className="py-20 bg-black">
+      <section className="py-20 bg-[#030303]">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-12 text-white">
             How Deep Linguistic Profiling Works
           </h2>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
                 <div className="w-16 h-16 bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Upload className="w-8 h-8 text-blue-400" />
@@ -329,10 +329,10 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
-                <div className="w-16 h-16 bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Brain className="w-8 h-8 text-purple-400" />
+                <div className="w-16 h-16 bg-violet-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Brain className="w-8 h-8 text-violet-400" />
                 </div>
                 <CardTitle className="text-white">2. Deep Profiling</CardTitle>
               </CardHeader>
@@ -343,10 +343,10 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
                 <div className="w-16 h-16 bg-pink-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-pink-400" />
+                  <Sparkles className="w-8 h-8 text-cyan-400" />
                 </div>
                 <CardTitle className="text-white">3. Pattern Enforcement</CardTitle>
               </CardHeader>
@@ -361,9 +361,9 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* Advanced Features Section */}
-      <section className="py-20 bg-gradient-to-b from-blue-950/20 to-black">
+      <section className="py-20 bg-gradient-to-b from-blue-950/20 to-[#030303]">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-4 text-white">
             Advanced Voice Analysis Features
           </h2>
           <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
@@ -371,7 +371,7 @@ export default function VoiceMatchingPage() {
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-white">
                   <BarChart3 className="w-5 h-5 text-blue-400" />
@@ -391,10 +391,10 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-white">
-                  <Brain className="w-5 h-5 text-purple-400" />
+                  <Brain className="w-5 h-5 text-violet-400" />
                   Real Transcript Analysis
                 </CardTitle>
               </CardHeader>
@@ -411,7 +411,7 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-white">
                   <CheckCircle2 className="w-5 h-5 text-green-400" />
@@ -431,7 +431,7 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-white">
                   <Fingerprint className="w-5 h-5 text-orange-400" />
@@ -451,10 +451,10 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-white">
-                  <User className="w-5 h-5 text-pink-400" />
+                  <User className="w-5 h-5 text-cyan-400" />
                   Audience Psychographics
                 </CardTitle>
               </CardHeader>
@@ -471,7 +471,7 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-white">
                   <Sparkles className="w-5 h-5 text-indigo-400" />
@@ -495,9 +495,9 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* Voice Attributes */}
-      <section className="py-20 bg-gradient-to-b from-black to-blue-950/20">
+      <section className="py-20 bg-gradient-to-b from-[#030303] to-blue-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-4 text-white">
             What We Analyze in Your Voice
           </h2>
           <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
@@ -506,7 +506,7 @@ export default function VoiceMatchingPage() {
 
           <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {voiceAttributes.map((attr, idx) => (
-              <Card key={idx} className="bg-gray-800/50 border-gray-700">
+              <Card key={idx} className="bg-white/[0.04] border-white/5">
                 <CardHeader>
                   <CardTitle className="text-lg text-white">{attr.attribute}</CardTitle>
                   <CardDescription className="text-gray-400">{attr.description}</CardDescription>
@@ -514,7 +514,7 @@ export default function VoiceMatchingPage() {
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {attr.examples.map((example, i) => (
-                      <Badge key={i} variant="outline" className="border-gray-600 text-gray-300">{example}</Badge>
+                      <Badge key={i} variant="outline" className="border-white/[0.06] text-gray-300">{example}</Badge>
                     ))}
                   </div>
                 </CardContent>
@@ -525,9 +525,9 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* What Makes Us Different */}
-      <section className="py-20 bg-gradient-to-b from-purple-950/20 to-black">
+      <section className="py-20 bg-gradient-to-b from-violet-950/20 to-[#030303]">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-4 text-white">
             What Makes Our System Different
           </h2>
           <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
@@ -535,7 +535,7 @@ export default function VoiceMatchingPage() {
           </p>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            <div className="p-6 bg-gray-800/30 rounded-lg border border-gray-700">
+            <div className="p-6 bg-white/[0.04] rounded-lg border border-white/5">
               <h3 className="font-semibold mb-4 text-red-400">Other Voice Matching Tools</h3>
               <ul className="space-y-3 text-sm text-gray-300">
                 <li className="flex items-start gap-2">
@@ -565,7 +565,7 @@ export default function VoiceMatchingPage() {
               </ul>
             </div>
 
-            <div className="p-6 bg-gray-800/30 rounded-lg border border-green-500/30">
+            <div className="p-6 bg-white/[0.04] rounded-lg border border-green-500/30">
               <h3 className="font-semibold mb-4 text-green-400">Our Deep Profiling System</h3>
               <ul className="space-y-3 text-sm text-gray-300">
                 <li className="flex items-start gap-2">
@@ -596,7 +596,7 @@ export default function VoiceMatchingPage() {
             </div>
           </div>
 
-          <div className="mt-12 p-6 bg-gradient-to-r from-blue-950/30 to-purple-950/30 rounded-lg max-w-3xl mx-auto border border-purple-500/30">
+          <div className="mt-12 p-6 bg-gradient-to-r from-blue-950/30 to-violet-950/30 rounded-lg max-w-3xl mx-auto border border-violet-500/30">
             <div className="text-center">
               <p className="text-lg font-semibold mb-2 text-white">Version 3.0 - January 2025</p>
               <p className="text-sm text-gray-400">
@@ -608,9 +608,9 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* Technical Depth Section */}
-      <section className="py-20 bg-black">
+      <section className="py-20 bg-[#030303]">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-4 text-white">
             Technical Analysis Depth
           </h2>
           <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
@@ -618,7 +618,7 @@ export default function VoiceMatchingPage() {
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="text-lg text-white">Question Analysis</CardTitle>
               </CardHeader>
@@ -643,7 +643,7 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="text-lg text-white">Sentence Complexity</CardTitle>
               </CardHeader>
@@ -668,29 +668,29 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="text-lg text-white">Hook Types</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Badge variant="outline" className="w-full justify-between border-gray-600 text-gray-300">
+                  <Badge variant="outline" className="w-full justify-between border-white/[0.06] text-gray-300">
                     <span>Question Hooks</span>
                     <span>35%</span>
                   </Badge>
-                  <Badge variant="outline" className="w-full justify-between border-gray-600 text-gray-300">
+                  <Badge variant="outline" className="w-full justify-between border-white/[0.06] text-gray-300">
                     <span>Statistic Hooks</span>
                     <span>20%</span>
                   </Badge>
-                  <Badge variant="outline" className="w-full justify-between border-gray-600 text-gray-300">
+                  <Badge variant="outline" className="w-full justify-between border-white/[0.06] text-gray-300">
                     <span>Story Hooks</span>
                     <span>25%</span>
                   </Badge>
-                  <Badge variant="outline" className="w-full justify-between border-gray-600 text-gray-300">
+                  <Badge variant="outline" className="w-full justify-between border-white/[0.06] text-gray-300">
                     <span>Problem Hooks</span>
                     <span>15%</span>
                   </Badge>
-                  <Badge variant="outline" className="w-full justify-between border-gray-600 text-gray-300">
+                  <Badge variant="outline" className="w-full justify-between border-white/[0.06] text-gray-300">
                     <span>Curiosity Hooks</span>
                     <span>5%</span>
                   </Badge>
@@ -698,7 +698,7 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="text-lg text-white">Vocabulary Metrics</CardTitle>
               </CardHeader>
@@ -708,18 +708,18 @@ export default function VoiceMatchingPage() {
                     <p className="text-2xl font-bold text-white">0.72</p>
                     <p className="text-xs text-gray-400">Type-Token Ratio</p>
                   </div>
-                  <div className="text-center p-3 bg-purple-950/30 rounded border border-purple-500/20">
+                  <div className="text-center p-3 bg-violet-950/30 rounded border border-violet-500/20">
                     <p className="text-2xl font-bold text-white">3.2</p>
                     <p className="text-xs text-gray-400">Fillers/1000 words</p>
                   </div>
                 </div>
-                <div className="mt-3 p-2 bg-gray-900/30 rounded text-center">
+                <div className="mt-3 p-2 bg-white/[0.02] rounded text-center">
                   <p className="text-xs text-gray-500">Top 50 unique words tracked</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="text-lg text-white">Emotional Dynamics</CardTitle>
               </CardHeader>
@@ -739,19 +739,19 @@ export default function VoiceMatchingPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-300">Authority</span>
-                    <Badge className="bg-purple-500">Expert</Badge>
+                    <Badge className="bg-violet-500">Expert</Badge>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <CardTitle className="text-lg text-white">Pacing Analysis</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="p-3 bg-gradient-to-r from-blue-950/30 to-purple-950/30 rounded border border-purple-500/20">
+                  <div className="p-3 bg-gradient-to-r from-blue-950/30 to-violet-950/30 rounded border border-violet-500/20">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium text-gray-300">Words Per Minute</span>
                       <span className="text-lg font-bold text-white">145</span>
@@ -770,24 +770,24 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* Before & After Examples */}
-      <section className="py-20 bg-gradient-to-b from-black to-blue-950/20">
+      <section className="py-20 bg-gradient-to-b from-[#030303] to-blue-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-12 text-white">
             Generic AI vs Your Voice
           </h2>
 
           <div className="space-y-6 max-w-4xl mx-auto">
             {beforeAfterExamples.map((example, idx) => (
-              <Card key={idx} className="bg-gray-800/50 border-gray-700">
+              <Card key={idx} className="bg-white/[0.04] border-white/5">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-white">{example.category}</CardTitle>
-                    <Badge variant="outline" className="border-purple-500/30 text-purple-400">{example.creator}</Badge>
+                    <Badge variant="outline" className="border-violet-500/30 text-violet-400">{example.creator}</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-gray-900/50 rounded-lg border border-gray-700">
+                    <div className="p-4 bg-white/[0.02] rounded-lg border border-white/5">
                       <div className="flex items-center gap-2 mb-2">
                         <Volume2 className="w-4 h-4 text-gray-500" />
                         <span className="text-sm font-medium text-gray-300">Generic AI</span>
@@ -797,9 +797,9 @@ export default function VoiceMatchingPage() {
                       </p>
                     </div>
 
-                    <div className="p-4 bg-gradient-to-br from-blue-950/30 to-purple-950/30 rounded-lg border border-purple-500/20">
+                    <div className="p-4 bg-gradient-to-br from-blue-950/30 to-violet-950/30 rounded-lg border border-violet-500/20">
                       <div className="flex items-center gap-2 mb-2">
-                        <Mic className="w-4 h-4 text-purple-400" />
+                        <Mic className="w-4 h-4 text-violet-400" />
                         <span className="text-sm font-medium text-white">Your Voice</span>
                       </div>
                       <p className="text-sm italic text-gray-300">
@@ -815,16 +815,16 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 bg-gradient-to-b from-black to-purple-950/20">
+      <section className="py-20 bg-gradient-to-b from-[#030303] to-violet-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">
+          <h2 className="font-display text-3xl font-bold text-center mb-12 text-white">
             Voice Matching Results
           </h2>
 
           <div className="grid md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
-                <CardTitle className="text-3xl font-bold text-purple-400">8</CardTitle>
+                <CardTitle className="text-3xl font-bold text-violet-400">8</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-400">
@@ -833,9 +833,9 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
-                <CardTitle className="text-3xl font-bold text-purple-400">100+</CardTitle>
+                <CardTitle className="text-3xl font-bold text-violet-400">100+</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-400">
@@ -844,9 +844,9 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
-                <CardTitle className="text-3xl font-bold text-purple-400">95%+</CardTitle>
+                <CardTitle className="text-3xl font-bold text-violet-400">95%+</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-400">
@@ -855,9 +855,9 @@ export default function VoiceMatchingPage() {
               </CardContent>
             </Card>
 
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
-                <CardTitle className="text-3xl font-bold text-purple-400">20</CardTitle>
+                <CardTitle className="text-3xl font-bold text-violet-400">20</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-400">
@@ -870,9 +870,9 @@ export default function VoiceMatchingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white">
+      <section className="py-20 bg-gradient-to-r from-blue-600 via-violet-600 to-cyan-600 text-white">
         <div className="container mx-auto px-4 max-w-4xl text-center">
-          <h2 className="text-4xl font-bold mb-6">
+          <h2 className="font-display text-4xl font-bold mb-6">
             Never Sound Like Generic AI Again
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">

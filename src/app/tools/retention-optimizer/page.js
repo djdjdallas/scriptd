@@ -106,7 +106,7 @@ export default function RetentionOptimizerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#030303]">
       <head>
         <title>YouTube Retention Optimizer - Keep Viewers Watching Until The End</title>
         <meta name="description" content="Transform your scripts for 68%+ retention. AI-powered optimization that keeps viewers glued to your videos. Used by top creators." />
@@ -122,7 +122,7 @@ export default function RetentionOptimizerPage() {
               {socialProofData.metrics.averageRetention}%+ Average Retention
             </Badge>
 
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold font-display mb-6 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
               Turn 30% Retention Into 68%+ With AI Optimization
             </h1>
 
@@ -139,7 +139,7 @@ export default function RetentionOptimizerPage() {
                   <TrendingUp className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="border-gray-600 hover:bg-gray-800 text-white">
+              <Button size="lg" variant="outline" className="border-white/[0.06] hover:bg-white/[0.06] text-white">
                 See Before & After
                 <BarChart3 className="ml-2 w-5 h-5" />
               </Button>
@@ -149,13 +149,13 @@ export default function RetentionOptimizerPage() {
       </section>
 
       {/* Interactive Retention Curve */}
-      <section className="py-20 bg-black border-y border-gray-800">
+      <section className="py-20 bg-[#030303] border-y border-white/5">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">
+          <h2 className="text-3xl font-bold font-display text-center mb-12 text-white">
             Your Retention Transformation
           </h2>
 
-          <Card className="max-w-4xl mx-auto bg-gray-800/50 border-gray-700">
+          <Card className="max-w-4xl mx-auto bg-white/[0.04] border-white/5">
             <CardHeader>
               <CardTitle className="text-white">Current vs Optimized Retention</CardTitle>
               <CardDescription className="text-gray-400">
@@ -246,7 +246,7 @@ export default function RetentionOptimizerPage() {
       {/* Script Optimization Examples */}
       <section className="py-20 bg-gradient-to-b from-black to-green-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4 text-white">
+          <h2 className="text-3xl font-bold font-display text-center mb-4 text-white">
             See The Optimization In Action
           </h2>
           <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
@@ -257,7 +257,7 @@ export default function RetentionOptimizerPage() {
             {Object.entries(scriptSections).map(([key, section]) => (
               <Card
                 key={key}
-                className={`bg-gray-800/50 border-gray-700 cursor-pointer ${activeSection === key ? 'border-green-500 shadow-lg shadow-green-500/20' : 'hover:border-gray-600'}`}
+                className={`bg-white/[0.04] border-white/5 cursor-pointer ${activeSection === key ? 'border-green-500 shadow-lg shadow-green-500/20' : 'hover:border-white/[0.06]'}`}
                 onClick={() => setActiveSection(key)}
               >
                 <CardHeader>
@@ -303,15 +303,15 @@ export default function RetentionOptimizerPage() {
       </section>
 
       {/* Optimization Techniques */}
-      <section className="py-20 bg-black">
+      <section className="py-20 bg-[#030303]">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">
+          <h2 className="text-3xl font-bold font-display text-center mb-12 text-white">
             Advanced Retention Techniques We Use
           </h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {optimizationTechniques.map((technique, idx) => (
-              <Card key={idx} className="bg-gray-800/50 border-gray-700">
+              <Card key={idx} className="bg-white/[0.04] border-white/5">
                 <CardHeader>
                   <CardTitle className="text-lg text-white">{technique.name}</CardTitle>
                   <Badge className="bg-green-500/20 text-green-400 border-green-500/30">{technique.impact}</Badge>
@@ -334,12 +334,12 @@ export default function RetentionOptimizerPage() {
       {/* Results Section */}
       <section className="py-20 bg-gradient-to-b from-black to-green-950/20">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">
+          <h2 className="text-3xl font-bold font-display text-center mb-12 text-white">
             What Better Retention Means For You
           </h2>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
                 <Eye className="w-12 h-12 text-green-400 mx-auto mb-2" />
                 <CardTitle className="text-white">More Views</CardTitle>
@@ -352,7 +352,7 @@ export default function RetentionOptimizerPage() {
               </CardContent>
             </Card>
 
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
                 <Users className="w-12 h-12 text-green-400 mx-auto mb-2" />
                 <CardTitle className="text-white">More Subscribers</CardTitle>
@@ -365,7 +365,7 @@ export default function RetentionOptimizerPage() {
               </CardContent>
             </Card>
 
-            <Card className="text-center bg-gray-800/50 border-gray-700">
+            <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
                 <Target className="w-12 h-12 text-green-400 mx-auto mb-2" />
                 <CardTitle className="text-white">More Revenue</CardTitle>
@@ -384,7 +384,7 @@ export default function RetentionOptimizerPage() {
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-r from-green-600 to-emerald-600 text-white">
         <div className="container mx-auto px-4 max-w-4xl text-center">
-          <h2 className="text-4xl font-bold mb-6">
+          <h2 className="text-4xl font-bold font-display mb-6">
             Stop Losing Viewers. Start Keeping Them.
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">

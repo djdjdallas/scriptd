@@ -96,8 +96,8 @@ export default function ScriptHistoryPage({ params }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="glass-card p-8 animate-pulse-slow">
-          <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto" />
+        <div className="vb-card p-8 animate-pulse-slow">
+          <Loader2 className="h-12 w-12 animate-spin text-violet-400 mx-auto" />
           <p className="mt-4 text-gray-300">Loading version history...</p>
         </div>
       </div>
@@ -107,14 +107,14 @@ export default function ScriptHistoryPage({ params }) {
   if (!script) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="glass-card p-8 text-center max-w-md">
+        <div className="vb-card p-8 text-center max-w-md">
           <AlertCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-white mb-2">Script Not Found</h2>
           <p className="text-gray-400 mb-6">
             This script doesn't exist or you don't have permission to view it.
           </p>
           <Link href="/scripts">
-            <Button className="glass-button">
+            <Button className="vb-btn-outline">
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back to Scripts
             </Button>
@@ -126,19 +126,12 @@ export default function ScriptHistoryPage({ params }) {
 
   return (
     <div className="min-h-screen p-6">
-      {/* Background Effects */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="gradient-orb w-96 h-96 bg-purple-600 -top-48 -right-48 opacity-20" />
-        <div className="gradient-orb w-96 h-96 bg-pink-600 -bottom-48 -left-48 opacity-20" />
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
-      </div>
-
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between animate-reveal">
           <div className="flex items-center gap-4">
             <Link href={`/scripts/${scriptId}`}>
-              <Button className="glass-button">
+              <Button className="vb-btn-outline">
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 Back to Script
               </Button>
@@ -146,8 +139,8 @@ export default function ScriptHistoryPage({ params }) {
             
             <div>
               <div className="flex items-center gap-3">
-                <HistoryIcon className="h-6 w-6 text-purple-400" />
-                <h1 className="text-2xl font-bold text-white">Version History</h1>
+                <HistoryIcon className="h-6 w-6 text-violet-400" />
+                <h1 className="font-display text-2xl md:text-3xl text-white">Version History</h1>
               </div>
               <div className="flex items-center gap-2 mt-2 text-sm text-gray-400">
                 <FileText className="h-3 w-3" />
@@ -158,7 +151,7 @@ export default function ScriptHistoryPage({ params }) {
 
           <div className="flex items-center gap-2">
             <Link href={`/scripts/${scriptId}/edit`}>
-              <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50">
+              <Button className="vb-btn-primary">
                 Edit Script
               </Button>
             </Link>
@@ -175,9 +168,9 @@ export default function ScriptHistoryPage({ params }) {
         </div>
 
         {/* Help Text */}
-        <div className="glass-card p-4 animate-reveal" style={{ animationDelay: '0.2s' }}>
+        <div className="vb-card animate-reveal" style={{ animationDelay: '0.2s' }}>
           <div className="flex items-start gap-3">
-            <HistoryIcon className="h-5 w-5 text-purple-400 mt-0.5" />
+            <HistoryIcon className="h-5 w-5 text-violet-400 mt-0.5" />
             <div className="text-sm text-gray-300">
               <h3 className="font-semibold mb-1">About Version History:</h3>
               <ul className="space-y-1 text-gray-400">

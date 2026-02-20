@@ -52,3 +52,4 @@ supabase/migrations
 .env.sentry-build-plugin
 voice-profile-log.txt
 database-schema.sql.bak
+.superdesign

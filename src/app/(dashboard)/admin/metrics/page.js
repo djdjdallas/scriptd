@@ -38,8 +38,8 @@ export default function MetricsAdminPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-          <Database className="h-8 w-8 text-purple-400" />
+        <h1 className="text-3xl font-bold font-display text-white flex items-center gap-2">
+          <Database className="h-8 w-8 text-violet-400" />
           Metrics Collection Admin
         </h1>
         <p className="text-gray-400 mt-2">
@@ -47,9 +47,9 @@ export default function MetricsAdminPage() {
         </p>
       </div>
 
-      <div className="glass-card p-6 space-y-4">
+      <div className="vb-card p-6 space-y-4">
         <div>
-          <h2 className="text-xl font-semibold text-white mb-2">Manual Collection</h2>
+          <h2 className="text-xl font-semibold font-display text-white mb-2">Manual Collection</h2>
           <p className="text-gray-400 text-sm mb-4">
             This will fetch current trending data from YouTube and store it for historical tracking.
             Run this every 6-12 hours to build up historical data for growth calculations.
@@ -58,7 +58,7 @@ export default function MetricsAdminPage() {
           <Button
             onClick={collectMetrics}
             disabled={loading}
-            className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+            className="vb-btn-primary bg-gradient-to-r from-violet-600 to-cyan-600 text-white"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             {loading ? 'Collecting...' : 'Collect Metrics Now'}
@@ -66,8 +66,8 @@ export default function MetricsAdminPage() {
         </div>
 
         {result && (
-          <div className="mt-6 p-4 glass rounded-lg">
-            <h3 className="text-lg font-semibold text-white mb-2">Last Collection Result</h3>
+          <div className="mt-6 p-4 bg-white/[0.04] border border-white/[0.06] rounded-xl">
+            <h3 className="text-lg font-semibold font-display text-white mb-2">Last Collection Result</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-400">Topics Collected:</span>
@@ -91,7 +91,7 @@ export default function MetricsAdminPage() {
           <div className="flex items-start gap-2">
             <TrendingUp className="h-5 w-5 text-yellow-400 mt-0.5" />
             <div>
-              <h3 className="text-yellow-400 font-semibold">Why is growth showing "N/A"?</h3>
+              <h3 className="text-yellow-400 font-semibold font-display">Why is growth showing "N/A"?</h3>
               <p className="text-yellow-200/80 text-sm mt-1">
                 Growth calculations require historical data. You need to:
               </p>
@@ -107,8 +107,8 @@ export default function MetricsAdminPage() {
           </div>
         </div>
 
-        <div className="mt-6 p-4 glass rounded-lg">
-          <h3 className="text-lg font-semibold text-white mb-2">Automation Setup</h3>
+        <div className="mt-6 p-4 bg-white/[0.04] border border-white/[0.06] rounded-xl">
+          <h3 className="text-lg font-semibold font-display text-white mb-2">Automation Setup</h3>
           <p className="text-gray-400 text-sm">
             For automatic collection, you can:
           </p>

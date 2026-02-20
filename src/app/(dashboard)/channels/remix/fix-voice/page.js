@@ -63,14 +63,14 @@ export default function FixRemixVoiceProfilesPage() {
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
-      <h1 className="text-3xl font-bold text-white mb-6">Fix Remix Voice Profiles</h1>
+      <h1 className="text-3xl font-bold font-display text-white mb-6">Fix Remix Voice Profiles</h1>
       
       <Card className="bg-zinc-900 border-zinc-800 p-6">
         <div className="space-y-4">
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5" />
             <div>
-              <h2 className="text-lg font-semibold text-white mb-2">About this tool</h2>
+              <h2 className="text-lg font-semibold font-display text-white mb-2">About this tool</h2>
               <p className="text-gray-400 text-sm">
                 This tool creates voice profile entries for existing remix channels. 
                 Run this if you created a remix channel but don't see its voice profile 
@@ -137,7 +137,7 @@ export default function FixRemixVoiceProfilesPage() {
             <Button
               onClick={runFix}
               disabled={loading}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              className="bg-gradient-to-r from-violet-600 to-cyan-600 text-white"
             >
               {loading ? (
                 <>
@@ -158,11 +158,11 @@ export default function FixRemixVoiceProfilesPage() {
       <div className="mt-6 text-center">
         <p className="text-gray-500 text-sm">
           After running this fix, check your{' '}
-          <a href="/voice" className="text-purple-400 hover:text-purple-300 underline">
+          <a href="/voice" className="text-violet-400 hover:text-violet-300 underline">
             Voice Training
           </a>{' '}
           page or create a new{' '}
-          <a href="/scripts/create" className="text-purple-400 hover:text-purple-300 underline">
+          <a href="/scripts/create" className="text-violet-400 hover:text-violet-300 underline">
             Script
           </a>{' '}
           to see your remix voice profiles.

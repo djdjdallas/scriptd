@@ -444,7 +444,7 @@ Please analyze:
           </div>
           <button
             onClick={createNewSession}
-            className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 hover:from-purple-500/60 hover:to-pink-500/60 transition-all"
+            className="w-full vb-btn-primary text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all"
           >
             <Plus className="h-4 w-4" />
             New Chat
@@ -454,7 +454,7 @@ Please analyze:
         <div className="flex-1 overflow-y-auto p-4">
           {loadingSessions ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
+              <Loader2 className="h-6 w-6 animate-spin text-violet-400" />
             </div>
           ) : sessions.length === 0 ? (
             <div className="text-center py-8">
@@ -469,7 +469,7 @@ Please analyze:
                   key={session.id}
                   className={`group rounded-lg transition-all relative ${
                     sessionId === session.id
-                      ? 'glass bg-purple-500/20 ring-2 ring-purple-400'
+                      ? 'bg-white/[0.04] border border-white/[0.06] rounded-xl bg-violet-500/10 ring-2 ring-violet-400'
                       : 'hover:bg-white/5'
                   }`}
                 >
@@ -528,18 +528,11 @@ Please analyze:
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-      {/* Background Effects */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-red-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '5s' }} />
-      </div>
-
       {/* Header */}
       <div className="animate-reveal">
-        <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-          <Youtube className="h-10 w-10 text-red-400 neon-glow" />
+        <h1 className="text-4xl font-display font-bold text-white flex items-center gap-3">
+          <Youtube className="h-10 w-10 text-red-400" />
           YouTube Research
-          <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
         </h1>
         <p className="text-gray-400 mt-2">
           AI-powered insights for viral content and channel growth
@@ -549,10 +542,10 @@ Please analyze:
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
         {/* Analyze Channel */}
-        <div className="glass-card p-6 glass-hover group">
+        <div className="vb-card-interactive p-6 group">
           <div className="flex items-center gap-3 mb-4">
-            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-              <AtSign className="h-5 w-5 text-purple-400" />
+            <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <AtSign className="h-5 w-5 text-violet-400" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">
@@ -569,12 +562,12 @@ Please analyze:
               onKeyPress={(e) =>
                 e.key === "Enter" && handleChannelAnalysis()
               }
-              className="glass-input text-white"
+              className="vb-input text-white"
             />
             <Button
               onClick={handleChannelAnalysis}
               disabled={!channelInput.trim() || isLoading}
-              className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+              className="vb-btn-primary text-white"
             >
               <Search className="h-4 w-4" />
             </Button>
@@ -582,9 +575,9 @@ Please analyze:
         </div>
 
         {/* Analyze Video */}
-        <div className="glass-card p-6 glass-hover group">
+        <div className="vb-card-interactive p-6 group">
           <div className="flex items-center gap-3 mb-4">
-            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
               <PlayCircle className="h-5 w-5 text-red-400" />
             </div>
             <div>
@@ -600,12 +593,12 @@ Please analyze:
               value={videoUrlInput}
               onChange={(e) => setVideoUrlInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleVideoAnalysis()}
-              className="glass-input text-white"
+              className="vb-input text-white"
             />
             <Button
               onClick={handleVideoAnalysis}
               disabled={!videoUrlInput.trim() || isLoading}
-              className="glass-button bg-gradient-to-r from-red-500/50 to-orange-500/50 text-white"
+              className="vb-btn-primary bg-gradient-to-r from-red-500/50 to-orange-500/50 text-white"
             >
               <PlayCircle className="h-4 w-4" />
             </Button>
@@ -615,7 +608,7 @@ Please analyze:
 
 
       {/* Main Chat/Library Interface */}
-      <div className="glass-card overflow-hidden animate-reveal" style={{ animationDelay: '0.3s' }}>
+      <div className="vb-card overflow-hidden animate-reveal" style={{ animationDelay: '0.3s' }}>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="border-b border-white/10 p-4">
             <div className="flex gap-2">
@@ -623,7 +616,7 @@ Please analyze:
                 onClick={() => setActiveTab('chat')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
                   activeTab === 'chat'
-                    ? 'bg-purple-500/20 text-white ring-2 ring-purple-400'
+                    ? 'bg-violet-500/10 text-white ring-2 ring-violet-400'
                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                 }`}
               >
@@ -634,7 +627,7 @@ Please analyze:
                 onClick={() => setActiveTab('library')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
                   activeTab === 'library'
-                    ? 'bg-purple-500/20 text-white ring-2 ring-purple-400'
+                    ? 'bg-violet-500/10 text-white ring-2 ring-violet-400'
                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                 }`}
               >
@@ -651,8 +644,8 @@ Please analyze:
                 <ScrollArea className="flex-1 p-6">
                   {messages.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="glass w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Sparkles className="h-10 w-10 text-purple-400 animate-pulse" />
+                      <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Sparkles className="h-10 w-10 text-violet-400 animate-pulse" />
                       </div>
                       <h3 className="text-lg font-semibold text-white mb-2">
                         Start Your Research
@@ -670,10 +663,10 @@ Please analyze:
                             <button
                               key={template.id}
                               onClick={() => handleTemplateClick(template)}
-                              className="glass glass-hover p-3 text-left group"
+                              className="vb-card-interactive p-3 text-left group"
                             >
                               <div className="flex items-center gap-2 mb-1">
-                                <div className="text-purple-400">
+                                <div className="text-violet-400">
                                   {template.icon}
                                 </div>
                               </div>
@@ -695,7 +688,7 @@ Please analyze:
                           <button
                             key={i}
                             onClick={() => sendMessage(example)}
-                            className="glass-button text-sm px-3 py-2 text-gray-300 hover:text-white"
+                            className="vb-btn-outline text-sm px-3 py-2 text-gray-300 hover:text-white"
                           >
                             {example}
                           </button>
@@ -716,8 +709,8 @@ Please analyze:
                           <div
                             className={`max-w-[80%] p-4 rounded-lg ${
                               message.role === "user"
-                                ? "glass bg-purple-500/20 text-white"
-                                : "glass text-white"
+                                ? "bg-white/[0.04] border border-white/[0.06] rounded-xl bg-violet-500/10 text-white"
+                                : "bg-white/[0.04] border border-white/[0.06] rounded-xl text-white"
                             }`}
                           >
                             <p className="whitespace-pre-wrap">
@@ -748,8 +741,8 @@ Please analyze:
                       ))}
                       {isLoading && (
                         <div className="flex justify-start">
-                          <div className="glass p-4 rounded-lg">
-                            <Loader2 className="h-5 w-5 animate-spin text-purple-400" />
+                          <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4 rounded-lg">
+                            <Loader2 className="h-5 w-5 animate-spin text-violet-400" />
                           </div>
                         </div>
                       )}
@@ -762,7 +755,7 @@ Please analyze:
                   <div className="flex gap-2 mb-2">
                     <Button
                       onClick={() => setShowTemplates(!showTemplates)}
-                      className="glass-button bg-gradient-to-r from-purple-500/30 to-pink-500/30 hover:from-purple-500/40 hover:to-pink-500/40 text-white shrink-0 px-3 py-2"
+                      className="vb-btn-primary bg-gradient-to-r from-violet-500/30 to-cyan-500/30 hover:from-violet-500/40 hover:to-cyan-500/40 text-white shrink-0 px-3 py-2"
                     >
                       <Sparkles className="h-4 w-4 mr-1" />
                       Templates
@@ -777,13 +770,13 @@ Please analyze:
                           sendMessage(input);
                         }
                       }}
-                      className="glass-input min-h-[60px] text-white !bg-gray-900/40 dark:!bg-gray-900/60"
+                      className="vb-input min-h-[60px] text-white !bg-gray-900/40 dark:!bg-gray-900/60"
                       rows={2}
                     />
                     <Button
                       onClick={() => sendMessage(input)}
                       disabled={!input.trim() || isLoading}
-                      className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+                      className="vb-btn-primary text-white"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
@@ -791,7 +784,7 @@ Please analyze:
                   
                   {/* Collapsible Templates */}
                   {showTemplates && (
-                    <div className="mb-3 p-3 glass rounded-lg">
+                    <div className="mb-3 p-3 bg-white/[0.04] border border-white/[0.06] rounded-xl rounded-lg">
                       <div className="grid grid-cols-2 gap-2">
                         {RESEARCH_TEMPLATES.slice(0, 8).map((template) => (
                           <button
@@ -800,10 +793,10 @@ Please analyze:
                               handleTemplateClick(template);
                               setShowTemplates(false);
                             }}
-                            className="p-2 text-left text-xs glass glass-hover rounded transition-colors"
+                            className="p-2 text-left text-xs vb-card-interactive rounded transition-colors"
                           >
                             <div className="flex items-center gap-1 mb-1">
-                              <div className="text-purple-400">
+                              <div className="text-violet-400">
                                 {template.icon}
                               </div>
                               <span className="font-medium text-white">{template.title}</span>
@@ -838,11 +831,11 @@ Please analyze:
                         {category.prompts.map((prompt, i) => (
                           <button
                             key={i}
-                            className="glass glass-hover p-3 text-left text-gray-300 hover:text-white transition-all group"
+                            className="vb-card-interactive p-3 text-left text-gray-300 hover:text-white transition-all group"
                             onClick={() => handlePromptClick(prompt)}
                           >
                             <div className="flex items-start gap-2">
-                              <Copy className="h-4 w-4 flex-shrink-0 mt-0.5 group-hover:text-purple-400" />
+                              <Copy className="h-4 w-4 flex-shrink-0 mt-0.5 group-hover:text-violet-400" />
                               <span className="text-sm">{prompt}</span>
                             </div>
                           </button>

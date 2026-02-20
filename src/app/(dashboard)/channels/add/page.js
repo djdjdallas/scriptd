@@ -14,7 +14,6 @@ import { useToast } from '@/components/ui/use-toast';
 import {
   ArrowLeft,
   Youtube,
-  Sparkles,
   Users,
   TrendingUp,
   Copy,
@@ -202,8 +201,8 @@ export default function AddChannelPage() {
           </Button>
         </Link>
         
-        <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-          <Plus className="h-8 w-8 text-purple-400" />
+        <h1 className="text-3xl font-bold font-display text-white flex items-center gap-2">
+          <Plus className="h-8 w-8 text-violet-400" />
           Add Your Channel
         </h1>
       </div>
@@ -222,14 +221,14 @@ export default function AddChannelPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 p-1 glass rounded-lg">
+      <div className="flex gap-2 p-1 bg-white/[0.04] border border-white/[0.06] rounded-xl">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleTabChange(tab.id)}
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${
               activeTab === tab.id 
-                ? 'bg-purple-500/20 text-white ring-2 ring-purple-400' 
+                ? 'bg-violet-500/10 text-white ring-2 ring-violet-400'
                 : 'text-gray-400 hover:text-white hover:bg-white/10'
             }`}
           >
@@ -244,13 +243,13 @@ export default function AddChannelPage() {
 
       {/* Content based on active tab */}
       {activeTab === 'existing' && !showCustomForm && (
-        <div className="glass-card p-8 text-center space-y-6">
-          <div className="inline-flex items-center justify-center w-20 h-20 glass rounded-full">
-            <Sparkles className="h-10 w-10 text-purple-400" />
+        <div className="vb-card p-8 text-center space-y-6">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/[0.04] border border-white/[0.06] rounded-full">
+            <Youtube className="h-10 w-10 text-violet-400" />
           </div>
-          
+
           <div>
-            <h2 className="text-2xl font-bold text-white mb-3">
+            <h2 className="text-2xl font-bold font-display text-white mb-3">
               Why Start From Scratch?
             </h2>
             <p className="text-gray-400 max-w-md mx-auto">
@@ -275,7 +274,7 @@ export default function AddChannelPage() {
 
           <Button 
             onClick={handleExistingChannel}
-            className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+            className="vb-btn-primary text-white"
             size="lg"
           >
             <Youtube className="mr-2 h-5 w-5" />
@@ -285,10 +284,10 @@ export default function AddChannelPage() {
       )}
 
       {activeTab === 'custom' && (
-        <div className="glass-card p-8 space-y-6">
+        <div className="vb-card p-8 space-y-6">
           {!showCustomForm ? (
             <>
-              <div className="flex items-center gap-3 p-4 glass rounded-lg border border-blue-400/30">
+              <div className="flex items-center gap-3 p-4 bg-white/[0.04] border border-blue-400/30 rounded-xl">
                 <AlertCircle className="h-5 w-5 text-blue-400" />
                 <div>
                   <p className="text-white font-medium">Start From Scratch</p>
@@ -298,9 +297,9 @@ export default function AddChannelPage() {
                 </div>
               </div>
 
-              <Button 
+              <Button
                 onClick={() => setShowCustomForm(true)}
-                className="w-full glass-button text-white"
+                className="w-full vb-btn-outline text-white"
                 size="lg"
               >
                 <Edit3 className="mr-2 h-5 w-5" />
@@ -318,7 +317,7 @@ export default function AddChannelPage() {
                   value={channelTitle}
                   onChange={(e) => setChannelTitle(e.target.value)}
                   placeholder="Tech Tips Daily"
-                  className="mt-2 glass-input text-white"
+                  className="mt-2 vb-input text-white"
                 />
               </div>
 
@@ -333,7 +332,7 @@ export default function AddChannelPage() {
                   placeholder="My audience: Tech professionals aged 25-40 who want to improve productivity. They struggle with work-life balance.
 
 My content: Quick tutorials on productivity tools, coding shortcuts, and time management strategies for developers."
-                  className="mt-2 glass-input text-white min-h-[150px]"
+                  className="mt-2 vb-input text-white min-h-[150px]"
                 />
               </div>
 
@@ -349,14 +348,14 @@ My content: Quick tutorials on productivity tools, coding shortcuts, and time ma
                   value={youtubeUrl}
                   onChange={(e) => setYoutubeUrl(e.target.value)}
                   placeholder="https://youtube.com/@yourchannel (optional)"
-                  className="glass-input text-white"
+                  className="vb-input text-white"
                 />
               </div>
 
               <Button 
                 onClick={handleCustomChannel}
                 disabled={loading}
-                className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+                className="w-full vb-btn-primary text-white"
                 size="lg"
               >
                 {loading ? (
@@ -377,15 +376,15 @@ My content: Quick tutorials on productivity tools, coding shortcuts, and time ma
       )}
 
       {activeTab === 'remix' && (
-        <div className="glass-card p-8 text-center space-y-6">
+        <div className="vb-card p-8 text-center space-y-6">
           {!isPremium ? (
             <>
-              <div className="inline-flex items-center justify-center w-20 h-20 glass rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-white/[0.04] border border-white/[0.06] rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20">
                 <Crown className="h-10 w-10 text-yellow-400" />
               </div>
               
               <div>
-                <h2 className="text-2xl font-bold text-white mb-3">
+                <h2 className="text-2xl font-bold font-display text-white mb-3">
                   Premium Feature
                 </h2>
                 <p className="text-gray-400 max-w-md mx-auto mb-6">
@@ -395,7 +394,7 @@ My content: Quick tutorials on productivity tools, coding shortcuts, and time ma
 
               <div className="space-y-3 max-w-sm mx-auto text-left">
                 <div className="flex items-start gap-3">
-                  <Shuffle className="h-5 w-5 text-purple-400 mt-0.5" />
+                  <Shuffle className="h-5 w-5 text-violet-400 mt-0.5" />
                   <p className="text-gray-300">Combine multiple channel strategies</p>
                 </div>
                 <div className="flex items-start gap-3">
@@ -417,7 +416,7 @@ My content: Quick tutorials on productivity tools, coding shortcuts, and time ma
                   });
                 }}>
                 <Button
-                  className="glass-button bg-gradient-to-r from-yellow-500/50 to-orange-500/50 text-white"
+                  className="vb-btn-outline bg-gradient-to-r from-yellow-500/50 to-orange-500/50 text-white"
                   size="lg"
                 >
                   <Lock className="mr-2 h-5 w-5" />
@@ -427,12 +426,12 @@ My content: Quick tutorials on productivity tools, coding shortcuts, and time ma
             </>
           ) : (
             <div className="space-y-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 glass rounded-full">
-                <Shuffle className="h-10 w-10 text-purple-400" />
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-white/[0.04] border border-white/[0.06] rounded-full">
+                <Shuffle className="h-10 w-10 text-violet-400" />
               </div>
-              
+
               <div>
-                <h2 className="text-2xl font-bold text-white mb-3">
+                <h2 className="text-2xl font-bold font-display text-white mb-3">
                   Remix a Channel
                 </h2>
                 <p className="text-gray-400 max-w-md mx-auto">
@@ -442,7 +441,7 @@ My content: Quick tutorials on productivity tools, coding shortcuts, and time ma
 
               <div className="space-y-3 max-w-sm mx-auto text-left">
                 <div className="flex items-start gap-3">
-                  <Shuffle className="h-5 w-5 text-purple-400 mt-0.5" />
+                  <Shuffle className="h-5 w-5 text-violet-400 mt-0.5" />
                   <p className="text-gray-300">Select 2-3 successful channels</p>
                 </div>
                 <div className="flex items-start gap-3">
@@ -457,7 +456,7 @@ My content: Quick tutorials on productivity tools, coding shortcuts, and time ma
 
               <Button 
                 onClick={() => router.push('/channels/remix')}
-                className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+                className="w-full vb-btn-primary text-white"
                 size="lg"
               >
                 <Shuffle className="mr-2 h-5 w-5" />

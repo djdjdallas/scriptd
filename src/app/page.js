@@ -1,132 +1,140 @@
 "use client";
 
 /**
- * Landing Page
+ * Landing Page — Vantablack + Violet/Cyan/Emerald aesthetic
  *
- * Authenticity-first positioning for GenScript.
- * Focuses on YouTube compliance and demonetization protection.
+ * Premium editorial design with Instrument Serif headings,
+ * shimmer animations, and a developer-grade code showcase.
  */
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-import { Button } from "@/components/ui/button";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { StatHero, AnimatedCounter } from "@/components/stats";
 import { PLANS } from "@/lib/constants";
 import {
   ArrowRight,
-  Sparkles,
-  Shield,
   ShieldCheck,
   AlertTriangle,
   XCircle,
   CheckCircle,
-  Mic,
   TrendingUp,
   Star,
   ChevronDown,
   ChevronRight,
   Download,
-  BarChart3,
   Users,
   Bot,
   AudioWaveform,
-  FileText,
   Check,
   X,
   Menu,
+  Fingerprint,
+  Zap,
+  Layers,
+  Copy,
 } from "lucide-react";
+
+/* ─── Data ─────────────────────────────────────────────── */
 
 const FEATURES = [
   {
-    title: "Compliance Checker",
-    description: "Every script scanned for YouTube policy violations. Get warnings before you publish, not after.",
+    title: "Compliance Engine",
+    description:
+      "Every script scanned for YouTube policy violations. Get warnings before you publish, not after.",
     icon: ShieldCheck,
-    gradient: "from-green-500/20 to-emerald-500/20",
-    benefit: "Protect your monetization"
+    color: "text-violet-400",
+    bg: "bg-violet-500/10",
+    borderHover: "hover:border-violet-500/30",
   },
   {
-    title: "Voice Matching",
-    description: "AI that learns YOUR speaking style. Upload past scripts, get output that sounds like you.",
-    icon: AudioWaveform,
-    gradient: "from-blue-500/20 to-cyan-500/20",
-    benefit: "Sound authentically you"
+    title: "Voice DNA Matching",
+    description:
+      "AI that learns YOUR speaking style. Upload past scripts, get output that sounds like you.",
+    icon: Fingerprint,
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/10",
+    borderHover: "hover:border-cyan-500/30",
   },
   {
     title: "Retention Optimizer",
-    description: "Scripts engineered for 70%+ retention. Hook formulas proven to keep viewers watching.",
-    icon: TrendingUp,
-    gradient: "from-purple-500/20 to-pink-500/20",
-    benefit: "Keep viewers watching"
+    description:
+      "Scripts engineered for 70%+ retention. Hook formulas proven to keep viewers watching.",
+    icon: Zap,
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    borderHover: "hover:border-emerald-500/30",
   },
   {
     title: "One-Click Export",
-    description: "Title, description, tags - all generated. Copy straight to YouTube Studio.",
-    icon: Download,
-    gradient: "from-orange-500/20 to-yellow-500/20",
-    benefit: "Upload in seconds"
-  }
+    description:
+      "Title, description, tags — all generated. Copy straight to YouTube Studio.",
+    icon: Layers,
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    borderHover: "hover:border-amber-500/30",
+  },
 ];
 
 const PROBLEMS = [
   {
     icon: AlertTriangle,
     title: "AI-generated scripts can get your channel demonetized",
-    color: "text-red-400"
+    color: "text-red-400",
   },
   {
     icon: Bot,
-    title: "Generic AI sounds like... generic AI",
-    color: "text-yellow-400"
+    title: "Generic AI sounds like… generic AI",
+    color: "text-yellow-400",
   },
   {
     icon: XCircle,
     title: "One wrong video can tank months of work",
-    color: "text-orange-400"
-  }
+    color: "text-orange-400",
+  },
 ];
 
 const SOLUTIONS = [
   {
     icon: ShieldCheck,
     title: "Real-time compliance checking as you write",
-    color: "text-green-400"
+    color: "text-emerald-400",
   },
   {
     icon: AudioWaveform,
     title: "Voice matching that sounds like YOU",
-    color: "text-blue-400"
+    color: "text-cyan-400",
   },
   {
-    icon: Shield,
+    icon: Fingerprint,
     title: "Built-in safeguards against AI detection",
-    color: "text-purple-400"
-  }
+    color: "text-violet-400",
+  },
 ];
 
 const TESTIMONIALS = [
   {
-    quote: "My retention went from 35% to 68% after switching to GenScript. The compliance checker saved me from a strike I didn't even know was coming.",
+    quote:
+      "My retention went from 35% to 68% after switching to GenScript. The compliance checker saved me from a strike I didn't even know was coming.",
     name: "Michael Torres",
     channel: "@FinanceFreedom",
     subscribers: "45K subscribers",
-    niche: "Finance"
+    niche: "Finance",
   },
   {
-    quote: "Finally, an AI tool that actually sounds like me. My audience can't tell the difference.",
+    quote:
+      "Finally, an AI tool that actually sounds like me. My audience can't tell the difference.",
     name: "Sarah Chen",
     channel: "@TechReviewsPro",
     subscribers: "120K subscribers",
-    niche: "Tech reviews"
+    niche: "Tech reviews",
   },
   {
-    quote: "I was terrified of YouTube's new AI policy. GenScript is the only tool that made me feel safe using AI again.",
+    quote:
+      "I was terrified of YouTube's new AI policy. GenScript is the only tool that made me feel safe using AI again.",
     name: "James Wilson",
     channel: "@LearnWithJames",
     subscribers: "28K subscribers",
-    niche: "Educational content"
-  }
+    niche: "Educational content",
+  },
 ];
 
 const COMPARISON_DATA = [
@@ -140,364 +148,298 @@ const COMPARISON_DATA = [
 const FAQ_DATA = [
   {
     question: "Will YouTube know I used AI?",
-    answer: "YouTube's policy doesn't ban AI-assisted content. It targets content that lacks authenticity. GenScript's compliance checker ensures your scripts include personal insight markers and avoid AI-typical patterns. Plus, our voice matching makes your content sound genuinely like you."
+    answer:
+      "YouTube's policy doesn't ban AI-assisted content. It targets content that lacks authenticity. GenScript's compliance checker ensures your scripts include personal insight markers and avoid AI-typical patterns. Plus, our voice matching makes your content sound genuinely like you.",
   },
   {
     question: "How does the compliance checker work?",
-    answer: "Our algorithm analyzes your script across four categories: repetitiveness, original insight markers, AI patterns, and structure quality. You get a score from 0-100 with specific suggestions for improvement. Scripts scoring 80+ are considered 'YouTube Approved.'"
+    answer:
+      'Our algorithm analyzes your script across four categories: repetitiveness, original insight markers, AI patterns, and structure quality. You get a score from 0-100 with specific suggestions for improvement. Scripts scoring 80+ are considered "YouTube Approved."',
   },
   {
     question: "Can I use my own voice/style?",
-    answer: "Absolutely! Our voice matching feature learns your speaking patterns from your existing content. Upload a few transcripts or past scripts, and GenScript will generate new content that sounds authentically like you, not like generic AI."
+    answer:
+      "Absolutely! Our voice matching feature learns your speaking patterns from your existing content. Upload a few transcripts or past scripts, and GenScript will generate new content that sounds authentically like you, not like generic AI.",
   },
   {
     question: "What if I get demonetized anyway?",
-    answer: "While no tool can guarantee 100% protection, our compliance checker significantly reduces risk by flagging issues before you publish. We continuously update our detection patterns as YouTube's policies evolve to keep you protected."
+    answer:
+      "While no tool can guarantee 100% protection, our compliance checker significantly reduces risk by flagging issues before you publish. We continuously update our detection patterns as YouTube's policies evolve to keep you protected.",
   },
   {
     question: "How is this different from ChatGPT?",
-    answer: "ChatGPT is a general-purpose AI that doesn't understand YouTube's specific requirements. GenScript is built exclusively for YouTube creators with retention optimization, compliance checking, and voice matching that ChatGPT simply can't provide."
+    answer:
+      "ChatGPT is a general-purpose AI that doesn't understand YouTube's specific requirements. GenScript is built exclusively for YouTube creators with retention optimization, compliance checking, and voice matching that ChatGPT simply can't provide.",
   },
   {
     question: "Do you offer refunds?",
-    answer: "Yes! We offer a 14-day money-back guarantee. If GenScript doesn't meet your needs, contact us within 14 days for a full refund. No questions asked."
-  }
+    answer:
+      "Yes! We offer a 14-day money-back guarantee. If GenScript doesn't meet your needs, contact us within 14 days for a full refund. No questions asked.",
+  },
 ];
 
+const TICKER_STATS = [
+  { value: "2.5M+", label: "Scripts Generated" },
+  { value: "89%", label: "Avg Compliance" },
+  { value: "68%", label: "Avg Retention" },
+  { value: "0", label: "Policy Strikes" },
+];
+
+/* ─── Page ─────────────────────────────────────────────── */
+
 export default function Home() {
-  const heroRef = useRef(null);
   const [openFaq, setOpenFaq] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [ctaEmail, setCtaEmail] = useState("");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 overflow-x-hidden">
-      {/* Animated Background Elements */}
-      <div className="fixed inset-0 -z-10">
-        {/* Gradient Orbs */}
-        <div className="gradient-orb w-96 h-96 bg-purple-600 -top-48 -left-48" />
+    <div className="min-h-screen bg-[#030303] text-white overflow-x-hidden">
+      {/* Background Orbs */}
+      <div className="fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
         <div
-          className="gradient-orb w-96 h-96 bg-pink-600 -bottom-48 -right-48"
-          style={{ animationDelay: "10s" }}
+          className="absolute -top-48 -left-48 w-[500px] h-[500px] rounded-full bg-violet-600/20 blur-[120px]"
+          style={{ transform: "translateZ(0)" }}
         />
         <div
-          className="gradient-orb w-64 h-64 bg-blue-600 top-1/2 left-1/3"
-          style={{ animationDelay: "5s" }}
+          className="absolute -bottom-48 -right-48 w-[500px] h-[500px] rounded-full bg-cyan-600/20 blur-[120px]"
+          style={{ transform: "translateZ(0)" }}
         />
-
-        {/* Morphing Shapes */}
-        <div className="absolute top-20 right-20 w-32 h-32 bg-gradient-to-br from-purple-400/20 to-pink-400/20 animate-morph" />
         <div
-          className="absolute bottom-40 left-40 w-48 h-48 bg-gradient-to-tr from-blue-400/20 to-purple-400/20 animate-morph"
-          style={{ animationDelay: "4s" }}
+          className="absolute top-1/3 left-1/2 w-[300px] h-[300px] rounded-full bg-emerald-600/10 blur-[100px]"
+          style={{ transform: "translateZ(0)" }}
         />
-
-        {/* Dynamic Grid */}
-        <svg className="absolute inset-0 w-full h-full opacity-20">
-          <defs>
-            <pattern
-              id="grid"
-              width="40"
-              height="40"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 40 0 L 0 0 0 40"
-                fill="none"
-                stroke="rgba(147, 51, 234, 0.3)"
-                strokeWidth="1"
-              />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-
-        {/* Particle Field - PERFORMANCE FIX: Reduced from 50 to 10 particles (80% GPU reduction) */}
-        <div className="absolute inset-0">
-          {[...Array(10)].map((_, i) => {
-            const seededRandom = (seed, multiplier = 1) => {
-              const x =
-                Math.sin(seed * 12.9898 + multiplier * 78.233) * 43758.5453;
-              return x - Math.floor(x);
-            };
-
-            const left = (seededRandom(i, 1) * 100).toFixed(4);
-            const top = (seededRandom(i, 2) * 100).toFixed(4);
-            const delay = (seededRandom(i, 3) * 20).toFixed(4);
-            const duration = (20 + seededRandom(i, 4) * 10).toFixed(4);
-            const opacity = (seededRandom(i, 5) * 0.5 + 0.2).toFixed(6);
-
-            return (
-              <div
-                key={i}
-                className="absolute w-1 h-1 bg-white rounded-full animate-float"
-                style={{
-                  left: `${left}%`,
-                  top: `${top}%`,
-                  animationDelay: `${delay}s`,
-                  animationDuration: `${duration}s`,
-                  opacity: opacity,
-                }}
-              />
-            );
-          })}
-        </div>
       </div>
 
-      {/* Glassmorphic Navigation */}
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 glass-nav noise-texture">
-        <div className="flex items-center gap-8">
-          <Link href="/" className="text-2xl font-bold gradient-text">
-            GenScript
+      {/* ── Navigation ─────────────────────────────── */}
+      <nav className="fixed top-5 left-1/2 -translate-x-1/2 z-50 glass-pill rounded-full px-6 py-3 w-[95%] max-w-3xl">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500" />
+            <span className="font-display text-lg text-white">GenScript</span>
           </Link>
-          <button
-            className="md:hidden text-white p-2"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-          <div className="hidden md:flex items-center gap-6">
-            <Link
-              href="/compliance-check"
-              className="text-gray-200 hover:text-white transition-colors"
-            >
-              Compliance Check
-            </Link>
-            <Link
-              href="/tools"
-              className="text-gray-200 hover:text-white transition-colors"
-            >
-              Free Tools
-            </Link>
-            <div className="relative group">
-              <span className="text-gray-200 hover:text-white transition-colors cursor-pointer flex items-center gap-1">
-                Resources
-                <ChevronDown className="w-3 h-3" />
-              </span>
-              <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                <div className="glass-card p-2 min-w-[200px] space-y-1">
-                  <Link
-                    href="/resources/youtube-compliance-whitepaper"
-                    className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    Compliance Whitepaper
-                  </Link>
-                  <Link
-                    href="/resources/creator-compliance-checklist"
-                    className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    Creator Checklist
-                  </Link>
-                  <Link
-                    href="/blog"
-                    className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    Blog
-                  </Link>
-                </div>
-              </div>
-            </div>
-            <Link
-              href="/pricing"
-              className="text-gray-200 hover:text-white transition-colors"
-            >
+
+          {/* Desktop links */}
+          <div className="hidden md:flex items-center gap-6 text-sm text-gray-400">
+            <a href="#features" className="hover:text-white transition-colors">
+              Features
+            </a>
+            <a href="#metrics" className="hover:text-white transition-colors">
+              Metrics
+            </a>
+            <a href="#pricing" className="hover:text-white transition-colors">
               Pricing
-            </Link>
+            </a>
           </div>
+
+          {/* CTA + Mobile toggle */}
           <div className="flex items-center gap-3">
-            <Link href="/login">
-              <Button className="glass-button text-white">Sign In</Button>
+            <Link
+              href="/signup"
+              className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:bg-gray-200 transition-colors"
+            >
+              Get Started
             </Link>
-            <Link href="/signup">
-              <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
-                Get Started
-              </Button>
-            </Link>
+            <button
+              className="md:hidden text-gray-400 hover:text-white p-1"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile Navigation Menu */}
+      {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="absolute top-24 left-4 right-4 z-40 glass-card p-4 md:hidden">
-          <div className="flex flex-col gap-4">
-            <Link
-              href="/compliance-check"
-              className="text-gray-200 hover:text-white transition-colors py-2"
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-40 w-[90%] max-w-sm glass-pill rounded-2xl p-5 md:hidden">
+          <div className="flex flex-col gap-4 text-sm">
+            <a
+              href="#features"
+              className="text-gray-300 hover:text-white transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Compliance Check
-            </Link>
-            <Link
-              href="/tools"
-              className="text-gray-200 hover:text-white transition-colors py-2"
+              Features
+            </a>
+            <a
+              href="#metrics"
+              className="text-gray-300 hover:text-white transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Free Tools
-            </Link>
-            <div className="space-y-2">
-              <span className="text-gray-200 font-medium">Resources</span>
-              <div className="pl-4 space-y-2">
-                <Link
-                  href="/resources/youtube-compliance-whitepaper"
-                  className="block text-gray-400 hover:text-white transition-colors py-1"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Compliance Whitepaper
-                </Link>
-                <Link
-                  href="/resources/creator-compliance-checklist"
-                  className="block text-gray-400 hover:text-white transition-colors py-1"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Creator Checklist
-                </Link>
-                <Link
-                  href="/blog"
-                  className="block text-gray-400 hover:text-white transition-colors py-1"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Blog
-                </Link>
-              </div>
-            </div>
-            <Link
-              href="/pricing"
-              className="text-gray-200 hover:text-white transition-colors py-2"
+              Metrics
+            </a>
+            <a
+              href="#pricing"
+              className="text-gray-300 hover:text-white transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Pricing
+            </a>
+            <Link
+              href="/login"
+              className="text-gray-300 hover:text-white transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/signup"
+              className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-white text-black text-sm font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Get Started
             </Link>
           </div>
         </div>
       )}
 
-      {/* Hero Section */}
-      <section
-        ref={heroRef}
-        className="relative min-h-screen flex items-center justify-center px-4 py-22"
-      >
-        <div className="relative z-10 max-w-5xl mx-auto text-center stagger-children">
-          {/* Trust Badge */}
-          <div className="inline-flex items-center gap-2 glass-card px-4 py-2 mb-8 animate-glow">
-            <ShieldCheck className="w-4 h-4 text-green-400" />
-            <span className="text-sm text-gray-200">
-              YouTube Policy Compliant • Built for 2025
-            </span>
+      {/* ── Hero ───────────────────────────────────── */}
+      <section className="relative min-h-screen flex items-center justify-center px-4 pt-28 pb-20">
+        <div className="relative z-10 max-w-5xl mx-auto text-center">
+          {/* Trust badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-sm text-gray-400 mb-8">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>YouTube Policy Compliant</span>
+            <span className="text-white/20">|</span>
+            <span>Built for 2026</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            <span className="block text-white text-glow">YouTube Scripts That</span>
-            <span className="block gradient-text text-glow holographic bg-clip-text">
-              Won&apos;t Get You Demonetized
-            </span>
+          <h1 className="font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl leading-[0.9] tracking-tight mb-6">
+            Scale Your{" "}
+            <span className="shimmer-text">Voice</span>
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-            The only AI script generator built for YouTube&apos;s 2025 authenticity policy.{" "}
-            <span className="text-white">Write faster without risking your channel.</span>
+          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed">
+            The only AI script engine that extracts your voice DNA —{" "}
+            <span className="text-white">
+              so every script sounds like you wrote it.
+            </span>
           </p>
 
-          {/* Trust Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-6 mb-10 text-sm">
-            <div className="flex items-center gap-2 text-green-400">
-              <ShieldCheck className="w-4 h-4" />
-              <span>YouTube Policy Compliant</span>
+          {/* Trust indicators */}
+          <div className="flex flex-wrap items-center justify-center gap-6 mb-10 text-sm text-gray-500">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>YouTube Compliant</span>
             </div>
-            <div className="flex items-center gap-2 text-gray-400">
-              <Users className="w-4 h-4" />
+            <div className="flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-violet-400" />
               <span>500+ Creators</span>
             </div>
-            <div className="flex items-center gap-2 text-yellow-400">
-              <Star className="w-4 h-4" />
+            <div className="flex items-center gap-1.5">
+              <Star className="w-4 h-4 text-amber-400" />
               <span>4.9/5 Rating</span>
             </div>
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link href="/signup">
-              <Button
-                size="lg"
-                className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white group"
-              >
-                Start Writing Free
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+            <Link
+              href="/signup"
+              className="shiny-border-btn inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white font-medium hover:scale-[1.02] transition-transform"
+            >
+              Extract My Voice
+              <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link href="/compliance-check">
-              <Button size="lg" className="glass-button text-white">
-                <Shield className="mr-2 h-5 w-5" />
-                Check Your Script
-              </Button>
-            </Link>
+            <a
+              href="#features"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-gray-400 hover:text-white transition-colors"
+            >
+              See how it works
+              <ChevronDown className="w-4 h-4" />
+            </a>
           </div>
 
-          <p className="text-gray-400">
-            No credit card required • 50 free credits
+          <p className="text-sm text-gray-600">
+            No credit card required &middot; 50 free credits
           </p>
+        </div>
+      </section>
 
-          {/* Scroll Indicator */}
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce">
-            <ChevronDown className="w-8 h-8 text-gray-400" />
+      {/* ── Metrics Ticker ─────────────────────────── */}
+      <section id="metrics" className="py-6 border-y border-white/[0.04]">
+        <div className="ticker-wrap">
+          <div className="ticker-track">
+            {[...TICKER_STATS, ...TICKER_STATS].map((stat, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-3 px-10 whitespace-nowrap"
+              >
+                <span className="font-mono text-2xl md:text-3xl font-semibold text-white">
+                  {stat.value}
+                </span>
+                <span className="text-sm text-gray-500 uppercase tracking-wider">
+                  {stat.label}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Problem/Solution Section */}
+      {/* ── Problem / Solution ─────────────────────── */}
       <section className="relative py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20 mb-6">
-              <AlertTriangle className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm text-yellow-400">July 2025 Policy Update</span>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-sm text-yellow-400 mb-6">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>2026 Policy Update</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-white mb-4">
               YouTube&apos;s Policy Changed Everything
             </h2>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">
               AI-generated content is under scrutiny like never before.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
-            {/* The Problem */}
-            <div className="space-y-6">
-              <h3 className="text-xl font-semibold text-red-400 flex items-center gap-2">
+            {/* Problem */}
+            <div className="space-y-5">
+              <h3 className="text-lg font-semibold text-red-400 flex items-center gap-2">
                 <XCircle className="w-5 h-5" />
                 The Problem
               </h3>
-              <div className="space-y-4">
-                {PROBLEMS.map((problem, idx) => (
+              <div className="space-y-3">
+                {PROBLEMS.map((p, i) => (
                   <div
-                    key={idx}
-                    className="flex items-start gap-4 glass-card rounded-xl p-4"
+                    key={i}
+                    className="flex items-start gap-4 bg-white/[0.02] border border-white/5 rounded-2xl p-4"
                   >
-                    <div className="p-2 rounded-lg bg-red-500/10">
-                      <problem.icon className={`w-5 h-5 ${problem.color}`} />
+                    <div className="p-2 rounded-lg bg-red-500/10 shrink-0">
+                      <p.icon className={`w-5 h-5 ${p.color}`} />
                     </div>
-                    <p className="text-gray-300">{problem.title}</p>
+                    <p className="text-gray-300 text-sm leading-relaxed">
+                      {p.title}
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* The Solution */}
-            <div className="space-y-6">
-              <h3 className="text-xl font-semibold text-green-400 flex items-center gap-2">
+            {/* Solution */}
+            <div className="space-y-5">
+              <h3 className="text-lg font-semibold text-emerald-400 flex items-center gap-2">
                 <CheckCircle className="w-5 h-5" />
                 The Solution
               </h3>
-              <div className="space-y-4">
-                {SOLUTIONS.map((solution, idx) => (
+              <div className="space-y-3">
+                {SOLUTIONS.map((s, i) => (
                   <div
-                    key={idx}
-                    className="flex items-start gap-4 glass-card rounded-xl p-4"
+                    key={i}
+                    className="flex items-start gap-4 bg-white/[0.02] border border-white/5 rounded-2xl p-4"
                   >
-                    <div className="p-2 rounded-lg bg-green-500/10">
-                      <solution.icon className={`w-5 h-5 ${solution.color}`} />
+                    <div className="p-2 rounded-lg bg-emerald-500/10 shrink-0">
+                      <s.icon className={`w-5 h-5 ${s.color}`} />
                     </div>
-                    <p className="text-gray-300">{solution.title}</p>
+                    <p className="text-gray-300 text-sm leading-relaxed">
+                      {s.title}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -506,166 +448,285 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="relative py-24 px-4 bg-gradient-to-b from-transparent via-purple-900/20 to-transparent">
+      {/* ── Features ───────────────────────────────── */}
+      <section id="features" className="relative py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-white mb-4">
               Built Different
             </h2>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              Features designed specifically for YouTube creators who value their channel.
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+              Features designed specifically for YouTube creators who value
+              their channel.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {FEATURES.map((feature, idx) => (
-              <TiltCard
-                key={idx}
-                className="glass-card p-6 rounded-xl"
-                options={{ max: 5, scale: 1.02 }}
+          <div className="grid md:grid-cols-2 gap-5">
+            {FEATURES.map((f, i) => (
+              <div
+                key={i}
+                className={`feature-card bg-white/[0.02] border border-white/5 rounded-2xl p-6 ${f.borderHover}`}
               >
                 <div className="flex items-start gap-4">
-                  <div className={`p-3 rounded-xl bg-gradient-to-br ${feature.gradient}`}>
-                    <feature.icon className="w-6 h-6 text-white" />
+                  <div className={`p-3 rounded-xl ${f.bg} shrink-0`}>
+                    <f.icon className={`w-6 h-6 ${f.color}`} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-white mb-2">
-                      {feature.title}
+                    <h3 className="text-lg font-semibold text-white mb-1.5">
+                      {f.title}
                     </h3>
-                    <p className="text-gray-400 mb-3">{feature.description}</p>
-                    <span className="text-sm text-purple-400">
-                      → {feature.benefit}
-                    </span>
+                    <p className="text-sm text-gray-400 leading-relaxed">
+                      {f.description}
+                    </p>
                   </div>
                 </div>
-              </TiltCard>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Social Proof Section */}
+      {/* ── Code Integration Block ─────────────────── */}
+      <section className="relative py-20 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="font-display text-3xl md:text-4xl text-white mb-3">
+              Developer-Grade Engine
+            </h2>
+            <p className="text-gray-500">
+              Under the hood, a voice-extraction pipeline built for scale.
+            </p>
+          </div>
+
+          <div className="bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden">
+            {/* Editor header */}
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5">
+              <div className="w-3 h-3 rounded-full bg-red-500/60" />
+              <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+              <div className="w-3 h-3 rounded-full bg-emerald-500/60" />
+              <span className="ml-3 text-xs text-gray-600 font-mono">
+                voice-engine.js
+              </span>
+              <button
+                className="ml-auto text-gray-600 hover:text-gray-400 transition-colors"
+                aria-label="Copy code"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Pseudocode */}
+            <pre className="p-5 text-sm leading-relaxed font-mono overflow-x-auto">
+              <code>
+                <span className="text-violet-400">const</span>{" "}
+                <span className="text-cyan-300">voice</span>{" "}
+                <span className="text-gray-500">=</span>{" "}
+                <span className="text-violet-400">await</span>{" "}
+                <span className="text-emerald-400">genscript</span>
+                <span className="text-gray-500">.</span>
+                <span className="text-cyan-300">extractVoice</span>
+                <span className="text-gray-500">({"{"}</span>
+                {"\n"}
+                {"  "}
+                <span className="text-gray-400">transcripts</span>
+                <span className="text-gray-500">:</span>{" "}
+                <span className="text-amber-300">[&quot;ep-142.txt&quot;, &quot;ep-143.txt&quot;]</span>
+                <span className="text-gray-500">,</span>
+                {"\n"}
+                {"  "}
+                <span className="text-gray-400">style</span>
+                <span className="text-gray-500">:</span>{" "}
+                <span className="text-amber-300">&quot;conversational&quot;</span>
+                <span className="text-gray-500">,</span>
+                {"\n"}
+                {"  "}
+                <span className="text-gray-400">compliance</span>
+                <span className="text-gray-500">:</span>{" "}
+                <span className="text-emerald-400">true</span>
+                {"\n"}
+                <span className="text-gray-500">{"}"})</span>
+                {"\n\n"}
+                <span className="text-violet-400">const</span>{" "}
+                <span className="text-cyan-300">script</span>{" "}
+                <span className="text-gray-500">=</span>{" "}
+                <span className="text-violet-400">await</span>{" "}
+                <span className="text-emerald-400">genscript</span>
+                <span className="text-gray-500">.</span>
+                <span className="text-cyan-300">generate</span>
+                <span className="text-gray-500">({"{"}</span>
+                {"\n"}
+                {"  "}
+                <span className="text-gray-400">voice</span>
+                <span className="text-gray-500">,</span>
+                {"\n"}
+                {"  "}
+                <span className="text-gray-400">topic</span>
+                <span className="text-gray-500">:</span>{" "}
+                <span className="text-amber-300">&quot;Next.js Server Actions Deep Dive&quot;</span>
+                <span className="text-gray-500">,</span>
+                {"\n"}
+                {"  "}
+                <span className="text-gray-400">length</span>
+                <span className="text-gray-500">:</span>{" "}
+                <span className="text-cyan-300">12</span>
+                {"\n"}
+                <span className="text-gray-500">{"}"})</span>
+                {"\n\n"}
+                <span className="text-gray-600">
+                  {"// "}→ compliance: 94/100 &middot; retention: 72% &middot; sounds like you
+                </span>
+              </code>
+            </pre>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Social Proof / Testimonials ────────────── */}
       <section className="relative py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-white mb-4">
               Creators Trust GenScript
             </h2>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              Real results from real creators who switched to compliance-first scripting.
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+              Real results from real creators who switched to compliance-first
+              scripting.
             </p>
           </div>
 
           {/* Stats Bar */}
-          <div className="glass-card rounded-xl p-6 mb-12">
+          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 mb-12">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               <div>
-                <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <div className="font-mono text-3xl font-bold text-violet-400">
                   2.5M+
                 </div>
-                <div className="text-sm text-gray-400 mt-1">Scripts Generated</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  Scripts Generated
+                </div>
               </div>
               <div>
-                <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <div className="font-mono text-3xl font-bold text-cyan-400">
                   89%
                 </div>
-                <div className="text-sm text-gray-400 mt-1">Avg Compliance Score</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  Avg Compliance Score
+                </div>
               </div>
               <div>
-                <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <div className="font-mono text-3xl font-bold text-emerald-400">
                   68%
                 </div>
-                <div className="text-sm text-gray-400 mt-1">Avg Retention</div>
+                <div className="text-sm text-gray-500 mt-1">Avg Retention</div>
               </div>
               <div>
-                <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  0
-                </div>
-                <div className="text-sm text-gray-400 mt-1">Policy Strikes</div>
+                <div className="font-mono text-3xl font-bold text-white">0</div>
+                <div className="text-sm text-gray-500 mt-1">Policy Strikes</div>
               </div>
             </div>
           </div>
 
-          {/* Testimonials */}
-          <div className="grid md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((testimonial, idx) => (
-              <TiltCard
-                key={idx}
-                className="glass-card p-6 rounded-xl"
-                options={{ max: 5, scale: 1.02 }}
+          {/* Testimonial Cards */}
+          <div className="grid md:grid-cols-3 gap-5">
+            {TESTIMONIALS.map((t, i) => (
+              <div
+                key={i}
+                className="bg-white/[0.02] border border-white/5 rounded-2xl p-6"
               >
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                <div className="flex gap-0.5 mb-4">
+                  {[...Array(5)].map((_, j) => (
+                    <Star
+                      key={j}
+                      className="w-4 h-4 text-amber-400 fill-amber-400"
+                    />
                   ))}
                 </div>
-                <p className="text-gray-300 mb-6 italic">
-                  &quot;{testimonial.quote}&quot;
+                <p className="text-gray-300 text-sm mb-6 italic leading-relaxed">
+                  &quot;{t.quote}&quot;
                 </p>
-                <div className="border-t border-gray-700 pt-4">
-                  <div className="font-semibold text-white">{testimonial.name}</div>
-                  <div className="text-sm text-gray-400">{testimonial.channel}</div>
-                  <div className="text-xs text-purple-400">{testimonial.subscribers} • {testimonial.niche}</div>
+                <div className="border-t border-white/5 pt-4">
+                  <div className="font-semibold text-white text-sm">
+                    {t.name}
+                  </div>
+                  <div className="text-xs text-gray-500">{t.channel}</div>
+                  <div className="text-xs text-violet-400">
+                    {t.subscribers} &middot; {t.niche}
+                  </div>
                 </div>
-              </TiltCard>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Comparison Section */}
-      <section className="relative py-24 px-4 bg-gradient-to-b from-transparent via-gray-900/50 to-transparent">
+      {/* ── Comparison Table ───────────────────────── */}
+      <section className="relative py-24 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-white mb-4">
               Why Creators Choose GenScript
             </h2>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">
               See how we compare to other options.
             </p>
           </div>
 
-          <div className="glass-card rounded-xl overflow-hidden">
+          <div className="bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-700">
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Feature</th>
-                    <th className="text-center py-4 px-6 text-purple-400 font-medium">GenScript</th>
-                    <th className="text-center py-4 px-6 text-gray-400 font-medium">ChatGPT</th>
-                    <th className="text-center py-4 px-6 text-gray-400 font-medium">Subscribr</th>
+                  <tr className="border-b border-white/5">
+                    <th className="text-left py-4 px-6 text-gray-500 font-medium text-sm">
+                      Feature
+                    </th>
+                    <th className="text-center py-4 px-6 text-violet-400 font-medium text-sm">
+                      GenScript
+                    </th>
+                    <th className="text-center py-4 px-6 text-gray-500 font-medium text-sm">
+                      ChatGPT
+                    </th>
+                    <th className="text-center py-4 px-6 text-gray-500 font-medium text-sm">
+                      Subscribr
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {COMPARISON_DATA.map((row, idx) => (
-                    <tr key={idx} className="border-b border-gray-800">
-                      <td className="py-4 px-6 text-white font-medium">{row.feature}</td>
-                      <td className="py-4 px-6 text-center bg-purple-500/5">
+                    <tr key={idx} className="border-b border-white/[0.03]">
+                      <td className="py-4 px-6 text-white text-sm">
+                        {row.feature}
+                      </td>
+                      <td className="py-4 px-6 text-center bg-violet-500/[0.03]">
                         {row.genscript === true ? (
-                          <Check className="w-5 h-5 text-green-400 mx-auto" />
+                          <Check className="w-5 h-5 text-emerald-400 mx-auto" />
                         ) : row.genscript === false ? (
-                          <X className="w-5 h-5 text-gray-600 mx-auto" />
+                          <X className="w-5 h-5 text-gray-700 mx-auto" />
                         ) : (
-                          <span className="text-yellow-400 text-sm">{row.genscript}</span>
+                          <span className="text-yellow-400 text-xs">
+                            {row.genscript}
+                          </span>
                         )}
                       </td>
                       <td className="py-4 px-6 text-center">
                         {row.chatgpt === true ? (
-                          <Check className="w-5 h-5 text-green-400 mx-auto" />
+                          <Check className="w-5 h-5 text-emerald-400 mx-auto" />
                         ) : row.chatgpt === false ? (
-                          <X className="w-5 h-5 text-gray-600 mx-auto" />
+                          <X className="w-5 h-5 text-gray-700 mx-auto" />
                         ) : (
-                          <span className="text-yellow-400 text-sm">{row.chatgpt}</span>
+                          <span className="text-yellow-400 text-xs">
+                            {row.chatgpt}
+                          </span>
                         )}
                       </td>
                       <td className="py-4 px-6 text-center">
                         {row.subscribr === true ? (
-                          <Check className="w-5 h-5 text-green-400 mx-auto" />
+                          <Check className="w-5 h-5 text-emerald-400 mx-auto" />
                         ) : row.subscribr === false ? (
-                          <X className="w-5 h-5 text-gray-600 mx-auto" />
+                          <X className="w-5 h-5 text-gray-700 mx-auto" />
                         ) : (
-                          <span className="text-yellow-400 text-sm">{row.subscribr}</span>
+                          <span className="text-yellow-400 text-xs">
+                            {row.subscribr}
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -676,130 +737,165 @@ export default function Home() {
           </div>
 
           <div className="text-center mt-8">
-            <Link href="/compare/genscript-vs-chatgpt" className="text-purple-400 hover:text-purple-300 transition-colors text-sm">
-              See detailed comparisons →
+            <Link
+              href="/compare/genscript-vs-chatgpt"
+              className="text-violet-400 hover:text-violet-300 transition-colors text-sm"
+            >
+              See detailed comparisons &rarr;
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="relative py-24 px-4">
+      {/* ── Pricing ────────────────────────────────── */}
+      <section id="pricing" className="relative py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-white mb-4">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">
               Start free, upgrade when you&apos;re ready.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
             {/* Free */}
-            <div className="glass-card rounded-xl p-6">
-              <div className="text-sm text-gray-400 mb-2">FREE</div>
-              <div className="flex items-baseline gap-1 mb-4">
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6">
+              <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                Free
+              </div>
+              <div className="flex items-baseline gap-1 mb-5">
                 <span className="text-4xl font-bold text-white">$0</span>
-                <span className="text-gray-400">/month</span>
+                <span className="text-gray-600 text-sm">/month</span>
               </div>
               <ul className="space-y-3 mb-6">
-                {PLANS.FREE.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-center gap-2 text-sm text-gray-300">
-                    <Check className="w-4 h-4 text-green-400" />
-                    {feature}
+                {PLANS.FREE.features.map((feat, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center gap-2 text-sm text-gray-400"
+                  >
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    {feat}
                   </li>
                 ))}
               </ul>
-              <Link href="/signup" className="block">
-                <Button className="w-full glass-button text-white">
-                  Start Free
-                </Button>
+              <Link
+                href="/signup"
+                className="block text-center py-2.5 rounded-full border border-white/10 text-sm text-white hover:bg-white/5 transition-colors"
+              >
+                Start Free
               </Link>
             </div>
 
-            {/* Creator - Popular */}
-            <div className="glass-card rounded-xl p-6 ring-2 ring-purple-500/50 relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-xs font-medium text-white">
+            {/* Creator — Popular */}
+            <div className="bg-white/[0.02] border border-violet-500/30 rounded-2xl p-6 relative ring-1 ring-violet-500/20">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-violet-600 to-cyan-600 rounded-full text-xs font-medium text-white">
                 Most Popular
               </div>
-              <div className="text-sm text-purple-400 mb-2">CREATOR</div>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-4xl font-bold text-white">${PLANS.CREATOR.price}</span>
-                <span className="text-gray-400">/month</span>
+              <div className="text-xs text-violet-400 uppercase tracking-wider mb-2">
+                Creator
+              </div>
+              <div className="flex items-baseline gap-1 mb-5">
+                <span className="text-4xl font-bold text-white">
+                  ${PLANS.CREATOR.price}
+                </span>
+                <span className="text-gray-600 text-sm">/month</span>
               </div>
               <ul className="space-y-3 mb-6">
-                {PLANS.CREATOR.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-center gap-2 text-sm text-gray-300">
-                    <Check className="w-4 h-4 text-green-400" />
-                    {feature}
+                {PLANS.CREATOR.features.map((feat, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center gap-2 text-sm text-gray-400"
+                  >
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    {feat}
                   </li>
                 ))}
               </ul>
-              <Link href="/signup?plan=creator" className="block">
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                  Get Started
-                </Button>
+              <Link
+                href="/signup?plan=creator"
+                className="block text-center py-2.5 rounded-full bg-gradient-to-r from-violet-600 to-cyan-600 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+              >
+                Get Started
               </Link>
             </div>
 
             {/* Professional */}
-            <div className="glass-card rounded-xl p-6">
-              <div className="text-sm text-gray-400 mb-2">PROFESSIONAL</div>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-4xl font-bold text-white">${PLANS.PROFESSIONAL.price}</span>
-                <span className="text-gray-400">/month</span>
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6">
+              <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                Professional
+              </div>
+              <div className="flex items-baseline gap-1 mb-5">
+                <span className="text-4xl font-bold text-white">
+                  ${PLANS.PROFESSIONAL.price}
+                </span>
+                <span className="text-gray-600 text-sm">/month</span>
               </div>
               <ul className="space-y-3 mb-6">
-                {PLANS.PROFESSIONAL.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-center gap-2 text-sm text-gray-300">
-                    <Check className="w-4 h-4 text-green-400" />
-                    {feature}
+                {PLANS.PROFESSIONAL.features.map((feat, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center gap-2 text-sm text-gray-400"
+                  >
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    {feat}
                   </li>
                 ))}
               </ul>
-              <Link href="/signup?plan=professional" className="block">
-                <Button className="w-full glass-button text-white">
-                  Get Started
-                </Button>
+              <Link
+                href="/signup?plan=professional"
+                className="block text-center py-2.5 rounded-full border border-white/10 text-sm text-white hover:bg-white/5 transition-colors"
+              >
+                Get Started
               </Link>
             </div>
           </div>
 
           <div className="text-center mt-8">
-            <Link href="/pricing" className="text-purple-400 hover:text-purple-300 transition-colors text-sm">
-              View all plans including Agency →
+            <Link
+              href="/pricing"
+              className="text-violet-400 hover:text-violet-300 transition-colors text-sm"
+            >
+              View all plans including Agency &rarr;
             </Link>
           </div>
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="relative py-24 px-4 bg-gradient-to-b from-transparent via-gray-900/50 to-transparent">
+      {/* ── FAQ ────────────────────────────────────── */}
+      <section className="relative py-24 px-4">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-white mb-4">
               Frequently Asked Questions
             </h2>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {FAQ_DATA.map((faq, idx) => (
-              <div key={idx} className="glass-card rounded-xl overflow-hidden">
+              <div
+                key={idx}
+                className="bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden"
+              >
                 <button
                   onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
                   className="w-full flex items-center justify-between p-5 text-left"
                 >
-                  <span className="font-medium text-white pr-4">{faq.question}</span>
+                  <span className="font-medium text-white text-sm pr-4">
+                    {faq.question}
+                  </span>
                   <ChevronRight
-                    className={`w-5 h-5 text-gray-400 transition-transform ${
-                      openFaq === idx ? 'rotate-90' : ''
+                    className={`w-4 h-4 text-gray-600 transition-transform shrink-0 ${
+                      openFaq === idx ? "rotate-90" : ""
                     }`}
                   />
                 </button>
                 {openFaq === idx && (
                   <div className="px-5 pb-5 pt-0">
-                    <p className="text-gray-400">{faq.answer}</p>
+                    <p className="text-sm text-gray-500 leading-relaxed">
+                      {faq.answer}
+                    </p>
                   </div>
                 )}
               </div>
@@ -808,72 +904,87 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Final CTA */}
+      {/* ── CTA Section ────────────────────────────── */}
       <section className="relative py-32 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 mb-6">
-            <Sparkles className="w-4 h-4 text-green-400" />
-            <span className="text-sm text-green-400">Start for free today</span>
-          </div>
-
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 text-glow">
-            Ready to Write Scripts That Actually Work?
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-white mb-4">
+            Ready to Scale Your Output?
           </h2>
-
-          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
-            Join 500+ creators who trust GenScript to keep their channels safe and their content engaging.
+          <p className="text-gray-500 mb-10">
+            7-day free trial. No credit card required.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <Link href="/signup">
-              <Button
-                size="lg"
-                className="glass-button bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:scale-105 transform transition"
-              >
-                Start Writing Free
-                <Sparkles className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/compliance-check">
-              <Button size="lg" className="glass-button text-white">
-                <Shield className="mr-2 h-5 w-5" />
-                Check Your Script First
-              </Button>
-            </Link>
-          </div>
-
-          <p className="text-sm text-gray-500">
-            No credit card required • 50 free credits • Cancel anytime
-          </p>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              window.location.href = `/signup${ctaEmail ? `?email=${encodeURIComponent(ctaEmail)}` : ""}`;
+            }}
+            className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+          >
+            <input
+              type="email"
+              value={ctaEmail}
+              onChange={(e) => setCtaEmail(e.target.value)}
+              placeholder="you@email.com"
+              className="flex-1 px-5 py-3 rounded-full bg-white/[0.04] border border-white/[0.06] text-white text-sm placeholder-gray-600 focus:outline-none focus:border-violet-500/40 transition-colors"
+            />
+            <button
+              type="submit"
+              className="px-6 py-3 rounded-full bg-white text-black text-sm font-medium hover:bg-gray-200 transition-colors shrink-0"
+            >
+              Start Trial
+            </button>
+          </form>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="relative py-16 px-4 border-t border-white/10">
+      {/* ── Footer ─────────────────────────────────── */}
+      <footer className="relative py-16 px-4 border-t border-white/[0.04]">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
-              <h3 className="text-2xl font-bold gradient-text mb-2">
-                GenScript
-              </h3>
-              <p className="text-gray-400 text-sm">Compliance-first AI scriptwriting for YouTube creators.</p>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500" />
+                <span className="font-display text-lg text-white">
+                  GenScript
+                </span>
+              </div>
+              <p className="text-gray-600 text-sm">
+                Compliance-first AI scriptwriting for YouTube creators.
+              </p>
+              <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                All systems operational
+              </div>
             </div>
 
             {/* Product */}
             <div>
-              <h4 className="font-semibold text-white mb-4">Product</h4>
+              <h4 className="font-medium text-white text-sm mb-4">Product</h4>
               <div className="space-y-2 text-sm">
-                <Link href="/compliance-check" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/compliance-check"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   Compliance Checker
                 </Link>
-                <Link href="/tools/youtube-script-generator" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/tools/youtube-script-generator"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   Script Generator
                 </Link>
-                <Link href="/tools" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/tools"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   Free Tools
                 </Link>
-                <Link href="/pricing" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/pricing"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   Pricing
                 </Link>
               </div>
@@ -881,15 +992,26 @@ export default function Home() {
 
             {/* Resources */}
             <div>
-              <h4 className="font-semibold text-white mb-4">Resources</h4>
+              <h4 className="font-medium text-white text-sm mb-4">
+                Resources
+              </h4>
               <div className="space-y-2 text-sm">
-                <Link href="/resources/youtube-compliance-whitepaper" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/resources/youtube-compliance-whitepaper"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   Compliance Whitepaper
                 </Link>
-                <Link href="/resources/creator-compliance-checklist" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/resources/creator-compliance-checklist"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   Creator Checklist
                 </Link>
-                <Link href="/blog" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/blog"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   Blog
                 </Link>
               </div>
@@ -897,15 +1019,24 @@ export default function Home() {
 
             {/* Compare */}
             <div>
-              <h4 className="font-semibold text-white mb-4">Compare</h4>
+              <h4 className="font-medium text-white text-sm mb-4">Compare</h4>
               <div className="space-y-2 text-sm">
-                <Link href="/compare/genscript-vs-chatgpt" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/compare/genscript-vs-chatgpt"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   GenScript vs ChatGPT
                 </Link>
-                <Link href="/compare/genscript-vs-subscribr" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/compare/genscript-vs-subscribr"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   GenScript vs Subscribr
                 </Link>
-                <Link href="/alternatives/chatgpt" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/alternatives/chatgpt"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   ChatGPT Alternative
                 </Link>
               </div>
@@ -913,22 +1044,31 @@ export default function Home() {
 
             {/* Legal */}
             <div>
-              <h4 className="font-semibold text-white mb-4">Legal</h4>
+              <h4 className="font-medium text-white text-sm mb-4">Legal</h4>
               <div className="space-y-2 text-sm">
-                <Link href="/privacy" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/privacy"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   Privacy Policy
                 </Link>
-                <Link href="/terms" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/terms"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   Terms of Service
                 </Link>
-                <Link href="/terms-voice-cloning" className="block text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/terms-voice-cloning"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
                   Voice Cloning Terms
                 </Link>
               </div>
             </div>
           </div>
 
-          <div className="pt-8 border-t border-white/10 text-center text-sm text-gray-500">
+          <div className="pt-8 border-t border-white/[0.04] text-center text-xs text-gray-700">
             &copy; {new Date().getFullYear()} GenScript. All rights reserved.
           </div>
         </div>

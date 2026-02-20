@@ -289,8 +289,8 @@ export default function AllRisingChannelsPage() {
   if (loading) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 text-center">
-          <Loader2 className="h-12 w-12 text-purple-400 animate-spin mx-auto mb-4" />
+        <div className="vb-card p-8 text-center">
+          <Loader2 className="h-12 w-12 text-violet-400 animate-spin mx-auto mb-4" />
           <p className="text-white text-lg">Loading rising channels...</p>
         </div>
       </div>
@@ -299,22 +299,16 @@ export default function AllRisingChannelsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-red-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
-      </div>
-
       {/* Header */}
       <div className="animate-reveal">
         <Link href="/trending">
-          <Button variant="ghost" className="glass-button mb-4 text-gray-400 hover:text-white">
+          <Button variant="ghost" className="vb-btn-outline mb-4 text-gray-400 hover:text-white">
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back to Trending
           </Button>
         </Link>
         
-        <h1 className="text-4xl font-bold text-white flex items-center gap-3">
+        <h1 className="text-4xl font-display font-bold text-white flex items-center gap-3">
           <Youtube className="h-10 w-10 text-red-400" />
           {searchMode ? 'YouTube Search Results' : 'All Rising Channels'}
           <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
@@ -328,7 +322,7 @@ export default function AllRisingChannelsPage() {
       </div>
 
       {/* Filters and Search */}
-      <div className="glass-card p-6 space-y-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
+      <div className="vb-card p-6 space-y-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
         {/* YouTube Channel Search */}
         <div className="border-b border-white/10 pb-4">
           <label className="block text-sm font-medium text-gray-300 mb-2">Search YouTube Channels</label>
@@ -341,7 +335,7 @@ export default function AllRisingChannelsPage() {
                 value={youtubeSearchQuery}
                 onChange={(e) => setYoutubeSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && searchYouTubeChannels()}
-                className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full pl-10 pr-4 py-2 bg-white/[0.06]/50 border border-white/5 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
             <Button
@@ -365,7 +359,7 @@ export default function AllRisingChannelsPage() {
               <Button 
                 onClick={clearSearch}
                 variant="outline" 
-                className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                className="border-white/[0.06] text-gray-300 hover:bg-white/[0.06]"
               >
                 Clear Search
               </Button>
@@ -383,7 +377,7 @@ export default function AllRisingChannelsPage() {
                 placeholder="Filter current results..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full pl-10 pr-4 py-2 bg-white/[0.06]/50 border border-white/5 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
             </div>
           </div>
@@ -394,7 +388,7 @@ export default function AllRisingChannelsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="px-4 py-2 bg-white/[0.06]/50 border border-white/5 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
               disabled={searchMode}
             >
               <option value="growth">Growth Rate</option>
@@ -407,7 +401,7 @@ export default function AllRisingChannelsPage() {
           {/* Refresh */}
           <Button 
             onClick={searchMode ? clearSearch : fetchAllChannels} 
-            className="glass-button text-white"
+            className="vb-btn-outline text-white"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             {searchMode ? 'Back to Trending' : 'Refresh'}
@@ -425,8 +419,8 @@ export default function AllRisingChannelsPage() {
                   onClick={() => setFilterCategory(cat)}
                   className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
                     filterCategory === cat
-                      ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-white'
-                      : 'glass text-gray-400 hover:text-white'
+                      ? 'bg-gradient-to-r from-violet-500/30 to-cyan-500/30 text-white'
+                      : 'bg-white/[0.04] border border-white/[0.06] rounded-xl text-gray-400 hover:text-white'
                   }`}
                 >
                   {cat === 'all' ? 'All Categories' : cat}
@@ -450,13 +444,13 @@ export default function AllRisingChannelsPage() {
 
           return (
           <StaticCard key={channel.id || index}>
-            <div className="glass-card p-6 animate-reveal" style={{ animationDelay: `${0.2 + (index % 9) * 0.05}s` }}>
+            <div className="vb-card p-6 animate-reveal" style={{ animationDelay: `${0.2 + (index % 9) * 0.05}s` }}>
               <div className="flex items-start gap-4">
                 <div className="relative">
                   <img 
                     src={channel.thumbnail} 
                     alt={channel.name}
-                    className="w-20 h-20 rounded-full object-cover ring-2 ring-purple-400/50"
+                    className="w-20 h-20 rounded-full object-cover ring-2 ring-violet-400/50"
                     onError={(e) => { e.target.src = '/youtube-default.svg'; }}
                   />
                   {channel.verified && (
@@ -475,7 +469,7 @@ export default function AllRisingChannelsPage() {
                     )}
                   </div>
                   
-                  <span className="inline-block text-xs glass px-2 py-1 rounded-full text-purple-300 mb-3">
+                  <span className="inline-block text-xs bg-white/[0.04] border border-white/[0.06] rounded-xl px-2 py-1 rounded-full text-violet-300 mb-3">
                     {channel.category}
                   </span>
 
@@ -510,7 +504,7 @@ export default function AllRisingChannelsPage() {
                     </div>
                   </div>
 
-                  <div className="glass p-3 rounded-lg mb-4">
+                  <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-3 mb-4">
                     <div className="flex items-center gap-2 mb-1">
                       <PlayCircle className="h-4 w-4 text-red-400" />
                       <p className="text-xs text-gray-400">Latest Hit:</p>
@@ -528,7 +522,7 @@ export default function AllRisingChannelsPage() {
                         href={`/trending/analyze?channelId=${channel.id}&channel=${encodeURIComponent(channel.name)}`}
                         className="flex-1"
                       >
-                        <Button size="sm" className="glass-button w-full text-white">
+                        <Button size="sm" className="vb-btn-outline w-full text-white">
                           <Eye className="mr-1 h-3 w-3" />
                           Analyze
                         </Button>
@@ -536,7 +530,7 @@ export default function AllRisingChannelsPage() {
                     ) : (
                       <Button 
                         size="sm" 
-                        className="glass-button flex-1 text-white opacity-50" 
+                        className="vb-btn-outline flex-1 text-white opacity-50" 
                         disabled
                         title={
                           !channel.id ? "No channel ID available" :
@@ -553,7 +547,7 @@ export default function AllRisingChannelsPage() {
                       href={`/trending/follow?channel=${encodeURIComponent(channel.name)}&channelId=${encodeURIComponent(channel.id)}&topic=${encodeURIComponent(channel.category || 'Content Creation')}&bio=${encodeURIComponent(channel.description || '')}`}
                       className="flex-1"
                     >
-                      <Button size="sm" className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 w-full text-white">
+                      <Button size="sm" className="vb-btn-primary w-full text-white">
                         <Users className="mr-1 h-3 w-3" />
                         Follow Trend
                       </Button>
@@ -568,9 +562,9 @@ export default function AllRisingChannelsPage() {
       </div>
 
       {filteredChannels.length === 0 && (
-        <div className="glass-card p-12 text-center">
+        <div className="vb-card p-12 text-center">
           <p className="text-gray-400 text-lg">No channels found matching your criteria.</p>
-          <Button onClick={() => { setSearchQuery(''); setFilterCategory('all'); }} className="glass-button text-white mt-4">
+          <Button onClick={() => { setSearchQuery(''); setFilterCategory('all'); }} className="vb-btn-outline text-white mt-4">
             Clear Filters
           </Button>
         </div>
@@ -578,7 +572,7 @@ export default function AllRisingChannelsPage() {
 
       {/* Pagination Controls - Only show for trending, not search results */}
       {!searchMode && pagination.totalPages > 1 && (
-        <div className="glass-card p-4 mt-8 animate-reveal">
+        <div className="vb-card p-4 mt-8 animate-reveal">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-400">
               Showing {((currentPage - 1) * 9) + 1}-{Math.min(currentPage * 9, pagination.totalChannels)} of {pagination.totalChannels} channels
@@ -589,7 +583,7 @@ export default function AllRisingChannelsPage() {
               <Button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={!pagination.hasPrevPage}
-                className="glass-button text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="vb-btn-outline text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 size="sm"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -603,7 +597,7 @@ export default function AllRisingChannelsPage() {
                   <>
                     <button
                       onClick={() => setCurrentPage(1)}
-                      className="w-8 h-8 rounded-lg glass text-gray-400 hover:text-white hover:bg-purple-500/20 transition-all"
+                      className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-gray-400 hover:text-white hover:bg-violet-500/20 transition-all"
                     >
                       1
                     </button>
@@ -623,8 +617,8 @@ export default function AllRisingChannelsPage() {
                       onClick={() => setCurrentPage(page)}
                       className={`w-8 h-8 rounded-lg transition-all ${
                         page === currentPage
-                          ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-white font-bold'
-                          : 'glass text-gray-400 hover:text-white hover:bg-purple-500/20'
+                          ? 'bg-gradient-to-r from-violet-500/30 to-cyan-500/30 text-white font-bold'
+                          : 'bg-white/[0.04] border border-white/[0.06] text-gray-400 hover:text-white hover:bg-violet-500/20'
                       }`}
                     >
                       {page}
@@ -637,7 +631,7 @@ export default function AllRisingChannelsPage() {
                     {currentPage < pagination.totalPages - 3 && <span className="text-gray-500 px-1">...</span>}
                     <button
                       onClick={() => setCurrentPage(pagination.totalPages)}
-                      className="w-8 h-8 rounded-lg glass text-gray-400 hover:text-white hover:bg-purple-500/20 transition-all"
+                      className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-gray-400 hover:text-white hover:bg-violet-500/20 transition-all"
                     >
                       {pagination.totalPages}
                     </button>
@@ -649,7 +643,7 @@ export default function AllRisingChannelsPage() {
               <Button
                 onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
                 disabled={!pagination.hasNextPage}
-                className="glass-button text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="vb-btn-outline text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 size="sm"
               >
                 Next
@@ -671,7 +665,7 @@ export default function AllRisingChannelsPage() {
                     setCurrentPage(page);
                   }
                 }}
-                className="w-16 px-2 py-1 bg-gray-800/50 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-16 px-2 py-1 bg-white/[0.06]/50 border border-white/5 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
             </div>
           </div>

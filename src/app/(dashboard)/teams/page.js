@@ -92,14 +92,14 @@ export default function TeamsPage() {
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4">
       <div className="text-center mb-12">
-        <Badge className="mb-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-primary border-primary/20">
+        <Badge className="mb-4 bg-gradient-to-r from-violet-500/10 to-cyan-500/10 text-primary border-primary/20">
           <Sparkles className="w-3 h-3 mr-1" />
           Team Collaboration
         </Badge>
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+        <h1 className="text-4xl md:text-5xl font-bold font-display mb-4 text-white">
           Work Better Together
         </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-xl text-white/50 max-w-2xl mx-auto">
           Collaborate on scripts, share voice profiles, and scale your content production with your team.
         </p>
         
@@ -108,7 +108,7 @@ export default function TeamsPage() {
             <Button 
               size="lg" 
               onClick={() => setShowCreateModal(true)}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700"
             >
               <Plus className="w-5 h-5 mr-2" />
               Create Your Team
@@ -136,7 +136,7 @@ export default function TeamsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-muted-foreground">
+            <ul className="space-y-2 text-white/50">
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
                 <span>Invite team members with different roles</span>
@@ -161,7 +161,7 @@ export default function TeamsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-muted-foreground">
+            <ul className="space-y-2 text-white/50">
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
                 <span>Real-time collaboration on scripts</span>
@@ -186,7 +186,7 @@ export default function TeamsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-muted-foreground">
+            <ul className="space-y-2 text-white/50">
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
                 <span>Track all changes with version history</span>
@@ -211,7 +211,7 @@ export default function TeamsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-muted-foreground">
+            <ul className="space-y-2 text-white/50">
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
                 <span>Activity feed for transparency</span>
@@ -230,8 +230,8 @@ export default function TeamsPage() {
       </div>
 
       <div className="mb-16">
-        <h2 className="text-3xl font-bold text-center mb-4">Choose Your Plan</h2>
-        <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+        <h2 className="text-3xl font-bold font-display text-center mb-4">Choose Your Plan</h2>
+        <p className="text-center text-white/50 mb-12 max-w-2xl mx-auto">
           All plans include team collaboration features. Individual subscriptions include personal credits.
         </p>
         
@@ -243,14 +243,14 @@ export default function TeamsPage() {
                 <Badge variant="outline" className="text-xs">
                   Free Trial
                 </Badge>
-                <Sparkles className="h-5 w-5 text-muted-foreground" />
+                <Sparkles className="h-5 w-5 text-white/50" />
               </div>
               <CardTitle className="text-xl">Free</CardTitle>
               <div className="mt-4">
                 <span className="text-4xl font-bold">$0</span>
-                <span className="text-muted-foreground">/month</span>
+                <span className="text-white/50">/month</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-white/50 mt-2">
                 50 credits included
               </p>
             </CardHeader>
@@ -290,7 +290,7 @@ export default function TeamsPage() {
           {/* Creator Plan */}
           <StaticCard className="relative h-full border-primary/20">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0">
+              <Badge className="bg-gradient-to-r from-violet-600 to-cyan-600 text-white border-0">
                 Most Popular
               </Badge>
             </div>
@@ -304,9 +304,9 @@ export default function TeamsPage() {
               <CardTitle className="text-xl">Creator</CardTitle>
               <div className="mt-4">
                 <span className="text-4xl font-bold">$39</span>
-                <span className="text-muted-foreground">/month</span>
+                <span className="text-white/50">/month</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-white/50 mt-2">
                 300 credits/month • 30-100 scripts
               </p>
             </CardHeader>
@@ -338,7 +338,7 @@ export default function TeamsPage() {
                 </li>
               </ul>
               <Button 
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700"
                 onClick={() => router.push('/subscription')}
               >
                 Get Started
@@ -358,9 +358,9 @@ export default function TeamsPage() {
               <CardTitle className="text-xl">Professional</CardTitle>
               <div className="mt-4">
                 <span className="text-4xl font-bold">$79</span>
-                <span className="text-muted-foreground">/month</span>
+                <span className="text-white/50">/month</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-white/50 mt-2">
                 800 credits/month • 80-260 scripts
               </p>
             </CardHeader>
@@ -404,17 +404,17 @@ export default function TeamsPage() {
           <StaticCard className="relative h-full">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between mb-2">
-                <Badge variant="outline" className="text-xs bg-purple-500/10">
+                <Badge variant="outline" className="text-xs bg-violet-500/10">
                   Agency
                 </Badge>
-                <Crown className="h-5 w-5 text-purple-500" />
+                <Crown className="h-5 w-5 text-violet-500" />
               </div>
               <CardTitle className="text-xl">Agency</CardTitle>
               <div className="mt-4">
                 <span className="text-4xl font-bold">$199</span>
-                <span className="text-muted-foreground">/month</span>
+                <span className="text-white/50">/month</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-white/50 mt-2">
                 2000 credits/month • 200-600+ scripts
               </p>
             </CardHeader>
@@ -450,7 +450,7 @@ export default function TeamsPage() {
                 </li>
               </ul>
               <Button 
-                className="w-full bg-purple-600 hover:bg-purple-700"
+                className="w-full bg-violet-600 hover:bg-violet-700"
                 onClick={() => router.push('/subscription')}
               >
                 Get Started
@@ -463,7 +463,7 @@ export default function TeamsPage() {
       {/* Your Teams Section */}
       {teams.length > 0 && (
         <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Your Teams</h2>
+          <h2 className="text-2xl font-bold font-display mb-6">Your Teams</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {teams.map((team) => (
               <Card 
@@ -490,7 +490,7 @@ export default function TeamsPage() {
                   )}
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between text-sm text-white/50">
                     <span>Plan: {team.subscription_tier}</span>
                     <ArrowRight className="w-4 h-4" />
                   </div>
@@ -503,8 +503,8 @@ export default function TeamsPage() {
               onClick={() => setShowCreateModal(true)}
             >
               <CardContent className="flex flex-col items-center justify-center h-full min-h-[150px]">
-                <Plus className="w-8 h-8 text-muted-foreground mb-2" />
-                <span className="text-muted-foreground font-medium">Create New Team</span>
+                <Plus className="w-8 h-8 text-white/50 mb-2" />
+                <span className="text-white/50 font-medium">Create New Team</span>
               </CardContent>
             </Card>
           </div>

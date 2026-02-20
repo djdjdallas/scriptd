@@ -22,6 +22,7 @@ import {
   Target,
   Award
 } from 'lucide-react';
+
 import {
   LineChart,
   Line,
@@ -38,6 +39,13 @@ import {
   Pie,
   Cell
 } from 'recharts';
+
+const CHART_COLORS = {
+  violet: '#8b5cf6',
+  cyan: '#06b6d4',
+  blue: '#3b82f6',
+  green: '#10b981'
+};
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('7d');
@@ -213,10 +221,10 @@ export default function AnalyticsPage() {
           : 0;
         
         performanceMetrics.push(
-          { name: 'Hook Rate', value: Math.round(avgHookRate), color: '#9333ea' },
-          { name: 'Retention', value: Math.round(avgRetention), color: '#ec4899' },
-          { name: 'CTR', value: Math.round(avgCTR), color: '#3b82f6' },
-          { name: 'Engagement', value: Math.round(avgEngagement), color: '#10b981' }
+          { name: 'Hook Rate', value: Math.round(avgHookRate), color: CHART_COLORS.violet },
+          { name: 'Retention', value: Math.round(avgRetention), color: CHART_COLORS.cyan },
+          { name: 'CTR', value: Math.round(avgCTR), color: CHART_COLORS.blue },
+          { name: 'Engagement', value: Math.round(avgEngagement), color: CHART_COLORS.green }
         );
         
         setPerformanceData(performanceMetrics);
@@ -264,9 +272,9 @@ export default function AnalyticsPage() {
 
   const StatCard = ({ icon: Icon, label, value, change, color }) => (
     <StaticCard>
-      <div className="glass-card p-6">
+      <div className="vb-card p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className={`glass w-12 h-12 rounded-xl flex items-center justify-center`}>
+          <div className={`bg-white/[0.04] border border-white/[0.06] rounded-xl w-12 h-12 flex items-center justify-center`}>
             <Icon className={`h-6 w-6 ${color}`} />
           </div>
           {change !== undefined && (
@@ -285,8 +293,8 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 animate-pulse-slow">
-          <BarChart3 className="h-12 w-12 text-purple-400 mx-auto animate-pulse" />
+        <div className="vb-card p-8 animate-pulse-slow">
+          <BarChart3 className="h-12 w-12 text-violet-400 mx-auto animate-pulse" />
           <p className="mt-4 text-gray-300">Loading analytics...</p>
         </div>
       </div>
@@ -295,19 +303,12 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl" />
-      </div>
-
       {/* Header */}
       <div className="flex items-center justify-between animate-reveal">
         <div>
-          <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-            <BarChart3 className="h-10 w-10 text-purple-400 neon-glow" />
+          <h1 className="text-4xl font-bold font-display text-white flex items-center gap-3">
+            <BarChart3 className="h-10 w-10 text-violet-400" />
             Analytics
-            <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
           </h1>
           <p className="text-gray-400 mt-2">
             Track your content performance and growth
@@ -316,10 +317,10 @@ export default function AnalyticsPage() {
         
         <div className="flex items-center gap-3">
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="glass-button w-[180px] text-white border-white/20 bg-white/10 [&>span]:text-white">
+            <SelectTrigger className="vb-btn-outline w-[180px] text-white border-white/20 bg-white/10 [&>span]:text-white">
               <SelectValue placeholder="Select period" />
             </SelectTrigger>
-            <SelectContent className="glass bg-gray-900/95 border-white/20 backdrop-blur-md">
+            <SelectContent className="bg-white/[0.04] border border-white/[0.06] rounded-xl bg-gray-900/95 border-white/20 backdrop-blur-md">
               <SelectItem value="24h" className="text-white hover:bg-white/10">Last 24 hours</SelectItem>
               <SelectItem value="7d" className="text-white hover:bg-white/10">Last 7 days</SelectItem>
               <SelectItem value="30d" className="text-white hover:bg-white/10">Last 30 days</SelectItem>
@@ -327,7 +328,7 @@ export default function AnalyticsPage() {
             </SelectContent>
           </Select>
           
-          <Button className="glass-button text-white">
+          <Button className="vb-btn-outline text-white">
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
@@ -341,14 +342,14 @@ export default function AnalyticsPage() {
           label="Total Scripts"
           value={metrics.totalScripts}
           change={12.5}
-          color="text-purple-400"
+          color="text-violet-400"
         />
         <StatCard
           icon={Eye}
           label="Total Views"
           value={`${(metrics.totalViews / 1000).toFixed(0)}K`}
           change={metrics.growthRate}
-          color="text-pink-400"
+          color="text-cyan-400"
         />
         <StatCard
           icon={Users}
@@ -370,35 +371,35 @@ export default function AnalyticsPage() {
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Views Over Time */}
         <StaticCard>
-          <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.2s' }}>
+          <div className="vb-card p-6 animate-reveal" style={{ animationDelay: '0.2s' }}>
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Eye className="h-5 w-5 text-purple-400" />
+              <Eye className="h-5 w-5 text-violet-400" />
               Views Over Time
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={viewsData}>
                 <defs>
                   <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#9333ea" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#9333ea" stopOpacity={0}/>
+                    <stop offset="5%" stopColor={CHART_COLORS.violet} stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor={CHART_COLORS.violet} stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="date" stroke="#9ca3af" />
                 <YAxis stroke="#9ca3af" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(17, 24, 39, 0.8)', 
-                    border: '1px solid rgba(147, 51, 234, 0.5)',
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(17, 24, 39, 0.8)',
+                    border: '1px solid rgba(139, 92, 246, 0.5)',
                     borderRadius: '8px'
                   }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="views" 
-                  stroke="#9333ea" 
-                  fillOpacity={1} 
-                  fill="url(#colorViews)" 
+                <Area
+                  type="monotone"
+                  dataKey="views"
+                  stroke={CHART_COLORS.violet}
+                  fillOpacity={1}
+                  fill="url(#colorViews)"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -407,9 +408,9 @@ export default function AnalyticsPage() {
 
         {/* Script Performance */}
         <StaticCard>
-          <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.3s' }}>
+          <div className="vb-card p-6 animate-reveal" style={{ animationDelay: '0.3s' }}>
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Target className="h-5 w-5 text-pink-400" />
+              <Target className="h-5 w-5 text-cyan-400" />
               Performance Metrics
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -417,10 +418,10 @@ export default function AnalyticsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="name" stroke="#9ca3af" />
                 <YAxis stroke="#9ca3af" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(17, 24, 39, 0.8)', 
-                    border: '1px solid rgba(236, 72, 153, 0.5)',
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(17, 24, 39, 0.8)',
+                    border: '1px solid rgba(6, 182, 212, 0.5)',
                     borderRadius: '8px'
                   }}
                 />
@@ -437,17 +438,17 @@ export default function AnalyticsPage() {
 
       {/* Top Performing Scripts */}
       <StaticCard>
-        <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.4s' }}>
+        <div className="vb-card p-6 animate-reveal" style={{ animationDelay: '0.4s' }}>
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Award className="h-5 w-5 text-yellow-400" />
             Top Performing Scripts
           </h3>
           <div className="space-y-4">
             {topScripts.map((script, index) => (
-              <div key={index} className="glass p-4 rounded-xl hover:bg-white/5 transition-all">
+              <div key={index} className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4 hover:bg-white/5 transition-all">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="glass w-10 h-10 rounded-lg flex items-center justify-center">
+                    <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl w-10 h-10 flex items-center justify-center">
                       <span className="text-white font-bold">{index + 1}</span>
                     </div>
                     <div>
@@ -473,7 +474,7 @@ export default function AnalyticsPage() {
             ))}
           </div>
           
-          <Button className="glass-button text-white w-full mt-4">
+          <Button className="vb-btn-outline text-white w-full mt-4">
             View All Scripts
             <Zap className="h-4 w-4 ml-2" />
           </Button>
@@ -481,14 +482,14 @@ export default function AnalyticsPage() {
       </StaticCard>
 
       {/* Insights */}
-      <div className="glass-card p-6 animate-reveal" style={{ animationDelay: '0.5s' }}>
+      <div className="vb-card p-6 animate-reveal" style={{ animationDelay: '0.5s' }}>
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-yellow-400" />
           AI Insights
         </h3>
         <div className="grid md:grid-cols-3 gap-4">
           <div className="flex gap-3">
-            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl w-10 h-10 flex items-center justify-center flex-shrink-0">
               <TrendingUp className="h-5 w-5 text-green-400" />
             </div>
             <div>
@@ -497,8 +498,8 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className="flex gap-3">
-            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
-              <PlayCircle className="h-5 w-5 text-purple-400" />
+            <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl w-10 h-10 flex items-center justify-center flex-shrink-0">
+              <PlayCircle className="h-5 w-5 text-violet-400" />
             </div>
             <div>
               <p className="text-sm text-white font-medium">Optimal Length</p>
@@ -506,8 +507,8 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className="flex gap-3">
-            <div className="glass w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Target className="h-5 w-5 text-pink-400" />
+            <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl w-10 h-10 flex items-center justify-center flex-shrink-0">
+              <Target className="h-5 w-5 text-cyan-400" />
             </div>
             <div>
               <p className="text-sm text-white font-medium">Hook Performance</p>

@@ -88,16 +88,16 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md bg-white/[0.02] border-white/5">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-2xl font-bold text-white">Welcome back</CardTitle>
+        <CardDescription className="text-gray-400">
           Sign in to your account to continue
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Button
-          className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 shadow-sm"
+          className="w-full bg-white hover:bg-gray-200 text-gray-900 border border-white/10 shadow-sm"
           onClick={handleGoogleLogin}
           disabled={isLoading}
         >
@@ -127,7 +127,7 @@ export function LoginForm() {
             <span className="w-full border-t" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white dark:bg-gray-900 px-2 text-gray-500">
+            <span className="bg-[#030303] px-2 text-gray-500">
               Or sign in with email
             </span>
           </div>
@@ -135,7 +135,7 @@ export function LoginForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-gray-300">Email</Label>
             <Input
               id="email"
               type="email"
@@ -144,10 +144,11 @@ export function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={isLoading}
+              className="vb-input"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-gray-300">Password</Label>
             <Input
               id="password"
               type="password"
@@ -155,11 +156,12 @@ export function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isLoading}
+              className="vb-input"
             />
           </div>
           <Button
             type="submit"
-            className="w-full"
+            className="w-full vb-btn-primary"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -176,15 +178,15 @@ export function LoginForm() {
       <CardFooter className="flex flex-col space-y-2">
         <Link
           href="/forgot-password"
-          className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+          className="text-sm text-gray-400 hover:text-white transition-colors"
         >
           Forgot your password?
         </Link>
-        <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-sm text-gray-400">
           Don't have an account?{' '}
           <Link
             href="/signup"
-            className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 font-medium"
+            className="text-violet-400 hover:text-violet-300 font-medium transition-colors"
           >
             Sign up
           </Link>

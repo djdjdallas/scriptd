@@ -106,8 +106,8 @@ export default function TeamDashboard() {
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-            <p className="text-gray-600">Loading team dashboard...</p>
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-violet-400" />
+            <p className="text-white/50">Loading team dashboard...</p>
           </div>
         </div>
       </div>
@@ -153,7 +153,7 @@ export default function TeamDashboard() {
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-gray-900 truncate">
+              <h1 className="text-3xl font-bold font-display text-white truncate">
                 {team.name}
               </h1>
               {team.user_role === 'owner' && (
@@ -165,9 +165,9 @@ export default function TeamDashboard() {
               </Badge>
             </div>
             {team.description && (
-              <p className="text-gray-600 text-lg">{team.description}</p>
+              <p className="text-white/50 text-lg">{team.description}</p>
             )}
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-white/40 mt-1">
               Created {formatDate(team.created_at)}
             </p>
           </div>
@@ -198,10 +198,10 @@ export default function TeamDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Members</p>
-                <p className="text-2xl font-bold text-gray-900">{members.length}</p>
+                <p className="text-sm font-medium text-white/50">Members</p>
+                <p className="text-2xl font-bold text-white">{members.length}</p>
               </div>
-              <Users className="w-8 h-8 text-blue-600" />
+              <Users className="w-8 h-8 text-violet-400" />
             </div>
           </CardContent>
         </Card>
@@ -210,8 +210,8 @@ export default function TeamDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Scripts</p>
-                <p className="text-2xl font-bold text-gray-900">{recentScripts.length}</p>
+                <p className="text-sm font-medium text-white/50">Scripts</p>
+                <p className="text-2xl font-bold text-white">{recentScripts.length}</p>
               </div>
               <FileText className="w-8 h-8 text-green-600" />
             </div>
@@ -225,10 +225,10 @@ export default function TeamDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Manage</p>
-                <p className="text-sm font-bold text-blue-600">Members →</p>
+                <p className="text-sm font-medium text-white/50">Manage</p>
+                <p className="text-sm font-bold text-violet-400">Members →</p>
               </div>
-              <Users className="w-8 h-8 text-blue-600" />
+              <Users className="w-8 h-8 text-violet-400" />
             </div>
           </CardContent>
         </Card>
@@ -240,7 +240,7 @@ export default function TeamDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">View</p>
+                <p className="text-sm font-medium text-white/50">View</p>
                 <p className="text-sm font-bold text-green-600">Scripts →</p>
               </div>
               <FileText className="w-8 h-8 text-green-600" />
@@ -273,15 +273,15 @@ export default function TeamDashboard() {
               <div className="space-y-3">
                 {members.slice(0, 5).map((member) => (
                   <div key={member.id} className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-xs font-medium text-blue-600">
+                    <div className="w-8 h-8 bg-violet-500/20 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-medium text-violet-400">
                         {member.profiles?.full_name
                           ? member.profiles.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
                           : member.profiles?.email?.slice(0, 2).toUpperCase() || '??'}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-white truncate">
                         {member.profiles?.full_name || member.profiles?.email}
                       </p>
                       <Badge size="sm" className={getRoleBadgeColor(member.role)}>
@@ -291,7 +291,7 @@ export default function TeamDashboard() {
                   </div>
                 ))}
                 {members.length > 5 && (
-                  <p className="text-xs text-gray-500 text-center pt-2">
+                  <p className="text-xs text-white/40 text-center pt-2">
                     +{members.length - 5} more members
                   </p>
                 )}
@@ -331,10 +331,10 @@ export default function TeamDashboard() {
             <CardContent>
               <div className="space-y-3">
                 {recentScripts.map((script) => (
-                  <div key={script.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={script.id} className="flex items-center justify-between p-3 bg-white/[0.04] rounded-lg">
                     <div>
-                      <h4 className="font-medium text-gray-900">{script.title}</h4>
-                      <p className="text-sm text-gray-600">
+                      <h4 className="font-medium text-white">{script.title}</h4>
+                      <p className="text-sm text-white/50">
                         Updated {formatDate(script.updated_at)} by {script.author_name}
                       </p>
                     </div>

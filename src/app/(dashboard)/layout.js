@@ -40,10 +40,10 @@ const SidebarCredits = memo(function SidebarCredits() {
   const { credits, loading } = useCredits();
 
   return (
-    <div className="glass-card p-3 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+    <div className="vb-card p-3 rounded-lg bg-gradient-to-br from-violet-500/10 to-cyan-500/10 border border-violet-500/20">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-purple-400" />
+          <Sparkles className="h-4 w-4 text-violet-400" />
           <span className="text-xs font-medium text-gray-300">Credits</span>
         </div>
         {loading ? (
@@ -56,14 +56,14 @@ const SidebarCredits = memo(function SidebarCredits() {
       </div>
       <div className="w-full h-1.5 bg-black/30 rounded-full overflow-hidden mb-2">
         <div
-          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+          className="h-full bg-gradient-to-r from-violet-600 to-cyan-600 transition-all duration-300"
           style={{ width: `${Math.min((credits / 1000) * 100, 100)}%` }}
         />
       </div>
       <Link href="/credits" className="block">
         <Button
           size="sm"
-          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs py-1.5 h-auto"
+          className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white text-xs py-1.5 h-auto"
         >
           Get More
         </Button>
@@ -163,24 +163,29 @@ function DashboardInner({ children, user, handleSignOut }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900">
+    <div className="min-h-screen bg-[#030303]">
       {/* Voice Training Notifications */}
       {user && <VoiceTrainingNotifications userId={user.id} />}
 
       {/* Sidebar Tour */}
       <SidebarTour />
 
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute w-96 h-96 bg-purple-600/10 rounded-full blur-3xl -top-48 -left-48" />
-        <div className="absolute w-96 h-96 bg-pink-600/10 rounded-full blur-3xl -bottom-48 -right-48" />
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
+      {/* Background Orbs */}
+      <div className="fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute -top-48 -left-48 w-[500px] h-[500px] rounded-full bg-violet-600/10 blur-[120px]"
+          style={{ transform: "translateZ(0)" }}
+        />
+        <div
+          className="absolute -bottom-48 -right-48 w-[500px] h-[500px] rounded-full bg-cyan-600/10 blur-[120px]"
+          style={{ transform: "translateZ(0)" }}
+        />
       </div>
 
       {/* Mobile Menu Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:hidden fixed top-6 left-6 z-50 glass-button p-3"
+        className="lg:hidden fixed top-6 left-6 z-50 vb-btn-outline p-3"
       >
         {sidebarOpen ? (
           <X className="h-5 w-5 text-white" />
@@ -194,7 +199,7 @@ function DashboardInner({ children, user, handleSignOut }) {
         onMouseEnter={handleSidebarMouseEnter}
         onMouseLeave={handleSidebarMouseLeave}
         className={cn(
-          "fixed left-0 top-0 h-full glass border-r border-white/10 z-40 flex flex-col overflow-hidden",
+          "fixed left-0 top-0 h-full bg-white/[0.02] border-r border-white/5 z-40 flex flex-col overflow-hidden",
           "transition-[width] duration-200 ease-out will-change-[width]",
           isCollapsed ? "w-20" : "w-64",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
@@ -204,9 +209,9 @@ function DashboardInner({ children, user, handleSignOut }) {
           {/* Logo */}
           <div className="mb-8">
             <Link href="/" className="flex items-center gap-2">
-              <Zap className="h-8 w-8 text-purple-400 neon-glow flex-shrink-0" />
+              <span className="w-3 h-3 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 flex-shrink-0" />
               {!isCollapsed && (
-                <span className="text-2xl font-bold gradient-text">
+                <span className="text-xl font-display text-white">
                   GenScript
                 </span>
               )}
@@ -247,14 +252,14 @@ function DashboardInner({ children, user, handleSignOut }) {
                         ? "justify-center px-3 py-3"
                         : "px-4 py-3",
                       isActive
-                        ? "glass bg-purple-500/20 text-white"
-                        : "hover:glass hover:bg-white/10 text-gray-300 hover:text-white"
+                        ? "vb-sidebar-active"
+                        : "hover:bg-white/[0.04] text-gray-300 hover:text-white"
                     )}
                   >
                     <Icon
                       className={cn(
                         "h-5 w-5 transition-transform flex-shrink-0",
-                        isActive && "text-purple-400",
+                        isActive && "text-violet-400",
                         hoveredItem === item.href && "scale-110"
                       )}
                     />
@@ -266,12 +271,12 @@ function DashboardInner({ children, user, handleSignOut }) {
                             className={cn(
                               "h-4 w-4 ml-auto transition-transform",
                               isExpanded ? "rotate-180" : "",
-                              isActive ? "text-purple-400" : "text-gray-400"
+                              isActive ? "text-violet-400" : "text-gray-400"
                             )}
                           />
                         ) : (
                           isActive && (
-                            <ChevronRight className="h-4 w-4 ml-auto text-purple-400" />
+                            <ChevronRight className="h-4 w-4 ml-auto text-violet-400" />
                           )
                         )}
                         {hoveredItem === item.href &&
@@ -285,7 +290,7 @@ function DashboardInner({ children, user, handleSignOut }) {
                     {/* Tooltip for collapsed state */}
                     {isCollapsed &&
                       hoveredItem === item.href && (
-                        <div className="absolute left-full ml-2 px-3 py-1 glass rounded-lg whitespace-nowrap z-50">
+                        <div className="absolute left-full ml-2 px-3 py-1 bg-white/[0.06] border border-white/5 rounded-lg whitespace-nowrap z-50">
                           <span className="text-sm text-white leading-none">
                             {item.label}
                           </span>
@@ -309,14 +314,14 @@ function DashboardInner({ children, user, handleSignOut }) {
                               className={cn(
                                 "flex items-center gap-3 px-4 py-2 rounded-lg transition-all",
                                 isSubActive
-                                  ? "glass bg-purple-500/20 text-white"
-                                  : "hover:glass hover:bg-white/5 text-gray-400 hover:text-white"
+                                  ? "bg-violet-500/10 border border-violet-500/20 text-white"
+                                  : "hover:bg-white/[0.04] text-gray-400 hover:text-white"
                               )}
                             >
                               <SubIcon
                                 className={cn(
                                   "h-4 w-4",
-                                  isSubActive && "text-purple-400"
+                                  isSubActive && "text-violet-400"
                                 )}
                               />
                               <span className="text-sm leading-none">{subItem.label}</span>
@@ -342,7 +347,7 @@ function DashboardInner({ children, user, handleSignOut }) {
             <div className="mt-4">
               <Button
                 onClick={startTour}
-                className="glass-button text-gray-300 hover:text-white w-full"
+                className="vb-btn-outline text-gray-300 hover:text-white w-full"
               >
                 <HelpCircle className="h-4 w-4 flex-shrink-0" />
                 <span className="ml-2 leading-none">Product Tour</span>
@@ -355,7 +360,7 @@ function DashboardInner({ children, user, handleSignOut }) {
             <Button
               onClick={handleSignOut}
               className={cn(
-                "glass-button text-white w-full",
+                "vb-btn-outline text-white w-full",
                 isCollapsed && "px-3"
               )}
             >
@@ -382,7 +387,7 @@ function DashboardInner({ children, user, handleSignOut }) {
       {/* Mobile Overlay */}
       {sidebarOpen && !isTourActive && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          className="lg:hidden fixed inset-0 bg-black/60 z-30"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -452,9 +457,9 @@ export default function DashboardLayout({ children }) {
   // Show loading state while checking auth
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center">
-        <div className="glass-card p-8">
-          <Sparkles className="h-12 w-12 text-purple-400 animate-spin mx-auto" />
+      <div className="min-h-screen bg-[#030303] flex items-center justify-center">
+        <div className="vb-card p-8">
+          <Sparkles className="h-12 w-12 text-violet-400 animate-spin mx-auto" />
           <p className="mt-4 text-gray-300">Loading...</p>
         </div>
       </div>
@@ -464,9 +469,9 @@ export default function DashboardLayout({ children }) {
   // If no user after loading, show a message (middleware will redirect if needed)
   if (!loading && !user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center">
-        <div className="glass-card p-8">
-          <Sparkles className="h-12 w-12 text-purple-400 animate-pulse mx-auto" />
+      <div className="min-h-screen bg-[#030303] flex items-center justify-center">
+        <div className="vb-card p-8">
+          <Sparkles className="h-12 w-12 text-violet-400 animate-pulse mx-auto" />
           <p className="mt-4 text-gray-300">Authenticating...</p>
         </div>
       </div>

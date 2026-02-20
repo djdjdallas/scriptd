@@ -8,9 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { 
-  Image, 
-  Copy, 
+import {
+  Image,
+  Copy,
   RefreshCw,
   Loader2,
   Palette,
@@ -41,7 +41,7 @@ export default function ThumbnailIdeasPage() {
 
   const generateIdeas = async (e) => {
     e.preventDefault();
-    
+
     if (!topic.trim()) {
       toast({
         title: "Topic Required",
@@ -102,18 +102,18 @@ export default function ThumbnailIdeasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black py-20 px-4">
+    <div className="min-h-screen bg-[#030303] py-20 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-white">Thumbnail Idea Generator</h1>
+          <h1 className="text-4xl font-bold font-display text-white">Thumbnail Idea Generator</h1>
           <p className="text-xl text-gray-400">
             Get creative thumbnail concepts that boost click-through rates
           </p>
         </div>
 
         {/* Generator Form */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Generate Thumbnail Ideas</CardTitle>
             <CardDescription className="text-gray-400">
@@ -130,7 +130,7 @@ export default function ThumbnailIdeasPage() {
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   disabled={loading}
-                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                  className="vb-input text-white placeholder:text-gray-500"
                 />
               </div>
 
@@ -142,7 +142,7 @@ export default function ThumbnailIdeasPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   disabled={loading}
-                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                  className="vb-input text-white placeholder:text-gray-500"
                 />
                 <p className="text-sm text-gray-400">
                   Helps create text overlay suggestions
@@ -162,7 +162,7 @@ export default function ThumbnailIdeasPage() {
                         />
                         <Label
                           htmlFor={s.id}
-                          className="flex flex-col gap-1 rounded-md border-2 border-gray-700 bg-gray-900 p-3 hover:bg-gray-800 peer-data-[state=checked]:border-purple-500 cursor-pointer"
+                          className="flex flex-col gap-1 rounded-md border-2 border-white/5 bg-white/[0.04] p-3 hover:bg-white/[0.06] peer-data-[state=checked]:border-violet-500 cursor-pointer"
                         >
                           <p className="font-medium text-white">{s.label}</p>
                           <p className="text-xs text-gray-400">{s.description}</p>
@@ -181,11 +181,11 @@ export default function ThumbnailIdeasPage() {
                   value={targetAudience}
                   onChange={(e) => setTargetAudience(e.target.value)}
                   disabled={loading}
-                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                  className="vb-input text-white placeholder:text-gray-500"
                 />
               </div>
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" disabled={loading}>
+              <Button type="submit" className="w-full bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -204,7 +204,7 @@ export default function ThumbnailIdeasPage() {
 
         {/* Results */}
         {ideas.length > 0 && (
-          <Card className="bg-gray-800/50 border-gray-700">
+          <Card className="bg-white/[0.04] border-white/5">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -218,7 +218,7 @@ export default function ThumbnailIdeasPage() {
                   size="sm"
                   onClick={() => generateIdeas(new Event('submit'))}
                   disabled={loading}
-                  className="border-gray-600 hover:bg-gray-700 text-white"
+                  className="border-white/[0.06] hover:bg-white/[0.06] text-white"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Regenerate
@@ -230,7 +230,7 @@ export default function ThumbnailIdeasPage() {
                 {ideas.map((idea, index) => (
                   <div
                     key={index}
-                    className="group p-4 rounded-lg border border-gray-700 hover:border-purple-500 hover:bg-gray-700/50 cursor-pointer transition-all"
+                    className="group p-4 rounded-lg border border-white/5 hover:border-violet-500 hover:bg-white/[0.06] cursor-pointer transition-all"
                     onClick={() => copyIdea(idea)}
                   >
                     <div className="space-y-3">
@@ -252,7 +252,7 @@ export default function ThumbnailIdeasPage() {
                           <span className="text-sm font-medium text-white">Colors:</span>
                           <div className="flex gap-2">
                             {idea.colors?.map((color, i) => (
-                              <Badge key={i} variant="outline" className="border-gray-600 text-gray-300">
+                              <Badge key={i} variant="outline" className="border-white/[0.06] text-gray-300">
                                 {color}
                               </Badge>
                             ))}
@@ -294,7 +294,7 @@ export default function ThumbnailIdeasPage() {
                       </div>
 
                       {idea.ctr_tip && (
-                        <div className="mt-3 p-3 bg-purple-500/10 rounded-md">
+                        <div className="mt-3 p-3 bg-violet-500/10 rounded-md">
                           <p className="text-sm text-gray-300">
                             <span className="font-medium text-white">CTR Tip:</span> {idea.ctr_tip}
                           </p>
@@ -309,13 +309,13 @@ export default function ThumbnailIdeasPage() {
         )}
 
         {/* Design Tips */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Thumbnail Design Tips</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-3">
-              <Eye className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <Eye className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Test at small sizes</p>
                 <p className="text-sm text-gray-400">
@@ -325,7 +325,7 @@ export default function ThumbnailIdeasPage() {
             </div>
 
             <div className="flex gap-3">
-              <Palette className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <Palette className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Use high contrast</p>
                 <p className="text-sm text-gray-400">
@@ -335,7 +335,7 @@ export default function ThumbnailIdeasPage() {
             </div>
 
             <div className="flex gap-3">
-              <Users className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <Users className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Include faces when possible</p>
                 <p className="text-sm text-gray-400">
@@ -345,7 +345,7 @@ export default function ThumbnailIdeasPage() {
             </div>
 
             <div className="flex gap-3">
-              <Type className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <Type className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Keep text minimal</p>
                 <p className="text-sm text-gray-400">

@@ -251,8 +251,8 @@ export default function TrendingPage() {
   if (loading && !refreshing) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 text-center">
-          <Loader2 className="h-12 w-12 text-purple-400 animate-spin mx-auto mb-4" />
+        <div className="vb-card p-8 text-center">
+          <Loader2 className="h-12 w-12 text-violet-400 animate-spin mx-auto mb-4" />
           <p className="text-white text-lg">Loading trending data...</p>
           <p className="text-gray-400 text-sm mt-2">Analyzing YouTube trends</p>
         </div>
@@ -264,31 +264,31 @@ export default function TrendingPage() {
   if (!hasAccess) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-12 text-center max-w-2xl mx-auto animate-reveal">
-          <div className="inline-flex items-center justify-center w-20 h-20 glass rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 mb-6">
+        <div className="vb-card p-12 text-center max-w-2xl mx-auto animate-reveal">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/[0.04] border border-white/[0.06] rounded-full bg-gradient-to-br from-violet-500/20 to-cyan-500/20 mb-6">
             <Crown className="h-10 w-10 text-yellow-400" />
           </div>
-          
-          <h1 className="text-3xl font-bold text-white mb-4">
+
+          <h1 className="text-3xl font-display font-bold text-white mb-4">
             Trending Analytics
           </h1>
-          
+
           <p className="text-gray-400 mb-8 max-w-md mx-auto">
             Access real-time YouTube trending data, discover viral topics, and stay ahead of the competition with our premium trending analytics.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="glass p-4 rounded-lg">
+            <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
               <TrendingUp className="h-8 w-8 text-green-400 mx-auto mb-2" />
               <h3 className="text-white font-semibold mb-1">Real-Time Trends</h3>
               <p className="text-sm text-gray-400">Track what's hot right now</p>
             </div>
-            <div className="glass p-4 rounded-lg">
-              <Hash className="h-8 w-8 text-purple-400 mx-auto mb-2" />
+            <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
+              <Hash className="h-8 w-8 text-violet-400 mx-auto mb-2" />
               <h3 className="text-white font-semibold mb-1">Viral Topics</h3>
               <p className="text-sm text-gray-400">Find trending hashtags & topics</p>
             </div>
-            <div className="glass p-4 rounded-lg">
+            <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
               <Users className="h-8 w-8 text-blue-400 mx-auto mb-2" />
               <h3 className="text-white font-semibold mb-1">Top Channels</h3>
               <p className="text-sm text-gray-400">Discover fast-growing creators</p>
@@ -296,9 +296,9 @@ export default function TrendingPage() {
           </div>
 
           <Link href="/pricing">
-            <Button 
+            <Button
               size="lg"
-              className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+              className="vb-btn-primary text-white"
             >
               <Lock className="mr-2 h-5 w-5" />
               Upgrade to Premium
@@ -311,24 +311,18 @@ export default function TrendingPage() {
 
   return (
     <div className="space-y-8">
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
-      </div>
-
       {/* Header */}
       <div className="animate-reveal">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-4xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-4xl font-display font-bold text-white flex items-center gap-3">
             <Flame className="h-10 w-10 text-orange-400 animate-pulse" />
             Trending Now
             <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
           </h1>
-          <Button 
+          <Button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="glass-button text-white"
+            className="vb-btn-outline text-white"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -340,7 +334,7 @@ export default function TrendingPage() {
       </div>
 
       {/* Filters */}
-      <div className="glass-card p-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
+      <div className="vb-card p-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
@@ -351,7 +345,7 @@ export default function TrendingPage() {
                   id="useNiche"
                   checked={useUserNiche}
                   onChange={(e) => setUseUserNiche(e.target.checked)}
-                  className="rounded border-gray-600 bg-gray-800 text-purple-500 focus:ring-purple-500"
+                  className="rounded border-gray-600 bg-white/[0.06] text-violet-500 focus:ring-violet-500"
                 />
                 <label htmlFor="useNiche" className="text-xs text-gray-400">
                   Use my niche
@@ -372,8 +366,8 @@ export default function TrendingPage() {
                     }}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                       selectedCategory === cat.id
-                        ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-white'
-                        : 'glass text-gray-400 hover:text-white'
+                        ? 'bg-gradient-to-r from-violet-500/30 to-cyan-500/30 text-white'
+                        : 'bg-white/[0.04] border border-white/[0.06] rounded-xl text-gray-400 hover:text-white'
                     }`}
                   >
                     <Icon className="h-3 w-3" />
@@ -392,8 +386,8 @@ export default function TrendingPage() {
                   onClick={() => setSelectedTimeframe(time.id)}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     selectedTimeframe === time.id
-                      ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-white'
-                      : 'glass text-gray-400 hover:text-white'
+                      ? 'bg-gradient-to-r from-violet-500/30 to-cyan-500/30 text-white'
+                      : 'bg-white/[0.04] border border-white/[0.06] rounded-xl text-gray-400 hover:text-white'
                   }`}
                 >
                   {time.label}
@@ -406,14 +400,14 @@ export default function TrendingPage() {
 
       {/* Hot Right Now - Featured Topic */}
       {hottestTopic && (
-        <div className="glass-card p-6 bg-gradient-to-r from-orange-500/10 to-red-500/10 animate-reveal" style={{ animationDelay: '0.2s' }}>
+        <div className="vb-card p-6 bg-gradient-to-r from-orange-500/10 to-red-500/10 animate-reveal" style={{ animationDelay: '0.2s' }}>
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 glass rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-white/[0.04] border border-white/[0.06] rounded-full flex items-center justify-center">
                 <Flame className="h-6 w-6 text-orange-400 animate-pulse" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <h2 className="text-xl font-display font-bold text-white flex items-center gap-2">
                   HOT RIGHT NOW
                   <Flame className="h-5 w-5 text-orange-400" />
                 </h2>
@@ -425,15 +419,15 @@ export default function TrendingPage() {
               <p className="text-xs text-gray-400">growth rate</p>
             </div>
           </div>
-          
-          <div className="glass p-4 rounded-lg">
-            <h3 className="text-2xl font-bold text-white mb-2">{hottestTopic.topic}</h3>
+
+          <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
+            <h3 className="text-2xl font-display font-bold text-white mb-2">{hottestTopic.topic}</h3>
             <p className="text-gray-300 mb-3">
               Content creators are rushing to cover this trending topic
             </p>
             <div className="flex flex-wrap gap-2 mb-4">
               {hottestTopic.hashtags?.map((tag, index) => (
-                <span key={`hot-tag-${index}`} className="glass px-3 py-1 rounded-full text-sm text-purple-300">
+                <span key={`hot-tag-${index}`} className="bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-1 rounded-full text-sm text-violet-300">
                   {tag}
                 </span>
               ))}
@@ -452,7 +446,7 @@ export default function TrendingPage() {
                 <p className="text-xl font-bold text-white">{hottestTopic.avgViews}</p>
               </div>
             </div>
-            <Button className="glass-button bg-gradient-to-r from-orange-500/50 to-red-500/50 text-white w-full">
+            <Button className="vb-btn-outline bg-gradient-to-r from-orange-500/50 to-red-500/50 text-white w-full">
               Create Content on This Topic
               <ArrowUpRight className="ml-2 h-4 w-4" />
             </Button>
@@ -463,8 +457,8 @@ export default function TrendingPage() {
       {/* Trending Topics */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-purple-400" />
+          <h2 className="text-2xl font-display font-bold text-white flex items-center gap-2">
+            <TrendingUp className="h-6 w-6 text-violet-400" />
             Trending Topics
             {growthData && growthData.summary?.avgTopicGrowth !== undefined && (
               <span className="text-sm text-gray-400">
@@ -473,7 +467,7 @@ export default function TrendingPage() {
             )}
           </h2>
           <Link href="/trending/topics">
-            <Button variant="ghost" className="glass-button text-gray-400 hover:text-white">
+            <Button variant="ghost" className="vb-btn-outline text-gray-400 hover:text-white">
               View All
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
@@ -484,11 +478,11 @@ export default function TrendingPage() {
           {trendingTopics.length > 0 ? (
             trendingTopics.slice(0, 6).map((topic, index) => (
               <StaticCard key={topic.id || index}>
-                <div className="glass-card p-6 h-full animate-reveal" style={{ animationDelay: `${0.3 + index * 0.05}s` }}>
+                <div className="vb-card-interactive p-6 h-full animate-reveal" style={{ animationDelay: `${0.3 + index * 0.05}s` }}>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 glass rounded-lg flex items-center justify-center">
-                        <Hash className="h-5 w-5 text-purple-400" />
+                      <div className="w-10 h-10 bg-white/[0.04] border border-white/[0.06] rounded-xl rounded-lg flex items-center justify-center">
+                        <Hash className="h-5 w-5 text-violet-400" />
                       </div>
                       <div>
                         <span className="text-xs text-gray-400">{topic.category}</span>
@@ -505,7 +499,7 @@ export default function TrendingPage() {
 
                   <div className="flex flex-wrap gap-2 mb-4">
                     {topic.hashtags?.slice(0, 3).map((tag, tagIndex) => (
-                      <span key={`topic-${index}-tag-${tagIndex}`} className="text-xs glass px-2 py-1 rounded-full text-purple-300">
+                      <span key={`topic-${index}-tag-${tagIndex}`} className="text-xs bg-white/[0.04] border border-white/[0.06] rounded-xl px-2 py-1 rounded-full text-violet-300">
                         {tag}
                       </span>
                     ))}
@@ -527,13 +521,13 @@ export default function TrendingPage() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className={`text-xs px-2 py-1 rounded-full glass ${
+                    <span className={`text-xs px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] ${
                       topic.engagement === 'Very High' ? 'text-green-400' : 'text-yellow-400'
                     }`}>
                       {topic.engagement} Engagement
                     </span>
                     <Link href={`/trending/explore?topic=${encodeURIComponent(topic.topic)}`}>
-                      <Button size="sm" className="glass-button text-white">
+                      <Button size="sm" className="vb-btn-outline text-white">
                         Explore
                         <ArrowUpRight className="ml-1 h-3 w-3" />
                       </Button>
@@ -543,7 +537,7 @@ export default function TrendingPage() {
               </StaticCard>
             ))
           ) : (
-            <div className="col-span-3 glass-card p-8 text-center">
+            <div className="col-span-3 vb-card p-8 text-center">
               <p className="text-gray-400">No trending topics found. Try adjusting your filters.</p>
             </div>
           )}
@@ -553,7 +547,7 @@ export default function TrendingPage() {
       {/* Trending Channels */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-display font-bold text-white flex items-center gap-2">
             <Youtube className="h-6 w-6 text-red-400" />
             Rising Channels
             {growthData && growthData.summary?.avgChannelGrowth !== undefined && (
@@ -563,7 +557,7 @@ export default function TrendingPage() {
             )}
           </h2>
           <Link href="/trending/channels">
-            <Button variant="ghost" className="glass-button text-gray-400 hover:text-white">
+            <Button variant="ghost" className="vb-btn-outline text-gray-400 hover:text-white">
               View All
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
@@ -574,13 +568,13 @@ export default function TrendingPage() {
           {trendingChannels.length > 0 ? (
             trendingChannels.slice(0, 4).map((channel, index) => (
               <StaticCard key={channel.id || index}>
-                <div className="glass-card p-6 animate-reveal" style={{ animationDelay: `${0.5 + index * 0.05}s` }}>
+                <div className="vb-card-interactive p-6 animate-reveal" style={{ animationDelay: `${0.5 + index * 0.05}s` }}>
                   <div className="flex items-start gap-4">
                     <div className="relative">
-                      <img 
-                        src={channel.thumbnail} 
+                      <img
+                        src={channel.thumbnail}
                         alt={channel.name}
-                        className="w-16 h-16 rounded-full object-cover ring-2 ring-purple-400/50"
+                        className="w-16 h-16 rounded-full object-cover ring-2 ring-violet-400/50"
                         onError={(e) => { e.target.src = '/youtube-default.svg'; }}
                       />
                       {channel.verified && (
@@ -589,14 +583,14 @@ export default function TrendingPage() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <h3 className="font-semibold text-white">{channel.name}</h3>
                           <p className="text-sm text-gray-400">{channel.handle}</p>
                         </div>
-                        <span className="text-xs glass px-2 py-1 rounded-full text-purple-300">
+                        <span className="text-xs bg-white/[0.04] border border-white/[0.06] rounded-xl px-2 py-1 rounded-full text-violet-300">
                           {channel.category}
                         </span>
                       </div>
@@ -620,7 +614,7 @@ export default function TrendingPage() {
                         </div>
                       </div>
 
-                      <div className="glass p-2 rounded-lg mb-3">
+                      <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-2 rounded-lg mb-3">
                         <p className="text-xs text-gray-400 mb-1">Latest Hit:</p>
                         <p className="text-sm text-white truncate">{channel.topVideo}</p>
                       </div>
@@ -628,15 +622,15 @@ export default function TrendingPage() {
                       <div className="flex gap-2">
                         {channel.id && !channel.id.startsWith('demo') ? (
                           <Link href={`/trending/analyze?channelId=${channel.id}&channel=${encodeURIComponent(channel.name)}`} className="flex-1">
-                            <Button size="sm" className="glass-button w-full text-white">
+                            <Button size="sm" className="vb-btn-outline w-full text-white">
                               <Eye className="mr-1 h-3 w-3" />
                               Analyze
                             </Button>
                           </Link>
                         ) : (
-                          <Button 
-                            size="sm" 
-                            className="glass-button flex-1 text-white opacity-50" 
+                          <Button
+                            size="sm"
+                            className="vb-btn-outline flex-1 text-white opacity-50"
                             disabled
                             title="Analysis not available for demo/cached channels"
                           >
@@ -645,7 +639,7 @@ export default function TrendingPage() {
                           </Button>
                         )}
                         <Link href={`/trending/follow?channelId=${channel.id}&channel=${encodeURIComponent(channel.name)}`} className="flex-1">
-                          <Button size="sm" className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 w-full text-white">
+                          <Button size="sm" className="vb-btn-primary w-full text-white">
                             <Users className="mr-1 h-3 w-3" />
                             Follow Trend
                           </Button>
@@ -657,7 +651,7 @@ export default function TrendingPage() {
               </StaticCard>
             ))
           ) : (
-            <div className="col-span-2 glass-card p-8 text-center">
+            <div className="col-span-2 vb-card p-8 text-center">
               <p className="text-gray-400">No trending channels found. Try adjusting your filters.</p>
             </div>
           )}
@@ -667,28 +661,28 @@ export default function TrendingPage() {
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StaticCard>
-          <div className="glass-card p-6 text-center animate-reveal" style={{ animationDelay: '0.7s' }}>
+          <div className="vb-card p-6 text-center animate-reveal" style={{ animationDelay: '0.7s' }}>
             <Flame className="h-8 w-8 text-orange-400 mx-auto mb-2" />
             <p className="text-2xl font-bold text-white">{stats.totalTopics || 0}</p>
             <p className="text-xs text-gray-400">Hot Topics</p>
           </div>
         </StaticCard>
         <StaticCard>
-          <div className="glass-card p-6 text-center animate-reveal" style={{ animationDelay: '0.75s' }}>
+          <div className="vb-card p-6 text-center animate-reveal" style={{ animationDelay: '0.75s' }}>
             <TrendingUp className="h-8 w-8 text-green-400 mx-auto mb-2" />
             <p className="text-2xl font-bold text-white">{stats.avgGrowthRate || 0}%</p>
             <p className="text-xs text-gray-400">Avg Growth Rate</p>
           </div>
         </StaticCard>
         <StaticCard>
-          <div className="glass-card p-6 text-center animate-reveal" style={{ animationDelay: '0.8s' }}>
+          <div className="vb-card p-6 text-center animate-reveal" style={{ animationDelay: '0.8s' }}>
             <Youtube className="h-8 w-8 text-red-400 mx-auto mb-2" />
             <p className="text-2xl font-bold text-white">{formatNumber(stats.totalChannels || 0)}</p>
             <p className="text-xs text-gray-400">Channels Rising</p>
           </div>
         </StaticCard>
         <StaticCard>
-          <div className="glass-card p-6 text-center animate-reveal" style={{ animationDelay: '0.85s' }}>
+          <div className="vb-card p-6 text-center animate-reveal" style={{ animationDelay: '0.85s' }}>
             <Sparkles className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
             <p className="text-2xl font-bold text-white">{formatNumber(stats.totalSearchVolume || 0)}</p>
             <p className="text-xs text-gray-400">Total Searches</p>
@@ -697,19 +691,19 @@ export default function TrendingPage() {
       </div>
 
       {/* Pro Tip */}
-      <div className="glass-card p-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10 animate-reveal" style={{ animationDelay: '0.9s' }}>
+      <div className="vb-card p-6 bg-gradient-to-r from-violet-500/10 to-cyan-500/10 animate-reveal" style={{ animationDelay: '0.9s' }}>
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 glass rounded-full flex items-center justify-center flex-shrink-0">
-            <Zap className="h-5 w-5 text-purple-400" />
+          <div className="w-10 h-10 bg-white/[0.04] border border-white/[0.06] rounded-full flex items-center justify-center flex-shrink-0">
+            <Zap className="h-5 w-5 text-violet-400" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white mb-1">Pro Tip</h3>
+            <h3 className="text-lg font-display font-semibold text-white mb-1">Pro Tip</h3>
             <p className="text-gray-300 text-sm">
-              Jump on trending topics early! The best time to create content on a trending topic is within the first 48 hours of it gaining momentum. 
+              Jump on trending topics early! The best time to create content on a trending topic is within the first 48 hours of it gaining momentum.
               Use these insights to plan your content calendar and stay ahead of the curve.
               {userPreferences?.niche && userPreferences.niche !== 'all' && (
-                <span className="block mt-2 text-purple-300">
-                  Your niche is set to <strong>{userPreferences.niche}</strong>. 
+                <span className="block mt-2 text-violet-300">
+                  Your niche is set to <strong>{userPreferences.niche}</strong>.
                   The trending data is personalized for your content category.
                 </span>
               )}

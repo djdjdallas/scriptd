@@ -248,8 +248,8 @@ export default function ScriptsPage() {
   if (isLoading && scripts.length === 0 && !hasMountedRef.current) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="glass-card p-8 animate-pulse-slow">
-          <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto" />
+        <div className="vb-card p-8 animate-pulse-slow">
+          <Loader2 className="h-12 w-12 animate-spin text-violet-400 mx-auto" />
           <p className="mt-4 text-gray-300">Loading your scripts...</p>
         </div>
       </div>
@@ -258,21 +258,12 @@ export default function ScriptsPage() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute w-96 h-96 bg-purple-600/20 rounded-full blur-3xl -top-48 -right-48" />
-        <div className="absolute w-96 h-96 bg-pink-600/20 rounded-full blur-3xl -bottom-48 -left-48" />
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
-      </div>
-
       <div className="space-y-8 p-6">
         {/* Header */}
-        <div className="flex items-center justify-between animate-reveal">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-              <FileText className="h-10 w-10 text-purple-400 neon-glow" />
+            <h1 className="font-display text-4xl md:text-5xl text-white">
               Scripts
-              <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
             </h1>
             <p className="text-gray-400 mt-2">
               Manage and create your viral YouTube scripts
@@ -280,7 +271,7 @@ export default function ScriptsPage() {
           </div>
 
           <Link href="/scripts/create">
-            <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white group">
+            <Button className="vb-btn-primary text-white group">
               <Plus className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform" />
               New Script
             </Button>
@@ -288,30 +279,27 @@ export default function ScriptsPage() {
         </div>
 
         {/* Stats Bar */}
-        <div
-          className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-reveal"
-          style={{ animationDelay: "0.1s" }}
-        >
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl font-bold gradient-text">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="vb-card p-4 text-center">
+            <div className="font-mono text-2xl font-bold text-white">
               {totalScripts}
             </div>
             <p className="text-sm text-gray-400">Total Scripts</p>
           </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl font-bold gradient-text">
+          <div className="vb-card p-4 text-center">
+            <div className="font-mono text-2xl font-bold text-white">
               {stats.thisWeek}
             </div>
             <p className="text-sm text-gray-400">This Week</p>
           </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl font-bold gradient-text">
+          <div className="vb-card p-4 text-center">
+            <div className="font-mono text-2xl font-bold text-white">
               {stats.totalMinutes}
             </div>
             <p className="text-sm text-gray-400">Total Minutes</p>
           </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl font-bold gradient-text flex items-center justify-center gap-1">
+          <div className="vb-card p-4 text-center">
+            <div className="font-mono text-2xl font-bold gradient-text flex items-center justify-center gap-1">
               <TrendingUp className="h-5 w-5" />
               {Math.round(totalScripts * 2.5)}K
             </div>
@@ -320,31 +308,28 @@ export default function ScriptsPage() {
         </div>
 
         {/* Filters */}
-        <div
-          className="glass-card p-6 animate-reveal"
-          style={{ animationDelay: "0.2s" }}
-        >
+        <div className="vb-card p-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-violet-400" />
                 <Input
                   placeholder="Search scripts..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="glass-input pl-10 text-white placeholder:text-gray-400"
+                  className="vb-input pl-10"
                 />
               </div>
             </div>
 
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="glass-button w-[180px] text-white border-white/20 bg-white/10 [&>span]:text-white">
+              <SelectTrigger className="vb-btn-outline w-[180px] [&>span]:text-white">
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
-              <SelectContent className="glass bg-gray-900/95 border-white/20 backdrop-blur-md">
+              <SelectContent className="bg-[#0a0a0a] border-white/5">
                 <SelectItem
                   value="all"
-                  className="text-white hover:bg-white/10"
+                  className="text-white hover:bg-white/[0.04]"
                 >
                   All types
                 </SelectItem>
@@ -352,7 +337,7 @@ export default function ScriptsPage() {
                   <SelectItem
                     key={key}
                     value={value}
-                    className="text-white hover:bg-white/10"
+                    className="text-white hover:bg-white/[0.04]"
                   >
                     {value}
                   </SelectItem>
@@ -361,31 +346,31 @@ export default function ScriptsPage() {
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="glass-button w-[180px] text-white border-white/20 bg-white/10 [&>span]:text-white">
+              <SelectTrigger className="vb-btn-outline w-[180px] [&>span]:text-white">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
-              <SelectContent className="glass bg-gray-900/95 border-white/20 backdrop-blur-md">
+              <SelectContent className="bg-[#0a0a0a] border-white/5">
                 <SelectItem
                   value="created_at"
-                  className="text-white hover:bg-white/10"
+                  className="text-white hover:bg-white/[0.04]"
                 >
                   Newest
                 </SelectItem>
                 <SelectItem
                   value="updated_at"
-                  className="text-white hover:bg-white/10"
+                  className="text-white hover:bg-white/[0.04]"
                 >
                   Recently updated
                 </SelectItem>
                 <SelectItem
                   value="title"
-                  className="text-white hover:bg-white/10"
+                  className="text-white hover:bg-white/[0.04]"
                 >
                   Title (A-Z)
                 </SelectItem>
                 <SelectItem
                   value="length"
-                  className="text-white hover:bg-white/10"
+                  className="text-white hover:bg-white/[0.04]"
                 >
                   Length
                 </SelectItem>
@@ -397,21 +382,15 @@ export default function ScriptsPage() {
         {/* Loading indicator for subsequent loads */}
         {isLoading && hasMountedRef.current && (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+            <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
             <span className="ml-2 text-gray-300">Loading scripts...</span>
           </div>
         )}
 
         {/* Scripts Grid */}
         {!isLoading && scripts.length === 0 ? (
-          <div
-            className="glass-card p-12 text-center animate-reveal"
-            style={{ animationDelay: "0.3s" }}
-          >
-            <div className="relative inline-block">
-              <FileText className="h-20 w-20 mx-auto text-purple-400 neon-glow" />
-              <Sparkles className="h-8 w-8 text-yellow-400 absolute -top-2 -right-2 animate-pulse" />
-            </div>
+          <div className="vb-card p-12 text-center">
+            <FileText className="h-20 w-20 mx-auto text-gray-600" />
             <h3 className="text-2xl font-bold text-white mt-6 mb-2">
               {search || typeFilter !== "all"
                 ? "No scripts found"
@@ -424,7 +403,7 @@ export default function ScriptsPage() {
             </p>
             {!(search || typeFilter !== "all") && (
               <Link href="/scripts/create">
-                <Button className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
+                <Button className="vb-btn-primary text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Script
                 </Button>
@@ -437,13 +416,12 @@ export default function ScriptsPage() {
               {scripts.map((script, index) => (
                 <StaticCard key={script.id}>
                   <div
-                    className="glass-card glass-hover overflow-hidden group"
+                    className="vb-card-interactive overflow-hidden group"
                     onMouseEnter={() => setHoveredScript(script.id)}
                     onMouseLeave={() => setHoveredScript(null)}
-                    style={{ animationDelay: `${0.3 + index * 0.05}s` }}
                   >
                     {/* Background gradient on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                     <div className="relative p-6">
                       <div className="flex items-start justify-between">
@@ -451,13 +429,10 @@ export default function ScriptsPage() {
                           <h3 className="text-xl font-semibold text-white mb-2 flex items-center gap-2">
                             <Link
                               href={`/scripts/${script.id}`}
-                              className="hover:text-purple-400 transition-colors"
+                              className="hover:text-violet-400 transition-colors"
                             >
                               {script.title}
                             </Link>
-                            {hoveredScript === script.id && (
-                              <Zap className="h-4 w-4 text-yellow-400 animate-pulse" />
-                            )}
                           </h3>
 
                           <p className="text-gray-400 mb-4 line-clamp-2">
@@ -465,7 +440,7 @@ export default function ScriptsPage() {
                           </p>
 
                           <div className="flex items-center gap-4 text-sm">
-                            <Badge className="glass border-purple-400/50 text-purple-300">
+                            <Badge className="vb-badge-violet">
                               {script.type || "general"}
                             </Badge>
                             <span className="flex items-center gap-1 text-gray-400">
@@ -496,7 +471,7 @@ export default function ScriptsPage() {
                         <div className="flex items-center gap-2 ml-6">
                           <Link href={`/scripts/${script.id}`}>
                             <Button
-                              className="glass-button hover:bg-blue-500/20"
+                              className="vb-btn-outline hover:bg-cyan-500/10"
                               size="icon"
                               title="View Script"
                             >
@@ -505,7 +480,7 @@ export default function ScriptsPage() {
                           </Link>
                           <Link href={`/scripts/${script.id}/edit`}>
                             <Button
-                              className="glass-button hover:bg-purple-500/20"
+                              className="vb-btn-outline hover:bg-violet-500/10"
                               size="icon"
                               title="Edit Script"
                             >
@@ -514,7 +489,7 @@ export default function ScriptsPage() {
                           </Link>
                           <Link href={`/scripts/${script.id}/history`}>
                             <Button
-                              className="glass-button hover:bg-yellow-500/20"
+                              className="vb-btn-outline hover:bg-amber-500/10"
                               size="icon"
                               title="Version History"
                             >
@@ -522,7 +497,7 @@ export default function ScriptsPage() {
                             </Button>
                           </Link>
                           <Button
-                            className="glass-button hover:bg-pink-500/20"
+                            className="vb-btn-outline hover:bg-red-500/10"
                             size="icon"
                             onClick={() => handleDeleteClick(script)}
                             title="Delete Script"
@@ -530,7 +505,7 @@ export default function ScriptsPage() {
                             <Trash2 className="h-4 w-4 text-white" />
                           </Button>
                           <Button
-                            className="glass-button hover:bg-green-500/20"
+                            className="vb-btn-outline hover:bg-emerald-500/10"
                             size="icon"
                             title="Share Script"
                           >
@@ -541,7 +516,7 @@ export default function ScriptsPage() {
 
                       {/* Progress indicator */}
                       {hoveredScript === script.id && (
-                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-pink-500 animate-shimmer" />
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-600 to-cyan-600" />
                       )}
                     </div>
                   </div>
@@ -553,22 +528,22 @@ export default function ScriptsPage() {
 
         {/* Pagination */}
         {totalPages > 1 && !isLoading && (
-          <div className="flex items-center justify-center gap-4 animate-reveal">
+          <div className="flex items-center justify-center gap-4">
             <Button
-              className="glass-button text-white"
+              className="vb-btn-outline text-white"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
             >
               Previous
             </Button>
-            <div className="glass-card px-4 py-2">
+            <div className="vb-card px-4 py-2">
               <span className="text-sm text-gray-300">
-                Page <span className="gradient-text font-bold">{page}</span> of{" "}
-                <span className="gradient-text font-bold">{totalPages}</span>
+                Page <span className="text-white font-bold">{page}</span> of{" "}
+                <span className="text-white font-bold">{totalPages}</span>
               </span>
             </div>
             <Button
-              className="glass-button text-white"
+              className="vb-btn-outline text-white"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
             >
@@ -580,9 +555,9 @@ export default function ScriptsPage() {
 
       {/* Floating action hints */}
       {!isLoading && scripts.length > 0 && (
-        <div className="fixed bottom-6 right-6 glass-card p-4 animate-float max-w-xs">
+        <div className="fixed bottom-6 right-6 vb-card p-4 max-w-xs">
           <p className="text-sm text-gray-300 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-yellow-400" />
+            <Sparkles className="h-4 w-4 text-violet-400" />
             Pro tip: Use AI to generate viral hooks!
           </p>
         </div>

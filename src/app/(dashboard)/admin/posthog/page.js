@@ -58,7 +58,7 @@ export default function AdminPosthogPage() {
         <Card className="max-w-md w-full bg-slate-900/50 border-slate-800">
           <CardContent className="p-8 text-center">
             <AlertTriangle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-white mb-2">Access Denied</h2>
+            <h2 className="text-xl font-semibold font-display text-white mb-2">Access Denied</h2>
             <p className="text-slate-400 mb-6">
               You don&apos;t have admin permissions to access this area.
             </p>
@@ -87,7 +87,7 @@ export default function AdminPosthogPage() {
             <div className="flex items-center gap-3">
               <Activity className="h-6 w-6 text-orange-500" />
               <div>
-                <h1 className="text-xl font-semibold text-white">PostHog Analytics</h1>
+                <h1 className="text-xl font-semibold font-display text-white">PostHog Analytics</h1>
                 <p className="text-sm text-slate-400">Product analytics and user behavior insights</p>
               </div>
             </div>

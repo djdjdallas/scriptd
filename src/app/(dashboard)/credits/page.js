@@ -12,7 +12,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import {
   CreditCard,
-  Sparkles,
   Zap,
   Trophy,
   Gift,
@@ -26,6 +25,7 @@ import {
   Crown,
   Star,
   ShoppingCart,
+  Sparkles,
 } from "lucide-react";
 import posthog from "posthog-js";
 
@@ -170,8 +170,8 @@ export default function CreditsPage() {
   if (loading) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 animate-pulse-slow">
-          <CreditCard className="h-12 w-12 text-purple-400 mx-auto animate-pulse" />
+        <div className="vb-card p-8 animate-pulse-slow">
+          <CreditCard className="h-12 w-12 text-violet-400 mx-auto animate-pulse" />
           <p className="mt-4 text-gray-300">Loading credits...</p>
         </div>
       </div>
@@ -180,18 +180,11 @@ export default function CreditsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-20 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl" />
-      </div>
-
       {/* Header */}
       <div className="animate-reveal">
-        <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-          <CreditCard className="h-10 w-10 text-purple-400 neon-glow" />
+        <h1 className="text-4xl font-bold font-display text-white flex items-center gap-3">
+          <CreditCard className="h-10 w-10 text-violet-400" />
           Credits
-          <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
         </h1>
         <p className="text-gray-400 mt-2">
           Purchase credits to generate more scripts and unlock features
@@ -201,11 +194,11 @@ export default function CreditsPage() {
       {/* Current Balance */}
       <StaticCard>
         <div
-          className="glass-card p-8 text-center animate-reveal"
+          className="vb-card p-8 text-center animate-reveal"
           style={{ animationDelay: "0.1s" }}
         >
-          <div className="inline-flex items-center justify-center w-20 h-20 glass rounded-full mb-4">
-            <Coins className="h-10 w-10 text-yellow-400 neon-glow" />
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/[0.04] border border-white/[0.06] rounded-full mb-4">
+            <Coins className="h-10 w-10 text-yellow-400" />
           </div>
           <h2 className="text-xl text-gray-400 mb-2">Current Balance</h2>
           <p className="text-5xl font-bold gradient-text mb-4">
@@ -218,7 +211,7 @@ export default function CreditsPage() {
 
       {/* Low Credits Warning */}
       {currentCredits < 15 && currentCredits > 0 && (
-        <Alert className="glass-card border-yellow-500/30 bg-yellow-500/5">
+        <Alert className="vb-card border-yellow-500/30 bg-yellow-500/5">
           <AlertCircle className="h-4 w-4 text-yellow-400" />
           <AlertDescription className="text-yellow-200">
             You have {currentCredits} credits remaining — not enough for a full script generation.
@@ -229,7 +222,7 @@ export default function CreditsPage() {
 
       {/* Success Alert */}
       {searchParams.get("success") === "true" && (
-        <Alert className="glass-card border-green-500/50 bg-green-500/10">
+        <Alert className="vb-card border-green-500/50 bg-green-500/10">
           <CheckCircle className="h-4 w-4 text-green-400" />
           <AlertDescription className="text-green-300">
             Payment successful! Your credits have been added to your account.
@@ -239,7 +232,7 @@ export default function CreditsPage() {
 
       {/* Special Offers */}
       {(isFirstPurchase || isLoyaltyBonus) && (
-        <Alert className="glass-card border-yellow-500/50 bg-yellow-500/10 animate-reveal">
+        <Alert className="vb-card border-yellow-500/50 bg-yellow-500/10 animate-reveal">
           <Gift className="h-4 w-4 text-yellow-400" />
           <AlertDescription className="text-yellow-300">
             {isFirstPurchase && (
@@ -262,7 +255,7 @@ export default function CreditsPage() {
         style={{ animationDelay: "0.2s" }}
       >
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-          <ShoppingCart className="h-6 w-6 text-purple-400" />
+          <ShoppingCart className="h-6 w-6 text-violet-400" />
           Purchase Credits
         </h2>
 
@@ -276,20 +269,20 @@ export default function CreditsPage() {
             const Icon = iconMap[pkg.id] || CreditCard;
             const colorMap = {
               small: "from-blue-500/20",
-              medium: "from-purple-500/20",
+              medium: "from-violet-500/20",
               large: "from-yellow-500/20",
             };
 
             return (
               <StaticCard key={pkg.id}>
                 <div
-                  className={`glass-card glass-hover h-full relative ${
-                    pkg.badge ? "ring-2 ring-purple-400" : ""
+                  className={`vb-card-interactive h-full relative ${
+                    pkg.badge ? "ring-2 ring-violet-400" : ""
                   }`}
                 >
                   {pkg.badge && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 glass px-3 py-1 rounded-full">
-                      <span className="text-xs text-purple-300 font-semibold">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white/[0.04] border border-white/[0.06] px-3 py-1 rounded-full">
+                      <span className="text-xs text-violet-300 font-semibold">
                         {pkg.badge}
                       </span>
                     </div>
@@ -297,7 +290,7 @@ export default function CreditsPage() {
 
                   <div className="p-6 text-center">
                     <div
-                      className={`w-16 h-16 glass rounded-xl flex items-center justify-center mx-auto mb-4 bg-gradient-to-br ${
+                      className={`w-16 h-16 bg-white/[0.04] border border-white/[0.06] rounded-xl flex items-center justify-center mx-auto mb-4 bg-gradient-to-br ${
                         colorMap[pkg.id]
                       } to-transparent`}
                     >
@@ -333,10 +326,10 @@ export default function CreditsPage() {
                     <Button
                       onClick={() => handlePurchase(pkg.id)}
                       disabled={purchasing}
-                      className={`w-full glass-button ${
+                      className={`w-full ${
                         pkg.badge === "Most Popular"
-                          ? "bg-gradient-to-r from-purple-500/50 to-pink-500/50"
-                          : ""
+                          ? "vb-btn-primary bg-gradient-to-r from-violet-500/50 to-cyan-500/50"
+                          : "vb-btn-outline"
                       } text-white`}
                     >
                       {purchasing && selectedPackage === pkg.id ? (
@@ -362,7 +355,7 @@ export default function CreditsPage() {
 
       {/* Benefits Section */}
       <div
-        className="glass-card p-6 animate-reveal"
+        className="vb-card p-6 animate-reveal"
         style={{ animationDelay: "0.4s" }}
       >
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -373,7 +366,7 @@ export default function CreditsPage() {
           {Object.entries(CREDIT_COSTS).map(([feature, costs]) => (
             <div key={feature} className="space-y-2">
               <h4 className="font-medium text-white flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-purple-400" />
+                <Sparkles className="h-4 w-4 text-violet-400" />
                 {feature
                   .replace(/_/g, " ")
                   .replace(/\b\w/g, (l) => l.toUpperCase())}
@@ -404,7 +397,7 @@ export default function CreditsPage() {
           ))}
         </div>
 
-        <Alert className="mt-6 border-gray-700 bg-gray-900/50">
+        <Alert className="mt-6 border-white/5 bg-white/[0.02]">
           <Clock className="h-4 w-4 text-gray-400" />
           <AlertDescription className="text-gray-300">
             Credits expire 12 months after purchase. Subscription credits reset

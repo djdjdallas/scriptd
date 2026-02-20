@@ -122,22 +122,22 @@ export default function TranscriptExtractionPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black py-20 px-4">
+    <div className="min-h-screen bg-[#030303] py-20 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <Badge className="gap-2 bg-purple-500/20 text-purple-400 border-purple-500/30">
+          <Badge className="gap-2 bg-violet-500/10 text-violet-400 border-violet-500/30">
             <Sparkles className="h-3 w-3" />
             Free YouTube Transcript Extractor
           </Badge>
-          <h1 className="text-4xl font-bold text-white">YouTube Transcript Extraction</h1>
+          <h1 className="text-4xl font-bold font-display text-white">YouTube Transcript Extraction</h1>
           <p className="text-xl text-gray-400">
             Extract and analyze video transcripts in seconds for competitive research
           </p>
         </div>
 
         {/* Extraction Form */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Extract Transcript</CardTitle>
             <CardDescription className="text-gray-400">
@@ -154,7 +154,7 @@ export default function TranscriptExtractionPage() {
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
                   disabled={loading}
-                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                  className="bg-white/[0.04] border-white/5 text-white placeholder:text-gray-500"
                 />
                 <p className="text-sm text-gray-400">
                   Works with any public YouTube video that has captions
@@ -173,7 +173,7 @@ export default function TranscriptExtractionPage() {
                 </Label>
               </div>
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" disabled={loading}>
+              <Button type="submit" className="w-full bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -193,7 +193,7 @@ export default function TranscriptExtractionPage() {
         {/* Results */}
         {transcript && (
           <>
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/[0.04] border-white/5">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -207,7 +207,7 @@ export default function TranscriptExtractionPage() {
                       variant="outline"
                       size="sm"
                       onClick={copyTranscript}
-                      className="border-gray-600 hover:bg-gray-700 text-white"
+                      className="border-white/[0.06] hover:bg-white/[0.06] text-white"
                     >
                       <Copy className="h-4 w-4 mr-2" />
                       Copy
@@ -216,7 +216,7 @@ export default function TranscriptExtractionPage() {
                       variant="outline"
                       size="sm"
                       onClick={downloadTranscript}
-                      className="border-gray-600 hover:bg-gray-700 text-white"
+                      className="border-white/[0.06] hover:bg-white/[0.06] text-white"
                     >
                       <Download className="h-4 w-4 mr-2" />
                       Download
@@ -228,23 +228,23 @@ export default function TranscriptExtractionPage() {
                 <div className="space-y-4">
                   {/* Stats */}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="p-3 bg-gray-900 rounded-lg">
+                    <div className="p-3 bg-white/[0.04] rounded-lg">
                       <div className="flex items-center gap-2 mb-1">
-                        <Hash className="h-4 w-4 text-purple-400" />
+                        <Hash className="h-4 w-4 text-violet-400" />
                         <span className="text-sm font-medium text-gray-300">Word Count</span>
                       </div>
                       <p className="text-2xl font-bold text-white">{transcript.wordCount}</p>
                     </div>
-                    <div className="p-3 bg-gray-900 rounded-lg">
+                    <div className="p-3 bg-white/[0.04] rounded-lg">
                       <div className="flex items-center gap-2 mb-1">
-                        <Clock className="h-4 w-4 text-purple-400" />
+                        <Clock className="h-4 w-4 text-violet-400" />
                         <span className="text-sm font-medium text-gray-300">Read Time</span>
                       </div>
                       <p className="text-2xl font-bold text-white">{transcript.estimatedReadTime} min</p>
                     </div>
-                    <div className="p-3 bg-gray-900 rounded-lg">
+                    <div className="p-3 bg-white/[0.04] rounded-lg">
                       <div className="flex items-center gap-2 mb-1">
-                        <FileText className="h-4 w-4 text-purple-400" />
+                        <FileText className="h-4 w-4 text-violet-400" />
                         <span className="text-sm font-medium text-gray-300">Format</span>
                       </div>
                       <p className="text-2xl font-bold text-white">{transcript.includeTimestamps ? 'Timed' : 'Plain'}</p>
@@ -256,7 +256,7 @@ export default function TranscriptExtractionPage() {
                     value={transcript.transcript}
                     readOnly
                     rows={20}
-                    className="font-mono text-sm bg-gray-900 border-gray-700 text-white"
+                    className="font-mono text-sm bg-white/[0.04] border-white/5 text-white"
                   />
                 </div>
               </CardContent>
@@ -265,14 +265,14 @@ export default function TranscriptExtractionPage() {
         )}
 
         {/* Features */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">What You Can Do With Transcripts</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex gap-3">
-              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <CheckCircle2 className="h-4 w-4 text-purple-400" />
+              <div className="h-6 w-6 rounded-full bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CheckCircle2 className="h-4 w-4 text-violet-400" />
               </div>
               <div>
                 <p className="font-medium text-white">Competitive Research</p>
@@ -283,8 +283,8 @@ export default function TranscriptExtractionPage() {
             </div>
 
             <div className="flex gap-3">
-              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <CheckCircle2 className="h-4 w-4 text-purple-400" />
+              <div className="h-6 w-6 rounded-full bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CheckCircle2 className="h-4 w-4 text-violet-400" />
               </div>
               <div>
                 <p className="font-medium text-white">Hook Analysis</p>
@@ -295,8 +295,8 @@ export default function TranscriptExtractionPage() {
             </div>
 
             <div className="flex gap-3">
-              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <CheckCircle2 className="h-4 w-4 text-purple-400" />
+              <div className="h-6 w-6 rounded-full bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CheckCircle2 className="h-4 w-4 text-violet-400" />
               </div>
               <div>
                 <p className="font-medium text-white">Topic Detection</p>
@@ -307,8 +307,8 @@ export default function TranscriptExtractionPage() {
             </div>
 
             <div className="flex gap-3">
-              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <CheckCircle2 className="h-4 w-4 text-purple-400" />
+              <div className="h-6 w-6 rounded-full bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CheckCircle2 className="h-4 w-4 text-violet-400" />
               </div>
               <div>
                 <p className="font-medium text-white">Keyword Research</p>
@@ -321,14 +321,14 @@ export default function TranscriptExtractionPage() {
         </Card>
 
         {/* Tips */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
             <CardTitle className="text-white">Research Tips</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex gap-3">
-              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-semibold text-purple-400">1</span>
+              <div className="h-6 w-6 rounded-full bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-semibold text-violet-400">1</span>
               </div>
               <div>
                 <p className="font-medium text-white">Analyze Top Performers</p>
@@ -339,8 +339,8 @@ export default function TranscriptExtractionPage() {
             </div>
 
             <div className="flex gap-3">
-              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-semibold text-purple-400">2</span>
+              <div className="h-6 w-6 rounded-full bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-semibold text-violet-400">2</span>
               </div>
               <div>
                 <p className="font-medium text-white">Study Hook Patterns</p>
@@ -351,8 +351,8 @@ export default function TranscriptExtractionPage() {
             </div>
 
             <div className="flex gap-3">
-              <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-semibold text-purple-400">3</span>
+              <div className="h-6 w-6 rounded-full bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-semibold text-violet-400">3</span>
               </div>
               <div>
                 <p className="font-medium text-white">Compare Structures</p>
@@ -365,15 +365,15 @@ export default function TranscriptExtractionPage() {
         </Card>
 
         {/* CTA */}
-        <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30">
+        <Card className="bg-gradient-to-r from-violet-500/50 to-cyan-500/50 border-violet-500/30">
           <CardContent className="pt-6 text-center">
-            <h3 className="text-lg font-semibold mb-2 text-white">
+            <h3 className="text-lg font-semibold font-display mb-2 text-white">
               Ready to Create Your Own Viral Scripts?
             </h3>
             <p className="text-gray-400 mb-4">
               Use the insights from transcript research to generate scripts in your unique voice
             </p>
-            <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+            <Button asChild className="bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700">
               <Link href="/signup">
                 Get Started Free
               </Link>

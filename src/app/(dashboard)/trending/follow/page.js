@@ -491,15 +491,9 @@ export default function FollowTrendPage() {
 
   return (
     <div className="space-y-8">
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-green-500/10 rounded-full blur-3xl" />
-      </div>
-
       {/* Upgrade Required Message */}
       {actionPlan?.isUpgradeRequired && (
-        <div className="glass-card p-8 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-2 border-yellow-500/30 animate-reveal">
+        <div className="vb-card p-8 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-2 border-yellow-500/30 animate-reveal">
           <div className="flex items-start gap-4">
             <div className="p-3 bg-yellow-500/20 rounded-lg">
               <Sparkles className="h-8 w-8 text-yellow-400" />
@@ -525,14 +519,14 @@ export default function FollowTrendPage() {
               <div className="flex gap-3">
                 <Button
                   onClick={() => router.push(actionPlan.upgradeUrl || '/pricing')}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                  className="bg-gradient-to-r from-violet-600 to-cyan-600 text-white hover:from-violet-700 hover:to-cyan-700"
                 >
                   <Rocket className="h-4 w-4 mr-2" />
                   Upgrade Now
                 </Button>
                 <Button
                   onClick={() => router.push('/trending/action-plans')}
-                  className="glass-button"
+                  className="vb-btn-outline"
                 >
                   View My Action Plan
                 </Button>
@@ -544,7 +538,7 @@ export default function FollowTrendPage() {
 
       {/* Free Plan Success Banner */}
       {actionPlan?.isFirstFreePlan && !actionPlan?.isUpgradeRequired && (
-        <div className="glass-card p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 border-2 border-green-500/30 animate-reveal">
+        <div className="vb-card p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 border-2 border-green-500/30 animate-reveal">
           <div className="flex items-start gap-4">
             <div className="p-2 bg-green-500/20 rounded-lg">
               <Sparkles className="h-6 w-6 text-green-400" />
@@ -557,7 +551,7 @@ export default function FollowTrendPage() {
                   <Button
                     onClick={() => router.push(actionPlan.upgradePrompt.url)}
                     size="sm"
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                    className="bg-gradient-to-r from-violet-600 to-cyan-600 text-white hover:from-violet-700 hover:to-cyan-700"
                   >
                     {actionPlan.upgradePrompt.cta}
                   </Button>
@@ -571,7 +565,7 @@ export default function FollowTrendPage() {
       {/* Header */}
       <div className="animate-reveal">
         <Link href="/trending">
-          <Button variant="ghost" className="glass-button mb-4 text-gray-400 hover:text-white">
+          <Button variant="ghost" className="vb-btn-outline mb-4 text-gray-400 hover:text-white">
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back to Trending
           </Button>
@@ -579,8 +573,8 @@ export default function FollowTrendPage() {
         
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-              <Rocket className="h-10 w-10 text-purple-400" />
+            <h1 className="text-4xl font-display font-bold text-white flex items-center gap-3">
+              <Rocket className="h-10 w-10 text-violet-400" />
               Follow Trend Action Plan
               <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
             </h1>
@@ -589,7 +583,7 @@ export default function FollowTrendPage() {
             </p>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold text-purple-400">{completionRate}%</div>
+            <div className="text-3xl font-bold text-violet-400">{completionRate}%</div>
             <p className="text-sm text-gray-400 leading-none">Completed</p>
           </div>
         </div>
@@ -597,7 +591,7 @@ export default function FollowTrendPage() {
 
       {/* Action Buttons - Only show when not upgrade required */}
       {!actionPlan?.isUpgradeRequired && (
-        <div className="glass-card p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 animate-reveal" style={{ animationDelay: '0.1s' }}>
+        <div className="vb-card p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 animate-reveal" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-white mb-1">Ready to start?</h3>
@@ -609,21 +603,21 @@ export default function FollowTrendPage() {
                 actionPlanId={planId}
               />
               <Button
-                className="glass-button text-white"
+                className="vb-btn-outline text-white"
                 onClick={exportPlan}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export Plan
               </Button>
               <Button
-                className="glass-button text-white"
+                className="vb-btn-outline text-white"
                 onClick={() => toast.info('Reminders feature coming soon!')}
               >
                 <Bell className="h-4 w-4 mr-2" />
                 Set Reminders
               </Button>
               <Button
-                className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+                className="vb-btn-primary text-white"
                 onClick={() => toast.success('Good luck with Week 1! Start with the first task.')}
               >
                 <Rocket className="h-4 w-4 mr-2" />
@@ -636,7 +630,7 @@ export default function FollowTrendPage() {
 
       {/* Strategy Overview - Only show when not upgrade required */}
       {!actionPlan?.isUpgradeRequired && (
-        <div className="glass-card p-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10 animate-reveal" style={{ animationDelay: '0.2s' }}>
+        <div className="vb-card p-6 bg-gradient-to-r from-violet-500/10 to-cyan-500/10 animate-reveal" style={{ animationDelay: '0.2s' }}>
           <div className="grid md:grid-cols-4 gap-6">
             <div>
               <p className="text-sm text-gray-400 mb-1 leading-none">Strategy</p>
@@ -662,12 +656,12 @@ export default function FollowTrendPage() {
       {!actionPlan?.isUpgradeRequired && (
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Calendar className="h-6 w-6 text-purple-400" />
+            <Calendar className="h-6 w-6 text-violet-400" />
             30-Day Action Plan
           </h2>
         
         {actionPlan.weeklyPlan.map((week, weekIndex) => (
-          <div key={week.week} className="glass-card p-6 animate-reveal" style={{ animationDelay: `${0.3 + weekIndex * 0.1}s` }}>
+          <div key={week.week} className="vb-card p-6 animate-reveal" style={{ animationDelay: `${0.3 + weekIndex * 0.1}s` }}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-white">Week {week.week}: {week.theme}</h3>
@@ -685,13 +679,13 @@ export default function FollowTrendPage() {
               {week.tasks.map((task) => (
                 <div 
                   key={task.id}
-                  className="flex items-center gap-3 p-3 glass rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+                  className="flex items-center gap-3 p-3 bg-white/[0.04] border border-white/[0.06] rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
                   onClick={() => toggleStep(task.id)}
                 >
                   <button className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                     completedSteps.has(task.id) 
                       ? 'bg-green-400 border-green-400' 
-                      : 'border-gray-600 hover:border-purple-400'
+                      : 'border-white/[0.06] hover:border-violet-400'
                   }`}>
                     {completedSteps.has(task.id) && (
                       <CheckCircle className="h-3 w-3 text-black" />
@@ -720,15 +714,15 @@ export default function FollowTrendPage() {
           </h2>
           <div className="grid md:grid-cols-2 gap-4">
             {actionPlan.contentIdeas.map((idea, index) => (
-              <div key={index} className="glass-card p-4">
+              <div key={index} className="vb-card p-4">
                 <h4 className="text-white font-bold mb-2">{idea.title}</h4>
-                <p className="text-purple-300 text-sm mb-2 leading-none">Hook: {idea.hook}</p>
+                <p className="text-violet-300 text-sm mb-2 leading-none">Hook: {idea.hook}</p>
                 <p className="text-gray-400 text-sm mb-2 leading-normal">{idea.description}</p>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-green-400">Est. {idea.estimatedViews} views</span>
                   <Button
                     size="sm"
-                    className="glass-button text-xs"
+                    className="vb-btn-outline text-xs"
                     onClick={() => useContentIdea(idea)}
                   >
                     <Edit3 className="h-3 w-3 mr-1" />
@@ -745,24 +739,24 @@ export default function FollowTrendPage() {
       {!actionPlan?.isUpgradeRequired && (
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <FileText className="h-6 w-6 text-purple-400" />
+            <FileText className="h-6 w-6 text-violet-400" />
             Content Templates
           </h2>
 
         <div className="grid md:grid-cols-3 gap-4">
           {actionPlan.contentTemplates.map((template, index) => (
             <StaticCard key={index}>
-              <div className="glass-card p-6">
+              <div className="vb-card p-6">
                 <div className="flex items-start justify-between mb-3">
                   <Video className="h-5 w-5 text-red-400" />
                   <span className="text-xs text-gray-400">{template.duration}</span>
                 </div>
                 <h4 className="text-white font-bold mb-2">{template.type}</h4>
-                <p className="text-sm text-purple-300 mb-3 leading-none">{template.title}</p>
+                <p className="text-sm text-violet-300 mb-3 leading-none">{template.title}</p>
                 <p className="text-xs text-gray-400 mb-3">{template.structure}</p>
                 <Button
                   size="sm"
-                  className="w-full glass-button text-white"
+                  className="w-full vb-btn-outline text-white"
                   onClick={() => useTemplate(template)}
                 >
                   <Edit3 className="h-3 w-3 mr-1" />
@@ -778,23 +772,23 @@ export default function FollowTrendPage() {
       {/* Keywords & Equipment - Only show when not upgrade required */}
       {!actionPlan?.isUpgradeRequired && (
         <div className="grid md:grid-cols-2 gap-6">
-        <div className="glass-card p-6">
+        <div className="vb-card p-6">
           <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <Hash className="h-5 w-5 text-purple-400" />
+            <Hash className="h-5 w-5 text-violet-400" />
             Target Keywords
           </h3>
           <div className="flex flex-wrap gap-2">
             {actionPlan.keywords.map((keyword, index) => (
-              <span key={index} className="glass px-3 py-1 rounded-full text-sm text-purple-300 leading-none">
+              <span key={index} className="bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-1 rounded-full text-sm text-violet-300 leading-none">
                 {keyword}
               </span>
             ))}
           </div>
         </div>
 
-        <div className="glass-card p-6">
+        <div className="vb-card p-6">
           <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <Camera className="h-5 w-5 text-purple-400" />
+            <Camera className="h-5 w-5 text-violet-400" />
             Equipment Needed
           </h3>
           <div className="space-y-2">
@@ -811,9 +805,9 @@ export default function FollowTrendPage() {
 
       {/* Competitor Analysis - if available */}
       {!actionPlan?.isUpgradeRequired && actionPlan.competitorAnalysis && (
-        <div className="glass-card p-6">
+        <div className="vb-card p-6">
           <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <Target className="h-5 w-5 text-purple-400" />
+            <Target className="h-5 w-5 text-violet-400" />
             Competitor Analysis
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
@@ -822,7 +816,7 @@ export default function FollowTrendPage() {
                 <p className="text-sm text-gray-400 mb-2 leading-none">Channels to Study:</p>
                 <div className="space-y-1">
                   {actionPlan.competitorAnalysis.topChannels.map((channel, i) => (
-                    <p key={i} className="text-sm text-purple-300 leading-normal">• {channel}</p>
+                    <p key={i} className="text-sm text-violet-300 leading-normal">• {channel}</p>
                   ))}
                 </div>
               </div>
@@ -860,7 +854,7 @@ export default function FollowTrendPage() {
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {actionPlan.monetizationStrategy.map((method, index) => (
-              <div key={index} className="glass-card p-4">
+              <div key={index} className="vb-card p-4">
                 <h4 className="text-white font-semibold mb-2">{method.method}</h4>
                 <p className="text-xs text-gray-400 mb-1">Timeline: {method.timeline}</p>
                 <p className="text-sm text-green-400 font-semibold leading-none">{method.potential}</p>

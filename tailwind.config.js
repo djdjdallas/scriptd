@@ -8,6 +8,10 @@ module.exports = {
   darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        display: ['var(--font-display)', 'serif'],
+        mono: ['var(--font-mono)', 'monospace'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -44,7 +48,7 @@ module.exports = {
         },
         gradient: {
           start: '#8b5cf6',
-          end: '#ec4899'
+          end: '#06b6d4'
         }
       },
       borderRadius: {
@@ -62,6 +66,9 @@ module.exports = {
         'morph': 'morph 8s ease-in-out infinite',
         'float': 'float 20s ease-in-out infinite',
         'glow': 'glow 2s ease-in-out infinite alternate',
+        'shimmer': 'shimmer 3s ease-in-out infinite',
+        'ticker': 'ticker 30s linear infinite',
+        'rotate-border': 'rotate-border 3s linear infinite',
       },
       keyframes: {
         slideUp: {
@@ -83,6 +90,18 @@ module.exports = {
         glow: {
           '0%': { boxShadow: '0 0 5px rgba(147, 51, 234, 0.3)' },
           '100%': { boxShadow: '0 0 20px rgba(147, 51, 234, 0.6)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% center' },
+          '100%': { backgroundPosition: '200% center' },
+        },
+        ticker: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        'rotate-border': {
+          '0%': { '--angle': '0deg' },
+          '100%': { '--angle': '360deg' },
         },
       },
     },

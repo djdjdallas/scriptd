@@ -7,7 +7,7 @@ export default function ResumeWorkflowPage({ params }) {
   const unwrappedParams = use(params);
   
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#030303]">
       <ScriptWorkflow workflowId={unwrappedParams.workflowId} />
     </div>
   );

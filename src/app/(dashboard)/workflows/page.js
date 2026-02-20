@@ -98,7 +98,7 @@ export default function WorkflowsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto" />
+          <Loader2 className="h-12 w-12 animate-spin text-violet-400 mx-auto" />
           <p className="mt-4 text-gray-400">Loading your workflows...</p>
         </div>
       </div>
@@ -111,8 +111,8 @@ export default function WorkflowsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-              <FileText className="h-10 w-10 text-purple-400" />
+            <h1 className="text-4xl font-bold font-display text-white flex items-center gap-3">
+              <FileText className="h-10 w-10 text-violet-400" />
               Script Workflows
             </h1>
             <p className="text-gray-400 mt-2">
@@ -121,7 +121,7 @@ export default function WorkflowsPage() {
           </div>
 
           <Link href="/scripts/create">
-            <Button className="glass-button bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+            <Button className="vb-btn-primary bg-gradient-to-r from-violet-600 to-cyan-600 text-white">
               <Plus className="h-4 w-4 mr-2" />
               New Script
             </Button>
@@ -130,8 +130,8 @@ export default function WorkflowsPage() {
 
         {/* Workflows Grid */}
         {workflows.length === 0 ? (
-          <div className="glass-card p-12 text-center">
-            <FileText className="h-20 w-20 mx-auto text-purple-400 mb-4" />
+          <div className="vb-card p-12 text-center">
+            <FileText className="h-20 w-20 mx-auto text-violet-400 mb-4" />
             <h3 className="text-2xl font-bold text-white mb-2">
               No workflows yet
             </h3>
@@ -139,7 +139,7 @@ export default function WorkflowsPage() {
               Start creating your first script workflow
             </p>
             <Link href="/scripts/create">
-              <Button className="glass-button bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+              <Button className="vb-btn-primary bg-gradient-to-r from-violet-600 to-cyan-600 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Your First Script
               </Button>
@@ -148,7 +148,7 @@ export default function WorkflowsPage() {
         ) : (
           <div className="grid gap-6">
             {workflows.map((workflow) => (
-              <div key={workflow.id} className="glass-card p-6">
+              <div key={workflow.id} className="vb-card p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="text-xl font-semibold text-white mb-2">
@@ -156,7 +156,7 @@ export default function WorkflowsPage() {
                     </h3>
                     
                     <div className="flex items-center gap-4 mb-4">
-                      <Badge className="glass border-purple-400/50 text-purple-300">
+                      <Badge className="glass border-violet-400/50 text-violet-300">
                         Step {workflow.current_step}: {getStepName(workflow.current_step)}
                       </Badge>
                       <span className="text-sm text-gray-400 flex items-center gap-1">
@@ -170,9 +170,9 @@ export default function WorkflowsPage() {
                     </div>
 
                     {/* Progress bar */}
-                    <div className="w-full bg-gray-800 rounded-full h-2 mb-4">
-                      <div 
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all"
+                    <div className="w-full bg-white/[0.06] rounded-full h-2 mb-4">
+                      <div
+                        className="bg-gradient-to-r from-violet-600 to-cyan-600 h-2 rounded-full transition-all"
                         style={{ width: `${getCompletionPercentage(workflow.completed_steps)}%` }}
                       />
                     </div>
@@ -199,14 +199,14 @@ export default function WorkflowsPage() {
                   <div className="flex items-center gap-2 ml-6">
                     <Button
                       onClick={() => continueWorkflow(workflow.id)}
-                      className="glass-button bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                      className="vb-btn-primary bg-gradient-to-r from-violet-600 to-cyan-600 text-white"
                     >
                       <PlayCircle className="h-4 w-4 mr-2" />
                       Continue
                     </Button>
                     <Button
                       onClick={() => handleDeleteClick(workflow)}
-                      className="glass-button hover:bg-red-500/20"
+                      className="vb-btn-outline hover:bg-red-500/20"
                       size="icon"
                     >
                       <Trash2 className="h-4 w-4 text-white" />

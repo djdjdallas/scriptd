@@ -194,8 +194,8 @@ export default function AllTrendingTopicsPage() {
   if (loading) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
-        <div className="glass-card p-8 text-center">
-          <Loader2 className="h-12 w-12 text-purple-400 animate-spin mx-auto mb-4" />
+        <div className="vb-card p-8 text-center">
+          <Loader2 className="h-12 w-12 text-violet-400 animate-spin mx-auto mb-4" />
           <p className="text-white text-lg">Loading all trending topics...</p>
         </div>
       </div>
@@ -204,17 +204,11 @@ export default function AllTrendingTopicsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Static Background - no animations for performance */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
-      </div>
-
       {/* Header */}
       <div className="animate-reveal">
         <div className="flex items-center justify-between mb-4">
           <Link href="/trending">
-            <Button variant="ghost" className="glass-button text-gray-400 hover:text-white">
+            <Button variant="ghost" className="vb-btn-outline text-gray-400 hover:text-white">
               <ChevronLeft className="mr-2 h-4 w-4" />
               Back to Trending
             </Button>
@@ -227,7 +221,7 @@ export default function AllTrendingTopicsPage() {
                 setLastRefresh(Date.now());
               }}
               disabled={loading}
-              className="glass-button text-white"
+              className="vb-btn-outline text-white"
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -237,7 +231,7 @@ export default function AllTrendingTopicsPage() {
               <span className="ml-2">Refresh</span>
             </Button>
             
-            <div className="flex items-center gap-2 px-3 py-1 glass rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/[0.04] border border-white/[0.06] rounded-xl">
               <input
                 type="checkbox"
                 id="auto-refresh"
@@ -258,8 +252,8 @@ export default function AllTrendingTopicsPage() {
           </div>
         </div>
         
-        <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-          <TrendingUp className="h-10 w-10 text-purple-400" />
+        <h1 className="text-4xl font-display font-bold text-white flex items-center gap-3">
+          <TrendingUp className="h-10 w-10 text-violet-400" />
           All Trending Topics
           <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
         </h1>
@@ -274,7 +268,7 @@ export default function AllTrendingTopicsPage() {
       </div>
 
       {/* Filters and Search */}
-      <div className="glass-card p-6 space-y-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
+      <div className="vb-card p-6 space-y-4 animate-reveal" style={{ animationDelay: '0.1s' }}>
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search */}
           <div className="flex-1">
@@ -285,7 +279,7 @@ export default function AllTrendingTopicsPage() {
                 placeholder="Search topics, hashtags, or descriptions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full pl-10 pr-4 py-2 bg-white/[0.06]/50 border border-white/5 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
             </div>
           </div>
@@ -296,7 +290,7 @@ export default function AllTrendingTopicsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="px-4 py-2 bg-white/[0.06]/50 border border-white/5 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               <option value="score">Trending Score</option>
               <option value="growth">Growth Rate</option>
@@ -306,7 +300,7 @@ export default function AllTrendingTopicsPage() {
           </div>
 
           {/* Refresh */}
-          <Button onClick={() => fetchAllTopics(true, filterCategory)} className="glass-button text-white">
+          <Button onClick={() => fetchAllTopics(true, filterCategory)} className="vb-btn-outline text-white">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -322,8 +316,8 @@ export default function AllTrendingTopicsPage() {
                 onClick={() => setFilterCategory(cat)}
                 className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
                   filterCategory === cat
-                    ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-white'
-                    : 'glass text-gray-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-violet-500/30 to-cyan-500/30 text-white'
+                    : 'bg-white/[0.04] border border-white/[0.06] rounded-xl text-gray-400 hover:text-white'
                 }`}
               >
                 {cat === 'all' ? 'All Categories' : cat}
@@ -337,11 +331,11 @@ export default function AllTrendingTopicsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredTopics.map((topic, index) => (
           <StaticCard key={`${topic.topic}-${topic.category}-${index}`}>
-            <div className="glass-card p-6 h-full animate-reveal" style={{ animationDelay: `${0.2 + (index % 9) * 0.05}s` }}>
+            <div className="vb-card p-6 h-full animate-reveal" style={{ animationDelay: `${0.2 + (index % 9) * 0.05}s` }}>
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 glass rounded-lg flex items-center justify-center">
-                    <Hash className="h-5 w-5 text-purple-400" />
+                  <div className="w-10 h-10 bg-white/[0.04] border border-white/[0.06] rounded-xl flex items-center justify-center">
+                    <Hash className="h-5 w-5 text-violet-400" />
                   </div>
                   <div>
                     <span className="text-xs text-gray-400">{topic.category}</span>
@@ -358,7 +352,7 @@ export default function AllTrendingTopicsPage() {
 
               <div className="flex flex-wrap gap-2 mb-4">
                 {topic.hashtags?.slice(0, 3).map((tag, tagIndex) => (
-                  <span key={`${tag}-${tagIndex}`} className="text-xs glass px-2 py-1 rounded-full text-purple-300">
+                  <span key={`${tag}-${tagIndex}`} className="text-xs bg-white/[0.04] border border-white/[0.06] rounded-xl px-2 py-1 rounded-full text-violet-300">
                     {tag}
                   </span>
                 ))}
@@ -380,13 +374,13 @@ export default function AllTrendingTopicsPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <span className={`text-xs px-2 py-1 rounded-full glass ${
+                <span className={`text-xs px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] ${
                   topic.engagement === 'Very High' ? 'text-green-400' : 
                   topic.engagement === 'High' ? 'text-yellow-400' : 'text-gray-400'
                 }`}>
                   {topic.engagement} Engagement
                 </span>
-                <Button size="sm" className="glass-button text-white">
+                <Button size="sm" className="vb-btn-outline text-white">
                   Explore
                   <ArrowUpRight className="ml-1 h-3 w-3" />
                 </Button>
@@ -397,9 +391,9 @@ export default function AllTrendingTopicsPage() {
       </div>
 
       {filteredTopics.length === 0 && (
-        <div className="glass-card p-12 text-center">
+        <div className="vb-card p-12 text-center">
           <p className="text-gray-400 text-lg">No topics found matching your criteria.</p>
-          <Button onClick={() => { setSearchQuery(''); setFilterCategory('all'); }} className="glass-button text-white mt-4">
+          <Button onClick={() => { setSearchQuery(''); setFilterCategory('all'); }} className="vb-btn-outline text-white mt-4">
             Clear Filters
           </Button>
         </div>

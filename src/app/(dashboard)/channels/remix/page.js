@@ -46,7 +46,7 @@ export default function RemixChannelPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <Shuffle className="h-12 w-12 text-purple-400 animate-pulse mx-auto mb-4" />
+          <Shuffle className="h-12 w-12 text-violet-400 animate-pulse mx-auto mb-4" />
           <p className="text-gray-400">Loading...</p>
         </div>
       </div>
@@ -65,13 +65,13 @@ export default function RemixChannelPage() {
           </Link>
         </div>
 
-        <div className="glass-card p-12 text-center space-y-6">
-          <div className="inline-flex items-center justify-center w-20 h-20 glass rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20">
+        <div className="vb-card p-12 text-center space-y-6">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/[0.04] border border-white/[0.06] rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20">
             <Crown className="h-10 w-10 text-yellow-400" />
           </div>
           
           <div>
-            <h2 className="text-3xl font-bold text-white mb-3">
+            <h2 className="text-3xl font-bold font-display text-white mb-3">
               Premium Feature
             </h2>
             <p className="text-gray-400 max-w-md mx-auto mb-6">
@@ -81,7 +81,7 @@ export default function RemixChannelPage() {
 
           <Link href="/pricing">
             <Button 
-              className="glass-button bg-gradient-to-r from-yellow-500/50 to-orange-500/50 text-white"
+              className="vb-btn-primary bg-gradient-to-r from-yellow-500/50 to-orange-500/50 text-white"
               size="lg"
             >
               <Lock className="mr-2 h-5 w-5" />
@@ -104,8 +104,8 @@ export default function RemixChannelPage() {
           </Button>
         </Link>
         
-        <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-          <Shuffle className="h-8 w-8 text-purple-400" />
+        <h1 className="text-3xl font-bold font-display text-white flex items-center gap-2">
+          <Shuffle className="h-8 w-8 text-violet-400" />
           Remix Channels
         </h1>
         <p className="text-gray-400 mt-2">

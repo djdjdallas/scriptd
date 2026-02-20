@@ -175,7 +175,7 @@ export default function TestCreditsPage() {
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Credit System Testing</h1>
+        <h1 className="text-3xl font-display font-bold mb-8">Credit System Testing</h1>
         
         {/* Current Balance */}
         <div className="bg-card rounded-lg p-6 mb-8 border">
@@ -221,7 +221,7 @@ export default function TestCreditsPage() {
             </button>
             <button
               onClick={() => addTestCredits(500)}
-              className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+              className="px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600"
               disabled={loading}
             >
               Add 500 Credits
@@ -268,7 +268,7 @@ export default function TestCreditsPage() {
                 </button>
                 <button
                   onClick={() => testScriptGeneration('claude-opus-4-1', 600)}
-                  className="px-3 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 text-sm"
+                  className="px-3 py-2 bg-violet-500 text-white rounded hover:bg-violet-600 text-sm"
                   disabled={loading}
                 >
                   Hollywood (10 min) ~12 credits

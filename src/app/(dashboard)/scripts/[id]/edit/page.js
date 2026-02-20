@@ -191,22 +191,14 @@ export default function ScriptEditPage({ params }) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="fixed inset-0 -z-10 overflow-hidden">
-          <div className="gradient-orb w-96 h-96 bg-purple-600 -top-48 -right-48 opacity-20" />
-          <div className="gradient-orb w-96 h-96 bg-pink-600 -bottom-48 -left-48 opacity-20" />
-          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
+          <div className="absolute w-[500px] h-[500px] rounded-full bg-violet-600/10 blur-[120px] -top-48 -right-48" />
+          <div className="absolute w-[500px] h-[500px] rounded-full bg-cyan-600/10 blur-[120px] -bottom-48 -left-48" />
+  
         </div>
-        <div className="glass-card p-12 max-w-md w-full text-center animate-reveal">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-xl opacity-30 animate-pulse" />
-            <Loader2 className="h-16 w-16 animate-spin text-purple-400 mx-auto relative" />
-          </div>
-          <h2 className="mt-6 text-xl font-semibold gradient-text">Loading Script Editor</h2>
+        <div className="vb-card p-12 max-w-md w-full text-center">
+          <Loader2 className="h-16 w-16 animate-spin text-violet-400 mx-auto" />
+          <h2 className="mt-6 text-xl font-semibold text-white">Loading Script Editor</h2>
           <p className="mt-2 text-gray-400">Preparing your workspace...</p>
-          <div className="mt-6 flex justify-center gap-1">
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-          </div>
         </div>
       </div>
     );
@@ -216,22 +208,18 @@ export default function ScriptEditPage({ params }) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="fixed inset-0 -z-10 overflow-hidden">
-          <div className="gradient-orb w-96 h-96 bg-red-600 -top-48 -right-48 opacity-10" />
-          <div className="gradient-orb w-96 h-96 bg-orange-600 -bottom-48 -left-48 opacity-10" />
-          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
+          <div className="absolute w-[500px] h-[500px] rounded-full bg-violet-600/10 blur-[120px] -top-48 -right-48" />
+          <div className="absolute w-[500px] h-[500px] rounded-full bg-cyan-600/10 blur-[120px] -bottom-48 -left-48" />
         </div>
-        <div className="glass-card p-10 text-center max-w-md w-full animate-reveal">
-          <div className="relative mb-6">
-            <div className="absolute inset-0 bg-red-500 rounded-full blur-2xl opacity-20 animate-pulse" />
-            <AlertCircle className="h-20 w-20 text-red-400 mx-auto relative" />
-          </div>
+        <div className="vb-card p-10 text-center max-w-md w-full">
+          <AlertCircle className="h-20 w-20 text-red-400 mx-auto mb-6" />
           <h2 className="text-2xl font-bold text-white mb-3">Script Not Found</h2>
           <p className="text-gray-400 mb-8 leading-relaxed">
             This script doesn't exist or you don't have permission to edit it.
           </p>
           <div className="flex gap-3 justify-center">
             <Link href="/scripts">
-              <Button className="glass-button bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30">
+              <Button className="vb-btn-outline">
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 Back to Scripts
               </Button>
@@ -246,30 +234,30 @@ export default function ScriptEditPage({ params }) {
     <div className="min-h-screen p-6">
       {/* Background Effects */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="gradient-orb w-96 h-96 bg-purple-600 -top-48 -right-48 opacity-20" />
-        <div className="gradient-orb w-96 h-96 bg-pink-600 -bottom-48 -left-48 opacity-20" />
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
+        <div className="absolute w-[500px] h-[500px] rounded-full bg-violet-600/10 blur-[120px] -top-48 -right-48" />
+        <div className="absolute w-[500px] h-[500px] rounded-full bg-cyan-600/10 blur-[120px] -bottom-48 -left-48" />
+
       </div>
 
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="glass-card p-4 animate-reveal">
+        <div className="vb-card p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <Link href={`/scripts/${scriptId}`}>
-                <Button className="glass-button group">
+                <Button className="vb-btn-outline group">
                   <ChevronLeft className="h-4 w-4 mr-2 transition-transform group-hover:-translate-x-1" />
                   Back
                 </Button>
               </Link>
-              
+
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg">
-                    <Edit3 className="h-5 w-5 text-purple-400" />
+                  <div className="p-2 bg-violet-500/10 rounded-lg">
+                    <Edit3 className="h-5 w-5 text-violet-400" />
                   </div>
                   <div className="flex-1">
-                    <h1 className="text-2xl font-bold gradient-text">Edit Script</h1>
+                    <h1 className="text-2xl font-bold text-white">Edit Script</h1>
                     <p className="text-gray-400 text-xs mt-1">
                       Make changes to your script and save them instantly
                     </p>
@@ -282,13 +270,13 @@ export default function ScriptEditPage({ params }) {
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     {script.updated_at && (
-                      <Badge className="glass-button px-2 py-1 text-xs">
+                      <Badge className="vb-badge text-xs">
                         <Clock className="h-3 w-3 mr-1" />
                         Last saved {formatDistanceToNow(new Date(script.updated_at), { addSuffix: true })}
                       </Badge>
                     )}
                     {script.metadata?.words && (
-                      <Badge className="glass-button px-2 py-1 text-xs">
+                      <Badge className="vb-badge text-xs">
                         <FileText className="h-3 w-3 mr-1" />
                         {script.metadata.words.toLocaleString()} words • {Math.ceil(script.metadata.words / 150)} min
                       </Badge>
@@ -306,7 +294,7 @@ export default function ScriptEditPage({ params }) {
 
             <div className="flex items-center gap-3">
               <Link href="/scripts">
-                <Button className="glass-button bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30">
+                <Button className="vb-btn-outline">
                   <FileText className="h-4 w-4 mr-2" />
                   All Scripts
                 </Button>
@@ -317,7 +305,7 @@ export default function ScriptEditPage({ params }) {
 
         {/* Permissions Notice */}
         {!permissions.canEdit && (
-          <div className="glass-card p-6 animate-reveal border-l-4 border-yellow-500/50" style={{ animationDelay: '0.05s' }}>
+          <div className="vb-card p-6 border-l-4 border-yellow-500/50">
             <div className="flex items-start gap-4">
               <div className="p-2 bg-yellow-500/20 rounded-xl">
                 <AlertCircle className="h-5 w-5 text-yellow-400" />
@@ -333,7 +321,7 @@ export default function ScriptEditPage({ params }) {
         )}
 
         {/* Editor Tabs */}
-        <div className="glass-card p-0 animate-reveal overflow-hidden" style={{ animationDelay: '0.05s' }}>
+        <div className="vb-card p-0 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="border-b border-white/5">
               <TabsList className="bg-transparent w-full h-auto p-0 flex gap-0">
@@ -344,7 +332,7 @@ export default function ScriptEditPage({ params }) {
                   <Edit3 className="h-4 w-4 mr-2" />
                   <span>Script Editor</span>
                   {activeTab === 'editor' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400" />
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-400 to-cyan-400" />
                   )}
                 </TabsTrigger>
                 <TabsTrigger 
@@ -354,7 +342,7 @@ export default function ScriptEditPage({ params }) {
                   <History className="h-4 w-4 mr-2" />
                   <span>Edit History</span>
                   {activeTab === 'history' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400" />
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-400 to-cyan-400" />
                   )}
                 </TabsTrigger>
               </TabsList>
@@ -373,7 +361,7 @@ export default function ScriptEditPage({ params }) {
                         size="sm"
                         variant={editorMode === 'fourCard' ? 'default' : 'ghost'}
                         onClick={() => setEditorMode('fourCard')}
-                        className={editorMode === 'fourCard' ? 'glass-button bg-purple-500/20' : 'glass-button'}
+                        className={editorMode === 'fourCard' ? 'vb-btn-outline bg-violet-500/10' : 'vb-btn-outline'}
                       >
                         4-Card System
                       </Button>
@@ -381,7 +369,7 @@ export default function ScriptEditPage({ params }) {
                         size="sm"
                         variant={editorMode === 'classic' ? 'default' : 'ghost'}
                         onClick={() => setEditorMode('classic')}
-                        className={editorMode === 'classic' ? 'glass-button bg-purple-500/20' : 'glass-button'}
+                        className={editorMode === 'classic' ? 'vb-btn-outline bg-violet-500/10' : 'vb-btn-outline'}
                       >
                         Classic
                       </Button>
@@ -423,26 +411,26 @@ export default function ScriptEditPage({ params }) {
         </div>
 
         {/* Help Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-reveal" style={{ animationDelay: '0.2s' }}>
-          <div className="glass-card p-5 group hover:scale-[1.02] transition-transform">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="vb-card-interactive p-5 group">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-lg group-hover:scale-110 transition-transform">
-                <Save className="h-4 w-4 text-purple-400" />
+              <div className="p-2 bg-violet-500/10 rounded-lg">
+                <Save className="h-4 w-4 text-violet-400" />
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold text-white mb-1">Quick Save</h4>
                 <p className="text-xs text-gray-400 leading-relaxed">
-                  Press <kbd className="px-1.5 py-0.5 bg-purple-500/20 rounded text-[10px] font-mono">Ctrl+S</kbd> or{' '}
-                  <kbd className="px-1.5 py-0.5 bg-purple-500/20 rounded text-[10px] font-mono">Cmd+S</kbd> to save
+                  Press <kbd className="px-1.5 py-0.5 bg-white/[0.06] rounded text-[10px] font-mono">Ctrl+S</kbd> or{' '}
+                  <kbd className="px-1.5 py-0.5 bg-white/[0.06] rounded text-[10px] font-mono">Cmd+S</kbd> to save
                 </p>
               </div>
             </div>
           </div>
-          
-          <div className="glass-card p-5 group hover:scale-[1.02] transition-transform">
+
+          <div className="vb-card-interactive p-5 group">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-gradient-to-br from-pink-500/20 to-pink-600/20 rounded-lg group-hover:scale-110 transition-transform">
-                <Clock className="h-4 w-4 text-pink-400" />
+              <div className="p-2 bg-cyan-500/10 rounded-lg">
+                <Clock className="h-4 w-4 text-cyan-400" />
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold text-white mb-1">Auto-Save</h4>
@@ -452,10 +440,10 @@ export default function ScriptEditPage({ params }) {
               </div>
             </div>
           </div>
-          
-          <div className="glass-card p-5 group hover:scale-[1.02] transition-transform">
+
+          <div className="vb-card-interactive p-5 group">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 rounded-lg group-hover:scale-110 transition-transform">
+              <div className="p-2 bg-cyan-500/10 rounded-lg">
                 <History className="h-4 w-4 text-cyan-400" />
               </div>
               <div className="flex-1">
