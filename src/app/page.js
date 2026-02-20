@@ -491,10 +491,10 @@ export default function Home() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="font-display text-3xl md:text-4xl text-white mb-3">
-              Developer-Grade Engine
+              Your Voice, Reverse-Engineered
             </h2>
-            <p className="text-gray-500">
-              Under the hood, a voice-extraction pipeline built for scale.
+            <p className="text-gray-500 max-w-xl mx-auto">
+              We analyze your transcripts to map 20+ speech patterns — catchphrases, pacing, humor, transitions — then generate scripts that pass as yours.
             </p>
           </div>
 
@@ -518,34 +518,41 @@ export default function Home() {
             {/* Pseudocode */}
             <pre className="p-5 text-sm leading-relaxed font-mono overflow-x-auto">
               <code>
+                <span className="text-gray-600">{"// Extract voice DNA from your existing content"}</span>
+                {"\n"}
                 <span className="text-violet-400">const</span>{" "}
-                <span className="text-cyan-300">voice</span>{" "}
+                <span className="text-cyan-300">profile</span>{" "}
                 <span className="text-gray-500">=</span>{" "}
                 <span className="text-violet-400">await</span>{" "}
                 <span className="text-emerald-400">genscript</span>
                 <span className="text-gray-500">.</span>
-                <span className="text-cyan-300">extractVoice</span>
+                <span className="text-cyan-300">analyzeVoice</span>
                 <span className="text-gray-500">({"{"}</span>
                 {"\n"}
                 {"  "}
-                <span className="text-gray-400">transcripts</span>
+                <span className="text-gray-400">channel</span>
                 <span className="text-gray-500">:</span>{" "}
-                <span className="text-amber-300">[&quot;ep-142.txt&quot;, &quot;ep-143.txt&quot;]</span>
+                <span className="text-amber-300">&quot;@YourChannel&quot;</span>
                 <span className="text-gray-500">,</span>
                 {"\n"}
                 {"  "}
-                <span className="text-gray-400">style</span>
+                <span className="text-gray-400">videos</span>
                 <span className="text-gray-500">:</span>{" "}
-                <span className="text-amber-300">&quot;conversational&quot;</span>
+                <span className="text-cyan-300">20</span>
                 <span className="text-gray-500">,</span>
-                {"\n"}
                 {"  "}
-                <span className="text-gray-400">compliance</span>
-                <span className="text-gray-500">:</span>{" "}
-                <span className="text-emerald-400">true</span>
+                <span className="text-gray-600">{"// pulls transcripts automatically"}</span>
                 {"\n"}
                 <span className="text-gray-500">{"}"})</span>
                 {"\n\n"}
+                <span className="text-gray-600">{"// profile.traits →"}</span>
+                {"\n"}
+                <span className="text-gray-600">{"//   catchphrases · pacing · humor · formality"}</span>
+                {"\n"}
+                <span className="text-gray-600">{"//   greetings · signoffs · question patterns"}</span>
+                {"\n\n"}
+                <span className="text-gray-600">{"// Generate with retention optimization baked in"}</span>
+                {"\n"}
                 <span className="text-violet-400">const</span>{" "}
                 <span className="text-cyan-300">script</span>{" "}
                 <span className="text-gray-500">=</span>{" "}
@@ -557,13 +564,31 @@ export default function Home() {
                 {"\n"}
                 {"  "}
                 <span className="text-gray-400">voice</span>
+                <span className="text-gray-500">:</span>{" "}
+                <span className="text-cyan-300">profile</span>
                 <span className="text-gray-500">,</span>
                 {"\n"}
                 {"  "}
                 <span className="text-gray-400">topic</span>
                 <span className="text-gray-500">:</span>{" "}
-                <span className="text-amber-300">&quot;Next.js Server Actions Deep Dive&quot;</span>
+                <span className="text-amber-300">&quot;Why Most Creators Plateau at 10K&quot;</span>
                 <span className="text-gray-500">,</span>
+                {"\n"}
+                {"  "}
+                <span className="text-gray-400">framework</span>
+                <span className="text-gray-500">:</span>{" "}
+                <span className="text-amber-300">&quot;PVSS&quot;</span>
+                <span className="text-gray-500">,</span>
+                {"       "}
+                <span className="text-gray-600">{"// Problem → Vision → Solution → Steps"}</span>
+                {"\n"}
+                {"  "}
+                <span className="text-gray-400">patternInterrupts</span>
+                <span className="text-gray-500">:</span>{" "}
+                <span className="text-emerald-400">true</span>
+                <span className="text-gray-500">,</span>
+                {"  "}
+                <span className="text-gray-600">{"// re-hooks every 60-90s"}</span>
                 {"\n"}
                 {"  "}
                 <span className="text-gray-400">length</span>
@@ -573,10 +598,17 @@ export default function Home() {
                 <span className="text-gray-500">{"}"})</span>
                 {"\n\n"}
                 <span className="text-gray-600">
-                  {"// "}→ compliance: 94/100 &middot; retention: 72% &middot; sounds like you
+                  {"// → voiceMatch: 94% · retentionLift: +38% · hooks: 8"}
                 </span>
               </code>
             </pre>
+          </div>
+
+          {/* Engine stats */}
+          <div className="flex flex-wrap justify-center gap-3 mt-6">
+            <span className="vb-badge-violet">20+ voice traits mapped</span>
+            <span className="vb-badge-cyan">PVSS retention framework</span>
+            <span className="vb-badge-emerald">94%+ voice match</span>
           </div>
         </div>
       </section>
