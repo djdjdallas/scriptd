@@ -969,10 +969,11 @@ export default function ChannelDetailPage({ params }) {
 
         {/* Channel Analysis Component - Now integrated directly */}
         <div className="mt-8">
-          <ChannelAnalyzer 
-            channelId={channelId} 
+          <ChannelAnalyzer
+            channelId={channelId}
             isRemix={channel.is_remix}
             channelData={channel}
+            onAnalysisComplete={() => fetchChannel()}
           />
         </div>
 

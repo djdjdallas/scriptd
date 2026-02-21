@@ -37,6 +37,7 @@ export function ChannelAnalyzer({
   channelId,
   isRemix = false,
   channelData = null,
+  onAnalysisComplete = null,
 }) {
   const router = useRouter();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -155,12 +156,28 @@ export function ChannelAnalyzer({
           eventSource.close();
           setProgress(100);
           setIsAnalyzing(false);
+
+          // Use SSE response data directly instead of reloading
+          setAnalysisData({
+            analytics: data.analytics || {},
+            persona: data.persona || '',
+            insights: data.insights || {},
+            audienceAnalysis: data.audienceAnalysis || {},
+            contentIdeas: data.contentIdeas || [],
+            voiceProfile: data.voiceProfile || {},
+          });
+          setExistingAnalysis({
+            analysisDate: new Date().toISOString(),
+            isRecent: true,
+            videosAnalyzed: data.analytics?.analysisMetadata?.videosAnalyzed || 0,
+          });
+
           toast.success("Channel analysis complete!", { duration: 3000 });
 
-          // Reload to show updated data from database
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
+          // Notify parent to refresh its own data (header stats, etc.)
+          if (onAnalysisComplete) {
+            onAnalysisComplete();
+          }
         } catch (parseError) {
           console.error('Failed to parse complete event:', parseError);
           eventSource.close();
