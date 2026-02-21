@@ -35,10 +35,24 @@ export async function POST(request) {
         .from('channels')
         .select('id')
         .eq('user_id', user.id);
-      
+
       if (existingChannels && existingChannels.length >= 1) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: 'Channel limit reached. Free users can only have 1 channel. Upgrade to add more channels.',
+          code: 'CHANNEL_LIMIT_REACHED'
+        }, { status: 403 });
+      }
+
+      // Check if user previously had a channel (deleted it) — free users get 1 channel total
+      const { data: userData } = await supabase
+        .from('users')
+        .select('preferences')
+        .eq('id', user.id)
+        .single();
+
+      if (userData?.preferences?.channels_ever_created >= 1) {
+        return NextResponse.json({
+          error: 'You have already used your free channel. Upgrade to a paid plan to add more channels.',
           code: 'CHANNEL_LIMIT_REACHED'
         }, { status: 403 });
       }
@@ -114,6 +128,20 @@ export async function POST(request) {
         error: 'Failed to save channel',
         details: insertError.message
       }, { status: 500 });
+    }
+
+    // Track channel creation for free user limits
+    if (!isPremium) {
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('preferences')
+        .eq('id', user.id)
+        .single();
+      const prefs = currentUser?.preferences || {};
+      await supabase
+        .from('users')
+        .update({ preferences: { ...prefs, channels_ever_created: (prefs.channels_ever_created || 0) + 1 } })
+        .eq('id', user.id);
     }
 
     // Queue FREE voice training automatically after channel connection

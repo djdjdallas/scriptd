@@ -74,14 +74,23 @@ export default function AddChannelPage() {
   const checkExistingChannels = async () => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (user) {
       const { data: channels } = await supabase
         .from('channels')
         .select('id')
         .eq('user_id', user.id);
-      
-      setExistingChannelsCount(channels?.length || 0);
+
+      // Also check if user has ever created a channel (covers deleted channels)
+      const { data: userData } = await supabase
+        .from('users')
+        .select('preferences')
+        .eq('id', user.id)
+        .single();
+      const channelsEverCreated = userData?.preferences?.channels_ever_created || 0;
+
+      // Use the higher of current count vs historical count
+      setExistingChannelsCount(Math.max(channels?.length || 0, channelsEverCreated));
     }
   };
 
@@ -156,6 +165,20 @@ export default function AddChannelPage() {
         .single();
 
       if (error) throw error;
+
+      // Track channel creation for free user limits
+      if (!isPremium) {
+        const { data: currentUser } = await supabase
+          .from('users')
+          .select('preferences')
+          .eq('id', user.id)
+          .single();
+        const prefs = currentUser?.preferences || {};
+        await supabase
+          .from('users')
+          .update({ preferences: { ...prefs, channels_ever_created: (prefs.channels_ever_created || 0) + 1 } })
+          .eq('id', user.id);
+      }
 
       // Capture channel created event
       posthog.capture('channel_created', {

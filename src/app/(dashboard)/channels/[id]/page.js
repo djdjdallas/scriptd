@@ -23,6 +23,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 import { calculateChannelMetrics } from "@/lib/utils/channel-metrics";
 import { ChannelAnalyzer } from "@/components/channel/channel-analyzer";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -34,6 +35,7 @@ export default function ChannelDetailPage({ params }) {
   const [refreshing, setRefreshing] = useState(false);
   const [creatingActionPlan, setCreatingActionPlan] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false });
+  const [isPremium, setIsPremium] = useState(false);
 
   // Unwrap params using React.use()
   const resolvedParams = use(params);
@@ -69,6 +71,15 @@ export default function ChannelDetailPage({ params }) {
       }
 
       setChannel(data.channel);
+
+      // Check premium status
+      const supabase = createClient();
+      const { data: userData } = await supabase
+        .from('users')
+        .select('subscription_tier')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+      setIsPremium(userData?.subscription_tier && userData.subscription_tier !== 'free');
     } catch (error) {
       console.error("Error fetching channel:", error);
       toast.error("Failed to load channel");
@@ -1036,8 +1047,12 @@ export default function ChannelDetailPage({ params }) {
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
         title="Remove Channel"
-        message="Are you sure you want to remove this channel? This action cannot be undone."
-        confirmText="Remove"
+        message={
+          !isPremium
+            ? "Warning: As a free user, you are limited to 1 channel. If you remove this channel, you will not be able to add another one. This action cannot be undone. Consider upgrading to a paid plan for more channels."
+            : "Are you sure you want to remove this channel? This action cannot be undone."
+        }
+        confirmText={!isPremium ? "Remove Permanently" : "Remove"}
         cancelText="Cancel"
       />
     </div>

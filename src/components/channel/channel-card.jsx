@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { useState } from 'react';
 
-export function ChannelCard({ channel, onRefresh, onDelete }) {
+export function ChannelCard({ channel, onRefresh, onDelete, isPremium = true }) {
   const [disconnectModal, setDisconnectModal] = useState({ isOpen: false });
   const handleRefresh = async () => {
     try {
@@ -180,7 +180,11 @@ export function ChannelCard({ channel, onRefresh, onDelete }) {
         onClose={() => setDisconnectModal({ isOpen: false })}
         onConfirm={handleDelete}
         title="Disconnect Channel"
-        message={`Are you sure you want to disconnect "${channel.title}"? This will remove the channel and all associated data from your account.`}
+        message={
+          !isPremium
+            ? `Warning: As a free user, you are limited to 1 channel. If you disconnect "${channel.title}", you will not be able to add another one. Consider upgrading to a paid plan for more channels.`
+            : `Are you sure you want to disconnect "${channel.title}"? This will remove the channel and all associated data from your account.`
+        }
         confirmText="Disconnect"
         cancelText="Cancel"
       />
