@@ -43,9 +43,6 @@ export const homepageMetadata = {
     description: "Extract your voice DNA and generate YouTube scripts that sound authentically you. Trusted by 500+ creators.",
     images: ["/twitter-image.png"]
   },
-  alternates: {
-    canonical: "https://genscript.io"
-  },
   other: {
     "fb:app_id": "your-fb-app-id"
   }

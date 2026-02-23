@@ -22,6 +22,9 @@ export const metadata = {
     description:
       "Access 11 free YouTube creator tools to grow your channel faster. Title generator, hook generator, and more.",
   },
+  alternates: {
+    canonical: "https://genscript.io/tools",
+  },
 };
 
 export default function ToolsLayout({ children }) {

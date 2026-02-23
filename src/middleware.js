@@ -8,6 +8,13 @@ export async function middleware(request) {
     const pathname = request.nextUrl.pathname
     const method = request.method
 
+    // Normalize trailing slashes to prevent duplicate URLs in search engines
+    if (pathname !== '/' && pathname.endsWith('/') && !pathname.startsWith('/ingest')) {
+      const url = request.nextUrl.clone()
+      url.pathname = pathname.slice(0, -1)
+      return NextResponse.redirect(url, 308)
+    }
+
     // Protected routes
     const protectedRoutes = ['/scripts', '/channels', '/research', '/settings', '/billing', '/dashboard', '/teams', '/admin']
     const authRoutes = ['/login', '/signup']
