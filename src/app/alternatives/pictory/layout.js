@@ -1,3 +1,5 @@
+import { generateSchemas } from '@/lib/alternatives-schema-data';
+
 export const metadata = {
   title: 'Pictory Alternative for YouTube Script Writing - AI Generation & Voice Cloning | GenScript',
   description: 'Need a Pictory alternative that actually writes scripts? GenScript offers full AI script generation, personal voice cloning, and 70%+ retention optimization. Better than Pictory for YouTube creators.',
@@ -19,5 +21,15 @@ export const metadata = {
 };
 
 export default function PictoryLayout({ children }) {
-  return children;
+  const schemas = generateSchemas('pictory', 'Pictory');
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+      />
+      {children}
+    </>
+  );
 }

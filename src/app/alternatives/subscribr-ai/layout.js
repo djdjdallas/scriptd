@@ -1,3 +1,5 @@
+import { generateSchemas } from '@/lib/alternatives-schema-data';
+
 export const metadata = {
   title: 'Subscribr AI Alternative - Unlimited Scripts & PVSS Framework | GenScript',
   description: 'Comparing Subscribr AI alternatives? GenScript offers unlimited script generation, advanced PVSS framework, and voice matching. No credit limits - create as many scripts as you need.',
@@ -19,5 +21,15 @@ export const metadata = {
 };
 
 export default function SubscribrAILayout({ children }) {
-  return children;
+  const schemas = generateSchemas('subscribr-ai', 'Subscribr AI');
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+      />
+      {children}
+    </>
+  );
 }

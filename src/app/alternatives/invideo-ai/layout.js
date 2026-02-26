@@ -1,3 +1,5 @@
+import { generateSchemas } from '@/lib/alternatives-schema-data';
+
 export const metadata = {
   title: 'InVideo AI Alternative for YouTube Scripts - Voice Cloning & Retention | GenScript',
   description: 'Looking for an InVideo AI alternative with better script quality? GenScript offers AI-powered script generation, personal voice cloning, and 70%+ retention optimization for YouTube creators.',
@@ -19,5 +21,15 @@ export const metadata = {
 };
 
 export default function InVideoAILayout({ children }) {
-  return children;
+  const schemas = generateSchemas('invideo-ai', 'InVideo AI');
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+      />
+      {children}
+    </>
+  );
 }

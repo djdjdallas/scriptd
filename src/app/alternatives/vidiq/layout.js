@@ -1,3 +1,5 @@
+import { generateSchemas } from '@/lib/alternatives-schema-data';
+
 export const metadata = {
   title: 'VidIQ Alternative for YouTube Script Generation - 70%+ Retention Scripts | Genscript',
   description: 'Looking for a VidIQ alternative with script writing features? Genscript creates retention-optimized YouTube scripts with fact checking and voice matching. Better than VidIQ for content creation.',
@@ -13,5 +15,15 @@ export const metadata = {
 };
 
 export default function VidIQLayout({ children }) {
-  return children;
+  const schemas = generateSchemas('vidiq', 'VidIQ');
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+      />
+      {children}
+    </>
+  );
 }

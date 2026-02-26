@@ -1,3 +1,5 @@
+import { generateSchemas } from '@/lib/alternatives-schema-data';
+
 export const metadata = {
   title: 'Jasper Alternative for YouTube Script Writing - Retention-Optimized AI Scripts | Genscript',
   description: 'Jasper alternative specialized for YouTube creators. Generate viral scripts with 70%+ retention, voice matching, and fact checking. Purpose-built for video, not blogs.',
@@ -13,5 +15,15 @@ export const metadata = {
 };
 
 export default function JasperAILayout({ children }) {
-  return children;
+  const schemas = generateSchemas('jasper-ai', 'Jasper AI');
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+      />
+      {children}
+    </>
+  );
 }

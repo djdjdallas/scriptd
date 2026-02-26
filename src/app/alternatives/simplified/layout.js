@@ -1,3 +1,5 @@
+import { generateSchemas } from '@/lib/alternatives-schema-data';
+
 export const metadata = {
   title: 'Simplified Alternative for YouTube Scripts - AI Content Generation | GenScript',
   description: 'Looking for a Simplified alternative focused on YouTube content? GenScript offers AI-powered script generation, voice matching, and 70%+ retention optimization. Built specifically for YouTube creators.',
@@ -19,5 +21,15 @@ export const metadata = {
 };
 
 export default function SimplifiedLayout({ children }) {
-  return children;
+  const schemas = generateSchemas('simplified', 'Simplified');
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+      />
+      {children}
+    </>
+  );
 }

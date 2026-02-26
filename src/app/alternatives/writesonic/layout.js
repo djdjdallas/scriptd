@@ -1,3 +1,5 @@
+import { generateSchemas } from '@/lib/alternatives-schema-data';
+
 export const metadata = {
   title: 'Writesonic Alternative for YouTube Scripts - Specialized Video Content AI | Genscript',
   description: 'Writesonic vs specialized YouTube script generator. Create retention-optimized scripts with psychographic targeting and viral frameworks. Beyond basic AI writing.',
@@ -13,5 +15,15 @@ export const metadata = {
 };
 
 export default function WritesonicLayout({ children }) {
-  return children;
+  const schemas = generateSchemas('writesonic', 'Writesonic');
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+      />
+      {children}
+    </>
+  );
 }

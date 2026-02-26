@@ -1,3 +1,5 @@
+import { generateSchemas } from '@/lib/alternatives-schema-data';
+
 export const metadata = {
   title: 'ChatGPT Alternative for YouTube Scripts - 68%+ Retention Scripts | GenScript',
   description: 'Looking for a ChatGPT alternative built for YouTube? GenScript creates retention-optimized scripts with YouTube-specific structure, fact checking, and voice matching. Better than ChatGPT for video content.',
@@ -19,5 +21,15 @@ export const metadata = {
 };
 
 export default function ChatGPTLayout({ children }) {
-  return children;
+  const schemas = generateSchemas('chatgpt', 'ChatGPT');
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+      />
+      {children}
+    </>
+  );
 }
