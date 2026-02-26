@@ -113,27 +113,63 @@ const SOLUTIONS = [
 const TESTIMONIALS = [
   {
     quote:
-      "My retention went from 35% to 68% after switching to GenScript. The compliance checker saved me from a strike I didn't even know was coming.",
-    name: "Michael Torres",
-    channel: "@FinanceFreedom",
-    subscribers: "45K subscribers",
-    niche: "Finance",
+      "My retention went from 38% to 71% in two months. GenScript's retention optimizer restructured my intros and the difference was immediate.",
+    name: "Marcus T.",
+    niche: "Finance & Investing",
   },
   {
     quote:
-      "Finally, an AI tool that actually sounds like me. My audience can't tell the difference.",
-    name: "Sarah Chen",
-    channel: "@TechReviewsPro",
-    subscribers: "120K subscribers",
-    niche: "Tech reviews",
+      "I used to spend 8 hours writing a single script. Now I generate a first draft in 90 minutes that actually sounds like me, not like a robot.",
+    name: "Sarah K.",
+    niche: "Educational Creator",
   },
   {
     quote:
-      "I was terrified of YouTube's new AI policy. GenScript is the only tool that made me feel safe using AI again.",
-    name: "James Wilson",
-    channel: "@LearnWithJames",
-    subscribers: "28K subscribers",
-    niche: "Educational content",
+      "Went from 2 videos a month to 11. Revenue is up 340%. GenScript handles the heavy lifting so I can focus on filming.",
+    name: "Ryan M.",
+    niche: "Faceless Automation",
+  },
+  {
+    quote:
+      "The PVSS Framework changed everything. My scripts have real structure now and my audience retention consistently hits 65%+.",
+    name: "Priya L.",
+    niche: "Business & Entrepreneurship",
+  },
+  {
+    quote:
+      "Grew from 8K to 47K subscribers in five months. The Voice DNA feature nails my documentary tone perfectly every time.",
+    name: "James O.",
+    niche: "True Crime & Documentary",
+  },
+  {
+    quote:
+      "I've tried ChatGPT, Jasper, and Subscribr. GenScript is the only tool where my audience can't tell I used AI. The voice matching is that good.",
+    name: "Alex C.",
+    niche: "Tech Reviews",
+  },
+  {
+    quote:
+      "The Compliance Engine caught a medical claim that would have gotten my video flagged. It's saved me from at least three potential strikes.",
+    name: "Nina R.",
+    niche: "Health & Wellness",
+  },
+  {
+    quote:
+      "I manage scripts for 14 clients. GenScript cut my production time by 70% and every client thinks the scripts are hand-written.",
+    name: "David W.",
+    niche: "Agency Owner",
+  },
+  {
+    quote:
+      "The fact-checking feature alone is worth the subscription. I cover financial topics and accuracy is non-negotiable.",
+    name: "Keisha B.",
+    niche: "Personal Finance",
+  },
+  {
+    quote:
+      "Most AI tools don't understand niche technical content. GenScript learned my cybersecurity vocabulary in two uploads.",
+    name: "Tom H.",
+    niche: "Cybersecurity & Tech",
   },
 ];
 
@@ -147,34 +183,39 @@ const COMPARISON_DATA = [
 
 const FAQ_DATA = [
   {
-    question: "Will YouTube know I used AI?",
+    question: "What is GenScript?",
     answer:
-      "YouTube's policy doesn't ban AI-assisted content. It targets content that lacks authenticity. GenScript's compliance checker ensures your scripts include personal insight markers and avoid AI-typical patterns. Plus, our voice matching makes your content sound genuinely like you.",
+      "GenScript is an AI YouTube script generator that uses Voice DNA technology to match your unique speaking style. It produces retention-optimized, compliance-checked scripts so every video sounds like you wrote it.",
   },
   {
-    question: "How does the compliance checker work?",
+    question: "How does Voice DNA Extraction work?",
     answer:
-      'Our algorithm analyzes your script across four categories: repetitiveness, original insight markers, AI patterns, and structure quality. You get a score from 0-100 with specific suggestions for improvement. Scripts scoring 80+ are considered "YouTube Approved."',
+      "Upload 3-5 of your existing scripts or transcripts. GenScript's AI analyzes 20+ speech patterns including catchphrases, pacing, humor style, and transitions to build a voice profile. Every script generated afterward matches your unique voice.",
   },
   {
-    question: "Can I use my own voice/style?",
+    question: "How does GenScript optimize for viewer retention?",
     answer:
-      "Absolutely! Our voice matching feature learns your speaking patterns from your existing content. Upload a few transcripts or past scripts, and GenScript will generate new content that sounds authentically like you, not like generic AI.",
+      "GenScript uses the PVSS (Pattern, Value, Story, Stakes) Framework to structure scripts for 70%+ viewer retention. Each section is engineered with proven hook formulas, open loops, and pacing techniques that keep viewers watching.",
   },
   {
-    question: "What if I get demonetized anyway?",
+    question: "What makes GenScript different from ChatGPT or Jasper?",
     answer:
-      "While no tool can guarantee 100% protection, our compliance checker significantly reduces risk by flagging issues before you publish. We continuously update our detection patterns as YouTube's policies evolve to keep you protected.",
+      "Unlike general-purpose AI writers, GenScript is built exclusively for YouTube. It includes Voice DNA matching, a YouTube compliance engine, retention optimization, and fact-checking — features that ChatGPT and Jasper do not offer.",
   },
   {
-    question: "How is this different from ChatGPT?",
+    question: "Is there a free plan?",
     answer:
-      "ChatGPT is a general-purpose AI that doesn't understand YouTube's specific requirements. GenScript is built exclusively for YouTube creators with retention optimization, compliance checking, and voice matching that ChatGPT simply can't provide.",
+      "Yes. GenScript offers a free plan that includes 3 scripts per month with compliance checking and retention optimization. Paid plans start at $29/month and unlock unlimited scripts, Voice DNA, and priority support.",
   },
   {
-    question: "Do you offer refunds?",
+    question: "What YouTube niches does GenScript work for?",
     answer:
-      "Yes! We offer a 14-day money-back guarantee. If GenScript doesn't meet your needs, contact us within 14 days for a full refund. No questions asked.",
+      "GenScript works across all YouTube niches including finance, tech reviews, education, true crime, health & wellness, gaming, and more. The Voice DNA system adapts to any content style or subject matter.",
+  },
+  {
+    question: "Does GenScript check YouTube compliance?",
+    answer:
+      "Yes. Every script is scanned by the built-in Compliance Engine, which checks for YouTube policy violations, AI-detection patterns, and content guidelines. You get a compliance score and specific suggestions before publishing.",
   },
 ];
 
@@ -309,8 +350,8 @@ export default function Home() {
             <span>Built for 2026</span>
           </div>
 
-          <h1 className="font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl leading-[0.9] tracking-tight mb-6">
-            Scale Your{" "}
+          <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[0.9] tracking-tight mb-6">
+            AI YouTube Script Generator That Matches Your{" "}
             <span className="shimmer-text">Voice</span>
           </h1>
 
@@ -453,7 +494,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-white mb-4">
-              Built Different
+              How GenScript Generates Retention-Optimized Scripts
             </h2>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto">
               Features designed specifically for YouTube creators who value
@@ -491,7 +532,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="font-display text-3xl md:text-4xl text-white mb-3">
-              Your Voice, Reverse-Engineered
+              How Voice DNA Extraction Works
             </h2>
             <p className="text-gray-500 max-w-xl mx-auto">
               We analyze your transcripts to map 20+ speech patterns like catchphrases, pacing, humor, and transitions, then generate scripts that pass as yours.
@@ -680,9 +721,8 @@ export default function Home() {
                   <div className="font-semibold text-white text-sm">
                     {t.name}
                   </div>
-                  <div className="text-xs text-gray-500">{t.channel}</div>
                   <div className="text-xs text-violet-400">
-                    {t.subscribers} &middot; {t.niche}
+                    {t.niche}
                   </div>
                 </div>
               </div>
@@ -1045,6 +1085,12 @@ export default function Home() {
                   className="block text-gray-600 hover:text-white transition-colors"
                 >
                   Blog
+                </Link>
+                <Link
+                  href="/about"
+                  className="block text-gray-600 hover:text-white transition-colors"
+                >
+                  About
                 </Link>
               </div>
             </div>

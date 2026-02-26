@@ -1,7 +1,6 @@
 import { Inter, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import {
   homepageMetadata,
@@ -41,16 +40,15 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
-      <body className={`${inter.className} ${instrumentSerif.variable} ${jetbrainsMono.variable} antialiased`}>
-        <Script
-          id="structured-data"
+      <head>
+        <script
           type="application/ld+json"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(allStructuredData)
           }}
         />
+      </head>
+      <body className={`${inter.className} ${instrumentSerif.variable} ${jetbrainsMono.variable} antialiased`}>
         {children}
         <SpeedInsights />
         <Toaster

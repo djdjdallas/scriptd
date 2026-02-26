@@ -1,7 +1,7 @@
 export const homepageMetadata = {
   metadataBase: new URL("https://genscript.io"),
   title: "GenScript — Scale Your Voice | AI YouTube Script Generator",
-  description: "Extract your voice DNA and generate YouTube scripts that sound like you. Compliance-checked, retention-optimized, trusted by 500+ creators. Start free.",
+  description: "GenScript is an AI YouTube script generator that matches your voice using Voice DNA technology. Generate retention-optimized scripts with the PVSS Framework. Trusted by 500+ creators. Free to start.",
   keywords: [
     "YouTube script generator",
     "AI content creation",
@@ -67,14 +67,17 @@ export const structuredData = {
     "reviewCount": "2500",
     "bestRating": "5"
   },
-  "description": "AI-powered YouTube script engine that extracts your voice DNA for compliance-checked, retention-optimized scripts.",
+  "url": "https://genscript.io",
+  "description": "AI YouTube script generator that matches your voice and optimizes for 70%+ viewer retention using Voice DNA technology and the PVSS Framework",
   "featureList": [
     "Voice DNA Extraction",
     "Compliance Engine",
     "Retention Optimizer",
     "One-Click Export",
     "Voice Matching",
-    "Team Collaboration"
+    "Team Collaboration",
+    "Fact Checking",
+    "PVSS Framework"
   ],
   "screenshot": "https://genscript.io/screenshot.png",
   "softwareVersion": "1.0",
@@ -82,6 +85,11 @@ export const structuredData = {
     "@type": "Organization",
     "name": "GenScript",
     "url": "https://genscript.io"
+  },
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "+14242880215",
+    "contactType": "customer support"
   }
 };
 
@@ -91,34 +99,58 @@ export const faqStructuredData = {
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "How much faster can I create content with GenScript?",
+      "name": "What is GenScript?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Our users report 5x productivity boost on average, with some achieving up to 70% time savings using our AI tools. This allows creators to go from 12 to 34 monthly uploads."
+        "text": "GenScript is an AI YouTube script generator that uses Voice DNA technology to match your unique speaking style. It produces retention-optimized, compliance-checked scripts so every video sounds like you wrote it."
       }
     },
     {
       "@type": "Question",
-      "name": "What results can I expect using AI for YouTube scripts?",
+      "name": "How does Voice DNA Extraction work?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Creators using GenScript see an average 180% faster channel growth, 35% increase in click-through rates, and significantly improved engagement metrics."
+        "text": "Upload 3-5 of your existing scripts or transcripts. GenScript's AI analyzes 20+ speech patterns including catchphrases, pacing, humor style, and transitions to build a voice profile. Every script generated afterward matches your unique voice."
       }
     },
     {
       "@type": "Question",
-      "name": "Is GenScript suitable for my niche?",
+      "name": "How does GenScript optimize for viewer retention?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes! GenScript works across all YouTube niches. Our AI learns from your unique voice and style, adapting to any content category from education to entertainment."
+        "text": "GenScript uses the PVSS (Pattern, Value, Story, Stakes) Framework to structure scripts for 70%+ viewer retention. Each section is engineered with proven hook formulas, open loops, and pacing techniques that keep viewers watching."
       }
     },
     {
       "@type": "Question",
-      "name": "How many creators use AI for content creation?",
+      "name": "What makes GenScript different from ChatGPT or Jasper?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "71.7% of content marketers now use AI for content outlining, with 68% using it for ideation. By late 2025, 58% of mid-sized channels are expected to adopt automation tools."
+        "text": "Unlike general-purpose AI writers, GenScript is built exclusively for YouTube. It includes Voice DNA matching, a YouTube compliance engine, retention optimization, and fact-checking — features that ChatGPT and Jasper do not offer."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is there a free plan?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. GenScript offers a free plan that includes 3 scripts per month with compliance checking and retention optimization. Paid plans start at $29/month and unlock unlimited scripts, Voice DNA, and priority support."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What YouTube niches does GenScript work for?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "GenScript works across all YouTube niches including finance, tech reviews, education, true crime, health & wellness, gaming, and more. The Voice DNA system adapts to any content style or subject matter."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does GenScript check YouTube compliance?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Every script is scanned by the built-in Compliance Engine, which checks for YouTube policy violations, AI-detection patterns, and content guidelines. You get a compliance score and specific suggestions before publishing."
       }
     }
   ]
@@ -138,8 +170,8 @@ export const organizationStructuredData = {
   ],
   "contactPoint": {
     "@type": "ContactPoint",
-    "telephone": "+1-555-123-4567",
-    "contactType": "customer service",
+    "telephone": "+14242880215",
+    "contactType": "customer support",
     "areaServed": "Worldwide",
     "availableLanguage": ["English"]
   }
