@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Script from 'next/script';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -123,47 +122,8 @@ export default function CopyAIAlternativePage() {
     }
   ];
 
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "Genscript",
-    "applicationCategory": "YouTube Script Generator",
-    "operatingSystem": "Web",
-    "alternativeOf": {
-      "@type": "SoftwareApplication",
-      "name": "Copy.ai"
-    },
-    "offers": {
-      "@type": "Offer",
-      "price": "39.00",
-      "priceCurrency": "USD",
-      "priceValidUntil": "2025-12-31"
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "reviewCount": "2500"
-    },
-    "featureList": [
-      "AI YouTube script generation",
-      "68%+ retention optimization",
-      "Voice matching technology",
-      "Built-in fact checking",
-      "PVSS viral framework",
-      "Psychographic targeting"
-    ]
-  };
-
   return (
     <div className="min-h-screen bg-black">
-      {/* Structured Data for SEO */}
-      <Script
-        id="copyai-structured-data"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(structuredData)
-        }}
-      />
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-gray-900 via-black to-gray-900 py-20">

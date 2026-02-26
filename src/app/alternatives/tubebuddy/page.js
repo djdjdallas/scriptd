@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Script from 'next/script';
 import {
   Check, X, ArrowRight, Star, TrendingUp, Shield, Zap,
   Brain, Target, BarChart3, Users, Youtube, Sparkles, Award,
@@ -151,47 +150,8 @@ export default function TubeBuddyAlternativePage() {
     }
   ];
 
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "GenScript",
-    "applicationCategory": "YouTube Script Generator",
-    "operatingSystem": "Web",
-    "alternativeOf": {
-      "@type": "SoftwareApplication",
-      "name": "TubeBuddy"
-    },
-    "offers": {
-      "@type": "Offer",
-      "price": "39.00",
-      "priceCurrency": "USD",
-      "priceValidUntil": "2025-12-31"
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "reviewCount": "2500"
-    },
-    "featureList": [
-      "AI YouTube script generation",
-      "68%+ retention optimization",
-      "Voice matching technology",
-      "Built-in fact checking",
-      "PVSS viral framework",
-      "Psychographic targeting"
-    ]
-  };
-
   return (
     <>
-      {/* Structured Data for SEO */}
-      <Script
-        id="tubebuddy-structured-data"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(structuredData)
-        }}
-      />
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-purple-50 to-white dark:from-purple-950/20 dark:to-background py-20">
