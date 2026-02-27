@@ -46,7 +46,7 @@ const youtubeTools = [
     icon: BarChart3,
     badge: 'Analytics',
     features: ['Content structure analysis', 'Engagement metrics', 'Strategy insights'],
-    color: 'from-purple-500/20 to-pink-500/20'
+    color: 'from-violet-500/20 to-cyan-500/20'
   },
   {
     id: 'description-generator',
@@ -55,7 +55,7 @@ const youtubeTools = [
     icon: FileText,
     badge: 'SEO',
     features: ['SEO optimization', 'Call-to-action templates', 'Hashtag suggestions'],
-    color: 'from-purple-500/20 to-pink-500/20'
+    color: 'from-violet-500/20 to-cyan-500/20'
   },
   {
     id: 'hook-generator',
@@ -64,7 +64,7 @@ const youtubeTools = [
     icon: Zap,
     badge: 'Most Popular',
     features: ['Multiple styles', 'Engagement focused', 'Time-tested formulas'],
-    color: 'from-purple-500/20 to-pink-500/20'
+    color: 'from-violet-500/20 to-cyan-500/20'
   },
   {
     id: 'keyword-research',
@@ -73,7 +73,7 @@ const youtubeTools = [
     icon: Search,
     badge: 'Research',
     features: ['Search volume data', 'Competition analysis', 'Trend insights'],
-    color: 'from-purple-500/20 to-pink-500/20'
+    color: 'from-violet-500/20 to-cyan-500/20'
   },
   {
     id: 'title-generator',
@@ -82,7 +82,7 @@ const youtubeTools = [
     icon: Type,
     badge: 'Essential',
     features: ['Click-worthy titles', 'A/B testing ready', 'Character counter'],
-    color: 'from-purple-500/20 to-pink-500/20'
+    color: 'from-violet-500/20 to-cyan-500/20'
   },
   {
     id: 'tag-generator',
@@ -91,7 +91,7 @@ const youtubeTools = [
     icon: Hash,
     badge: 'Discovery',
     features: ['Relevance scoring', 'Competition level', 'Trending tags'],
-    color: 'from-purple-500/20 to-pink-500/20'
+    color: 'from-violet-500/20 to-cyan-500/20'
   },
   {
     id: 'thumbnail-grabber',
@@ -100,7 +100,7 @@ const youtubeTools = [
     icon: Image,
     badge: 'Utility',
     features: ['Multiple resolutions', 'High quality', 'Instant download'],
-    color: 'from-purple-500/20 to-pink-500/20'
+    color: 'from-violet-500/20 to-cyan-500/20'
   },
   {
     id: 'transcript-generator',
@@ -109,7 +109,7 @@ const youtubeTools = [
     icon: FileAudio,
     badge: 'Content',
     features: ['Auto-generated captions', 'Timestamp support', 'Export options'],
-    color: 'from-purple-500/20 to-pink-500/20'
+    color: 'from-violet-500/20 to-cyan-500/20'
   }
 ];
 
@@ -170,9 +170,9 @@ function VideoBreakdownTool() {
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
             disabled={loading}
-            className="glass-input text-white placeholder:text-gray-500"
+            className="vb-input"
           />
-          <Button onClick={analyzeVideo} disabled={loading || !videoUrl.trim()} className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
+          <Button onClick={analyzeVideo} disabled={loading || !videoUrl.trim()} className="vb-btn-primary">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
             Analyze
           </Button>
@@ -181,9 +181,9 @@ function VideoBreakdownTool() {
 
       {analysis && (
         <div className="space-y-4">
-          <div className="glass-card p-6">
+          <div className="vb-card">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <PlayCircle className="h-5 w-5 text-purple-400" />
+              <PlayCircle className="h-5 w-5 text-violet-400" />
               Video Overview
             </h3>
             <div className="space-y-3">
@@ -208,13 +208,13 @@ function VideoBreakdownTool() {
             </div>
           </div>
 
-          <div className="glass-card p-6">
+          <div className="vb-card">
             <h3 className="text-lg font-semibold text-white mb-4">Content Structure</h3>
             <div>
               <div className="space-y-3">
                 {analysis.structure.map((section, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 glass rounded-lg">
-                    <Badge className="glass bg-purple-500/20 text-purple-300 border-purple-400/50">{section.section}</Badge>
+                  <div key={index} className="flex items-start gap-3 p-3 bg-white/[0.02] border border-white/5 rounded-lg">
+                    <Badge className="bg-violet-500/10 text-violet-300 border-violet-500/20">{section.section}</Badge>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <Clock className="h-4 w-4 text-gray-400" />
@@ -228,7 +228,7 @@ function VideoBreakdownTool() {
             </div>
           </div>
 
-          <div className="glass-card p-6">
+          <div className="vb-card">
             <h3 className="text-lg font-semibold text-white mb-4">Key Insights</h3>
             <div>
               <ul className="space-y-2">
@@ -328,7 +328,7 @@ function DescriptionGeneratorTool() {
             value={videoTopic}
             onChange={(e) => setVideoTopic(e.target.value)}
             disabled={loading}
-            className="glass-input text-white placeholder:text-gray-500"
+            className="vb-input"
           />
         </div>
 
@@ -340,7 +340,7 @@ function DescriptionGeneratorTool() {
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
             disabled={loading}
-            className="glass-input text-white placeholder:text-gray-500"
+            className="vb-input"
           />
         </div>
 
@@ -348,14 +348,14 @@ function DescriptionGeneratorTool() {
           <div className="space-y-2">
             <Label htmlFor="style" className="text-gray-300">Writing Style</Label>
             <Select value={style} onValueChange={setStyle}>
-              <SelectTrigger className="glass-input text-white [&>span]:text-white">
+              <SelectTrigger className="vb-input [&>span]:text-white">
                 <SelectValue placeholder="Select a writing style" />
               </SelectTrigger>
-              <SelectContent className="glass-card border-white/20 bg-black/95">
-                <SelectItem value="professional" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 cursor-pointer">Professional</SelectItem>
-                <SelectItem value="casual" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 cursor-pointer">Casual & Friendly</SelectItem>
-                <SelectItem value="educational" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 cursor-pointer">Educational</SelectItem>
-                <SelectItem value="entertaining" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 cursor-pointer">Entertaining</SelectItem>
+              <SelectContent className="bg-[#0a0a0a] border border-white/5 rounded-xl">
+                <SelectItem value="professional" className="text-white hover:bg-violet-500/10 focus:bg-violet-500/10 cursor-pointer">Professional</SelectItem>
+                <SelectItem value="casual" className="text-white hover:bg-violet-500/10 focus:bg-violet-500/10 cursor-pointer">Casual & Friendly</SelectItem>
+                <SelectItem value="educational" className="text-white hover:bg-violet-500/10 focus:bg-violet-500/10 cursor-pointer">Educational</SelectItem>
+                <SelectItem value="entertaining" className="text-white hover:bg-violet-500/10 focus:bg-violet-500/10 cursor-pointer">Entertaining</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -383,7 +383,7 @@ function DescriptionGeneratorTool() {
           </div>
         </div>
 
-        <Button onClick={generateDescription} disabled={loading || !videoTopic.trim()} className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
+        <Button onClick={generateDescription} disabled={loading || !videoTopic.trim()} className="w-full vb-btn-primary">
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -399,10 +399,10 @@ function DescriptionGeneratorTool() {
       </div>
 
       {description && (
-        <div className="glass-card p-6">
+        <div className="vb-card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white">Generated Description</h3>
-            <Button className="glass-button text-white" size="sm" onClick={copyDescription}>
+            <Button className="vb-btn-outline" size="sm" onClick={copyDescription}>
               <Copy className="h-4 w-4 mr-2" />
               Copy
             </Button>
@@ -412,7 +412,7 @@ function DescriptionGeneratorTool() {
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="glass-input min-h-[400px] font-mono text-sm text-white"
+                className="vb-input min-h-[400px] font-mono text-sm"
                 placeholder="Your generated description will appear here..."
               />
               <div className="absolute bottom-2 right-2 text-xs text-gray-400">
@@ -510,7 +510,7 @@ function HookGeneratorTool() {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             disabled={loading}
-            className="glass-input text-white placeholder:text-gray-500"
+            className="vb-input"
           />
         </div>
 
@@ -527,7 +527,7 @@ function HookGeneratorTool() {
                   />
                   <Label
                     htmlFor={style.id}
-                    className="flex flex-col gap-1 rounded-md border-2 border-white/20 glass p-4 hover:bg-white/10 peer-data-[state=checked]:border-purple-400 peer-data-[state=checked]:bg-purple-500/20 cursor-pointer text-white"
+                    className="flex flex-col gap-1 rounded-md border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] peer-data-[state=checked]:border-violet-400 peer-data-[state=checked]:bg-violet-500/10 cursor-pointer text-white"
                   >
                     <span className="font-medium text-white">{style.label}</span>
                     <span className="text-xs text-gray-400">{style.example}</span>
@@ -538,7 +538,7 @@ function HookGeneratorTool() {
           </RadioGroup>
         </div>
 
-        <Button onClick={generateHooks} disabled={loading || !topic.trim()} className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
+        <Button onClick={generateHooks} disabled={loading || !topic.trim()} className="w-full vb-btn-primary">
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -557,20 +557,20 @@ function HookGeneratorTool() {
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-white">Generated Hooks</h3>
           {hooks.map((hook, index) => (
-            <div key={index} className="glass-card p-6 glass-hover cursor-pointer" onClick={() => copyHook(hook.text)}>
+            <div key={index} className="vb-card-interactive cursor-pointer" onClick={() => copyHook(hook.text)}>
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
                     <p className="font-medium mb-2 text-white">{hook.text}</p>
                     <div className="flex items-center gap-4 text-sm">
-                      <Badge className="glass bg-purple-500/20 text-purple-300 border-purple-400/50">{hook.type}</Badge>
+                      <Badge className="bg-violet-500/10 text-violet-300 border-violet-500/20">{hook.type}</Badge>
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 text-yellow-400" />
                         <span className="text-gray-300">{hook.engagement}/10</span>
                       </div>
                     </div>
                   </div>
-                  <Button className="glass-button text-white" size="icon">
+                  <Button className="vb-btn-outline" size="icon">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -631,16 +631,16 @@ function KeywordResearchTool() {
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
-      case 'Low': return 'text-green-600 bg-green-100';
-      case 'Medium': return 'text-yellow-600 bg-yellow-100';
-      case 'High': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'Low': return 'text-emerald-400 bg-emerald-500/10';
+      case 'Medium': return 'text-amber-400 bg-amber-500/10';
+      case 'High': return 'text-red-400 bg-red-500/10';
+      default: return 'text-gray-400 bg-white/[0.04]';
     }
   };
 
   const getTrendColor = (trend) => {
     const value = parseInt(trend);
-    return value > 15 ? 'text-green-600' : value > 5 ? 'text-yellow-600' : 'text-red-600';
+    return value > 15 ? 'text-emerald-400' : value > 5 ? 'text-amber-400' : 'text-red-400';
   };
 
   return (
@@ -655,9 +655,9 @@ function KeywordResearchTool() {
               value={seedKeyword}
               onChange={(e) => setSeedKeyword(e.target.value)}
               disabled={loading}
-              className="glass-input text-white placeholder:text-gray-500"
+              className="vb-input"
             />
-            <Button onClick={researchKeywords} disabled={loading || !seedKeyword.trim()} className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
+            <Button onClick={researchKeywords} disabled={loading || !seedKeyword.trim()} className="vb-btn-primary">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               Research
             </Button>
@@ -666,7 +666,7 @@ function KeywordResearchTool() {
       </div>
 
       {keywords.length > 0 && (
-        <div className="glass-card p-6">
+        <div className="vb-card">
           <h3 className="text-lg font-semibold text-white mb-2">Keyword Opportunities</h3>
           <p className="text-sm text-gray-400 mb-4">
             Keywords related to "{seedKeyword}" with search volume and difficulty
@@ -698,7 +698,7 @@ function KeywordResearchTool() {
                       </td>
                       <td className="text-center py-3">
                         <Button
-                          className="glass-button text-white"
+                          className="vb-btn-outline"
                           size="sm"
                           onClick={() => navigator.clipboard.writeText(item.keyword)}
                         >
@@ -801,7 +801,7 @@ function TitleGeneratorTool() {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             disabled={loading}
-            className="glass-input text-white placeholder:text-gray-500"
+            className="vb-input"
           />
         </div>
 
@@ -813,7 +813,7 @@ function TitleGeneratorTool() {
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
             disabled={loading}
-            className="glass-input text-white placeholder:text-gray-500"
+            className="vb-input"
           />
         </div>
 
@@ -830,7 +830,7 @@ function TitleGeneratorTool() {
                   />
                   <Label
                     htmlFor={s.id}
-                    className="flex items-center justify-between rounded-md border-2 border-white/20 glass p-4 hover:bg-white/10 peer-data-[state=checked]:border-purple-400 peer-data-[state=checked]:bg-purple-500/20 cursor-pointer text-white"
+                    className="flex items-center justify-between rounded-md border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] peer-data-[state=checked]:border-violet-400 peer-data-[state=checked]:bg-violet-500/10 cursor-pointer text-white"
                   >
                     <div>
                       <p className="font-medium text-white">{s.label}</p>
@@ -843,7 +843,7 @@ function TitleGeneratorTool() {
           </RadioGroup>
         </div>
 
-        <Button onClick={generateTitles} disabled={loading || !topic.trim()} className="w-full glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
+        <Button onClick={generateTitles} disabled={loading || !topic.trim()} className="w-full vb-btn-primary">
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -862,19 +862,19 @@ function TitleGeneratorTool() {
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-white">Generated Titles</h3>
           {titles.map((title, index) => (
-            <div key={index} className="glass-card p-6 glass-hover cursor-pointer" onClick={() => copyTitle(title.text)}>
+            <div key={index} className="vb-card-interactive cursor-pointer" onClick={() => copyTitle(title.text)}>
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
                     <p className="font-medium mb-2 text-white">{title.text}</p>
                     <div className="flex items-center gap-4 text-sm">
                       <span className="text-gray-400">{title.text.length} characters</span>
-                      <Badge className="glass bg-purple-500/20 text-purple-300 border-purple-400/50">
+                      <Badge className="bg-violet-500/10 text-violet-300 border-violet-500/20">
                         Score: {title.score}/10
                       </Badge>
                     </div>
                   </div>
-                  <Button className="glass-button text-white" size="icon">
+                  <Button className="vb-btn-outline" size="icon">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -952,10 +952,10 @@ function TagGeneratorTool() {
 
   const getCompetitionColor = (competition) => {
     switch (competition) {
-      case 'Low': return 'text-green-600 bg-green-100';
-      case 'Medium': return 'text-yellow-600 bg-yellow-100';
-      case 'High': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'Low': return 'text-emerald-400 bg-emerald-500/10';
+      case 'Medium': return 'text-amber-400 bg-amber-500/10';
+      case 'High': return 'text-red-400 bg-red-500/10';
+      default: return 'text-gray-400 bg-white/[0.04]';
     }
   };
 
@@ -971,9 +971,9 @@ function TagGeneratorTool() {
               value={videoTopic}
               onChange={(e) => setVideoTopic(e.target.value)}
               disabled={loading}
-              className="glass-input text-white placeholder:text-gray-500"
+              className="vb-input"
             />
-            <Button onClick={generateTags} disabled={loading || !videoTopic.trim()} className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
+            <Button onClick={generateTags} disabled={loading || !videoTopic.trim()} className="vb-btn-primary">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Hash className="h-4 w-4" />}
               Generate
             </Button>
@@ -982,7 +982,7 @@ function TagGeneratorTool() {
       </div>
 
       {tags.length > 0 && (
-        <div className="glass-card p-6">
+        <div className="vb-card">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-white">Generated Tags</h3>
@@ -990,7 +990,7 @@ function TagGeneratorTool() {
                 Optimized tags for "{videoTopic}" ranked by relevance
               </p>
             </div>
-            <Button className="glass-button text-white" size="sm" onClick={copyAllTags}>
+            <Button className="vb-btn-outline" size="sm" onClick={copyAllTags}>
               <Copy className="h-4 w-4 mr-2" />
               Copy All
             </Button>
@@ -998,7 +998,7 @@ function TagGeneratorTool() {
           <div>
             <div className="grid gap-3">
               {tags.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 glass rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="text-center">
                       <div className="text-lg font-bold text-white">{item.relevance}</div>
@@ -1014,7 +1014,7 @@ function TagGeneratorTool() {
                       {item.competition}
                     </Badge>
                     <Button
-                      className="glass-button text-white"
+                      className="vb-btn-outline"
                       size="sm"
                       onClick={() => navigator.clipboard.writeText(item.tag)}
                     >
@@ -1157,9 +1157,9 @@ function ThumbnailGrabberTool() {
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
               disabled={loading}
-              className="glass-input text-white placeholder:text-gray-500"
+              className="vb-input"
             />
-            <Button onClick={grabThumbnails} disabled={loading || !videoUrl.trim()} className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
+            <Button onClick={grabThumbnails} disabled={loading || !videoUrl.trim()} className="vb-btn-primary">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Image className="h-4 w-4" />}
               Grab
             </Button>
@@ -1172,10 +1172,10 @@ function ThumbnailGrabberTool() {
           <h3 className="text-lg font-semibold text-white">Available Thumbnails</h3>
           <div className="grid gap-4">
             {thumbnails.map((thumbnail, index) => (
-              <div key={index} className="glass-card p-6">
+              <div key={index} className="vb-card">
                 <div>
                   <div className="flex items-center gap-4">
-                    <div className="w-32 h-24 glass rounded-lg overflow-hidden">
+                    <div className="w-32 h-24 bg-white/[0.02] border border-white/5 rounded-lg overflow-hidden">
                       <img
                         src={thumbnail.url}
                         alt={`${thumbnail.quality} thumbnail`}
@@ -1194,7 +1194,7 @@ function ThumbnailGrabberTool() {
                     </div>
                     <div className="flex gap-2">
                       <Button
-                        className="glass-button text-white"
+                        className="vb-btn-outline"
                         size="sm"
                         onClick={() => navigator.clipboard.writeText(thumbnail.url)}
                       >
@@ -1202,7 +1202,7 @@ function ThumbnailGrabberTool() {
                         Copy URL
                       </Button>
                       <Button
-                        className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white"
+                        className="vb-btn-primary"
                         size="sm"
                         onClick={() => downloadThumbnail(thumbnail)}
                       >
@@ -1314,9 +1314,9 @@ function TranscriptGeneratorTool() {
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
               disabled={loading}
-              className="glass-input text-white placeholder:text-gray-500"
+              className="vb-input"
             />
-            <Button onClick={generateTranscript} disabled={loading || !videoUrl.trim()} className="glass-button bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-white">
+            <Button onClick={generateTranscript} disabled={loading || !videoUrl.trim()} className="vb-btn-primary">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileAudio className="h-4 w-4" />}
               Extract
             </Button>
@@ -1333,7 +1333,7 @@ function TranscriptGeneratorTool() {
       </div>
 
       {transcript && (
-        <div className="glass-card p-6">
+        <div className="vb-card">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-white">Generated Transcript</h3>
@@ -1342,11 +1342,11 @@ function TranscriptGeneratorTool() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button className="glass-button text-white" size="sm" onClick={copyTranscript}>
+              <Button className="vb-btn-outline" size="sm" onClick={copyTranscript}>
                 <Copy className="h-4 w-4 mr-2" />
                 Copy
               </Button>
-              <Button className="glass-button text-white" size="sm" onClick={downloadTranscript}>
+              <Button className="vb-btn-outline" size="sm" onClick={downloadTranscript}>
                 <Download className="h-4 w-4 mr-2" />
                 Download
               </Button>
@@ -1357,7 +1357,7 @@ function TranscriptGeneratorTool() {
               <Textarea
                 value={transcript}
                 onChange={(e) => setTranscript(e.target.value)}
-                className="glass-input min-h-[400px] font-mono text-sm text-white"
+                className="vb-input min-h-[400px] font-mono text-sm"
                 placeholder="Extracted transcript will appear here..."
               />
               <div className="absolute bottom-2 right-2 text-xs text-gray-400">
@@ -1430,7 +1430,7 @@ export default function YouTubeTools() {
           return (
             <div
               key={tool.id}
-              className="glass-card p-6 glass-hover cursor-pointer group animate-reveal"
+              className="vb-card-interactive cursor-pointer group animate-reveal"
               onClick={() => openTool(tool)}
               style={{ animationDelay: `${index * 0.05}s` }}
             >
@@ -1439,11 +1439,11 @@ export default function YouTubeTools() {
               
               <div className="relative">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="glass w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Icon className="h-6 w-6 text-purple-400" />
+                  <div className="bg-violet-500/10 w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Icon className="h-6 w-6 text-violet-400" />
                   </div>
                   {tool.badge && (
-                    <Badge className="glass bg-purple-500/20 text-purple-300 border-purple-400/50 text-xs">
+                    <Badge className="bg-violet-500/10 text-violet-300 border-violet-500/20 text-xs">
                       {tool.badge}
                     </Badge>
                   )}
@@ -1459,13 +1459,13 @@ export default function YouTubeTools() {
                 <ul className="space-y-2 mb-4">
                   {tool.features.map((feature, idx) => (
                     <li key={idx} className="flex items-center gap-2 text-xs text-gray-300">
-                      <div className="h-1 w-1 bg-purple-400 rounded-full" />
+                      <div className="h-1 w-1 bg-violet-400 rounded-full" />
                       {feature}
                     </li>
                   ))}
                 </ul>
                 
-                <div className="flex items-center text-sm font-medium text-purple-400 group-hover:text-purple-300 transition-colors">
+                <div className="flex items-center text-sm font-medium text-violet-400 group-hover:text-violet-300 transition-colors">
                   <span>Try it free</span>
                   <ExternalLink className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -1477,13 +1477,13 @@ export default function YouTubeTools() {
 
       {/* Tool Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-white/20 bg-gradient-to-br from-gray-900 via-purple-900/50 to-gray-900">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-[#0a0a0a] border border-white/5 rounded-2xl">
           {selectedTool && (
             <>
               <DialogHeader>
                 <div className="flex items-center gap-3">
-                  <div className="glass w-10 h-10 rounded-lg flex items-center justify-center">
-                    <selectedTool.icon className="h-5 w-5 text-purple-400" />
+                  <div className="bg-violet-500/10 w-10 h-10 rounded-lg flex items-center justify-center">
+                    <selectedTool.icon className="h-5 w-5 text-violet-400" />
                   </div>
                   <div>
                     <DialogTitle className="text-2xl text-white">{selectedTool.title}</DialogTitle>

@@ -114,7 +114,7 @@ export default function RetentionOptimizerPage() {
       </head>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-green-950/40 via-black to-green-950/20 py-20">
+      <section className="relative bg-gradient-to-b from-green-950/40 via-[#030303] to-green-950/20 py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center">
             <Badge className="mb-4 bg-green-500/20 text-green-400 border-green-500/30">

@@ -294,10 +294,10 @@ export default function PVSSFrameworkPage() {
                       <p className="text-sm text-gray-300">{example.pattern}</p>
                     </div>
 
-                    <div className="p-3 bg-pink-950/30 rounded-lg border border-pink-500/20">
+                    <div className="p-3 bg-cyan-950/30 rounded-lg border border-cyan-500/20">
                       <div className="flex items-center gap-2 mb-2">
-                        <Target className="w-4 h-4 text-pink-400" />
-                        <span className="text-xs font-medium text-pink-400">Value</span>
+                        <Target className="w-4 h-4 text-cyan-400" />
+                        <span className="text-xs font-medium text-cyan-400">Value</span>
                       </div>
                       <p className="text-sm text-gray-300">{example.value}</p>
                     </div>
@@ -355,10 +355,10 @@ export default function PVSSFrameworkPage() {
                         <p className="italic text-gray-300">{template.pattern}</p>
                       </div>
 
-                      <div className="p-4 bg-pink-950/30 rounded-lg border border-pink-500/20">
+                      <div className="p-4 bg-cyan-950/30 rounded-lg border border-cyan-500/20">
                         <div className="flex items-center gap-2 mb-2">
-                          <Target className="w-5 h-5 text-pink-400" />
-                          <span className="font-medium text-pink-400">Value</span>
+                          <Target className="w-5 h-5 text-cyan-400" />
+                          <span className="font-medium text-cyan-400">Value</span>
                         </div>
                         <p className="italic text-gray-300">{template.value}</p>
                       </div>

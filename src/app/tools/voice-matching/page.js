@@ -289,7 +289,7 @@ export default function VoiceMatchingPage() {
                       <p className="text-xs font-medium text-gray-400">Avg Words/Sentence</p>
                       <p className="text-lg font-bold text-white">{voiceProfile.avgWordsPerSentence}</p>
                     </div>
-                    <div className="p-3 bg-pink-950/30 rounded-lg border border-pink-500/20">
+                    <div className="p-3 bg-cyan-950/30 rounded-lg border border-cyan-500/20">
                       <p className="text-xs font-medium text-gray-400">Humor Frequency</p>
                       <p className="text-lg font-bold text-white">{voiceProfile.humorFrequency}</p>
                     </div>
@@ -345,7 +345,7 @@ export default function VoiceMatchingPage() {
 
             <Card className="text-center bg-white/[0.04] border-white/5">
               <CardHeader>
-                <div className="w-16 h-16 bg-pink-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-cyan-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Sparkles className="w-8 h-8 text-cyan-400" />
                 </div>
                 <CardTitle className="text-white">3. Pattern Enforcement</CardTitle>

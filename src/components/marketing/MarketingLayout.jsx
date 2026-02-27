@@ -87,9 +87,9 @@ export function MarketingCard({
   return (
     <div 
       className={cn(
-        "glass-card",
-        hover && "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
-        glow && "hover:shadow-purple-500/20",
+        "vb-card-interactive",
+        hover && "hover:scale-[1.02]",
+        glow && "hover:shadow-violet-500/10",
         className
       )}
       {...props}
@@ -115,7 +115,7 @@ export function FeatureGrid({ features, columns = 3 }) {
               <div className={cn(
                 "w-12 h-12 rounded-lg flex items-center justify-center",
                 "bg-gradient-to-r",
-                feature.gradient || "from-purple-500/20 to-pink-500/20"
+                feature.gradient || "from-violet-500/20 to-cyan-500/20"
               )}>
                 <feature.icon className="w-6 h-6 text-white" />
               </div>
@@ -123,7 +123,7 @@ export function FeatureGrid({ features, columns = 3 }) {
             <h3 className="text-xl font-bold text-white">{feature.title}</h3>
             <p className="text-gray-400">{feature.description}</p>
             {feature.benefit && (
-              <div className="pt-2 text-sm font-medium text-purple-400">
+              <div className="pt-2 text-sm font-medium text-violet-400">
                 → {feature.benefit}
               </div>
             )}
@@ -152,20 +152,20 @@ export function ComparisonSection({
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-700">
+              <tr className="border-b border-white/5">
                 <th className="text-left py-4 px-6 text-gray-400 font-medium">Feature</th>
                 <th className="text-center py-4 px-6 text-gray-400 font-medium">{competitor}</th>
-                <th className="text-center py-4 px-6 text-purple-400 font-medium">GenScript</th>
+                <th className="text-center py-4 px-6 text-violet-400 font-medium">GenScript</th>
               </tr>
             </thead>
             <tbody>
               {features.map((feature, idx) => (
-                <tr key={idx} className="border-b border-gray-800">
+                <tr key={idx} className="border-b border-white/[0.03]">
                   <td className="py-4 px-6 text-white font-medium">{feature.feature}</td>
                   <td className="py-4 px-6 text-center">
                     <FeatureValue value={feature.competitor} />
                   </td>
-                  <td className="py-4 px-6 text-center bg-purple-500/5">
+                  <td className="py-4 px-6 text-center bg-violet-500/[0.03]">
                     <FeatureValue value={feature.genscript} winner />
                   </td>
                 </tr>
@@ -223,7 +223,7 @@ export function TestimonialSection({ title, subtitle, testimonials }) {
                 </div>
                 
                 {testimonial.beforeAfter && (
-                  <div className="mt-3 p-3 bg-purple-500/10 rounded-lg">
+                  <div className="mt-3 p-3 bg-violet-500/10 rounded-lg">
                     <div className="text-xs text-gray-400 mb-1">Results:</div>
                     <div className="text-sm">
                       <span className="text-red-400">Before: {testimonial.beforeAfter.before}</span>
@@ -269,7 +269,7 @@ export function CTASection({
         )}
 
         {features && (
-          <div className="glass-card max-w-2xl mx-auto mb-8 p-6">
+          <div className="vb-card max-w-2xl mx-auto mb-8">
             <div className="grid grid-cols-2 gap-4 text-left">
               {features.map((feature, idx) => (
                 <div key={idx} className="flex items-center gap-2">
@@ -321,11 +321,11 @@ export function FAQSection({ title, faqs }) {
 
 export function StatsBar({ stats }) {
   return (
-    <div className="glass-card">
+    <div className="vb-card">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
         {stats.map((stat, idx) => (
           <div key={idx}>
-            <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <div className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
               {stat.value}
             </div>
             <div className="text-sm text-gray-400 mt-1">{stat.label}</div>

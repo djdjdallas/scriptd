@@ -3,16 +3,6 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
   Lightbulb,
   FileText,
   TrendingUp,
@@ -39,7 +29,7 @@ const tools = [
       "Extract and analyze video transcripts in seconds. AI-powered competitive research made easy.",
     icon: Video,
     badge: "New",
-    badgeVariant: "secondary",
+    badgeClass: "vb-badge-cyan",
     features: [
       "Hook analysis",
       "Topic extraction",
@@ -49,7 +39,6 @@ const tools = [
     href: "/tools/transcript-extraction",
     category: "research",
     popularity: 5,
-    gradient: "from-violet-500/10 to-cyan-500/10",
   },
   {
     id: "title-generator",
@@ -57,12 +46,11 @@ const tools = [
     description: "Create click-worthy titles that rank well in YouTube search",
     icon: FileText,
     badge: "Most Popular",
-    badgeVariant: "default",
+    badgeClass: "vb-badge-violet",
     features: ["SEO optimized", "A/B testing ready", "Character counter"],
     href: "/tools/title-generator",
     category: "content",
     popularity: 5,
-    gradient: "from-blue-500/10 to-cyan-500/10",
   },
   {
     id: "hook-generator",
@@ -71,12 +59,11 @@ const tools = [
       "Generate compelling hooks that grab attention in the first 15 seconds",
     icon: Zap,
     badge: "Trending",
-    badgeVariant: "destructive",
+    badgeClass: "vb-badge-violet",
     features: ["Multiple styles", "Engagement focused", "Time-tested formulas"],
     href: "/tools/hook-generator",
     category: "content",
     popularity: 4,
-    gradient: "from-orange-500/10 to-red-500/10",
   },
   {
     id: "idea-generator",
@@ -87,7 +74,6 @@ const tools = [
     href: "/tools/idea-generator",
     category: "planning",
     popularity: 4,
-    gradient: "from-yellow-500/10 to-amber-500/10",
   },
   {
     id: "hashtag-generator",
@@ -99,7 +85,6 @@ const tools = [
     href: "/tools/hashtag-generator",
     category: "seo",
     popularity: 3,
-    gradient: "from-green-500/10 to-emerald-500/10",
   },
   {
     id: "thumbnail-ideas",
@@ -108,12 +93,11 @@ const tools = [
       "Get creative thumbnail concepts that boost click-through rates",
     icon: Image,
     badge: "New",
-    badgeVariant: "secondary",
+    badgeClass: "vb-badge-cyan",
     features: ["Style suggestions", "Color psychology", "Text overlay ideas"],
     href: "/tools/thumbnail-ideas",
     category: "visual",
     popularity: 5,
-    gradient: "from-pink-500/10 to-rose-500/10",
   },
   {
     id: "length-calculator",
@@ -125,7 +109,6 @@ const tools = [
     href: "/tools/length-calculator",
     category: "planning",
     popularity: 3,
-    gradient: "from-indigo-500/10 to-violet-500/10",
   },
   {
     id: "faceless-youtube",
@@ -134,7 +117,7 @@ const tools = [
       "Create complete faceless YouTube videos without showing your face",
     icon: Users,
     badge: "Popular",
-    badgeVariant: "secondary",
+    badgeClass: "vb-badge-violet",
     features: [
       "Automated scripts",
       "AI voiceover",
@@ -144,7 +127,6 @@ const tools = [
     href: "/tools/faceless-youtube-generator",
     category: "content",
     popularity: 5,
-    gradient: "from-teal-500/10 to-cyan-500/10",
   },
   {
     id: "retention-optimizer",
@@ -153,7 +135,7 @@ const tools = [
       "Transform scripts for 68%+ retention with psychological triggers",
     icon: TrendingUp,
     badge: "Advanced",
-    badgeVariant: "secondary",
+    badgeClass: "vb-badge",
     features: [
       "Pattern interrupts",
       "Open loops",
@@ -163,7 +145,6 @@ const tools = [
     href: "/tools/retention-optimizer",
     category: "content",
     popularity: 4,
-    gradient: "from-blue-500/10 to-purple-500/10",
   },
   {
     id: "pvss-framework",
@@ -171,7 +152,7 @@ const tools = [
     description: "Pattern-Value-Story-Surprise structure for viral videos",
     icon: Sparkles,
     badge: "Framework",
-    badgeVariant: "secondary",
+    badgeClass: "vb-badge",
     features: [
       "Proven structure",
       "Psychology-based",
@@ -181,7 +162,6 @@ const tools = [
     href: "/tools/pvss-framework",
     category: "planning",
     popularity: 4,
-    gradient: "from-fuchsia-500/10 to-purple-500/10",
   },
   {
     id: "voice-matching",
@@ -190,7 +170,7 @@ const tools = [
       "AI that writes exactly like you do with deep linguistic profiling",
     icon: Users,
     badge: "Advanced",
-    badgeVariant: "secondary",
+    badgeClass: "vb-badge",
     features: [
       "100+ voice metrics",
       "Real transcript analysis",
@@ -200,7 +180,6 @@ const tools = [
     href: "/signup",
     category: "content",
     popularity: 5,
-    gradient: "from-violet-500/10 to-indigo-500/10",
   },
 ];
 
@@ -238,71 +217,74 @@ export default function ToolsPage() {
   }, [searchQuery, selectedCategory]);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Cleaner Hero Section */}
-      <section className="relative overflow-hidden pb-16 pt-12 bg-gradient-to-b from-muted/30 to-background">
-        {/* Subtle pattern overlay */}
-        <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,transparent,black)] dark:bg-grid-slate-700/25" />
-
+    <div>
+      {/* Hero Section */}
+      <section className="relative overflow-hidden pb-16 pt-12">
         <div className="relative space-y-10 px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
-            {/* Cleaner Header */}
+            {/* Header */}
             <div className="text-center space-y-6 mb-12">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-primary">
-                  100% Free • No Sign-up Required
+              <div className="vb-badge-violet mx-auto w-fit">
+                <Sparkles className="h-4 w-4" />
+                <span className="text-sm font-semibold">
+                  100% Free &middot; No Sign-up Required
                 </span>
               </div>
 
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-display tracking-tight">
-                YouTube Script <span className="text-primary">Tools</span>
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-display tracking-tight text-white">
+                YouTube Script{" "}
+                <span className="gradient-text">Tools</span>
               </h1>
 
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
                 Professional AI-powered tools trusted by thousands of creators
                 to make better content, faster.
               </p>
             </div>
 
-            {/* Cleaner Search and Filters */}
+            {/* Search and Filters */}
             <div className="max-w-4xl mx-auto space-y-6">
               {/* Search Bar */}
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+                <input
                   type="text"
                   placeholder="Search by name, feature, or keyword..."
-                  className="pl-12 pr-4 h-14 text-base border-2 focus:border-primary"
+                  className="vb-input pl-12 pr-4 h-14 text-base"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
 
-              {/* Cleaner Category Filters */}
+              {/* Category Filters */}
               <div className="flex flex-wrap gap-3 justify-center">
                 {categories.map((category) => {
                   const Icon = category.icon;
                   const isActive = selectedCategory === category.id;
                   return (
-                    <Button
+                    <button
                       key={category.id}
-                      variant={isActive ? "default" : "outline"}
-                      size="default"
                       onClick={() => setSelectedCategory(category.id)}
                       className={cn(
-                        "gap-2 transition-all duration-200",
-                        isActive && "shadow-md"
+                        "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border",
+                        isActive
+                          ? "bg-violet-500/10 border-violet-500/20 text-violet-400"
+                          : "bg-white/[0.04] border-white/[0.06] text-gray-400 hover:text-white hover:border-white/10"
                       )}
                     >
                       <Icon className="h-4 w-4" />
-                      <span className="font-medium">{category.label}</span>
+                      <span>{category.label}</span>
                       {category.id === "all" && (
-                        <Badge variant="secondary" className="ml-1">
+                        <span className={cn(
+                          "ml-1 text-xs px-1.5 py-0.5 rounded-full",
+                          isActive
+                            ? "bg-violet-500/20 text-violet-300"
+                            : "bg-white/[0.06] text-gray-500"
+                        )}>
                           {tools.length}
-                        </Badge>
+                        </span>
                       )}
-                    </Button>
+                    </button>
                   );
                 })}
               </div>
@@ -321,11 +303,10 @@ export default function ToolsPage() {
 
               return (
                 <Link key={tool.id} href={tool.href}>
-                  <Card
+                  <div
                     className={cn(
-                      "group relative h-full transition-all duration-300 cursor-pointer",
-                      "border-2",
-                      "hover:shadow-xl hover:border-primary/50 hover:-translate-y-1",
+                      "group relative h-full vb-card-interactive",
+                      "hover:border-violet-500/30 hover:-translate-y-1",
                       "animate-in fade-in slide-in-from-bottom-4"
                     )}
                     onMouseEnter={() => setHoveredCard(tool.id)}
@@ -334,23 +315,16 @@ export default function ToolsPage() {
                       animationDelay: `${index * 50}ms`,
                     }}
                   >
-                    {/* Subtle gradient overlay on hover */}
-                    <div
-                      className={cn(
-                        "absolute inset-0 bg-gradient-to-br rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300",
-                        tool.gradient
-                      )}
-                    />
-
-                    <CardHeader className="relative pb-4">
+                    {/* Header */}
+                    <div className="pb-4">
                       <div className="flex items-start justify-between mb-4">
                         {/* Icon */}
                         <div
                           className={cn(
                             "p-3 rounded-xl transition-all duration-300",
                             isHovered
-                              ? "bg-primary text-primary-foreground scale-110"
-                              : "bg-primary/10 text-primary"
+                              ? "bg-violet-500 text-white scale-110"
+                              : "bg-violet-500/10 text-violet-400"
                           )}
                         >
                           <Icon className="h-6 w-6" />
@@ -358,169 +332,163 @@ export default function ToolsPage() {
 
                         {/* Badge */}
                         {tool.badge && (
-                          <Badge
-                            variant={tool.badgeVariant || "secondary"}
-                            className="font-medium"
-                          >
+                          <span className={tool.badgeClass}>
                             {tool.badge}
-                          </Badge>
+                          </span>
                         )}
                       </div>
 
-                      <CardTitle className="text-xl mb-2 group-hover:text-primary transition-colors">
+                      <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-violet-400 transition-colors">
                         {tool.title}
-                      </CardTitle>
+                      </h3>
 
-                      <CardDescription className="text-sm leading-relaxed">
+                      <p className="text-sm text-gray-400 leading-relaxed">
                         {tool.description}
-                      </CardDescription>
-                    </CardHeader>
+                      </p>
+                    </div>
 
-                    <CardContent className="relative">
-                      <div className="space-y-4">
-                        {/* Features */}
-                        <ul className="space-y-2">
-                          {tool.features.map((feature, idx) => (
-                            <li
-                              key={idx}
-                              className="flex items-start gap-2 text-sm text-muted-foreground"
-                            >
-                              <div
-                                className={cn(
-                                  "mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 transition-all duration-300",
-                                  isHovered
-                                    ? "bg-primary scale-125"
-                                    : "bg-primary/60"
-                                )}
-                              />
-                              <span>{feature}</span>
-                            </li>
+                    {/* Content */}
+                    <div className="space-y-4">
+                      {/* Features */}
+                      <ul className="space-y-2">
+                        {tool.features.map((feature, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-2 text-sm text-gray-400"
+                          >
+                            <div
+                              className={cn(
+                                "mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 transition-all duration-300",
+                                isHovered
+                                  ? "bg-violet-400 scale-125"
+                                  : "bg-violet-500/60"
+                              )}
+                            />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* Popularity Stars */}
+                      {tool.popularity && (
+                        <div className="flex items-center gap-1 pt-2">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={cn(
+                                "h-3.5 w-3.5 transition-all",
+                                i < tool.popularity
+                                  ? "fill-yellow-500 text-yellow-500"
+                                  : "text-gray-700"
+                              )}
+                            />
                           ))}
-                        </ul>
+                          <span className="text-xs text-gray-500 ml-1.5">
+                            Highly Rated
+                          </span>
+                        </div>
+                      )}
 
-                        {/* Popularity Stars */}
-                        {tool.popularity && (
-                          <div className="flex items-center gap-1 pt-2">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={cn(
-                                  "h-3.5 w-3.5 transition-all",
-                                  i < tool.popularity
-                                    ? "fill-yellow-500 text-yellow-500"
-                                    : "text-muted-foreground/20"
-                                )}
-                              />
-                            ))}
-                            <span className="text-xs text-muted-foreground ml-1.5">
-                              Highly Rated
-                            </span>
-                          </div>
+                      {/* CTA */}
+                      <div
+                        className={cn(
+                          "flex items-center justify-between pt-4 border-t border-white/5",
+                          "transition-all duration-300"
                         )}
-
-                        {/* CTA */}
-                        <div
+                      >
+                        <span
                           className={cn(
-                            "flex items-center justify-between pt-4 border-t",
-                            "transition-all duration-300"
+                            "text-sm font-semibold transition-all",
+                            isHovered ? "text-violet-400" : "text-gray-500"
                           )}
                         >
-                          <span
-                            className={cn(
-                              "text-sm font-semibold transition-all",
-                              isHovered
-                                ? "text-primary"
-                                : "text-muted-foreground"
-                            )}
-                          >
-                            Try it free
-                          </span>
-                          <ArrowRight
-                            className={cn(
-                              "h-4 w-4 transition-all",
-                              isHovered
-                                ? "text-primary translate-x-1"
-                                : "text-muted-foreground"
-                            )}
-                          />
-                        </div>
+                          Try it free
+                        </span>
+                        <ArrowRight
+                          className={cn(
+                            "h-4 w-4 transition-all",
+                            isHovered
+                              ? "text-violet-400 translate-x-1"
+                              : "text-gray-500"
+                          )}
+                        />
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </Link>
               );
             })}
           </div>
         ) : (
-          <Card className="p-16 text-center border-2 border-dashed">
+          <div className="vb-card p-16 text-center border-dashed">
             <div className="space-y-4">
-              <Filter className="h-16 w-16 mx-auto text-muted-foreground/50" />
-              <h3 className="text-2xl font-bold">No tools found</h3>
-              <p className="text-muted-foreground text-lg">
+              <Filter className="h-16 w-16 mx-auto text-gray-500" />
+              <h3 className="text-2xl font-bold text-white">No tools found</h3>
+              <p className="text-gray-400 text-lg">
                 Try adjusting your search terms or filters
               </p>
-              <Button
-                size="lg"
+              <button
                 onClick={() => {
                   setSearchQuery("");
                   setSelectedCategory("all");
                 }}
-                className="mt-6"
+                className="vb-btn-primary mt-6"
               >
                 Clear all filters
-              </Button>
+              </button>
             </div>
-          </Card>
+          </div>
         )}
       </section>
 
-      {/* Simplified CTA Section */}
+      {/* CTA Section */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <Card className="relative overflow-hidden border-2 bg-gradient-to-br from-primary/5 to-violet-500/5">
-          <CardContent className="relative pt-12 pb-12 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-6">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-primary">
+        <div className="vb-card relative overflow-hidden">
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-600/5 to-cyan-600/5 rounded-2xl" />
+
+          <div className="relative pt-6 pb-6 text-center">
+            <div className="vb-badge-violet mx-auto w-fit mb-6">
+              <Sparkles className="h-4 w-4" />
+              <span className="text-sm font-semibold">
                 Premium Features Available
               </span>
             </div>
 
-            <h3 className="text-4xl font-bold mb-4">
+            <h3 className="text-4xl font-bold text-white mb-4">
               Ready for Unlimited Power?
             </h3>
 
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">
               Unlock unlimited generations, advanced AI models, team
               collaboration, priority support, and exclusive features with our
               Pro plan.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button size="lg" className="gap-2 group" asChild>
-                <Link href="/signup">
-                  Get Started Free
-                  <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="border-2" asChild>
-                <Link href="/pricing">View Pricing Plans</Link>
-              </Button>
+              <Link href="/signup" className="vb-btn-primary flex items-center gap-2 group">
+                Get Started Free
+                <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link href="/pricing" className="vb-btn-outline">
+                View Pricing Plans
+              </Link>
             </div>
 
-            <p className="text-sm text-muted-foreground mt-6">
-              No credit card required • Cancel anytime
+            <p className="text-sm text-gray-500 mt-6">
+              No credit card required &middot; Cancel anytime
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </section>
 
-      {/* Cleaner FAQ Section */}
+      {/* FAQ Section */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold font-display mb-4">
+          <h2 className="text-4xl font-bold font-display text-white mb-4">
             Frequently Asked Questions
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-gray-400">
             Everything you need to know about our tools
           </p>
         </div>
@@ -543,22 +511,18 @@ export default function ToolsPage() {
                 "Absolutely! All content generated by our free tools is yours to use however you like, including for commercial YouTube channels and business purposes.",
             },
           ].map((faq, index) => (
-            <Card
+            <div
               key={index}
-              className="group border-2 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+              className="vb-card-interactive hover:border-violet-500/30"
             >
-              <CardHeader>
-                <CardTitle className="text-lg flex items-start gap-3">
-                  <span className="text-primary font-bold shrink-0">
-                    Q{index + 1}
-                  </span>
-                  {faq.question}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground pl-8">{faq.answer}</p>
-              </CardContent>
-            </Card>
+              <h4 className="text-lg font-semibold text-white flex items-start gap-3 mb-3">
+                <span className="text-violet-400 font-bold shrink-0">
+                  Q{index + 1}
+                </span>
+                {faq.question}
+              </h4>
+              <p className="text-gray-400 pl-8">{faq.answer}</p>
+            </div>
           ))}
         </div>
       </section>

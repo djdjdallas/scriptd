@@ -107,18 +107,18 @@ export default function HashtagGeneratorPage() {
 
   const getCompetitionColor = (level) => {
     switch(level) {
-      case 'low': return 'text-green-600';
-      case 'medium': return 'text-yellow-600';
-      case 'high': return 'text-red-600';
-      default: return 'text-gray-600';
+      case 'low': return 'text-emerald-400';
+      case 'medium': return 'text-amber-400';
+      case 'high': return 'text-red-400';
+      default: return 'text-gray-400';
     }
   };
 
   const getCompetitionBadge = (level) => {
     switch(level) {
-      case 'low': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'high': return 'bg-red-100 text-red-800';
+      case 'low': return 'bg-emerald-500/10 text-emerald-400';
+      case 'medium': return 'bg-amber-500/10 text-amber-400';
+      case 'high': return 'bg-red-500/10 text-red-400';
       default: return '';
     }
   };

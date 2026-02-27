@@ -1,8 +1,6 @@
 // Tools Layout - Public layout for free tools
 
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import ToolsNav from "@/components/tools/ToolsNav";
 
 export const metadata = {
   title: "Free YouTube Tools | AI-Powered Creator Tools for YouTube Success",
@@ -29,40 +27,24 @@ export const metadata = {
 
 export default function ToolsLayout({ children }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">GenScript</span>
-          </Link>
+    <div className="min-h-screen bg-[#030303]">
+      {/* Background Orbs */}
+      <div className="fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute -top-48 -left-48 w-[500px] h-[500px] rounded-full bg-violet-600/10 blur-[120px]"
+          style={{ transform: "translateZ(0)" }}
+        />
+        <div
+          className="absolute -bottom-48 -right-48 w-[500px] h-[500px] rounded-full bg-cyan-600/10 blur-[120px]"
+          style={{ transform: "translateZ(0)" }}
+        />
+      </div>
 
-          <nav className="flex items-center gap-6">
-            <Link
-              href="/tools"
-              className="text-sm font-medium hover:text-primary"
-            >
-              Free Tools
-            </Link>
-            <Link
-              href="/pricing"
-              className="text-sm font-medium hover:text-primary"
-            >
-              Pricing
-            </Link>
-            <Button asChild size="sm">
-              <Link href="/signup">
-                Get Started
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
+      {/* Navigation */}
+      <ToolsNav />
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-12">{children}</main>
+      <main className="pt-24">{children}</main>
     </div>
   );
 }
