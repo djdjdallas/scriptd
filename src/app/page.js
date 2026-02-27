@@ -200,7 +200,7 @@ const FAQ_DATA = [
   {
     question: "What makes GenScript different from ChatGPT or Jasper?",
     answer:
-      "Unlike general-purpose AI writers, GenScript is built exclusively for YouTube. It includes Voice DNA matching, a YouTube compliance engine, retention optimization, and fact-checking — features that ChatGPT and Jasper do not offer.",
+      "Unlike general-purpose AI writers, GenScript is built exclusively for YouTube. It includes Voice DNA matching, a YouTube compliance engine, retention optimization, and fact-checking that ChatGPT and Jasper do not offer.",
   },
   {
     question: "Is there a free plan?",
