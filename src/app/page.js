@@ -205,7 +205,7 @@ const FAQ_DATA = [
   {
     question: "Is there a free plan?",
     answer:
-      "Yes. GenScript offers a free plan that includes 3 scripts per month with compliance checking and retention optimization. Paid plans start at $29/month and unlock unlimited scripts, Voice DNA, and priority support.",
+      "Yes. GenScript offers a free plan that includes 3 scripts per month with compliance checking and retention optimization. Paid plans start at $39/month and unlock unlimited scripts, Voice DNA, and priority support.",
   },
   {
     question: "What YouTube niches does GenScript work for?",
