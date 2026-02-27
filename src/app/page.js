@@ -220,7 +220,7 @@ const FAQ_DATA = [
 ];
 
 const TICKER_STATS = [
-  { value: "2.5M+", label: "Scripts Generated" },
+  { value: "5,000+", label: "Scripts Generated" },
   { value: "89%", label: "Avg Compliance" },
   { value: "68%", label: "Avg Retention" },
   { value: "0", label: "Policy Strikes" },
@@ -370,7 +370,7 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-1.5">
               <Users className="w-4 h-4 text-violet-400" />
-              <span>500+ Creators</span>
+              <span>100+ Creators</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Star className="w-4 h-4 text-amber-400" />
@@ -672,7 +672,7 @@ export default function Home() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               <div>
                 <div className="font-mono text-3xl font-bold text-violet-400">
-                  2.5M+
+                  5,000+
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
                   Scripts Generated
