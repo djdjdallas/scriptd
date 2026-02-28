@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { inngest } from '@/lib/inngest/client';
 
 /**
  * GET /api/workflow/job-status/[jobId]
@@ -127,6 +128,9 @@ export async function PATCH(request, { params }) {
         apiLogger.error('Error cancelling job', updateError, { jobId });
         return NextResponse.json({ error: 'Failed to cancel job' }, { status: 500 });
       }
+
+      // Emit cancellation event so Inngest stops the running function
+      await inngest.send({ name: 'script/generation.cancelled', data: { jobId } });
 
       return NextResponse.json({
         success: true,

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { validateUserAccess, calculateChunkStrategy } from '@/lib/scriptGenerationConfig';
 import { MODEL_TIERS } from '@/lib/constants';
 import { checkFeatureRateLimit } from '@/lib/api/rate-limit';
+import { inngest } from '@/lib/inngest/client';
 
 // Helper to normalize old model names to new ones (all script generation uses BALANCED or PREMIUM)
 function normalizeModelName(model) {
@@ -191,31 +192,11 @@ export async function POST(request) {
       }, { status: 500 });
     }
 
-    // Trigger the Edge Function to process the job immediately
-    // This ensures immediate processing without waiting for pg_cron
-    try {
-
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-      if (supabaseUrl && supabaseServiceKey) {
-        // Fire and forget - don't wait for the response
-        fetch(`${supabaseUrl}/functions/v1/process-script-jobs`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'x-supabase-caller': 'api'
-          },
-          body: JSON.stringify({})
-        }).catch(() => {
-          /* Failed to trigger Edge Function (non-blocking) */
-        });
-      }
-    } catch {
-      // Don't fail the request if Edge Function trigger fails
-      // pg_cron will pick it up eventually
-    }
+    // Send event to Inngest for durable background processing
+    await inngest.send({
+      name: 'script/generation.requested',
+      data: { jobId: job.id, userId: user.id, workflowId, generationParams },
+    });
 
     // Return job ID immediately
     return NextResponse.json({

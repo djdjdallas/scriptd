@@ -7,8 +7,8 @@
     "src/app/api/cron/collect-metrics/route.js": {
       "maxDuration": 10
     },
-    "src/app/api/cron/process-script-jobs/route.js": {
-      "maxDuration": 10
+    "src/app/api/inngest/route.js": {
+      "maxDuration": 800
     },
     "src/app/api/workflow/research/route.js": {
       "maxDuration": 800

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { inngest } from '@/lib/inngest/client';
 
 /**
  * POST /api/workflow/research-async
@@ -109,29 +110,11 @@ export async function POST(request) {
       }, { status: 500 });
     }
 
-    // Trigger the Edge Function to process the job immediately
-    try {
-
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-      if (supabaseUrl && supabaseServiceKey) {
-        // Fire and forget - don't wait for the response
-        fetch(`${supabaseUrl}/functions/v1/process-research-jobs`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'x-supabase-caller': 'api'
-          },
-          body: JSON.stringify({})
-        }).catch(() => {
-          /* Failed to trigger Edge Function (non-blocking) */
-        });
-      }
-    } catch {
-      // Don't fail the request if Edge Function trigger fails
-    }
+    // Send event to Inngest for durable background processing
+    await inngest.send({
+      name: 'research/processing.requested',
+      data: { jobId: job.id, userId: user.id, workflowId, researchParams },
+    });
 
     // Return job ID immediately
     return NextResponse.json({

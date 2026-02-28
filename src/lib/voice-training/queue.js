@@ -1,11 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { processVoiceTraining } from './processor';
-import {
-  notifyTrainingStarted,
-  notifyTrainingCompleted,
-  notifyTrainingFailed,
-  notifyTrainingRetrying
-} from './webhooks';
+import { inngest } from '@/lib/inngest/client';
 
 export async function queueVoiceTraining({
   channelId,
@@ -36,25 +30,11 @@ export async function queueVoiceTraining({
     throw error;
   }
 
-  // Trigger background processing
-  if (process.env.NODE_ENV === 'production') {
-    // In production, trigger Supabase Edge Function or external worker
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/process-voice-training`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ jobId: job.id })
-      });
-    } catch (error) {
-      console.error('Failed to trigger background processing:', error);
-    }
-  } else {
-    // In development, process immediately with a delay
-    setTimeout(() => processVoiceTrainingJob(job.id), 1000);
-  }
+  // Send event to Inngest for durable background processing
+  await inngest.send({
+    name: 'voice/training.requested',
+    data: { jobId: job.id, channelId, userId, metadata },
+  });
 
   return job.id;
 }

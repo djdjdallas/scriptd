@@ -99,9 +99,10 @@ export async function processVoiceTraining({
   channelId,
   userId: _userId,
   channelData,
-  isFree: _isFree = true // Always free
+  isFree: _isFree = true, // Always free
+  supabase: injectedSupabase
 }) {
-  const supabase = await createClient();
+  const supabase = injectedSupabase || await createClient();
   
   try {
     // Fetch channel videos for training data
