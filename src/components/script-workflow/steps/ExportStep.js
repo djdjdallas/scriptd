@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useWorkflow } from '../ScriptWorkflow';
 import { Download, FileText, FileJson, Copy, Check, Printer, Film, Music } from 'lucide-react';
 import { toast } from 'sonner';
+import posthog from 'posthog-js';
 import ContentIdeaBanner from '../ContentIdeaBanner';
 
 export default function ExportStep() {
@@ -52,6 +53,13 @@ export default function ExportStep() {
       window.URL.revokeObjectURL(url);
 
       markStepComplete(10);
+
+      posthog.capture('script_exported', {
+        export_format: format,
+        word_count: generatedScript.split(' ').length,
+        title: workflowData.title?.selected || 'Untitled',
+      });
+
       toast.success(`Exported as ${format.toUpperCase()}`);
     } catch (error) {
       toast.error('Failed to export script');

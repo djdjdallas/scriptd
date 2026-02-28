@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { analyzeContentWithAI } from '@/lib/ai/content-analysis';
 import { getChannelVideos } from '@/lib/youtube/channel';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 export async function POST(request) {
   try {
@@ -29,10 +30,21 @@ export async function POST(request) {
     
     // Get videos for analysis
     const videos = await getChannelVideos(channel.youtube_channel_id, 30);
-    
+
+    const analysisStartTime = Date.now();
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: user.id,
+      event: 'content_analysis_started',
+      properties: {
+        channel_id: channelId,
+        video_count: videos?.length || 0,
+      }
+    });
+
     // Perform AI analysis
     const analysis = await analyzeContentWithAI(videos);
-    
+
     // Store results if successful
     if (analysis.success) {
       await supabase
@@ -57,9 +69,34 @@ export async function POST(request) {
         });
     }
     
+    posthog.capture({
+      distinctId: user.id,
+      event: analysis.success ? 'content_analysis_completed' : 'content_analysis_failed',
+      properties: {
+        channel_id: channelId,
+        success: analysis.success,
+        video_count: videos?.length || 0,
+        tokens_used: analysis.tokensUsed || 0,
+        analysis_time_ms: Date.now() - analysisStartTime,
+      }
+    });
+
     return NextResponse.json(analysis);
   } catch (error) {
     apiLogger.error('Content analysis error', error);
+
+    const posthog = getPostHogClient();
+    if (user?.id) {
+      posthog.capture({
+        distinctId: user.id,
+        event: 'content_analysis_failed',
+        properties: {
+          channel_id: channelId,
+          error_message: error.message || 'Unknown error',
+        }
+      });
+    }
+
     return NextResponse.json(
       { error: 'Failed to analyze content' },
       { status: 500 }

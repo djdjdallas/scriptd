@@ -7,6 +7,7 @@ import { analyzeVoiceStyleAdvanced } from '@/lib/youtube/voice-analyzer-v2';
 import { getChannelVideos } from '@/lib/youtube/channel';
 import { getVideoTranscript } from '@/lib/youtube/video';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 export async function POST(request) {
   try {
@@ -45,6 +46,19 @@ export async function POST(request) {
 
     // NO CREDIT CHECK - Voice training is completely FREE
     // This is a core feature that helps users get started
+
+    const trainingStartTime = Date.now();
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: user.id,
+      event: 'voice_training_started',
+      properties: {
+        channel_id: channelId,
+        profile_name: profileName,
+        has_samples: !!(samples && samples.length > 0),
+        sample_count: samples?.length || 0,
+      }
+    });
 
     // Update channel status to queued first
     const updateData = {
@@ -388,6 +402,21 @@ export async function POST(request) {
         }
       });
 
+    posthog.capture({
+      distinctId: user.id,
+      event: 'voice_training_completed',
+      properties: {
+        channel_id: channelId,
+        profile_name: profileName,
+        profile_id: savedProfile.id,
+        sample_count: sampleCount,
+        transcript_source: transcriptsSource,
+        videos_analyzed: analyzedVideos.length,
+        transcript_failures: transcriptFailures.length,
+        training_time_ms: Date.now() - trainingStartTime,
+      }
+    });
+
     return NextResponse.json({
       success: true,
       profile: savedProfile,
@@ -397,6 +426,18 @@ export async function POST(request) {
 
   } catch (error) {
     apiLogger.error('Voice training error', error);
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: user?.id || 'unknown',
+      event: 'voice_training_failed',
+      properties: {
+        channel_id: channelId,
+        error_message: error.message || 'Unknown error',
+        training_time_ms: typeof trainingStartTime !== 'undefined' ? Date.now() - trainingStartTime : null,
+      }
+    });
+
     return NextResponse.json(
       { error: 'Failed to train voice profile' },
       { status: 500 }

@@ -11,6 +11,7 @@ import { CREDIT_COSTS, AI_MODELS, MODEL_TIERS, calculateScriptCost, TIER_ACCESS_
 import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
 import { hasAccessToModel, checkUpgradeRequirement, getTierDisplayName } from '@/lib/subscription-helpers';
 import { checkFeatureRateLimit } from '@/lib/api/rate-limit';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 // Helper function to map quality tiers to actual AI models (hidden from users)
 function getTierModel(tier) {
@@ -187,10 +188,31 @@ export const POST = createApiHandler(async (req) => {
     }
   }
 
+  const generationStartTime = Date.now();
+
+  // Track script generation started
+  const posthog = getPostHogClient();
+  posthog.capture({
+    distinctId: user.id,
+    event: 'script_generation_started',
+    properties: {
+      generation_source: 'direct',
+      script_type: validated.type,
+      script_length: validated.length,
+      tier: selectedTier,
+      model: actualModel,
+      tone: validated.tone,
+      has_voice_profile: !!validated.voiceProfileId,
+      has_channel: !!validated.channelId,
+      fact_checking_enabled: validated.enableFactChecking === true,
+      subscription_tier: userTier,
+    }
+  });
+
   try {
     // Generate script using AI (select provider based on actual model)
     const ai = getAIService(actualModel);
-    
+
     const prompt = generateScript({
       title: validated.title,
       topic: validated.topic, // Pass topic for better context
@@ -321,6 +343,27 @@ export const POST = createApiHandler(async (req) => {
         });
     }
 
+    // Track script generation completed
+    posthog.capture({
+      distinctId: user.id,
+      event: 'script_generation_completed',
+      properties: {
+        generation_source: 'direct',
+        script_id: script.id,
+        script_type: validated.type,
+        script_length: validated.length,
+        tier: selectedTier,
+        model: actualModel,
+        credits_used: creditDeduction.bypassed ? 0 : creditCost,
+        credits_bypassed: !!creditDeduction.bypassed,
+        generation_time_ms: Date.now() - generationStartTime,
+        word_count: scriptContent.split(/\s+/).length,
+        has_voice_profile: !!validated.voiceProfileId,
+        fact_checking_enabled: validated.enableFactChecking === true,
+        subscription_tier: userTier,
+      }
+    });
+
     return NextResponse.json({
       scriptId: script.id, // Frontend expects scriptId
       script: {
@@ -346,10 +389,27 @@ export const POST = createApiHandler(async (req) => {
     });
 
   } catch (error) {
+    // Track script generation failed
+    posthog.capture({
+      distinctId: user.id,
+      event: 'script_generation_failed',
+      properties: {
+        generation_source: 'direct',
+        script_type: validated.type,
+        script_length: validated.length,
+        tier: selectedTier,
+        model: actualModel,
+        error_message: error.message || 'Unknown error',
+        error_type: error instanceof ApiError ? 'api_error' : 'unexpected_error',
+        generation_time_ms: Date.now() - generationStartTime,
+        subscription_tier: userTier,
+      }
+    });
+
     if (error instanceof ApiError) {
       throw error;
     }
-    
+
     // Check for specific error types
     let errorMessage = 'Failed to generate script. Please try again.';
     if (error.message?.includes('ANTHROPIC_API_KEY')) {
@@ -363,7 +423,7 @@ export const POST = createApiHandler(async (req) => {
     } else if (error.message) {
       errorMessage = error.message;
     }
-    
+
     throw new ApiError(errorMessage, 500);
   }
 });

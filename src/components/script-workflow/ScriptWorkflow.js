@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, createContext, useContext, useRef } f
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import posthog from 'posthog-js';
 import WorkflowSidebar from './WorkflowSidebar';
 import WorkflowHeader from './WorkflowHeader';
 
@@ -231,7 +232,17 @@ export default function ScriptWorkflow({ workflowId = null, initialTemplateData 
 
       console.log('[ScriptWorkflow] Workflow created successfully:', data);
       console.log('[ScriptWorkflow] Redirecting to:', `/scripts/create/${data.id}`);
-      
+
+      // Track workflow started
+      posthog.capture('script_workflow_started', {
+        workflow_id: data.id,
+        source: contentIdeaData ? 'content_idea' : templateData ? 'template' : 'blank',
+        has_template: !!templateData,
+        has_content_idea: !!contentIdeaData,
+        template_type: templateData?.templateType || null,
+        topic: contentIdeaData?.contentIdeaTitle || templateData?.topic || null,
+      });
+
       // Use replace instead of push to avoid back button issues
       router.replace(`/scripts/create/${data.id}`);
     } catch (error) {
@@ -290,6 +301,15 @@ export default function ScriptWorkflow({ workflowId = null, initialTemplateData 
   const markStepComplete = (stepId) => {
     if (!completedSteps.includes(stepId)) {
       setCompletedSteps(prev => [...prev, stepId]);
+
+      const stepInfo = WORKFLOW_STEPS.find(s => s.id === stepId);
+      posthog.capture('script_workflow_step_completed', {
+        workflow_id: workflowId,
+        step_id: stepId,
+        step_name: stepInfo?.name || `step_${stepId}`,
+        steps_completed: completedSteps.length + 1,
+        total_steps: WORKFLOW_STEPS.length,
+      });
     }
   };
 

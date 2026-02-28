@@ -7,6 +7,7 @@ import { FileText, Sparkles, ScrollText, Copy, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { MODEL_TIERS } from "@/lib/constants";
+import posthog from "posthog-js";
 import ContentIdeaBanner from "../ContentIdeaBanner";
 
 // Helper function to normalize model names from old to new format

@@ -15,6 +15,7 @@ import {
 } from '@/lib/scriptGenerationConfig';
 import { checkFeatureRateLimit } from '@/lib/api/rate-limit';
 import { MODEL_TIERS } from '@/lib/constants';
+import { getPostHogClient } from '@/lib/posthog-server';
 import { expandShortScript } from '@/lib/script-generation/expansion-handler';
 import { generateContentPlan, applyContentPlan } from '@/lib/script-generation/content-planner';
 import { generateComprehensiveOutline, formatOutlineForPrompt } from '@/lib/script-generation/outline-generator';
@@ -121,6 +122,31 @@ export async function POST(request) {
       targetDuration, // Add targetDuration from summary
       workflowId // Add workflow ID to link the script
     } = await request.json();
+
+    const generationStartTime = Date.now();
+    const posthog = getPostHogClient();
+
+    // Track script generation started
+    posthog.capture({
+      distinctId: user.id,
+      event: 'script_generation_started',
+      properties: {
+        generation_source: 'workflow',
+        script_type: type,
+        model,
+        workflow_id: workflowId || null,
+        target_duration_seconds: targetDuration || null,
+        has_voice_profile: !!voiceProfile,
+        has_research: !!(research?.sources?.length),
+        research_source_count: research?.sources?.length || 0,
+        has_frame: !!frame,
+        has_hook: !!hook,
+        has_content_points: !!(contentPoints?.points?.length),
+        content_point_count: contentPoints?.points?.length || 0,
+        has_sponsor: !!sponsor,
+        tone: tone || 'professional',
+      }
+    });
 
     // Format JSON audience data to prevent token limit errors
     // If targetAudience is a large JSON object, convert it to token-efficient text format
@@ -419,6 +445,21 @@ export async function POST(request) {
       );
 
       if (!validation.isValid) {
+        // Track validation failure
+        posthog.capture({
+          distinctId: user.id,
+          event: 'script_generation_failed',
+          properties: {
+            generation_source: 'workflow',
+            failure_reason: 'insufficient_research',
+            error_message: validation.errors.join('; '),
+            research_source_count: research.sources.length,
+            substantive_source_count: validation.stats.substantiveSources,
+            workflow_id: workflowId || null,
+            generation_time_ms: Date.now() - generationStartTime,
+          }
+        });
+
         // Return error WITHOUT charging credits
         return NextResponse.json({
           error: 'Insufficient content for script generation',
@@ -1500,22 +1541,27 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
           }
         }
 
-        // Track script generation in PostHog
+        // Track script generation completed in PostHog
         try {
-          const { getPostHogClient } = await import('@/lib/posthog-server');
-          const posthog = getPostHogClient();
           posthog.capture({
             distinctId: user.id,
-            event: 'script_generated',
+            event: 'script_generation_completed',
             properties: {
+              generation_source: 'workflow',
+              script_id: newScript?.id || null,
               script_type: type,
               duration_minutes: durationMinutes,
               model,
               credits_used: creditsUsed,
+              generation_time_ms: Date.now() - generationStartTime,
+              word_count: script.split(/\s+/).length,
+              was_chunked: needsChunking,
+              has_voice_profile: !!voiceProfile,
+              has_sponsor: !!sponsor,
+              workflow_id: workflowId || null,
               subscription_tier: userTier,
             }
           });
-          await posthog.shutdown();
         } catch (e) {
           // Don't block generation for analytics
         }
@@ -1545,6 +1591,24 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
     }
   } catch (error) {
     apiLogger.error('Script generation error', error);
+
+    // Track script generation failed
+    try {
+      const posthog = getPostHogClient();
+      posthog.capture({
+        distinctId: user?.id || 'unknown',
+        event: 'script_generation_failed',
+        properties: {
+          generation_source: 'workflow',
+          error_message: error.message || 'Unknown error',
+          generation_time_ms: typeof generationStartTime !== 'undefined' ? Date.now() - generationStartTime : null,
+          workflow_id: typeof workflowId !== 'undefined' ? workflowId : null,
+        }
+      });
+    } catch (e) {
+      // Don't block error response for analytics
+    }
+
     return NextResponse.json(
       { error: 'Failed to generate script' },
       { status: 500 }

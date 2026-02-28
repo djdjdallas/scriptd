@@ -7,6 +7,7 @@ import { getAIService } from '@/lib/ai';
 import { CREDIT_COSTS } from '@/lib/constants';
 import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 // POST /api/research/chat
 export const POST = createApiHandler(async (req) => {
@@ -168,6 +169,21 @@ Be concise but thorough. Cite sources when referencing specific information.`;
     const urlRegex = /https?:\/\/[^\s]+/g;
     const suggestedUrls = response.text.match(urlRegex) || [];
 
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: user.id,
+      event: 'research_chat_message_sent',
+      properties: {
+        session_id: researchSession.id,
+        message_length: message.length,
+        context_source_count: context.length,
+        credits_used: creditDeduction.bypassed ? 0 : creditCost,
+        credits_bypassed: !!creditDeduction.bypassed,
+        response_length: response.text?.length || 0,
+        suggested_urls_count: suggestedUrls.length,
+      }
+    });
+
     return {
       sessionId: researchSession.id,
       messageId: aiMessage.id,
@@ -180,6 +196,16 @@ Be concise but thorough. Cite sources when referencing specific information.`;
 
   } catch (error) {
     apiLogger.error('Research chat error', error);
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: user.id,
+      event: 'research_chat_failed',
+      properties: {
+        error_message: error.message || 'Unknown error',
+      }
+    });
+
     throw new ApiError('Failed to process research chat', 500);
   }
 });

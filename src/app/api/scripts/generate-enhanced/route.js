@@ -72,11 +72,33 @@ export const POST = createApiHandler(async (req) => {
 
   // Credit validation
   const creditValidation = await validateCreditsWithBypass(user.id, 'SCRIPT_GENERATION', creditCost);
-  
+
   if (!creditValidation.valid) {
     const message = creditValidation.error || `Insufficient credits. You need ${creditCost} credits.`;
     throw new ApiError(message, 402);
   }
+
+  const generationStartTime = Date.now();
+
+  // Track script generation started
+  const posthog = getPostHogClient();
+  posthog.capture({
+    distinctId: user.id,
+    event: 'script_generation_started',
+    properties: {
+      generation_source: 'enhanced',
+      script_type: validated.type,
+      script_length: validated.length,
+      model: validated.model,
+      platform: validated.platform,
+      tone: validated.tone,
+      has_voice_profile: !!validated.voiceProfileId,
+      has_channel: !!validated.channelId,
+      use_chain_prompting: !!validated.useChainPrompting,
+      include_prediction: !!validated.includePrediction,
+      subscription_tier: userTier,
+    }
+  });
 
   // Get channel context if provided
   let channelContext = null;
@@ -307,12 +329,12 @@ export const POST = createApiHandler(async (req) => {
         });
     }
 
-    // Track script generation event in PostHog
-    const posthog = getPostHogClient();
+    // Track script generation completed in PostHog
     posthog.capture({
       distinctId: user.id,
-      event: 'script_generated',
+      event: 'script_generation_completed',
       properties: {
+        generation_source: 'enhanced',
         script_id: script.id,
         script_type: validated.type,
         script_length: validated.length,
@@ -320,13 +342,15 @@ export const POST = createApiHandler(async (req) => {
         platform: validated.platform,
         model: validated.model,
         credits_used: creditDeduction.bypassed ? 0 : creditCost,
-        credits_bypassed: creditDeduction.bypassed,
-        used_voice_profile: !!validated.voiceProfileId,
-        used_chain_prompting: validated.useChainPrompting,
+        credits_bypassed: !!creditDeduction.bypassed,
+        generation_time_ms: Date.now() - generationStartTime,
+        word_count: finalScript.split(/\s+/).length,
+        has_voice_profile: !!validated.voiceProfileId,
+        used_chain_prompting: !!validated.useChainPrompting,
+        has_performance_prediction: !!performancePrediction,
         subscription_tier: userTier,
       }
     });
-    await posthog.shutdown();
 
     return NextResponse.json({
       scriptId: script.id,
@@ -355,10 +379,27 @@ export const POST = createApiHandler(async (req) => {
   } catch (error) {
     apiLogger.error('Enhanced script generation error', error);
 
+    // Track script generation failed
+    posthog.capture({
+      distinctId: user.id,
+      event: 'script_generation_failed',
+      properties: {
+        generation_source: 'enhanced',
+        script_type: validated.type,
+        script_length: validated.length,
+        model: validated.model,
+        platform: validated.platform,
+        error_message: error.message || 'Unknown error',
+        error_type: error instanceof ApiError ? 'api_error' : 'unexpected_error',
+        generation_time_ms: Date.now() - generationStartTime,
+        subscription_tier: userTier,
+      }
+    });
+
     if (error instanceof ApiError) {
       throw error;
     }
-    
+
     let errorMessage = 'Failed to generate enhanced script. Please try again.';
     if (error.message?.includes('API key')) {
       errorMessage = `API configuration error: ${error.message}`;
@@ -367,7 +408,7 @@ export const POST = createApiHandler(async (req) => {
     } else if (error.message) {
       errorMessage = error.message;
     }
-    
+
     throw new ApiError(errorMessage, 500);
   }
 });

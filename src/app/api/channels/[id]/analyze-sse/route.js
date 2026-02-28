@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getChannelById, getChannelVideos } from '@/lib/youtube/channel';
 import { analyzeChannelWithClaude, generateChannelVoiceProfile } from '@/lib/ai/single-channel-analyzer';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -44,6 +45,18 @@ export async function GET(request, { params }) {
           controller.close();
           return;
         }
+
+        const analysisStartTime = Date.now();
+        const posthog = getPostHogClient();
+        posthog.capture({
+          distinctId: user.id,
+          event: 'channel_analysis_started',
+          properties: {
+            channel_id: id,
+            channel_name: dbChannel.name,
+            youtube_channel_id: dbChannel.youtube_channel_id,
+          }
+        });
 
         // Send initial progress
         sendEvent('progress', {
@@ -239,6 +252,22 @@ export async function GET(request, { params }) {
           message: 'Comprehensive AI analysis completed successfully'
         });
 
+        posthog.capture({
+          distinctId: user.id,
+          event: 'channel_analysis_completed',
+          properties: {
+            channel_id: id,
+            channel_name: dbChannel.name,
+            videos_analyzed: videos.length,
+            performance_score: formattedAnalytics.performance.performanceScore,
+            growth_potential: formattedAnalytics.performance.growthPotential,
+            subscriber_count: formattedAnalytics.channel.subscriberCount,
+            has_voice_profile: voiceProfileResult.success,
+            analysis_time_ms: Date.now() - analysisStartTime,
+            analysis_id: savedAnalysis?.id,
+          }
+        });
+
         sendEvent('progress', {
           stage: 'done',
           message: 'Analysis complete!',
@@ -247,6 +276,20 @@ export async function GET(request, { params }) {
 
       } catch (error) {
         apiLogger.error('SSE Analysis error', error);
+
+        const posthog = getPostHogClient();
+        if (user?.id) {
+          posthog.capture({
+            distinctId: user.id,
+            event: 'channel_analysis_failed',
+            properties: {
+              channel_id: id,
+              error_message: error.message || 'Unknown error',
+              analysis_time_ms: typeof analysisStartTime !== 'undefined' ? Date.now() - analysisStartTime : null,
+            }
+          });
+        }
+
         sendEvent('error', {
           message: error.message || 'Analysis failed',
           details: error.toString()
