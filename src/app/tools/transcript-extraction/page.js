@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+import ToolResultsCTA from '@/components/tools/ToolResultsCTA';
 
 export default function TranscriptExtractionPage() {
   const { toast } = useToast();
@@ -264,6 +265,11 @@ export default function TranscriptExtractionPage() {
           </>
         )}
 
+        {/* Post-generation CTA */}
+        {transcript && (
+          <ToolResultsCTA sourceTool="transcript-extraction" />
+        )}
+
         {/* Features */}
         <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
@@ -364,22 +370,6 @@ export default function TranscriptExtractionPage() {
           </CardContent>
         </Card>
 
-        {/* CTA */}
-        <Card className="bg-gradient-to-r from-violet-500/50 to-cyan-500/50 border-violet-500/30">
-          <CardContent className="pt-6 text-center">
-            <h3 className="text-lg font-semibold font-display mb-2 text-white">
-              Ready to Create Your Own Viral Scripts?
-            </h3>
-            <p className="text-gray-400 mb-4">
-              Use the insights from transcript research to generate scripts in your unique voice
-            </p>
-            <Button asChild className="bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700">
-              <Link href="/signup">
-                Get Started Free
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { SCRIPT_TYPES } from '@/lib/constants';
+import ToolResultsCTA from '@/components/tools/ToolResultsCTA';
 
 const HOOK_STYLES = [
   {
@@ -292,6 +293,11 @@ export default function HookGeneratorPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Post-generation CTA */}
+        {hooks.length > 0 && (
+          <ToolResultsCTA sourceTool="hook-generator" />
         )}
 
         {/* Best Practices */}

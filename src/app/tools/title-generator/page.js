@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+import ToolResultsCTA from '@/components/tools/ToolResultsCTA';
 
 const TITLE_STYLES = [
   { id: 'how-to', label: 'How-To', icon: Target, example: 'How to...' },
@@ -273,6 +274,11 @@ export default function TitleGeneratorPage() {
           </Card>
         )}
 
+        {/* Post-generation CTA */}
+        {hasGenerated && titles.length > 0 && (
+          <ToolResultsCTA sourceTool="title-generator" />
+        )}
+
         {/* Tips */}
         <Card className="bg-white/[0.04] border-white/5">
           <CardHeader>
@@ -317,22 +323,6 @@ export default function TitleGeneratorPage() {
           </CardContent>
         </Card>
 
-        {/* CTA */}
-        <Card className="bg-gradient-to-r from-violet-500/50 to-cyan-500/50 border-violet-500/30">
-          <CardContent className="pt-6 text-center">
-            <h3 className="text-lg font-semibold mb-2 text-white">
-              Want to Generate Complete Scripts?
-            </h3>
-            <p className="text-gray-400 mb-4">
-              Sign up for free and get access to our full AI script generator
-            </p>
-            <Button asChild className="bg-gradient-to-r from-violet-700 to-cyan-700 hover:from-violet-700 hover:to-cyan-700">
-              <Link href="/signup">
-                Get Started Free
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

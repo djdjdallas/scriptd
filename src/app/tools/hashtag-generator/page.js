@@ -18,6 +18,7 @@ import {
   Info
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import ToolResultsCTA from '@/components/tools/ToolResultsCTA';
 
 export default function HashtagGeneratorPage() {
   const { toast } = useToast();
@@ -332,6 +333,11 @@ export default function HashtagGeneratorPage() {
               </CardContent>
             </Card>
           </>
+        )}
+
+        {/* Post-generation CTA */}
+        {hashtags.length > 0 && (
+          <ToolResultsCTA sourceTool="hashtag-generator" />
         )}
 
         {/* Best Practices */}

@@ -20,6 +20,7 @@ import {
   Eye
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import ToolResultsCTA from '@/components/tools/ToolResultsCTA';
 
 const THUMBNAIL_STYLES = [
   { id: 'minimal', label: 'Minimal', description: 'Clean and simple design' },
@@ -306,6 +307,11 @@ export default function ThumbnailIdeasPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Post-generation CTA */}
+        {ideas.length > 0 && (
+          <ToolResultsCTA sourceTool="thumbnail-ideas" />
         )}
 
         {/* Design Tips */}

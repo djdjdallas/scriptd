@@ -17,6 +17,7 @@ import {
   Target
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import ToolResultsCTA from '@/components/tools/ToolResultsCTA';
 
 const CONTENT_CATEGORIES = [
   { value: 'tech', label: 'Technology' },
@@ -261,6 +262,11 @@ export default function IdeaGeneratorPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Post-generation CTA */}
+        {ideas.length > 0 && (
+          <ToolResultsCTA sourceTool="idea-generator" />
         )}
 
         {/* Tips */}
