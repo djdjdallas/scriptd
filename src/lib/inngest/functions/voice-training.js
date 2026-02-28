@@ -66,6 +66,11 @@ export const voiceTrainingFunction = inngest.createFunction(
         .eq('id', jobId)
         .single();
 
+      // Skip if already completed
+      if (job?.status === 'completed') {
+        return job?.channels;
+      }
+
       await supabase
         .from('voice_training_jobs')
         .update({

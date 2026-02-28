@@ -217,12 +217,13 @@ export async function GET(request, { params }) {
         }
 
         // Update channel
+        const deepVoiceProfile = voiceProfileResult.success ? voiceProfileResult.voiceProfile : {};
         await supabase
           .from('channels')
           .update({
             last_analyzed_at: new Date().toISOString(),
             audience_description: formatAudienceDescription(analysis.audienceProfile),
-            voice_profile: voiceProfileResult.success ? voiceProfileResult.voiceProfile : {},
+            voice_profile: deepVoiceProfile,
             analytics_summary: {
               performance_score: formattedAnalytics.performance.performanceScore,
               growth_potential: formattedAnalytics.performance.growthPotential,
@@ -233,6 +234,28 @@ export async function GET(request, { params }) {
           })
           .eq('id', id)
           .eq('user_id', user.id);
+
+        // Sync deep voice profile to voice_profiles table so script generation
+        // reads the deep profile instead of the stale basic one
+        if (voiceProfileResult.success) {
+          await supabase
+            .from('voice_profiles')
+            .upsert({
+              channel_id: id,
+              profile_name: `${dbChannel.name} Voice`,
+              training_data: {
+                source: 'deep_analysis',
+                videosAnalyzed: videos.length,
+                analyzedAt: new Date().toISOString(),
+                basedOnRealData: voiceProfileResult.basedOnRealData || false,
+              },
+              parameters: deepVoiceProfile,
+              is_active: true,
+              updated_at: new Date().toISOString(),
+            }, {
+              onConflict: 'channel_id',
+            });
+        }
 
         // Send complete event with all data
         sendEvent('complete', {

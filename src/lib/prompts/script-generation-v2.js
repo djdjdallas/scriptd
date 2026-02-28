@@ -1,13 +1,14 @@
 // Enhanced Script Generation v2 - 2025 YouTube Optimization
 // Incorporates latest research on retention, hooks, and AI prompt engineering
 
-import { 
-  hookFormulas, 
-  generateOptimizedHook, 
+import {
+  hookFormulas,
+  generateOptimizedHook,
   generatePVSSStructure,
   generateRetentionCheckpoints,
-  patternInterrupts 
+  patternInterrupts
 } from './enhanced-hooks';
+import { buildVoicePromptInjection } from '@/lib/voice-training/normalizer';
 
 // Advanced tone and voice profiles with specific characteristics
 export const advancedToneProfiles = {
@@ -199,7 +200,7 @@ You write in a ${tone} tone that perfectly matches this profile:
 You're creating content for ${targetAudience} on ${platform}, optimized for ${videoFormat} format.
 
 ${channelContext ? `Channel Context: ${channelContext}` : ''}
-${voiceProfile ? `Voice Profile: ${JSON.stringify(voiceProfile)}` : ''}
+${voiceProfile ? buildVoicePromptInjection(voiceProfile, channelContext?.split('\n')?.[0]?.replace('Channel: ', '') || '') : ''}
 
 CRITICAL SUCCESS METRICS FOR 2025:
 - 30-second retention rate must exceed 70%

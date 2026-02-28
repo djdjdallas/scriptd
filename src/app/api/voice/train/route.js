@@ -47,6 +47,20 @@ export async function POST(request) {
     // NO CREDIT CHECK - Voice training is completely FREE
     // This is a core feature that helps users get started
 
+    // Check if training is already in progress (via Inngest or another request)
+    const { data: channelStatus } = await supabase
+      .from('channels')
+      .select('voice_training_status')
+      .eq('id', channelId)
+      .single();
+
+    if (channelStatus?.voice_training_status === 'in_progress') {
+      return NextResponse.json(
+        { error: 'Voice training is already in progress for this channel' },
+        { status: 409 }
+      );
+    }
+
     const trainingStartTime = Date.now();
     const posthog = getPostHogClient();
     posthog.capture({
@@ -350,10 +364,10 @@ export async function POST(request) {
       // Column might not exist, continue without error
     }
 
-    // Save voice profile - simplified insert without is_active
+    // Save voice profile - upsert to handle existing profiles for this channel
     const { data: savedProfile, error: saveError } = await supabase
       .from('voice_profiles')
-      .insert(voiceProfile)
+      .upsert(voiceProfile, { onConflict: 'channel_id' })
       .select('id, channel_id, profile_name, created_at')
       .single();
 
@@ -366,9 +380,11 @@ export async function POST(request) {
     }
 
     // Update to 100% and completed (with fallback)
+    // Store the actual profile parameters (not just the ID) so downstream
+    // consumers can read voice_profile directly from the channels table
     const finalUpdate = {
       voice_training_status: 'completed',
-      voice_profile: savedProfile.id,
+      voice_profile: voiceProfile.parameters,
       voice_training_error: null
     };
     

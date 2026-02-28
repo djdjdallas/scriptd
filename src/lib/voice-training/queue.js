@@ -55,7 +55,21 @@ export async function processVoiceTrainingJob(jobId) {
       return;
     }
 
-    if (job.status !== 'queued') {
+    // Allow processing of 'queued' jobs normally.
+    // Also allow retrying 'in_progress' jobs that are stuck (started > 10 min ago).
+    if (job.status === 'completed') {
+      return;
+    }
+    if (job.status === 'in_progress') {
+      const startedAt = job.started_at ? new Date(job.started_at).getTime() : 0;
+      const stuckThresholdMs = 10 * 60 * 1000; // 10 minutes
+      if (Date.now() - startedAt < stuckThresholdMs) {
+        // Job is still actively processing, don't interfere
+        return;
+      }
+      console.warn(`[Voice Training] Recovering stuck job ${jobId} (in_progress for >10 min)`);
+    }
+    if (job.status !== 'queued' && job.status !== 'in_progress' && job.status !== 'failed') {
       return;
     }
 
@@ -110,20 +124,8 @@ export async function processVoiceTrainingJob(jobId) {
       })
       .eq('id', job.channel_id);
 
-    // Log the FREE training event (0 credits)
-    await supabase
-      .from('credits_transactions')
-      .insert({
-        user_id: job.user_id,
-        amount: 0, // FREE - no credits charged
-        type: 'usage',
-        description: 'Free voice training on channel connection',
-        metadata: {
-          feature: 'voice_training',
-          channelId: job.channel_id,
-          isFree: true
-        }
-      });
+    // Credit logging is handled by the Inngest function (save-results step)
+    // to avoid duplicate 0-credit transaction entries.
 
     // Webhook: Training completed
     await notifyTrainingCompleted(job.channel_id, {
@@ -249,8 +251,13 @@ export async function checkAutoTrainEligibility(userId, channelId) {
     }
   }
 
-  // Don't retrain if already completed
+  // Don't retrain if already completed (but allow failed to retry)
   if (channel.voice_training_status === 'completed') {
+    return false;
+  }
+
+  // Don't auto-retrain if currently in progress
+  if (channel.voice_training_status === 'in_progress') {
     return false;
   }
 

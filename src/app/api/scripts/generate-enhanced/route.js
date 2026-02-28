@@ -115,18 +115,47 @@ export const POST = createApiHandler(async (req) => {
     }
   }
 
-  // Get voice profile if provided
+  // Get voice profile if provided - check voice_profiles table first,
+  // then fall back to channels.voice_profile for deep analysis data
   let voiceProfile = null;
   if (validated.voiceProfileId) {
     const { data: profile } = await supabase
       .from('voice_profiles')
-      .select('profile_data')
+      .select('parameters, training_data, channel_id')
       .eq('id', validated.voiceProfileId)
-      .eq('user_id', user.id)
       .single();
 
     if (profile) {
-      voiceProfile = profile.profile_data;
+      voiceProfile = profile.parameters;
+    }
+
+    // If the voice_profiles entry is a basic profile but the channel has a
+    // deep analysis profile, prefer the deep one
+    if (profile?.channel_id) {
+      const isBasicProfile = voiceProfile && !voiceProfile.linguisticFingerprints && !Array.isArray(voiceProfile.tone);
+      if (isBasicProfile || !voiceProfile) {
+        const { data: channel } = await supabase
+          .from('channels')
+          .select('voice_profile')
+          .eq('id', profile.channel_id)
+          .single();
+
+        if (channel?.voice_profile && (channel.voice_profile.linguisticFingerprints || Array.isArray(channel.voice_profile.tone))) {
+          voiceProfile = channel.voice_profile;
+        }
+      }
+    }
+  } else if (validated.channelId) {
+    // No voice profile ID but channel ID provided - check channel's voice_profile directly
+    const { data: channel } = await supabase
+      .from('channels')
+      .select('voice_profile')
+      .eq('id', validated.channelId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (channel?.voice_profile && Object.keys(channel.voice_profile).length > 0) {
+      voiceProfile = channel.voice_profile;
     }
   }
 

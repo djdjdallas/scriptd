@@ -104,7 +104,10 @@ export async function POST(request) {
     // 3. Create a job in a queue for ML processing
     // 4. Store the voice profile in the database
 
-    // Create voice profile
+    // Create voice profile with status 'trained' immediately.
+    // The actual training happens via Inngest background job (triggered by
+    // channel connect) or the /api/voice/train route. This POST endpoint
+    // creates a placeholder profile that will be overwritten by real training.
     const { data: profile, error } = await supabase
       .from('voice_profiles')
       .insert({
@@ -112,14 +115,13 @@ export async function POST(request) {
         profile_name: profileName,
         training_data: {
           sampleCount: samples?.length || 0,
-          description: description || ''
+          description: description || '',
+          source: 'manual_create',
         },
         parameters: {
-          accuracy: Math.floor(Math.random() * 20) + 80,
-          pitch: Math.random() * 2 - 1,
-          tone: Math.random() * 2 - 1,
-          speed: Math.random() * 0.5 + 0.75,
-          status: 'training'
+          formality: 'balanced',
+          enthusiasm: 'medium',
+          status: 'trained',
         }
       })
       .select()
@@ -129,19 +131,6 @@ export async function POST(request) {
       apiLogger.error('Error creating voice profile', error);
       return NextResponse.json({ error: 'Failed to create voice profile' }, { status: 500 });
     }
-
-    // Update status to trained after a short delay (in production, this would be done by a background job)
-    setTimeout(async () => {
-      await supabase
-        .from('voice_profiles')
-        .update({ 
-          parameters: {
-            ...profile.parameters,
-            status: 'trained'
-          }
-        })
-        .eq('id', profile.id);
-    }, 5000); // 5 seconds for demo
 
     return NextResponse.json({
       success: true,
