@@ -8,7 +8,7 @@ import {
   generateRetentionCheckpoints,
   patternInterrupts
 } from './enhanced-hooks';
-import { buildVoicePromptInjection } from '@/lib/voice-training/normalizer';
+import { buildVoicePromptInjection, buildPerformanceWeightedInjection } from '@/lib/voice-training/normalizer';
 
 // Advanced tone and voice profiles with specific characteristics
 export const advancedToneProfiles = {
@@ -200,7 +200,11 @@ You write in a ${tone} tone that perfectly matches this profile:
 You're creating content for ${targetAudience} on ${platform}, optimized for ${videoFormat} format.
 
 ${channelContext ? `Channel Context: ${channelContext}` : ''}
-${voiceProfile ? buildVoicePromptInjection(voiceProfile, channelContext?.split('\n')?.[0]?.replace('Channel: ', '') || '') : ''}
+${voiceProfile ? (
+  voiceProfile.performance
+    ? buildPerformanceWeightedInjection(voiceProfile, channelContext?.split('\n')?.[0]?.replace('Channel: ', '') || '').weighted
+    : buildVoicePromptInjection(voiceProfile, channelContext?.split('\n')?.[0]?.replace('Channel: ', '') || '')
+) : ''}
 
 CRITICAL SUCCESS METRICS FOR 2025:
 - 30-second retention rate must exceed 70%

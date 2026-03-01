@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { computeVoiceConfidenceScore } from '@/lib/voice-training/confidence';
 
 export async function GET(request) {
   try {
@@ -54,11 +55,17 @@ export async function GET(request) {
     }
 
     // Transform data for frontend compatibility
-    const transformedProfiles = (profiles || []).map(profile => ({
-      ...profile,
-      status: profile.training_data?.status || profile.parameters?.status || 'trained',
-      accuracy: profile.parameters?.accuracy || 85
-    }));
+    const transformedProfiles = (profiles || []).map(profile => {
+      const confidence = computeVoiceConfidenceScore(profile.parameters);
+      return {
+        ...profile,
+        status: profile.parameters?.isPlaceholder
+          ? 'training_pending'
+          : (profile.training_data?.status || profile.parameters?.status || 'trained'),
+        accuracy: confidence.score,
+        confidence,
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -121,7 +128,8 @@ export async function POST(request) {
         parameters: {
           formality: 'balanced',
           enthusiasm: 'medium',
-          status: 'trained',
+          status: 'training_pending',
+          isPlaceholder: true,
         }
       })
       .select()

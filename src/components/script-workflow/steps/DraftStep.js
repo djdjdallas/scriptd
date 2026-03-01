@@ -458,6 +458,17 @@ export default function DraftStep() {
           };
         }
         console.error("Script generation error:", errorData);
+
+        // Handle voice profile still training (409 Conflict)
+        if (response.status === 409) {
+          toast.info("Your voice profile is being built. This takes 2-3 minutes for your first channel.", {
+            duration: 6000,
+          });
+          setIsGenerating(false);
+          setGenerationType("");
+          return;
+        }
+
         throw new Error(
           errorData.error || `Failed to generate script: ${response.statusText}`
         );

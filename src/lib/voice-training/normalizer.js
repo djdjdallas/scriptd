@@ -272,3 +272,119 @@ export function buildVoicePromptInjection(profile, channelName = '') {
 
   return sections.join('\n');
 }
+
+/**
+ * Base weights for voice constraint categories.
+ * Higher weight = more impactful on script quality.
+ */
+const CATEGORY_WEIGHTS = {
+  hooks: 1.0,
+  openings: 0.9,
+  transitions: 0.8,
+  emotional: 0.7,
+  closings: 0.6,
+  pacing: 0.5,
+  engagement: 0.5,
+  narrative: 0.4,
+  technical: 0.3,
+};
+
+/**
+ * Build a performance-weighted voice injection that selects the top 5
+ * highest-impact constraints instead of dumping all data as soft suggestions.
+ *
+ * @param {Object} profile - Raw or normalized voice profile
+ * @param {string} channelName - Channel name for context
+ * @returns {{ weighted: string, full: string, constraints: Array }}
+ */
+export function buildPerformanceWeightedInjection(profile, channelName = '') {
+  const normalized = profile?.metadata?.normalizedAt ? profile : normalizeVoiceProfile(profile);
+  if (!normalized) {
+    return { weighted: '', full: '', constraints: [] };
+  }
+
+  const performance = normalized.performance;
+  const lf = normalized.linguisticFingerprints || {};
+
+  // Build flat constraint array
+  const constraints = [];
+
+  const addConstraint = (category, instruction, reason) => {
+    if (!instruction) return;
+    let weight = CATEGORY_WEIGHTS[category] || 0.3;
+
+    // Boost weight for categories that correlate with high performance
+    if (performance?.patterns?.[category]?.performanceImpact === 'positive') {
+      weight *= 1.3;
+    }
+
+    constraints.push({ category, weight, instruction, reason });
+  };
+
+  // Hooks
+  if (normalized.hooks) {
+    addConstraint('hooks', `Open with a hook style: ${normalized.hooks}`, 'correlated with high-performing videos');
+  }
+
+  // Openings
+  if (lf.openingPatterns?.length > 0) {
+    addConstraint('openings', `Use one of these opening patterns: "${lf.openingPatterns[0]}"`, 'correlated with high-performing videos');
+  } else if (normalized.greetings?.length > 0) {
+    addConstraint('openings', `Start with this greeting style: "${normalized.greetings[0]}"`, 'correlated with high-performing videos');
+  }
+
+  // Transitions
+  if (lf.transitionPhrases?.length > 0) {
+    addConstraint('transitions', `Use these transition phrases between sections: ${lf.transitionPhrases.slice(0, 3).map(p => `"${p}"`).join(', ')}`, 'correlated with high-performing videos');
+  }
+
+  // Emotional dynamics
+  if (normalized.emotionalDynamics?.energyCurve?.length > 0) {
+    const curve = normalized.emotionalDynamics.energyCurve;
+    addConstraint('emotional', `Follow this emotional progression: ${curve.join(' → ')}`, 'correlated with high-performing videos');
+  } else if (normalized.emotionalDynamics?.passionTriggers?.length > 0) {
+    addConstraint('emotional', `Elevate energy when discussing: ${normalized.emotionalDynamics.passionTriggers.join(', ')}`, 'correlated with high-performing videos');
+  }
+
+  // Closings
+  if (lf.closingPatterns?.length > 0) {
+    addConstraint('closings', `End with this closing style: "${lf.closingPatterns[0]}"`, 'correlated with high-performing videos');
+  }
+
+  // Pacing
+  if (normalized.pacingDynamics?.speedVariations?.length > 0) {
+    addConstraint('pacing', `Vary pacing: ${normalized.pacingDynamics.speedVariations.join(' → ')}`, 'correlated with high-performing videos');
+  }
+
+  // Engagement
+  if (normalized.engagementTechniques?.questionStrategy) {
+    addConstraint('engagement', `Use this question strategy: ${normalized.engagementTechniques.questionStrategy}`, 'correlated with high-performing videos');
+  }
+
+  // Narrative
+  if (normalized.narrativeStructure?.storyArcPattern) {
+    addConstraint('narrative', `Structure content as: ${normalized.narrativeStructure.storyArcPattern}`, 'correlated with high-performing videos');
+  }
+
+  // Technical
+  if (normalized.technicalPatterns?.avgWordsPerSentence) {
+    addConstraint('technical', `Keep sentences around ${normalized.technicalPatterns.avgWordsPerSentence} words`, 'correlated with high-performing videos');
+  }
+
+  // Signature phrases (always high value)
+  if (normalized.signature_phrases?.length > 0) {
+    addConstraint('hooks', `Naturally include these signature phrases: ${normalized.signature_phrases.slice(0, 3).map(p => `"${p}"`).join(', ')}`, 'defines creator identity');
+  }
+
+  // Sort by weight descending, take top 5
+  constraints.sort((a, b) => b.weight - a.weight);
+  const top5 = constraints.slice(0, 5);
+
+  const weighted = top5
+    .map(c => `You MUST ${c.instruction}. [REASON: ${c.reason}]`)
+    .join('\n');
+
+  const full = buildVoicePromptInjection(profile, channelName);
+
+  return { weighted, full, constraints };
+}

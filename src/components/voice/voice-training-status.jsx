@@ -258,12 +258,12 @@ export function VoiceTrainingStatus({ channelId, initialStatus = 'pending' }) {
             </div>
             <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
               <div>
-                <span className="text-muted-foreground">Accuracy:</span>
-                <span className="ml-2 font-medium">{profile.accuracy || 90}%</span>
+                <span className="text-muted-foreground">Confidence:</span>
+                <span className="ml-2 font-medium">{profile.confidence?.score ?? profile.accuracy ?? 0}%</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Status:</span>
-                <span className="ml-2 font-medium text-green-400">Ready</span>
+                <span className="ml-2 font-medium text-green-400 capitalize">{profile.confidence?.status || 'Ready'}</span>
               </div>
             </div>
           </div>

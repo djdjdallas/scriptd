@@ -118,7 +118,7 @@ export async function generateScript(config) {
   return processedScript;
 }
 
-function verifyVoiceCompliance(script, voiceProfile) {
+export function verifyVoiceCompliance(script, voiceProfile) {
   const checks = {
     signaturePhrases: checkSignaturePhrases(script, voiceProfile),
     sentenceLength: checkSentenceLength(script, voiceProfile),
@@ -134,7 +134,7 @@ function verifyVoiceCompliance(script, voiceProfile) {
   };
 }
 
-function checkSignaturePhrases(script, voiceProfile) {
+export function checkSignaturePhrases(script, voiceProfile) {
   const phrases = voiceProfile.linguisticFingerprints?.signaturePhrases || [];
   const found = phrases.filter(phrase => 
     script.toLowerCase().includes(phrase.toLowerCase())
@@ -146,7 +146,7 @@ function checkSignaturePhrases(script, voiceProfile) {
   };
 }
 
-function checkSentenceLength(script, voiceProfile) {
+export function checkSentenceLength(script, voiceProfile) {
   const target = voiceProfile.technicalPatterns?.avgWordsPerSentence || 15;
   const sentences = script.split(/[.!?]+/);
   const avgLength = sentences.reduce((sum, s) => 
@@ -159,7 +159,7 @@ function checkSentenceLength(script, voiceProfile) {
   };
 }
 
-function checkPronounDistribution(script, voiceProfile) {
+export function checkPronounDistribution(script, voiceProfile) {
   const target = voiceProfile.engagementTechniques?.pronounUsage || {};
   const words = script.toLowerCase().split(/\s+/);
   const counts = {
@@ -184,7 +184,7 @@ function checkPronounDistribution(script, voiceProfile) {
   };
 }
 
-function checkTransitionUsage(script, voiceProfile) {
+export function checkTransitionUsage(script, voiceProfile) {
   const transitions = voiceProfile.linguisticFingerprints?.transitionPhrases || [];
   const found = transitions.filter(phrase => 
     script.toLowerCase().includes(phrase.toLowerCase())
@@ -197,7 +197,7 @@ function checkTransitionUsage(script, voiceProfile) {
   };
 }
 
-function calculateComplianceScore(checks) {
+export function calculateComplianceScore(checks) {
   const weights = {
     signaturePhrases: 0.3,
     sentenceLength: 0.2,

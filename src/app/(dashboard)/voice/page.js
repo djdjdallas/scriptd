@@ -362,12 +362,12 @@ export default function VoiceTrainingPage() {
             {voiceProfiles.length > 0
               ? Math.round(
                   voiceProfiles.reduce((sum, profile) =>
-                    sum + (profile.parameters?.accuracy || profile.accuracy || 0), 0
+                    sum + (profile.confidence?.score || profile.accuracy || 0), 0
                   ) / voiceProfiles.length
                 ) || 0
               : 0}%
           </div>
-          <p className="text-sm text-gray-400">Avg. Accuracy</p>
+          <p className="text-sm text-gray-400">Voice Confidence</p>
         </div>
         <div className="vb-card p-4 text-center">
           <Clock className="h-8 w-8 text-orange-400 mx-auto mb-2" />
@@ -571,14 +571,16 @@ export default function VoiceTrainingPage() {
                   </div>
                   
                   <div className="flex items-center gap-4">
-                    {/* Accuracy Meter */}
+                    {/* Confidence Score */}
                     <div className="text-center">
                       <div className="text-2xl font-bold gradient-text">
-                        {profile.parameters?.accuracy || profile.accuracy || 85}%
+                        {profile.confidence?.score ?? profile.accuracy ?? 0}%
                       </div>
-                      <p className="text-xs text-gray-400">Accuracy</p>
+                      <p className="text-xs text-gray-400 capitalize">
+                        {profile.confidence?.status || 'Confidence'}
+                      </p>
                     </div>
-                    
+
                     {/* Status */}
                     <div className="flex items-center gap-2">
                       <Button className="vb-btn-outline text-white">
@@ -589,15 +591,27 @@ export default function VoiceTrainingPage() {
                   </div>
                 </div>
 
-                {/* Progress Bar */}
+                {/* Confidence Progress Bar */}
                 <div className="mt-4">
                   <div className="w-full h-2 bg-white/[0.04] border border-white/[0.06] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-violet-600 to-cyan-600 transition-all duration-300"
-                      style={{ width: `${profile.accuracy}%` }}
+                      style={{ width: `${profile.confidence?.score ?? profile.accuracy ?? 0}%` }}
                     />
                   </div>
                 </div>
+
+                {/* Improvement Suggestions */}
+                {profile.confidence?.improvements?.length > 0 && (
+                  <div className="mt-3 space-y-1.5">
+                    {profile.confidence.improvements.slice(0, 2).map((tip, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs text-gray-400">
+                        <Zap className="h-3 w-3 text-yellow-400 mt-0.5 flex-shrink-0" />
+                        <span>{tip}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Style Analysis Details */}
                 {activeProfile === profile.id && profile.parameters && (

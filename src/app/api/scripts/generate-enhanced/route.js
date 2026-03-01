@@ -6,6 +6,9 @@ import { createApiHandler, ApiError } from '@/lib/api-handler';
 import { validateSchema } from '@/lib/validators';
 import { getAIService } from '@/lib/ai';
 import { generateEnhancedScript, createChainPrompts, predictScriptPerformance } from '@/lib/prompts/script-generation-v2';
+import { generateEnhancedScriptPrompt } from '@/lib/prompts/enhanced-script-generation';
+import { normalizeVoiceProfile } from '@/lib/voice-training/normalizer';
+import { generateHook } from '@/lib/script-generation/hook-engine';
 import { CREDIT_COSTS, AI_MODELS } from '@/lib/constants';
 import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
 import { checkUpgradeRequirement, getTierDisplayName } from '@/lib/subscription-helpers';
@@ -102,6 +105,7 @@ export const POST = createApiHandler(async (req) => {
 
   // Get channel context if provided
   let channelContext = null;
+  let channelObject = null;
   if (validated.channelId) {
     const { data: channel } = await supabase
       .from('channels')
@@ -111,6 +115,7 @@ export const POST = createApiHandler(async (req) => {
       .single();
 
     if (channel) {
+      channelObject = channel;
       channelContext = `Channel: ${channel.name}\nDescription: ${channel.description}\nKeywords: ${channel.keywords?.join(', ')}`;
     }
   }
@@ -159,6 +164,14 @@ export const POST = createApiHandler(async (req) => {
     }
   }
 
+  // Block script generation if voice profile is still a placeholder
+  if (voiceProfile?.isPlaceholder === true || voiceProfile?.status === 'training_pending') {
+    throw new ApiError(
+      'Voice profile is still being trained. Script generation will unlock when training completes.',
+      409
+    );
+  }
+
   // Get trending topics for the niche (optional enhancement)
   let trendingTopics = [];
   if (validated.performanceGoals.useTrending) {
@@ -180,32 +193,89 @@ export const POST = createApiHandler(async (req) => {
   }
 
   try {
+    // Pre-generate a dedicated hook before main script generation
+    let preGeneratedHook = null;
+    try {
+      const hookResult = await generateHook({
+        voiceProfile,
+        scriptContext: {
+          title: validated.title,
+          type: validated.type,
+          targetAudience: validated.targetAudience,
+          tone: validated.tone,
+          length: validated.length,
+        },
+        channelName: channelContext?.split('\n')?.[0]?.replace('Channel: ', '') || '',
+      });
+      if (hookResult.success) {
+        preGeneratedHook = hookResult.hook;
+        apiLogger.info('Hook pre-generated successfully', { hookLength: preGeneratedHook.length });
+      }
+    } catch (hookError) {
+      apiLogger.warn('Hook pre-generation failed, proceeding without', { error: hookError.message });
+    }
+
     // Generate enhanced script
     const ai = getAIService(validated.model);
-    
-    const enhancedPrompt = generateEnhancedScript({
-      title: validated.title,
-      type: validated.type,
-      length: validated.length,
-      tone: validated.tone,
-      targetAudience: validated.targetAudience,
-      keyPoints: validated.keyPoints,
-      channelContext,
-      voiceProfile,
-      platform: validated.platform,
-      trendingTopics,
-      previousScripts,
-      performanceGoals: validated.performanceGoals
-    });
+
+    // Route to deep profile prompt generator if profile has full linguistic data
+    const hasDeepVoiceProfile = (profile) =>
+      profile?.linguisticFingerprints && profile?.narrativeStructure && profile?.emotionalDynamics;
+
+    let enhancedPrompt;
+    let generationPath;
+
+    if (voiceProfile && hasDeepVoiceProfile(voiceProfile)) {
+      // Use the enhanced prompt generator with 10-category voice decomposition
+      const normalizedProfile = normalizeVoiceProfile(voiceProfile);
+      const deepPromptText = generateEnhancedScriptPrompt({
+        topic: validated.title,
+        channel: channelObject || { name: channelContext?.split('\n')?.[0]?.replace('Channel: ', '') || 'Creator' },
+        voiceProfile: normalizedProfile,
+        tier: userTier === 'premium' ? 'premium' : 'balanced',
+        features: { factChecking: true },
+      });
+      enhancedPrompt = {
+        system: 'You are an elite YouTube script writer. Follow the voice implementation instructions precisely.',
+        user: deepPromptText,
+        metadata: { generationPath: 'enhanced_deep_profile' },
+      };
+      generationPath = 'enhanced';
+      apiLogger.info('Using enhanced deep-profile prompt generator', { channel: channelObject?.name });
+    } else {
+      // Standard v2 generation
+      enhancedPrompt = generateEnhancedScript({
+        title: validated.title,
+        type: validated.type,
+        length: validated.length,
+        tone: validated.tone,
+        targetAudience: validated.targetAudience,
+        keyPoints: validated.keyPoints,
+        channelContext,
+        voiceProfile,
+        platform: validated.platform,
+        trendingTopics,
+        previousScripts,
+        performanceGoals: validated.performanceGoals,
+      });
+      generationPath = 'v2_standard';
+      apiLogger.info('Using v2 standard prompt generator');
+    }
+
+    // Inject pre-generated hook into user prompt if available
+    let userPrompt = enhancedPrompt.user;
+    if (preGeneratedHook) {
+      userPrompt += `\n\nMANDATORY OPENING HOOK (use EXACTLY as first lines): ${preGeneratedHook}. Do NOT modify this hook.`;
+    }
 
     // Generate initial script
     const isAnthropic = validated.model.includes('claude');
     const isGroq = validated.model.includes('mistral') || validated.model.includes('mixtral');
-    
+
     let result;
     if (isAnthropic || isGroq) {
       result = await ai.generateCompletion({
-        prompt: enhancedPrompt.user,
+        prompt: userPrompt,
         system: enhancedPrompt.system,
         model: validated.model,
         maxTokens: 4000,
@@ -213,7 +283,7 @@ export const POST = createApiHandler(async (req) => {
       });
     } else {
       const text = await ai.generateCompletion(
-        enhancedPrompt.user,
+        userPrompt,
         {
           model: validated.model,
           systemPrompt: enhancedPrompt.system,
@@ -377,6 +447,8 @@ export const POST = createApiHandler(async (req) => {
         has_voice_profile: !!validated.voiceProfileId,
         used_chain_prompting: !!validated.useChainPrompting,
         has_performance_prediction: !!performancePrediction,
+        preGeneratedHook: !!preGeneratedHook,
+        generation_path: generationPath,
         subscription_tier: userTier,
       }
     });
