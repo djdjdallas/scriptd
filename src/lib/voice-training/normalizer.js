@@ -386,5 +386,11 @@ export function buildPerformanceWeightedInjection(profile, channelName = '') {
 
   const full = buildVoicePromptInjection(profile, channelName);
 
-  return { weighted, full, constraints };
+  // Build weights map for debug logging
+  const weights = {};
+  for (const c of top5) {
+    weights[c.category] = Math.round(c.weight * 100) / 100;
+  }
+
+  return { weighted, full, constraints: top5, weights };
 }

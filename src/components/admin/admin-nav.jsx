@@ -16,7 +16,8 @@ import {
   Activity,
   Database,
   FileText,
-  TrendingUp
+  TrendingUp,
+  Bug
 } from 'lucide-react';
 
 const adminNavItems = [
@@ -49,6 +50,12 @@ const adminNavItems = [
     label: 'PostHog',
     icon: Activity,
     description: 'Product analytics & events'
+  },
+  {
+    href: '/admin/debug',
+    label: 'Debug Panel',
+    icon: Bug,
+    description: 'Script generation debug logs'
   }
 ];
 

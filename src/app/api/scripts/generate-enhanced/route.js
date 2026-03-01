@@ -7,7 +7,10 @@ import { validateSchema } from '@/lib/validators';
 import { getAIService } from '@/lib/ai';
 import { generateEnhancedScript, createChainPrompts, predictScriptPerformance } from '@/lib/prompts/script-generation-v2';
 import { generateEnhancedScriptPrompt } from '@/lib/prompts/enhanced-script-generation';
-import { normalizeVoiceProfile } from '@/lib/voice-training/normalizer';
+import { normalizeVoiceProfile, buildPerformanceWeightedInjection } from '@/lib/voice-training/normalizer';
+import { computeVoiceConfidenceScore } from '@/lib/voice-training/confidence';
+import { verifyVoiceCompliance } from '@/lib/prompts/enhanced-script-generation';
+import { detectProfileSource } from '@/lib/voice-training/normalizer';
 import { generateHook } from '@/lib/script-generation/hook-engine';
 import { CREDIT_COSTS, AI_MODELS } from '@/lib/constants';
 import { validateCreditsWithBypass, conditionalCreditDeduction } from '@/lib/credit-bypass';
@@ -195,6 +198,8 @@ export const POST = createApiHandler(async (req) => {
   try {
     // Pre-generate a dedicated hook before main script generation
     let preGeneratedHook = null;
+    let hookEngineUsed = false;
+    let hookEngineFallback = false;
     try {
       const hookResult = await generateHook({
         voiceProfile,
@@ -207,11 +212,16 @@ export const POST = createApiHandler(async (req) => {
         },
         channelName: channelContext?.split('\n')?.[0]?.replace('Channel: ', '') || '',
       });
+      hookEngineUsed = true;
       if (hookResult.success) {
         preGeneratedHook = hookResult.hook;
         apiLogger.info('Hook pre-generated successfully', { hookLength: preGeneratedHook.length });
+      } else {
+        hookEngineFallback = true;
       }
     } catch (hookError) {
+      hookEngineUsed = true;
+      hookEngineFallback = true;
       apiLogger.warn('Hook pre-generation failed, proceeding without', { error: hookError.message });
     }
 
@@ -426,6 +436,73 @@ export const POST = createApiHandler(async (req) => {
             enhanced: true
           }
         });
+    }
+
+    // Fire-and-forget: insert generation debug log
+    try {
+      const profileSource = voiceProfile
+        ? (voiceProfile.isPlaceholder ? 'placeholder' : (voiceProfile.linguisticFingerprints ? 'deep' : 'basic'))
+        : null;
+
+      // Compute voice confidence if profile exists
+      let confidenceData = null;
+      if (voiceProfile) {
+        try { confidenceData = computeVoiceConfidenceScore(voiceProfile); } catch {}
+      }
+
+      // Get weighted injection data if performance data was available
+      let constraintsInjected = [];
+      let constraintWeights = {};
+      if (voiceProfile?.performance) {
+        try {
+          const injection = buildPerformanceWeightedInjection(voiceProfile, channelObject?.name || '');
+          constraintsInjected = (injection.constraints || []).map(c => ({
+            category: c.category,
+            weight: c.weight,
+            instruction: c.instruction?.slice(0, 200),
+          }));
+          constraintWeights = injection.weights || {};
+        } catch {}
+      }
+
+      // Compute compliance scores for enhanced path
+      let complianceScores = null;
+      if (generationPath === 'enhanced' && voiceProfile) {
+        try {
+          const compliance = verifyVoiceCompliance(finalScript, voiceProfile);
+          complianceScores = {
+            overall: compliance.overallScore,
+            signaturePhrases: compliance.voiceCompliance?.signaturePhrases?.found ?? null,
+            sentenceLength: compliance.voiceCompliance?.sentenceLength?.deviation ?? null,
+            pronounDistribution: compliance.voiceCompliance?.pronounUsage?.deviation ?? null,
+            transitionUsage: compliance.voiceCompliance?.transitions?.found ?? null,
+          };
+        } catch {}
+      }
+
+      await supabase
+        .from('generation_debug_logs')
+        .insert({
+          user_id: user.id,
+          script_id: script.id,
+          channel_id: channelId,
+          voice_profile_id: validated.voiceProfileId || null,
+          generation_path: generationPath,
+          hook_engine_used: hookEngineUsed,
+          hook_engine_fallback: hookEngineFallback,
+          hook_word_count: preGeneratedHook ? preGeneratedHook.split(/\s+/).length : null,
+          constraints_injected: constraintsInjected,
+          constraint_weights: constraintWeights,
+          voice_confidence_score: confidenceData?.score ?? null,
+          voice_confidence_status: confidenceData?.status ?? null,
+          compliance_scores: complianceScores,
+          profile_source: profileSource,
+          transcripts_analyzed: voiceProfile?.metadata?.transcriptsAnalyzed ?? null,
+          performance_data_available: !!voiceProfile?.performance,
+          generation_time_ms: Date.now() - generationStartTime,
+        });
+    } catch (debugLogError) {
+      console.error('Failed to insert generation debug log:', debugLogError);
     }
 
     // Track script generation completed in PostHog
