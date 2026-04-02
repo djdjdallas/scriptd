@@ -6,6 +6,7 @@ import {
   generateAudienceInsights
 } from '@/lib/ai/remix-analyzer';
 import { apiLogger } from '@/lib/monitoring/logger';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 export const maxDuration = 800;
 
@@ -20,15 +21,21 @@ export async function POST(request) {
         controller.enqueue(encoder.encode(`data: ${data}\n\n`));
       };
 
+      // Declare outside try so catch block can access them for error tracking
+      let user = null;
+      let analysisStartTime = null;
+
       try {
         const { channelIds, channels: providedChannels, config } = await request.json();
 
         sendUpdate('Initializing analysis...', 5);
+        analysisStartTime = Date.now();
 
         // Check authentication
         const supabase = await createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+        user = authUser;
+
         if (authError || !user) {
           sendUpdate('error:Unauthorized');
           controller.close();
@@ -224,6 +231,22 @@ export async function POST(request) {
 
       } catch (error) {
         apiLogger.error('SSE Analysis error', error);
+
+        if (user?.id) {
+          const posthog = getPostHogClient();
+          posthog.capture({
+            distinctId: user.id,
+            event: 'channel_analysis_failed',
+            properties: {
+              analysis_type: 'remix',
+              error_message: error.message || 'Unknown error',
+              error_type: error.name || 'Error',
+              error_stack: (error.stack || '').slice(0, 500),
+              analysis_time_ms: analysisStartTime ? Date.now() - analysisStartTime : null,
+            }
+          });
+        }
+
         const errorMessage = `error:${error.message || 'Analysis failed'}`;
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ step: errorMessage })}\n\n`));
         controller.close();

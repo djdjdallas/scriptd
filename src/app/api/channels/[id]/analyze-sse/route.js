@@ -21,11 +21,16 @@ export async function GET(request, { params }) {
         );
       };
 
+      // Declare outside try so catch block can access them for error tracking
+      let user = null;
+      let analysisStartTime = null;
+
       try {
         const supabase = await createClient();
 
         // Check authentication
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+        user = authUser;
         if (authError || !user) {
           sendEvent('error', { message: 'Unauthorized' });
           controller.close();
@@ -46,7 +51,7 @@ export async function GET(request, { params }) {
           return;
         }
 
-        const analysisStartTime = Date.now();
+        analysisStartTime = Date.now();
         const posthog = getPostHogClient();
         posthog.capture({
           distinctId: user.id,
@@ -308,7 +313,9 @@ export async function GET(request, { params }) {
             properties: {
               channel_id: id,
               error_message: error.message || 'Unknown error',
-              analysis_time_ms: typeof analysisStartTime !== 'undefined' ? Date.now() - analysisStartTime : null,
+              error_type: error.name || 'Error',
+              error_stack: (error.stack || '').slice(0, 500),
+              analysis_time_ms: analysisStartTime ? Date.now() - analysisStartTime : null,
             }
           });
         }

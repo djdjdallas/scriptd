@@ -10,8 +10,13 @@ export default function GlobalError({ error }) {
     // Send error to Sentry
     Sentry.captureException(error);
 
-    // Send error to PostHog as well for correlation with user behavior
-    posthog.captureException(error);
+    // Send error to PostHog with full exception details.
+    // captureException automatically extracts type, message, and stack trace
+    // from Error objects. Pass additional properties for context.
+    posthog.captureException(error, {
+      $exception_source: 'global_error_boundary',
+      $current_url: typeof window !== 'undefined' ? window.location.href : undefined,
+    });
   }, [error]);
 
   return (

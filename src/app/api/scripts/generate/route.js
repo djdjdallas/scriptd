@@ -400,7 +400,8 @@ export const POST = createApiHandler(async (req) => {
         tier: selectedTier,
         model: actualModel,
         error_message: error.message || 'Unknown error',
-        error_type: error instanceof ApiError ? 'api_error' : 'unexpected_error',
+        error_type: error instanceof ApiError ? 'api_error' : (error.name || 'Error'),
+        error_stack: (error.stack || '').slice(0, 500),
         generation_time_ms: Date.now() - generationStartTime,
         subscription_tier: userTier,
       }

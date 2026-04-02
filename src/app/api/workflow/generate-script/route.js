@@ -1601,6 +1601,8 @@ SCRIPT TYPE: ${type === 'outline' ? 'Create a structured outline with clear sect
         properties: {
           generation_source: 'workflow',
           error_message: error.message || 'Unknown error',
+          error_type: error.name || 'Error',
+          error_stack: (error.stack || '').slice(0, 500),
           generation_time_ms: typeof generationStartTime !== 'undefined' ? Date.now() - generationStartTime : null,
           workflow_id: typeof workflowId !== 'undefined' ? workflowId : null,
         }

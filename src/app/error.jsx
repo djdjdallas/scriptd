@@ -1,6 +1,7 @@
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
+import posthog from "posthog-js";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RefreshCw, Home } from "lucide-react";
@@ -10,6 +11,11 @@ export default function Error({ error, reset }) {
   useEffect(() => {
     // Log to Sentry
     Sentry.captureException(error);
+
+    // Log to PostHog for correlation with user behavior
+    posthog.captureException(error, {
+      $exception_source: 'error_boundary',
+    });
   }, [error]);
 
   return (

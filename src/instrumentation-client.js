@@ -30,6 +30,7 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
   capture_pageview: 'history_change', // Tracks SPA navigations as pageviews
   autocapture: true, // Captures clicks, form submissions, etc.
   capture_exceptions: true, // Enables capturing unhandled exceptions via Error Tracking
+  capture_dead_clicks: true, // Captures clicks on non-interactive elements (rage/dead clicks)
   debug: process.env.NODE_ENV === "development",
   persistence: 'localStorage+cookie', // Ensures user identification persists
 });
