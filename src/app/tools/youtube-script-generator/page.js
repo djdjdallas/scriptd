@@ -7,6 +7,7 @@
  * Educational content + tool preview + CTAs.
  */
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Zap,
@@ -32,6 +33,7 @@ import {
   CTASection,
   FAQSection
 } from '@/components/marketing/MarketingLayout';
+import FreeToolCtaBanner from '@/components/marketing/FreeToolCtaBanner';
 
 // How it works steps
 const howItWorks = [
@@ -128,6 +130,22 @@ const faqs = [
 ];
 
 export default function YouTubeScriptGeneratorPage() {
+  // This is a static marketing page with no interactive tool output, so
+  // "value received" is proxied by meaningful scroll engagement.
+  const [engaged, setEngaged] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleScroll = () => {
+      if (window.scrollY > 1500) {
+        setEngaged(true);
+        window.removeEventListener('scroll', handleScroll);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#030303]">
       {/* Hero */}
@@ -287,6 +305,13 @@ export default function YouTubeScriptGeneratorPage() {
             </div>
           </div>
         </MarketingCard>
+      </MarketingSection>
+
+      {/* Post-engagement CTA banner — shown after the user scrolls meaningfully */}
+      <MarketingSection>
+        <div className="max-w-4xl mx-auto">
+          <FreeToolCtaBanner tool="youtube_script_generator" show={engaged} />
+        </div>
       </MarketingSection>
 
       {/* FAQs */}

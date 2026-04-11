@@ -8,7 +8,7 @@ import posthog from 'posthog-js';
 import ContentIdeaBanner from '../ContentIdeaBanner';
 
 export default function ExportStep() {
-  const { generatedScript, workflowData, markStepComplete } = useWorkflow();
+  const { generatedScript, workflowData, markStepComplete, workflowId } = useWorkflow();
   const [exportFormat, setExportFormat] = useState('txt');
   const [isExporting, setIsExporting] = useState(false);
   const [copiedFormat, setCopiedFormat] = useState(null);
@@ -55,8 +55,10 @@ export default function ExportStep() {
       markStepComplete(10);
 
       posthog.capture('script_exported', {
+        script_id: workflowData.draft?.scriptId || null,
+        workflow_id: workflowId || null,
         export_format: format,
-        word_count: generatedScript.split(' ').length,
+        script_length_words: generatedScript.split(/\s+/).filter(Boolean).length,
         title: workflowData.title?.selected || 'Untitled',
       });
 

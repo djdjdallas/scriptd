@@ -43,6 +43,7 @@ export default function DraftStep() {
     markStepComplete,
     trackCredits,
     workflowId,
+    completedSteps,
   } = useWorkflow();
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -422,6 +423,17 @@ export default function DraftStep() {
     });
 
     console.log("=== END DEBUG ===");
+
+    // Track generation start from the client so the event is tied to the
+    // same session/device as the pageview (server-side captures live under a
+    // different distinct_id and break funnel attribution).
+    posthog.capture('script_generation_started', {
+      generation_type: type,
+      workflow_id: workflowId,
+      has_hook: !!workflowData.hook?.selected,
+      has_research: !!workflowData.research,
+      step_completion_count: Array.isArray(completedSteps) ? completedSteps.length : 0,
+    });
 
     try {
       console.log(

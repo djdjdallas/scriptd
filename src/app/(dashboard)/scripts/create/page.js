@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import posthog from 'posthog-js';
 import ScriptWorkflow from '@/components/script-workflow/ScriptWorkflow';
 
 export default function CreateScriptPage() {
@@ -34,6 +36,17 @@ export default function CreateScriptPage() {
   // Check if any template data or content idea data exists
   const hasTemplateData = Object.values(templateData).some(val => val !== null);
   const hasContentIdeaData = searchParams.get('sourceType') === 'content-idea';
+
+  const pageViewedFiredRef = useRef(false);
+  useEffect(() => {
+    if (pageViewedFiredRef.current) return;
+    pageViewedFiredRef.current = true;
+    posthog.capture('script_create_page_viewed', {
+      source: workflowId ? 'resume_workflow' : 'new_workflow',
+      has_template: hasTemplateData,
+      has_content_idea: hasContentIdeaData,
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#030303]">

@@ -66,11 +66,14 @@ export default function ScriptWorkflow({ workflowId = null, initialTemplateData 
 
   const supabase = createClient();
   const router = useRouter();
+  const creationGuardRef = useRef(false);
 
   useEffect(() => {
     if (workflowId) {
       loadWorkflow();
-    } else {
+    } else if (!creationGuardRef.current) {
+      // Guard against React StrictMode double-invoke and any re-mounts
+      creationGuardRef.current = true;
       // For new workflows, we'll let the database handle the user_id
       // using RLS policies and the authenticated user from the session
       createNewWorkflow(initialTemplateData, initialContentIdeaData);
@@ -233,10 +236,24 @@ export default function ScriptWorkflow({ workflowId = null, initialTemplateData 
       console.log('[ScriptWorkflow] Workflow created successfully:', data);
       console.log('[ScriptWorkflow] Redirecting to:', `/scripts/create/${data.id}`);
 
+      // Look up whether this user has a channel connected (non-blocking best-effort)
+      let hasChannel = false;
+      try {
+        const { data: channelRows } = await supabase
+          .from('channels')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+        hasChannel = !!(channelRows && channelRows.length);
+      } catch (e) {
+        // Don't block workflow creation on analytics lookup
+      }
+
       // Track workflow started
       posthog.capture('script_workflow_started', {
         workflow_id: data.id,
         source: contentIdeaData ? 'content_idea' : templateData ? 'template' : 'blank',
+        has_channel: hasChannel,
         has_template: !!templateData,
         has_content_idea: !!contentIdeaData,
         template_type: templateData?.templateType || null,

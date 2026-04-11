@@ -20,6 +20,7 @@ import {
   Copy
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import FreeToolCtaBanner from '@/components/marketing/FreeToolCtaBanner';
 
 const SPEAKING_PACES = [
   {
@@ -355,6 +356,9 @@ export default function LengthCalculatorPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Post-value CTA — only shown after user has seen results */}
+            <FreeToolCtaBanner tool="length_calculator" show={!!results} />
 
             {/* Recommendations */}
             <Card className="bg-white/[0.04] border-white/5">
